@@ -1,0 +1,173 @@
+function copyCode(button) {
+  const code = button.closest(".code-block").querySelector("code").innerText;
+  const original = button.innerHTML;
+
+  navigator.clipboard.writeText(code).then(() => {
+    button.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 6L9 17l-5-5"></path>
+      </svg>
+    `;
+
+    setTimeout(() => {
+      button.innerHTML = original;
+    }, 1200);
+  }).catch(() => {
+    button.innerHTML = original;
+    alert("複製失敗");
+  });
+}
+
+function formatLangLabel(lang) {
+  const map = {
+    python: "PYTHON",
+    javascript: "JAVASCRIPT",
+    css: "CSS",
+    markup: "HTML",
+    html: "HTML",
+    js: "JAVASCRIPT",
+    typescript: "TYPESCRIPT",
+    ts: "TYPESCRIPT",
+    json: "JSON",
+    bash: "BASH",
+    shell: "SHELL",
+    sh: "SHELL",
+    swift: "SWIFT"
+  };
+  return map[lang] || lang.toUpperCase();
+}
+
+function highlightKeywordInTextNode(textNode, keyword, className) {
+  const text = textNode.textContent;
+  if (!text.includes(keyword)) return;
+
+  const fragment = document.createDocumentFragment();
+  let lastIndex = 0;
+  let index = text.indexOf(keyword);
+
+  while (index !== -1) {
+    if (index > lastIndex) {
+      fragment.appendChild(document.createTextNode(text.slice(lastIndex, index)));
+    }
+
+    const span = document.createElement("span");
+    span.className = className;
+    span.textContent = keyword;
+    fragment.appendChild(span);
+
+    lastIndex = index + keyword.length;
+    index = text.indexOf(keyword, lastIndex);
+  }
+
+  if (lastIndex < text.length) {
+    fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+  }
+
+  textNode.parentNode.replaceChild(fragment, textNode);
+}
+
+function highlightKeywordSafely(container, keyword, className) {
+  const walker = document.createTreeWalker(
+    container,
+    NodeFilter.SHOW_TEXT,
+    {
+      acceptNode(node) {
+        if (!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        if (!node.nodeValue.includes(keyword)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    }
+  );
+
+  const textNodes = [];
+  let current;
+
+  while ((current = walker.nextNode())) {
+    textNodes.push(current);
+  }
+
+  textNodes.forEach((node) => {
+    highlightKeywordInTextNode(node, keyword, className);
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const blocks = document.querySelectorAll("pre.code-auto");
+
+  blocks.forEach((pre) => {
+    if (pre.parentElement.classList.contains("code-block")) return;
+
+    const code = pre.querySelector("code");
+    if (!code) return;
+
+    const langClass =
+      [...code.classList]
+        .find((c) => c.startsWith("language-"))
+        ?.replace("language-", "") || "code";
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "code-block";
+
+    const header = document.createElement("div");
+    header.className = "code-header";
+
+    let fileName = "";
+    const lines = code.textContent.split("\n");
+
+    if (lines[0].startsWith("# ")) {
+      fileName = lines[0].replace("# ", "").trim();
+      lines.shift();
+
+      while (lines.length && lines[0].trim() === "") {
+        lines.shift();
+      }
+
+      code.textContent = lines.join("\n");
+    }
+
+    const file = document.createElement("span");
+    file.className = "code-file";
+    file.textContent = fileName || "code";
+
+    const label = document.createElement("span");
+    label.className = "code-lang";
+    label.textContent = formatLangLabel(langClass);
+
+    const left = document.createElement("div");
+    left.className = "code-left";
+    left.appendChild(file);
+    left.appendChild(label);
+
+    const button = document.createElement("button");
+    button.className = "copy-btn";
+    button.type = "button";
+    button.setAttribute("aria-label", "複製程式碼");
+    button.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+        <rect x="4" y="4" width="11" height="11" rx="2"></rect>
+      </svg>
+    `;
+
+    button.addEventListener("click", () => copyCode(button));
+
+    header.appendChild(left);
+    header.appendChild(button);
+
+    pre.classList.add("line-numbers");
+
+    pre.parentNode.insertBefore(wrapper, pre);
+    wrapper.appendChild(header);
+    wrapper.appendChild(pre);
+  });
+
+  if (window.Prism) {
+    Prism.highlightAll();
+
+    document.querySelectorAll("code.language-python .token.string").forEach((token) => {
+      highlightKeywordSafely(token, "Galgame", "kw-red");
+      highlightKeywordSafely(token, "Morfonica", "kw-blue");
+      highlightKeywordSafely(token, "Ave Mujica", "kw-reddishpurple");
+    });
+  }
+});
