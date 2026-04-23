@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>私について | huihui.dev</title>
+
+  <link rel="stylesheet" href="/style.css" />
+
+  <link href="https://cdn.jsdelivr.net/npm/prismjs/themes/prism-tomorrow.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/prismjs/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+
+  <style>
+    .about-page {
+      max-width: 840px;
+      min-height: calc(100vh - 56px);
+      display: flex;
+      align-items: flex-start;
+      padding: 56px 0;
+    }
+
+    .about-content {
+      width: 100%;
+    }
+
+    .interest-cards {
+      display: grid;
+      gap: 8px;
+    }
+
+    .interest-card {
+      display: grid;
+      grid-template-columns: 160px minmax(0, 1fr);
+      gap: 20px;
+      padding: 6px 0;
+    }
+
+    .interest-card h4 {
+      margin: 0;
+      font-size: clamp(1.15rem, 2vw, 1.45rem);
+      font-weight: 600;
+    }
+
+    .interest-note {
+      margin-top: 28px;
+      color: rgba(255, 255, 255, 0.55);
+      font-size: 0.8rem;
+    }
+
+    @media (max-width: 900px) {
+      .main {
+        margin-left: 0;
+      }
+
+      .interest-card {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <h1><a href="/ja/">huihui.dev</a></h1>
+
+      <div class="lang-switch" aria-label="Language switch">
+        <a href="/">中</a>
+        <span>|</span>
+        <a href="/en/">English</a>
+        <span>|</span>
+        <a href="/ja/" class="active">日本語</a>
+      </div>
+
+      <nav>
+        <a href="/ja/about/">私について</a>
+        <a href="/ja/contact/">連絡先</a>
+      </nav>
+    </div>
+
+    <div class="sidebar-bottom">
+      © 2026 huihui.dev<br />
+      All rights reserved.
+    </div>
+  </aside>
+
+  <main class="main">
+    <section class="about-page">
+      <div class="about-content">
+        <h1>私について</h1>
+
+        <pre class="code-auto"><code class="language-python"># profile.py
+
+from __future__ import annotations
+from typing import List
+
+class HuiHui:
+    """Developer profile object."""
+
+    def __init__(self) -> None:
+        self.name: str = "huihui"
+        self.major: str = "Electronic Engineering"
+        self.hobbies: List[str] = ["Photography", "Rhythm Games", "Galgame"]
+        self.website: str = "huihui.dev"
+        self.contact: str = "contact@huihui.dev"
+
+        self.skills: List[str] = [
+            "Python (OpenCV, Computer Vision, ML basics)",
+            "SwiftUI (basic)",
+            "JavaScript (basic)",
+            "HTML & CSS (basic)",
+        ]
+
+        self.projects: List[str] = [
+            "huihui.dev (personal website with custom UI and code rendering system)",
+            "Multimodal Health Analysis Prototype (Raspberry Pi + OpenCV)",
+        ]
+
+        self.favorite_composers: List[str] = [
+            "Laur",
+            "USAO",
+            "Sakuzyo",
+            "ak+q",
+        ]
+
+        self.favorite_bands: List[str] = [
+            "Morfonica",
+            "Ave Mujica",
+        ]
+
+        self.favorite_songs: List[str] = [
+            "Grievous Lady -nothing is but what is not- · Team Grimoire & Laur",
+            "PRAGMATISM -RESURRECTION- · Laur",
+            "Cyaegha · USAO",
+            "Cryptarithm · Sakuzyo",
+            "虚空の夢 · ak+q",
+            "One step at a time · Morfonica",
+            "顔 · Ave Mujica",
+        ]
+
+huihui = HuiHui()
+</code></pre>
+
+        <section>
+          <h2>趣味</h2>
+
+          <div class="interest-cards">
+            <article class="interest-card">
+              <h4>Maimai</h4>
+              <div class="interest-gallery">
+                <img src="/images/1001_aa.webp" alt="Maimai" />
+                <img src="/images/1001_ab.webp" alt="Maimai" />
+              </div>
+            </article>
+
+            <article class="interest-card">
+              <h4>Arcaea</h4>
+              <div class="interest-gallery">
+                <img src="/images/1002_aa.webp" alt="Arcaea" />
+                <img src="/images/1002_ab.webp" alt="Arcaea" />
+              </div>
+            </article>
+
+            <article class="interest-card">
+              <h4>Galgame</h4>
+              <div class="interest-gallery">
+                <img src="/images/1003_aa.webp" alt="Galgame" />
+                <img src="/images/1003_ab.webp" alt="Galgame" />
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <p class="interest-note">
+          Images © respective owners (SEGA, lowiro, YUZUSOFT, NEKO WORKs, etc.)
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <div class="lightbox" id="lightbox">
+    <span class="lightbox-close" id="lightboxClose">&times;</span>
+    <img class="lightbox-img no-lightbox" id="lightboxImg" src="" alt="" />
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-python.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/plugins/line-numbers/prism-line-numbers.min.js"></script>
+  <script src="/js/main.js"></script>
+  <script src="/js/lightbox.js"></script>
+</body>
+</html>
