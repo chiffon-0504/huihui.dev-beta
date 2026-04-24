@@ -12,7 +12,7 @@
 
   <style>
     .about-page {
-      max-width: 1040px;
+      max-width: 1280px;
       min-height: calc(100vh - 56px);
       display: flex;
       align-items: flex-start;
@@ -38,38 +38,35 @@
 
     .interest-cards {
       display: grid;
-      gap: 92px;
+      gap: 56px;
       margin-top: 28px;
     }
 
     .interest-card {
-      display: grid;
-      grid-template-columns: 180px minmax(0, 1fr);
-      align-items: start;
-      gap: 28px;
+      display: block;
       padding: 8px 0;
     }
 
     .interest-card h4 {
-      margin: 0;
+      margin: 0 0 18px;
       font-size: clamp(2rem, 3vw, 3rem);
       font-weight: 700;
       line-height: 1.08;
     }
 
     .interest-gallery {
-      width: max-content;
-      transform: scale(1.45);
-      transform-origin: top left;
+      width: 100%;
     }
 
     .interest-gallery img {
-      border-radius: 16px;
+      width: 100%;
+      max-width: 100%;
+      border-radius: 18px;
       display: block;
     }
 
     .interest-note {
-      margin-top: 80px;
+      margin-top: 28px;
       color: rgba(255, 255, 255, 0.55);
       font-size: 0.8rem;
     }
@@ -81,24 +78,6 @@
 
       .interest-cards {
         gap: 34px;
-      }
-
-      .interest-card {
-        grid-template-columns: 1fr;
-        gap: 14px;
-      }
-
-      .interest-gallery {
-        width: 100%;
-        transform: none;
-      }
-
-      .interest-gallery img {
-        width: 100%;
-      }
-
-      .interest-note {
-        margin-top: 28px;
       }
     }
   </style>
