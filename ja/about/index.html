@@ -12,7 +12,7 @@
 
   <style>
     .about-page {
-      max-width: 840px;
+      max-width: 1280px;
       min-height: calc(100vh - 56px);
       display: flex;
       align-items: flex-start;
@@ -25,20 +25,32 @@
 
     .interest-cards {
       display: grid;
-      gap: 8px;
+      gap: 56px;
+      margin-top: 28px;
     }
 
     .interest-card {
-      display: grid;
-      grid-template-columns: 160px minmax(0, 1fr);
-      gap: 20px;
-      padding: 6px 0;
+      display: block;
+      padding: 8px 0;
     }
 
     .interest-card h4 {
-      margin: 0;
-      font-size: clamp(1.15rem, 2vw, 1.45rem);
-      font-weight: 600;
+      margin: 0 0 18px;
+      font-size: clamp(2rem, 3vw, 3rem);
+      font-weight: 700;
+      line-height: 1.08;
+    }
+
+    .interest-gallery {
+      width: 100%;
+    }
+
+    .interest-gallery img {
+      width: 1000px !important;
+      max-width: none !important;
+      height: auto !important;
+      border-radius: 18px;
+      display: block;
     }
 
     .interest-note {
@@ -52,8 +64,13 @@
         margin-left: 0;
       }
 
-      .interest-card {
-        grid-template-columns: 1fr;
+      .interest-cards {
+        gap: 34px;
+      }
+
+      .interest-gallery img {
+        width: 100% !important;
+        max-width: 100% !important;
       }
     }
   </style>
@@ -160,26 +177,23 @@ huihui = HuiHui()
 
           <div class="interest-cards">
             <article class="interest-card">
-              <h4>maimai <br> でらっくす</h4>
+              <h4>maimai でらっくす</h4>
               <div class="interest-gallery">
-                <img src="/images/1001_aa.webp" alt="maimai でらっくす" />
-                <img src="/images/1001_ab.webp" alt="maimai でらっくす" />
+                <img src="/images/1001_a.webp" alt="maimai でらっくす" />
               </div>
             </article>
 
             <article class="interest-card">
               <h4>Arcaea</h4>
               <div class="interest-gallery">
-                <img src="/images/1002_aa.webp" alt="Arcaea" />
-                <img src="/images/1002_ab.webp" alt="Arcaea" />
+                <img src="/images/1002_a.webp" alt="Arcaea" />
               </div>
             </article>
 
             <article class="interest-card">
               <h4>美少女ゲーム</h4>
               <div class="interest-gallery">
-                <img src="/images/1003_aa.webp" alt="美少女ゲーム" />
-                <img src="/images/1003_ab.webp" alt="美少女ゲーム" />
+                <img src="/images/1003_a.webp" alt="美少女ゲーム" />
               </div>
             </article>
           </div>
