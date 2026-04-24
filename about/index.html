@@ -12,7 +12,7 @@
 
   <style>
     .about-page {
-      max-width: 840px;
+      max-width: 1040px;
       min-height: calc(100vh - 56px);
       display: flex;
       align-items: flex-start;
@@ -23,6 +23,19 @@
       width: 100%;
     }
 
+    .about-title {
+      margin: 0 0 28px;
+      font-size: clamp(2.4rem, 6vw, 4.2rem);
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+    }
+
+    .about-section-title {
+      margin: 0 0 22px;
+      font-size: clamp(1.3rem, 3vw, 1.8rem);
+      line-height: 1.2;
+    }
+
     .interest-cards {
       display: grid;
       gap: 34px;
@@ -30,9 +43,9 @@
 
     .interest-card {
       display: grid;
-      grid-template-columns: 170px minmax(0, 1fr);
+      grid-template-columns: 180px minmax(0, 1fr);
       align-items: start;
-      gap: 26px;
+      gap: 28px;
       padding: 8px 0;
     }
 
@@ -40,27 +53,138 @@
       margin: 0;
       font-size: clamp(1.5rem, 2.8vw, 2.2rem);
       font-weight: 700;
+      line-height: 1.15;
+    }
+
+    .interest-gallery {
+      width: 100%;
     }
 
     .interest-gallery img {
       width: 100%;
-      max-width: 760px;
+      max-width: 820px;
       border-radius: 16px;
       display: block;
     }
 
+    .interest-note {
+      margin-top: 28px;
+      color: rgba(255, 255, 255, 0.55);
+      font-size: 0.8rem;
+    }
+
     @media (max-width: 900px) {
-      .main { margin-left: 0; }
-      .interest-card { grid-template-columns: 1fr; }
+      .main {
+        margin-left: 0;
+      }
+
+      .interest-card {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      .interest-gallery img {
+        max-width: 100%;
+      }
     }
   </style>
 </head>
 
 <body>
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <h1><a href="../index.html">huihui.dev</a></h1>
+
+      <div class="lang-switch" aria-label="Language switch">
+        <a href="/" class="active">中</a>
+        <span>|</span>
+        <a href="/en/">English</a>
+        <span>|</span>
+        <a href="/ja/">日本語</a>
+      </div>
+      
+      <nav>
+        <a href="../about/">關於我</a>
+        <a href="../works/">作品</a>
+        <a href="../posts/">貼文</a>
+        <a href="../contact/">聯絡</a>
+      </nav>
+    </div>
+
+    <div class="sidebar-bottom">
+      © 2026 huihui.dev<br />
+      All rights reserved.
+    </div>
+  </aside>
+
   <main class="main">
     <section class="about-page">
       <div class="about-content">
         <h1>關於我</h1>
+
+        <pre class="code-auto"><code class="language-python"># profile.py
+
+from __future__ import annotations
+from typing import List, Optional
+
+class HuiHui:
+    """Developer profile object."""
+
+    def __init__(self) -> None:
+        self.name: str = "huihui"
+        self.major: str = "Electronic Engineering"
+        self.hobbies: List[str] = ["Photography", "Rhythm Games", "Galgame"]
+        self.website: str = "huihui.dev"
+        self.contact: str = "contact@huihui.dev"
+
+        self.skills: List[str] = [
+            "Python (OpenCV, Computer Vision, ML basics)",
+            "SwiftUI (basic)",
+            "JavaScript (basic)",
+            "HTML & CSS (basic)",
+        ]
+
+        self.projects: List[str] = [
+            "huihui.dev (personal website with custom UI and code rendering system)",
+            "Multimodal Health Analysis Prototype (Raspberry Pi + OpenCV)",
+        ]
+
+        self.favorite_composers: List[str] = [
+            "Laur",
+            "USAO",
+            "Sakuzyo",
+            "ak+q",
+        ]
+
+        self.favorite_bands: List[str] = [
+            "Morfonica",
+            "Ave Mujica",
+        ]
+
+        self.favorite_songs: List[str] = [
+            "Grievous Lady -nothing is but what is not- · Team Grimoire & Laur",
+            "PRAGMATISM -RESURRECTION- · Laur",
+            "Cyaegha · USAO",
+            "Cryptarithm · Sakuzyo",
+            "虚空の夢 · ak+q",
+            "One step at a time · Morfonica",
+            "顏 · Ave Mujica",
+        ]
+
+        self.favorite_illustrators: List[str] = [
+            "@momoco_haru",
+            "@horuhara",
+            "@kurumi_lm"
+        ]
+
+    def about(self) -> str:
+        return (
+            "A personal dev space focused on embedded systems, "
+            "computer vision, and experimental projects"
+        )
+
+huihui = HuiHui()
+</code></pre>
 
         <section>
           <h2>興趣</h2>
@@ -88,8 +212,23 @@
             </article>
           </div>
         </section>
+
+        <p class="interest-note">
+          Images © respective owners (SEGA, lowiro, YUZUSOFT, NEKO WORKs,etc.)
+        </p>
       </div>
     </section>
   </main>
+
+  <div class="lightbox" id="lightbox">
+    <span class="lightbox-close" id="lightboxClose">&times;</span>
+    <img class="lightbox-img no-lightbox" id="lightboxImg" src="" alt="" />
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-python.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/plugins/line-numbers/prism-line-numbers.min.js"></script>
+  <script src="../js/main.js"></script>
+  <script src="../js/lightbox.js"></script>
 </body>
 </html>
