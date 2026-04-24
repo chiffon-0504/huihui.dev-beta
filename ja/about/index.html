@@ -94,7 +94,7 @@
         <pre class="code-auto"><code class="language-python"># profile.py
 
 from __future__ import annotations
-from typing import List
+from typing import List, Optional
 
 class HuiHui:
     """Developer profile object."""
@@ -137,8 +137,20 @@ class HuiHui:
             "Cryptarithm · Sakuzyo",
             "虚空の夢 · ak+q",
             "One step at a time · Morfonica",
-            "顔 · Ave Mujica",
+            "顏 · Ave Mujica",
         ]
+
+        self.favorite_illustrators: List[str] = [
+            "@momoco_haru",
+            "@horuhara",
+            "@kurumi_lm"
+        ]
+
+    def about(self) -> str:
+        return (
+            "A personal dev space focused on embedded systems, "
+            "computer vision, and experimental projects"
+        )
 
 huihui = HuiHui()
 </code></pre>
