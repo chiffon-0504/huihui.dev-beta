@@ -12,7 +12,7 @@
 
   <style>
     .about-page {
-      max-width: 1040px;
+      max-width: 1320px;
       min-height: calc(100vh - 56px);
       display: flex;
       align-items: flex-start;
@@ -38,22 +38,22 @@
 
     .interest-cards {
       display: grid;
-      gap: 34px;
+      gap: 42px;
     }
 
     .interest-card {
       display: grid;
-      grid-template-columns: 180px minmax(0, 1fr);
+      grid-template-columns: 220px minmax(0, 1fr);
       align-items: start;
-      gap: 28px;
-      padding: 8px 0;
+      gap: 34px;
+      padding: 10px 0;
     }
 
     .interest-card h4 {
       margin: 0;
-      font-size: clamp(1.5rem, 2.8vw, 2.2rem);
+      font-size: clamp(2rem, 3.2vw, 3rem);
       font-weight: 700;
-      line-height: 1.15;
+      line-height: 1.08;
     }
 
     .interest-gallery {
@@ -61,9 +61,8 @@
     }
 
     .interest-gallery img {
-      width: 100%;
-      max-width: 820px;
-      border-radius: 16px;
+      width: min(100%, 1080px);
+      border-radius: 18px;
       display: block;
     }
 
@@ -84,7 +83,7 @@
       }
 
       .interest-gallery img {
-        max-width: 100%;
+        width: 100%;
       }
     }
   </style>
