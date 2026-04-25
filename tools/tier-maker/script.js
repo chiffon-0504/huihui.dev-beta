@@ -21,8 +21,9 @@ upload.addEventListener("change",e=>{
 document.addEventListener("dragover",e=>e.preventDefault());
 
 document.addEventListener("drop",e=>{
-  if(e.target.classList.contains("tier-content") && dragged){
-    e.target.appendChild(dragged);
+  const zone=e.target.closest(".tier-content");
+  if(zone && dragged){
+    zone.appendChild(dragged);
   }
 });
 
@@ -33,13 +34,12 @@ slider.addEventListener("input",e=>{
   });
 });
 
-// 顏色同步到 label
+// 顏色 → 整塊 label
 
 document.addEventListener("input",e=>{
   if(e.target.classList.contains("tier-color")){
-    const row=e.target.closest(".tier-row");
-    const label=row.querySelector(".tier-label");
-    label.style.background=e.target.value;
+    const wrap=e.target.closest(".tier-label-wrap");
+    wrap.style.background=e.target.value;
   }
 });
 
@@ -48,8 +48,10 @@ addBtn.addEventListener("click",()=>{
   const row=document.createElement("div");
   row.className="tier-row";
   row.innerHTML=`
-    <input class="tier-label" value="NEW">
-    <input class="tier-color" type="color" value="#ccc">
+    <div class="tier-label-wrap" style="background:#ccc">
+      <input class="tier-label" value="NEW">
+      <input class="tier-color" type="color" value="#ccc">
+    </div>
     <div class="tier-content"></div>
     <button class="delete-tier">×</button>
   `;
