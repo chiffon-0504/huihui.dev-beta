@@ -1,7 +1,72 @@
 let dragged=null;
+let touchGhost=null;
 
 const upload=document.getElementById("imageUpload");
 const pool=document.getElementById("poolContent");
+const board=document.getElementById("tierBoard");
+
+function setupTierItem(img){
+  img.className="tier-item";
+  img.draggable=true;
+  img.addEventListener("dragstart",()=>dragged=img);
+
+  img.addEventListener("touchstart",e=>{
+    dragged=img;
+    img.classList.add("is-dragging");
+    touchGhost=img.cloneNode(true);
+    touchGhost.className="tier-item touch-ghost";
+    document.body.appendChild(touchGhost);
+    moveGhost(e.touches[0]);
+  },{passive:false});
+
+  img.addEventListener("touchmove",e=>{
+    if(!dragged)return;
+    e.preventDefault();
+    moveGhost(e.touches[0]);
+  },{passive:false});
+
+  img.addEventListener("touchend",e=>{
+    if(!dragged)return;
+    const t=e.changedTouches[0];
+    const target=document.elementFromPoint(t.clientX,t.clientY);
+    const zone=target?.closest(".tier-content,.pool-content");
+    if(zone)zone.appendChild(dragged);
+    cleanupTouchDrag();
+  });
+}
+
+function moveGhost(touch){
+  if(!touchGhost)return;
+  touchGhost.style.position='fixed';
+  touchGhost.style.pointerEvents='none';
+  touchGhost.style.transform='translate(-50%,-50%)';
+  touchGhost.style.left=touch.clientX+"px";
+  touchGhost.style.top=touch.clientY+"px";
+}
+
+function cleanupTouchDrag(){
+  if(dragged)dragged.classList.remove("is-dragging");
+  dragged=null;
+  if(touchGhost){
+    touchGhost.remove();
+    touchGhost=null;
+  }
+}
+
+function prepareExportLabels(){
+  document.querySelectorAll(".tier-label-wrap").forEach(wrap=>{
+    const input=wrap.querySelector(".tier-label");
+    if(!input||wrap.querySelector(".tier-label-export"))return;
+    const span=document.createElement("span");
+    span.className="tier-label-export";
+    span.textContent=input.value;
+    wrap.appendChild(span);
+  });
+}
+
+function cleanupExportLabels(){
+  document.querySelectorAll(".tier-label-export").forEach(el=>el.remove());
+}
 
 upload.addEventListener("change",e=>{
   for(let file of e.target.files){
@@ -9,9 +74,7 @@ upload.addEventListener("change",e=>{
     r.onload=ev=>{
       const img=document.createElement("img");
       img.src=ev.target.result;
-      img.className="tier-item";
-      img.draggable=true;
-      img.addEventListener("dragstart",()=>dragged=img);
+      setupTierItem(img);
       pool.appendChild(img);
     };
     r.readAsDataURL(file);
@@ -21,9 +84,10 @@ upload.addEventListener("change",e=>{
 document.addEventListener("dragover",e=>e.preventDefault());
 
 document.addEventListener("drop",e=>{
-  const zone=e.target.closest(".tier-content");
-  if(zone && dragged){
+  const zone=e.target.closest(".tier-content,.pool-content");
+  if(zone&&dragged){
     zone.appendChild(dragged);
+    dragged=null;
   }
 });
 
@@ -33,8 +97,6 @@ slider.addEventListener("input",e=>{
     img.style.height=e.target.value+"px";
   });
 });
-
-// 顏色 → 整塊 label
 
 document.addEventListener("input",e=>{
   if(e.target.classList.contains("tier-color")){
@@ -55,7 +117,7 @@ addBtn.addEventListener("click",()=>{
     <div class="tier-content"></div>
     <button class="delete-tier">×</button>
   `;
-  document.getElementById("tierBoard").appendChild(row);
+  board.appendChild(row);
 });
 
 document.addEventListener("click",e=>{
@@ -64,11 +126,13 @@ document.addEventListener("click",e=>{
   }
 });
 
-// 下載 PNG
-
 document.getElementById("saveBtn").addEventListener("click",()=>{
+  prepareExportLabels();
+  board.classList.add("exporting");
   import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm').then(({default:html2canvas})=>{
-    html2canvas(document.getElementById("tierBoard"),{backgroundColor:'#000'}).then(canvas=>{
+    html2canvas(board,{backgroundColor:'#000'}).then(canvas=>{
+      board.classList.remove("exporting");
+      cleanupExportLabels();
       const link=document.createElement('a');
       link.download='tier-list.png';
       link.href=canvas.toDataURL();
