@@ -38,7 +38,10 @@
 
   <main class="main tier-maker-page">
     <section class="tier-header">
-      <h1>Tier Maker</h1>
+      <div class="tier-title-row">
+        <h1>Tier Maker</h1>
+        <button type="button" id="saveBtn" class="save-button">下載 PNG</button>
+      </div>
       <p>不內建素材庫。圖片由使用者自行上傳，並只在瀏覽器內排序。</p>
     </section>
 
@@ -52,7 +55,6 @@
         圖片大小
         <input type="range" id="sizeSlider" min="80" max="220" value="150">
       </label>
-      <button type="button" id="saveBtn" class="save-button">儲存</button>
     </section>
 
     <section class="tier-board" id="tierBoard">
