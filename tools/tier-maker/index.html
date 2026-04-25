@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tier Maker | huihui.dev</title>
+  <link rel="stylesheet" href="../../style.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <h1><a href="/">huihui.dev</a></h1>
+      <nav>
+        <a href="/about/">關於我</a>
+        <a href="/works/">作品</a>
+        <a href="/posts/">貼文</a>
+        <a href="/contact/">聯絡</a>
+      </nav>
+    </div>
+    <div class="sidebar-bottom">
+      © 2026 huihui.dev<br>
+      All rights reserved.
+    </div>
+  </aside>
+
+  <main class="main tier-maker-page">
+    <section class="tier-header">
+      <p class="eyebrow">Browser Tool</p>
+      <h1>Tier Maker</h1>
+      <p>不內建素材庫。圖片由使用者自行上傳，並只在瀏覽器內排序。</p>
+    </section>
+
+    <section class="tier-toolbar" aria-label="Tier maker controls">
+      <button type="button" id="addTierBtn">新增等級</button>
+      <label class="size-control">
+        圖片大小
+        <input type="range" id="sizeSlider" min="80" max="220" value="150">
+      </label>
+      <label class="upload-button">
+        上傳照片
+        <input type="file" id="imageUpload" accept="image/*" multiple hidden>
+      </label>
+    </section>
+
+    <section class="tier-board" id="tierBoard">
+      <div class="tier-row">
+        <input class="tier-label" value="SSS" aria-label="Tier name">
+        <input class="tier-color" type="color" value="#ff7f7f" aria-label="Tier color">
+        <div class="tier-content" aria-label="SSS tier"></div>
+        <button type="button" class="delete-tier" aria-label="Delete tier">×</button>
+      </div>
+      <div class="tier-row">
+        <input class="tier-label" value="SS" aria-label="Tier name">
+        <input class="tier-color" type="color" value="#ffc07f" aria-label="Tier color">
+        <div class="tier-content" aria-label="SS tier"></div>
+        <button type="button" class="delete-tier" aria-label="Delete tier">×</button>
+      </div>
+      <div class="tier-row">
+        <input class="tier-label" value="S" aria-label="Tier name">
+        <input class="tier-color" type="color" value="#ffe27f" aria-label="Tier color">
+        <div class="tier-content" aria-label="S tier"></div>
+        <button type="button" class="delete-tier" aria-label="Delete tier">×</button>
+      </div>
+      <div class="tier-row">
+        <input class="tier-label" value="A" aria-label="Tier name">
+        <input class="tier-color" type="color" value="#ffff7f" aria-label="Tier color">
+        <div class="tier-content" aria-label="A tier"></div>
+        <button type="button" class="delete-tier" aria-label="Delete tier">×</button>
+      </div>
+      <div class="tier-row">
+        <input class="tier-label" value="B" aria-label="Tier name">
+        <input class="tier-color" type="color" value="#bfff7f" aria-label="Tier color">
+        <div class="tier-content" aria-label="B tier"></div>
+        <button type="button" class="delete-tier" aria-label="Delete tier">×</button>
+      </div>
+    </section>
+
+    <section class="image-pool">
+      <h2>待排序</h2>
+      <div class="pool-content" id="poolContent"></div>
+    </section>
+
+    <p class="tier-note">提醒：公開分享前，請確認上傳圖片具有使用權或符合合理使用情境。</p>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
