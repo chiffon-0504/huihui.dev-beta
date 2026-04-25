@@ -53,6 +53,21 @@ function cleanupTouchDrag(){
   }
 }
 
+function prepareExportLabels(){
+  document.querySelectorAll(".tier-label-wrap").forEach(wrap=>{
+    const input=wrap.querySelector(".tier-label");
+    if(!input||wrap.querySelector(".tier-label-export"))return;
+    const span=document.createElement("span");
+    span.className="tier-label-export";
+    span.textContent=input.value;
+    wrap.appendChild(span);
+  });
+}
+
+function cleanupExportLabels(){
+  document.querySelectorAll(".tier-label-export").forEach(el=>el.remove());
+}
+
 upload.addEventListener("change",e=>{
   for(let file of e.target.files){
     const r=new FileReader();
@@ -70,7 +85,7 @@ document.addEventListener("dragover",e=>e.preventDefault());
 
 document.addEventListener("drop",e=>{
   const zone=e.target.closest(".tier-content,.pool-content");
-  if(zone && dragged){
+  if(zone&&dragged){
     zone.appendChild(dragged);
     dragged=null;
   }
@@ -102,7 +117,7 @@ addBtn.addEventListener("click",()=>{
     <div class="tier-content"></div>
     <button class="delete-tier">×</button>
   `;
-  document.getElementById("tierBoard").appendChild(row);
+  board.appendChild(row);
 });
 
 document.addEventListener("click",e=>{
@@ -111,13 +126,13 @@ document.addEventListener("click",e=>{
   }
 });
 
-// 下載 PNG（不包含 X）
-
 document.getElementById("saveBtn").addEventListener("click",()=>{
+  prepareExportLabels();
   board.classList.add("exporting");
   import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm').then(({default:html2canvas})=>{
     html2canvas(board,{backgroundColor:'#000'}).then(canvas=>{
       board.classList.remove("exporting");
+      cleanupExportLabels();
       const link=document.createElement('a');
       link.download='tier-list.png';
       link.href=canvas.toDataURL();
