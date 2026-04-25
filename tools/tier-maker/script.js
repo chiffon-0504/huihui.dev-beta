@@ -33,6 +33,16 @@ slider.addEventListener("input",e=>{
   });
 });
 
+// 顏色同步到 label
+
+document.addEventListener("input",e=>{
+  if(e.target.classList.contains("tier-color")){
+    const row=e.target.closest(".tier-row");
+    const label=row.querySelector(".tier-label");
+    label.style.background=e.target.value;
+  }
+});
+
 const addBtn=document.getElementById("addTierBtn");
 addBtn.addEventListener("click",()=>{
   const row=document.createElement("div");
