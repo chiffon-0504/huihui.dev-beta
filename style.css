@@ -91,6 +91,27 @@ img {
   color: #fff;
 }
 
+.tools-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.beta-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.5px;
+  color: #2f8cff;
+  border: 1px solid #2f8cff;
+  border-radius: 999px;
+  background: rgba(47, 140, 255, 0.08);
+}
+
 .sidebar-bottom {
   font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.4);
@@ -286,8 +307,7 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   font-size: 1rem;
   line-height: 1.8;
   color: rgba(255, 255, 255, 0.78);
-}
-
+}\n
 .home-image {
   flex: 1;
   display: flex;

@@ -1,0 +1,46 @@
+.tier-maker-page{max-width:2000px}
+
+.tier-title-row{display:flex;align-items:center;justify-content:space-between}
+
+.save-button{
+  padding:12px 28px;
+  font-size:1rem;
+  font-weight:600;
+  border-radius:999px;
+  border:1px solid #0b3d91;
+  background:#0b3d91;
+  color:#fff;
+  cursor:pointer
+}
+
+.save-button:hover{background:#0a357d}
+
+.tier-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:14px;margin:18px 0 22px}
+
+.tier-toolbar button,.upload-button{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 18px;border:1px solid rgba(255,255,255,.22);border-radius:999px;background:rgba(255,255,255,.08);color:#fff;font-size:.95rem;font-weight:600;cursor:pointer}
+
+.upload-button{border-color:#2f8cff;background:rgba(47,140,255,.16);color:#7db8ff}
+
+.size-control{display:inline-flex;align-items:center;gap:10px;color:rgba(255,255,255,.78)}
+
+.size-control input{width:160px}
+
+.tier-row{display:grid;grid-template-columns:110px 1fr 42px;min-height:190px;border:1px solid rgba(255,255,255,.12);border-bottom:0;background:#090909}
+
+.tier-row:last-child{border-bottom:1px solid rgba(255,255,255,.12)}
+
+.tier-label-wrap{position:relative;display:flex;flex-direction:column;justify-content:center;align-items:center;cursor:pointer}
+
+.tier-label{position:relative;z-index:2;border:0;outline:0;background:transparent;text-align:center;font-size:1.15rem;font-weight:700;color:#111;width:86%;padding:8px 4px;cursor:text}
+
+.tier-label:focus{background:rgba(255,255,255,.28);border-radius:8px}
+
+.tier-color{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;padding:0;cursor:pointer;z-index:1}
+
+.tier-content,.pool-content{min-height:190px;display:flex;align-items:center;align-content:flex-start;justify-content:flex-start;gap:14px;flex-wrap:wrap;padding:16px;background:#0f0f0f}
+
+.pool-content{border:1px solid rgba(255,255,255,.12);border-radius:16px}
+
+.tier-item{height:150px;width:auto;max-width:260px;object-fit:contain;border-radius:8px;background:transparent;cursor:grab;flex:0 0 auto}
+
+.delete-tier{border:0;border-left:1px solid rgba(255,255,255,.12);background:#080808;color:rgba(255,255,255,.55);font-size:1.4rem;cursor:pointer}
