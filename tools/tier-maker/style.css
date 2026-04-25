@@ -37,6 +37,8 @@
 
 .tier-label:focus{background:rgba(255,255,255,.28);border-radius:8px}
 
+.tier-board.exporting .tier-label{width:auto;min-width:48px;padding:0;font-size:1.3rem;line-height:1.2;appearance:none;-webkit-appearance:none}
+
 .tier-color{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;padding:0;cursor:pointer;z-index:1}
 
 .tier-content,.pool-content{min-height:190px;display:flex;align-items:center;align-content:flex-start;justify-content:flex-start;gap:14px;flex-wrap:wrap;padding:16px;background:#0f0f0f}
