@@ -63,3 +63,16 @@ document.addEventListener("click",e=>{
     e.target.closest(".tier-row").remove();
   }
 });
+
+// 下載 PNG
+
+document.getElementById("saveBtn").addEventListener("click",()=>{
+  import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm').then(({default:html2canvas})=>{
+    html2canvas(document.getElementById("tierBoard"),{backgroundColor:'#000'}).then(canvas=>{
+      const link=document.createElement('a');
+      link.download='tier-list.png';
+      link.href=canvas.toDataURL();
+      link.click();
+    });
+  });
+});
