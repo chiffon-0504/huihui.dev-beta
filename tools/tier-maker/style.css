@@ -1,0 +1,5 @@
+.tier-row{display:flex;min-height:180px;border-bottom:1px solid #333}
+.tier-label{width:100px;text-align:center;font-size:18px}
+.tier-content{flex:1;display:flex;gap:10px;flex-wrap:wrap;padding:10px}
+.tier-item{height:150px;cursor:grab}
+.upload-button{cursor:pointer}
