@@ -3,6 +3,7 @@ let touchGhost=null;
 
 const upload=document.getElementById("imageUpload");
 const pool=document.getElementById("poolContent");
+const board=document.getElementById("tierBoard");
 
 function setupTierItem(img){
   img.className="tier-item";
@@ -36,6 +37,9 @@ function setupTierItem(img){
 
 function moveGhost(touch){
   if(!touchGhost)return;
+  touchGhost.style.position='fixed';
+  touchGhost.style.pointerEvents='none';
+  touchGhost.style.transform='translate(-50%,-50%)';
   touchGhost.style.left=touch.clientX+"px";
   touchGhost.style.top=touch.clientY+"px";
 }
@@ -107,9 +111,13 @@ document.addEventListener("click",e=>{
   }
 });
 
+// 下載 PNG（不包含 X）
+
 document.getElementById("saveBtn").addEventListener("click",()=>{
+  board.classList.add("exporting");
   import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm').then(({default:html2canvas})=>{
-    html2canvas(document.getElementById("tierBoard"),{backgroundColor:'#000'}).then(canvas=>{
+    html2canvas(board,{backgroundColor:'#000'}).then(canvas=>{
+      board.classList.remove("exporting");
       const link=document.createElement('a');
       link.download='tier-list.png';
       link.href=canvas.toDataURL();
