@@ -192,12 +192,17 @@ async function loadTechNews() {
 
     container.innerHTML = data.techNews
       .map((item) => `
-        <article class="tech-news-card">
+        <a
+          class="tech-news-card"
+          href="${item.link}"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           <div class="tech-news-category">${item.category}</div>
           <h3>${item.title}</h3>
           <p>${item.description}</p>
           <span class="tech-news-tag">${item.tag}</span>
-        </article>
+        </a>
       `)
       .join("");
   } catch (error) {
