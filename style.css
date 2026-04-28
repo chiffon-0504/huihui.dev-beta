@@ -321,6 +321,93 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   object-fit: cover;
 }
 
+/* Tech Updates */
+.tech-news-section {
+  width: 100%;
+  max-width: 1200px;
+  margin: -36px auto 72px;
+}
+
+.tech-news-header {
+  margin-bottom: 20px;
+}
+
+.tech-news-header h2 {
+  margin: 0 0 8px;
+  color: #fff;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.tech-news-header p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.tech-news-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.tech-news-card {
+  min-height: 180px;
+  padding: 20px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.tech-news-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.tech-news-category {
+  margin-bottom: 12px;
+  color: #8ab4ff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tech-news-card h3 {
+  margin: 0 0 10px;
+  color: #fff;
+  font-size: 1.12rem;
+  line-height: 1.35;
+}
+
+.tech-news-card p {
+  margin: 0 0 16px;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.tech-news-tag {
+  display: inline-flex;
+  padding: 5px 10px;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.78rem;
+}
+
+.tech-news-loading,
+.tech-news-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.95rem;
+}
+
 /* Hashtag */
 .hashtag {
   color: #1d9bf0 !important;
@@ -557,6 +644,18 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
     width: 100%;
     max-height: none;
     border-radius: 22px;
+  }
+  
+  .tech-news-section {
+  margin: 40px auto 56px;
+  }
+
+  .tech-news-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tech-news-card {
+    min-height: auto;
   }
 
   .code-block {
