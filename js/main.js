@@ -178,7 +178,7 @@ async function loadTechNews() {
   if (!container) return;
 
   try {
-    const response = await fetch("https://huihui-api.huihuigames01.workers.dev");
+    const response = await fetch("https://api.huihui.dev/tech-news");
 
     if (!response.ok) {
       throw new Error("API request failed");
