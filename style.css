@@ -230,7 +230,7 @@ img {
   gap: 56px;
   max-width: 1200px;
   margin: 0 auto;
-  min-height: calc(100vh - 56px);
+  min-height: 680px;
 }
 
 .home-text {
@@ -647,7 +647,7 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   }
   
   .tech-news-section {
-  margin: 40px auto 56px;
+    margin: 40px auto 56px;
   }
 
   .tech-news-grid {
