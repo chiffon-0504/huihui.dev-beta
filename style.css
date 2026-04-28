@@ -307,7 +307,8 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   font-size: 1rem;
   line-height: 1.8;
   color: rgba(255, 255, 255, 0.78);
-}\n
+}
+
 .home-image {
   flex: 1;
   display: flex;
