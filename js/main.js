@@ -171,3 +171,41 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+// ===== Tech Updates =====
+async function loadTechNews() {
+  const container = document.getElementById("techNewsCards");
+  if (!container) return;
+
+  try {
+    const response = await fetch("https://huihui-api.huihuigames01.workers.dev");
+
+    if (!response.ok) {
+      throw new Error("API request failed");
+    }
+
+    const data = await response.json();
+
+    if (!Array.isArray(data.techNews)) {
+      throw new Error("Invalid API response");
+    }
+
+    container.innerHTML = data.techNews
+      .map((item) => `
+        <article class="tech-news-card">
+          <div class="tech-news-category">${item.category}</div>
+          <h3>${item.title}</h3>
+          <p>${item.description}</p>
+          <span class="tech-news-tag">${item.tag}</span>
+        </article>
+      `)
+      .join("");
+  } catch (error) {
+    container.innerHTML = `
+      <p class="tech-news-error">Failed to load tech updates.</p>
+    `;
+    console.error(error);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", loadTechNews);
