@@ -11,97 +11,24 @@
   <link href="https://cdn.jsdelivr.net/npm/prismjs/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
 
   <style>
-    .about-page {
-      max-width: 1280px;
-      min-height: calc(100vh - 56px);
-      display: flex;
-      align-items: flex-start;
-      padding: 56px 0;
-    }
-
-    .about-content {
-      width: 100%;
-    }
-
-    .interest-cards {
-      display: grid;
-      gap: 56px;
-      margin-top: 28px;
-    }
-
-    .interest-card {
-      display: block;
-      padding: 8px 0;
-    }
-
-    .interest-card h4 {
-      margin: 0 0 18px;
-      font-size: clamp(2rem, 3vw, 3rem);
-      font-weight: 700;
-      line-height: 1.08;
-    }
-
-    .interest-gallery {
-      width: 100%;
-    }
-
-    .interest-gallery img {
-      width: 1000px !important;
-      max-width: none !important;
-      height: auto !important;
-      border-radius: 18px;
-      display: block;
-    }
-
-    .interest-note {
-      margin-top: 28px;
-      color: rgba(255, 255, 255, 0.55);
-      font-size: 0.8rem;
-    }
-
+    .about-page { max-width: 1280px; min-height: calc(100vh - 56px); display: flex; align-items: flex-start; padding: 56px 0; }
+    .about-content { width: 100%; }
+    .interest-cards { display: grid; gap: 56px; margin-top: 28px; }
+    .interest-card { display: block; padding: 8px 0; }
+    .interest-card h4 { margin: 0 0 18px; font-size: clamp(2rem, 3vw, 3rem); font-weight: 700; line-height: 1.08; }
+    .interest-gallery { width: 100%; }
+    .interest-gallery img { width: 1000px !important; max-width: none !important; height: auto !important; border-radius: 18px; display: block; }
+    .interest-note { margin-top: 28px; color: rgba(255, 255, 255, 0.55); font-size: 0.8rem; }
     @media (max-width: 900px) {
-      .main {
-        margin-left: 0;
-      }
-
-      .interest-cards {
-        gap: 34px;
-      }
-
-      .interest-gallery img {
-        width: 100% !important;
-        max-width: 100% !important;
-      }
+      .main { margin-left: 0; }
+      .interest-cards { gap: 34px; }
+      .interest-gallery img { width: 100% !important; max-width: 100% !important; }
     }
   </style>
 </head>
 
 <body>
-  <aside class="sidebar">
-    <div class="sidebar-top">
-      <h1><a href="/ja/">huihui.dev</a></h1>
-
-      <div class="lang-switch" aria-label="Language switch">
-        <a href="/">中</a>
-        <span>|</span>
-        <a href="/en/">English</a>
-        <span>|</span>
-        <a href="/ja/" class="active">日本語</a>
-      </div>
-
-      <nav>
-        <a href="/ja/about/">私について</a>
-        <a href="/ja/works/">作品</a>
-        <a href="/ja/posts/">投稿</a>
-        <a href="/ja/contact/">連絡先</a>
-      </nav>
-    </div>
-
-    <div class="sidebar-bottom">
-      © 2026 huihui.dev<br />
-      All rights reserved.
-    </div>
-  </aside>
+  <aside id="site-sidebar" class="sidebar"></aside>
 
   <main class="main">
     <section class="about-page">
@@ -135,18 +62,8 @@ class HuiHui:
             "Multimodal Health Analysis Prototype (Raspberry Pi + OpenCV)",
         ]
 
-        self.favorite_composers: List[str] = [
-            "Laur",
-            "USAO",
-            "Sakuzyo",
-            "ak+q",
-        ]
-
-        self.favorite_bands: List[str] = [
-            "Morfonica",
-            "Ave Mujica",
-        ]
-
+        self.favorite_composers: List[str] = ["Laur", "USAO", "Sakuzyo", "ak+q"]
+        self.favorite_bands: List[str] = ["Morfonica", "Ave Mujica"]
         self.favorite_songs: List[str] = [
             "Grievous Lady -nothing is but what is not- · Team Grimoire & Laur",
             "PRAGMATISM -RESURRECTION- · Laur",
@@ -156,12 +73,7 @@ class HuiHui:
             "One step at a time · Morfonica",
             "顏 · Ave Mujica",
         ]
-
-        self.favorite_illustrators: List[str] = [
-            "@momoco_haru",
-            "@horuhara",
-            "@kurumi_lm"
-        ]
+        self.favorite_illustrators: List[str] = ["@momoco_haru", "@horuhara", "@kurumi_lm"]
 
     def about(self) -> str:
         return (
@@ -178,30 +90,22 @@ huihui = HuiHui()
           <div class="interest-cards">
             <article class="interest-card">
               <h4>maimai でらっくす</h4>
-              <div class="interest-gallery">
-                <img src="/images/1001_a.webp" alt="maimai でらっくす" />
-              </div>
+              <div class="interest-gallery"><img src="/images/1001_a.webp" alt="maimai でらっくす" /></div>
             </article>
 
             <article class="interest-card">
               <h4>Arcaea</h4>
-              <div class="interest-gallery">
-                <img src="/images/1002_a.webp" alt="Arcaea" />
-              </div>
+              <div class="interest-gallery"><img src="/images/1002_a.webp" alt="Arcaea" /></div>
             </article>
 
             <article class="interest-card">
               <h4>美少女ゲーム</h4>
-              <div class="interest-gallery">
-                <img src="/images/1003_a.webp" alt="美少女ゲーム" />
-              </div>
+              <div class="interest-gallery"><img src="/images/1003_a.webp" alt="美少女ゲーム" /></div>
             </article>
           </div>
         </section>
 
-        <p class="interest-note">
-          Images © respective owners (SEGA, lowiro, YUZUSOFT, etc.)
-        </p>
+        <p class="interest-note">Images © respective owners (SEGA, lowiro, YUZUSOFT, etc.)</p>
       </div>
     </section>
   </main>
@@ -214,6 +118,7 @@ huihui = HuiHui()
   <script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-python.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/prismjs/plugins/line-numbers/prism-line-numbers.min.js"></script>
+  <script src="/js/layout.js"></script>
   <script src="/js/main.js"></script>
   <script src="/js/lightbox.js"></script>
 </body>
