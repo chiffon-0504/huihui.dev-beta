@@ -9,11 +9,13 @@ function getCurrentLang() {
 const layoutText = {
   zh: {
     home: "首頁",
-    about: "關於",
+    about: "關於我",
     works: "作品",
-    posts: "文章",
+    posts: "貼文",
     contact: "聯絡",
-    tools: "工具"
+    tools: "工具",
+    english: "English",
+    japanese: "日本語"
   },
   en: {
     home: "Home",
@@ -21,15 +23,19 @@ const layoutText = {
     works: "Works",
     posts: "Posts",
     contact: "Contact",
-    tools: "Tools"
+    tools: "Tools",
+    english: "English",
+    japanese: "日本語"
   },
   ja: {
     home: "ホーム",
     about: "自己紹介",
     works: "作品",
-    posts: "記事",
+    posts: "投稿",
     contact: "連絡",
-    tools: "ツール"
+    tools: "ツール",
+    english: "English",
+    japanese: "日本語"
   }
 };
 
@@ -48,23 +54,32 @@ function renderSidebar() {
   if (!sidebar) return;
 
   sidebar.innerHTML = `
-    <a class="brand" href="${getLocalizedPath(lang, "home")}">huihui</a>
+    <div class="sidebar-top">
+      <h1><a href="${getLocalizedPath(lang, "home")}">huihui.dev</a></h1>
 
-    <nav class="side-nav">
-      <a href="${getLocalizedPath(lang, "home")}">${t.home}</a>
-      <a href="${getLocalizedPath(lang, "about")}">${t.about}</a>
-      <a href="${getLocalizedPath(lang, "works")}">${t.works}</a>
-      <a href="${getLocalizedPath(lang, "posts")}">${t.posts}</a>
-      <a href="${getLocalizedPath(lang, "contact")}">${t.contact}</a>
-      <a href="/tools/tier-maker/">${t.tools}</a>
-    </nav>
+      <div class="lang-switch" aria-label="Language switch">
+        <a href="/" class="${lang === "zh" ? "active" : ""}">中</a>
+        <span>|</span>
+        <a href="/en/" class="${lang === "en" ? "active" : ""}">${t.english}</a>
+        <span>|</span>
+        <a href="/ja/" class="${lang === "ja" ? "active" : ""}">${t.japanese}</a>
+      </div>
 
-    <div class="lang-switch">
-      <a href="/">中</a>
-      <span>|</span>
-      <a href="/en/">En</a>
-      <span>|</span>
-      <a href="/ja/">Jp</a>
+      <nav>
+        <a href="${getLocalizedPath(lang, "about")}">${t.about}</a>
+        <a href="${getLocalizedPath(lang, "works")}">${t.works}</a>
+        <a href="${getLocalizedPath(lang, "posts")}">${t.posts}</a>
+        <a href="${getLocalizedPath(lang, "contact")}">${t.contact}</a>
+        <a href="/tools/tier-maker/" class="tools-link">
+          ${t.tools}
+          <span class="beta-badge" aria-label="Beta">Beta</span>
+        </a>
+      </nav>
+    </div>
+
+    <div class="sidebar-bottom">
+      © 2026 huihui.dev<br />
+      All rights reserved.
     </div>
   `;
 }
