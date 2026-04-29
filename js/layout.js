@@ -46,6 +46,12 @@ function getLocalizedPath(lang, page) {
   return `${prefix}${page}/`;
 }
 
+function getToolsPath(lang) {
+  if (lang === "en") return "/en/tools/tier-maker/";
+  if (lang === "ja") return "/ja/tools/tier-maker/";
+  return "/tools/tier-maker/";
+}
+
 function renderSidebar() {
   const lang = getCurrentLang();
   const t = layoutText[lang] || layoutText.zh;
@@ -70,7 +76,7 @@ function renderSidebar() {
         <a href="${getLocalizedPath(lang, "works")}">${t.works}</a>
         <a href="${getLocalizedPath(lang, "posts")}">${t.posts}</a>
         <a href="${getLocalizedPath(lang, "contact")}">${t.contact}</a>
-        <a href="/tools/tier-maker/" class="tools-link">
+        <a href="${getToolsPath(lang)}" class="tools-link">
           ${t.tools}
           <span class="beta-badge" aria-label="Beta">Beta</span>
         </a>
