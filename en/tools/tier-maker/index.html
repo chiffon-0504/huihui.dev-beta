@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tier Maker | huihui.dev</title>
+  <link rel="stylesheet" href="../../../style.css">
+  <link rel="stylesheet" href="../../../tools/tier-maker/style.css">
+</head>
+  
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <h1><a href="/en/">huihui.dev</a></h1>
+      
+      <div class="lang-switch" aria-label="Language switch">
+        <a href="/">中</a>
+        <span>|</span>
+        <a href="/en/" class="active">English</a>
+        <span>|</span>
+        <a href="/ja/">日本語</a>
+      </div>
+      
+      <nav>
+        <a href="/en/about/">About</a>
+        <a href="/en/works/">Works</a>
+        <a href="/en/posts/">Posts</a>
+        <a href="/en/contact/">Contact</a>
+        <a href="/en/tools/tier-maker/" class="tools-link">
+          Tools
+          <span class="beta-badge" aria-label="Beta">Beta</span>
+        </a>
+      </nav>
+    </div>
+    
+    <div class="sidebar-bottom">
+      © 2026 huihui.dev<br>
+      All rights reserved.
+    </div>
+  </aside>
+
+  <main class="main tier-maker-page">
+    <section class="tier-header">
+      <div class="tier-title-row">
+        <h1>Tier Maker</h1>
+        <button type="button" id="saveBtn" class="save-button">Download PNG</button>
+      </div>
+      <p>No built-in asset library. Images are uploaded by users and only sorted within the browser.</p>
+    </section>
+
+    <section class="tier-toolbar" aria-label="Tier maker controls">
+      <button type="button" id="addTierBtn">Add Tier</button>
+      <label class="upload-button">
+        Upload Images
+        <input type="file" id="imageUpload" accept="image/*" multiple hidden>
+      </label>
+      <label class="size-control">
+        Image Size
+        <input type="range" id="sizeSlider" min="80" max="220" value="150">
+      </label>
+    </section>
+
+    <section class="tier-board" id="tierBoard">
+      <div class="tier-row">
+        <div class="tier-label-wrap" style="background:#ff7f7f">
+          <input class="tier-label" value="S" aria-label="Tier name">
+          <input class="tier-color" type="color" value="#ff7f7f" aria-label="Tier color">
+        </div>
+        <div class="tier-content" aria-label="S tier"></div>
+        <button type="button" class="delete-tier" aria-label="Delete tier">×</button>
+      </div>
+      <div class="tier-row">
+        <div class="tier-label-wrap" style="background:#ffc07f">
+          <input class="tier-label" value="A" aria-label="Tier name">
+          <input class="tier-color" type="color" value="#ffc07f" aria-label="Tier color">
+        </div>
+        <div class="tier-content" aria-label="A tier"></div>
+        <button type="button" class="delete-tier" aria-label="Delete tier">×</button>
+      </div>
+      <div class="tier-row">
+        <div class="tier-label-wrap" style="background:#ffff7f">
+          <input class="tier-label" value="B" aria-label="Tier name">
+          <input class="tier-color" type="color" value="#ffff7f" aria-label="Tier color">
+        </div>
+        <div class="tier-content" aria-label="B tier"></div>
+        <button type="button" class="delete-tier" aria-label="Delete tier">×</button>
+      </div>
+    </section>
+
+    <section class="image-pool">
+      <h2>Unsorted</h2>
+      <div class="pool-content" id="poolContent"></div>
+    </section>
+
+    <p class="tier-note">Reminder: Before sharing publicly, make sure you have the rights to use the images or that they fall under fair use.</p>
+  </main>
+
+  <script src="../../../tools/tier-maker/script.js"></script>
+</body>
+</html>
