@@ -9,31 +9,7 @@
 
 <body>
 
-  <aside class="sidebar">
-    <div class="sidebar-top">
-      <h1><a href="/ja/">huihui.dev</a></h1>
-
-      <div class="lang-switch" aria-label="Language switch">
-        <a href="/">中</a>
-        <span>|</span>
-        <a href="/en/">English</a>
-        <span>|</span>
-        <a href="/ja/" class="active">日本語</a>
-      </div>
-
-      <nav>
-        <a href="/ja/about/">私について</a>
-        <a href="/ja/works/">作品</a>
-        <a href="/ja/posts/">投稿</a>
-        <a href="/ja/contact/">連絡先</a>
-      </nav>
-    </div>
-
-    <div class="sidebar-bottom">
-      © 2026 huihui.dev<br />
-      All rights reserved.
-    </div>
-  </aside>
+  <aside id="site-sidebar" class="sidebar"></aside>
 
   <main class="main">
     <section class="home-hero">
@@ -41,8 +17,8 @@
         <h1>huihui.dev</h1>
         <h4>開発者 / 写真</h4>
         <div class="hero-actions">
-          <a href="/about/" class="hero-btn">私について</a>
-          <a href="/contact/" class="hero-btn">連絡先</a>
+          <a href="/ja/about/" class="hero-btn">私について</a>
+          <a href="/ja/contact/" class="hero-btn">連絡先</a>
         </div>
       </div>
 
@@ -57,6 +33,7 @@
     <img class="lightbox-img" id="lightboxImg" src="" alt="プレビュー" />
   </div>
 
+  <script src="/js/layout.js"></script>
   <script src="/js/lightbox.js"></script>
 
 </body>
