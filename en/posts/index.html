@@ -7,177 +7,35 @@
   <link rel="stylesheet" href="/style.css?v=2" />
 
   <style>
-    .main {
-      margin-left: 240px;
-      padding: 40px 36px 80px;
-      max-width: 860px;
-    }
-
-    .posts-header {
-      margin-bottom: 56px;
-    }
-
-    .posts-header h1 {
-      margin: 0 0 12px;
-      font-size: clamp(2.6rem, 6vw, 4.4rem);
-      line-height: 1.05;
-      letter-spacing: -0.04em;
-    }
-
-    .posts-header p {
-      margin: 0;
-      color: rgba(255, 255, 255, 0.58);
-      font-size: 1rem;
-      line-height: 1.7;
-    }
-
-    .post-card {
-      padding: 0 0 32px;
-      margin: 0 0 32px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .post-meta {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 5px;
-      line-height: 1.3;
-    }
-
-    .post-name {
-      font-weight: 700;
-      font-size: 1.05rem;
-      color: #fff;
-    }
-
-    .post-handle,
-    .post-dot,
-    .post-date {
-      color: rgba(255, 255, 255, 0.58);
-      font-size: 0.98rem;
-    }
-
-    .post-content {
-      color: #f5f5f5;
-      font-size: 1.35rem;
-      line-height: 1.2;
-      white-space: pre-line;
-      margin-bottom: 24px;
-    }
-
-    .ftr {
-      color: #913A79;
-      font-weight: 600;
-    }
-
-    .hashtag {
-      color: #1d9bf0;
-      text-decoration: none;
-      font-weight: 500;
-    }
-
-    .hashtag:hover {
-      text-decoration: underline;
-    }
-
-    .post-figure {
-      margin: 0;
-      width: 100%;
-    }
-
-    .post-image {
-      width: 100%;
-      max-width: 600px;
-      margin: 0;
-      border-radius: 22px;
-      overflow: hidden;
-    }
-
-    .post-image img {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
-
-    .post-caption {
-      margin-top: 10px;
-      font-size: 0.78rem;
-      line-height: 1.5;
-      color: rgba(255, 255, 255, 0.42);
-      text-align: left;
-    }
-
+    .main { margin-left: 240px; padding: 40px 36px 80px; max-width: 860px; }
+    .posts-header { margin-bottom: 56px; }
+    .posts-header h1 { margin: 0 0 12px; font-size: clamp(2.6rem, 6vw, 4.4rem); line-height: 1.05; letter-spacing: -0.04em; }
+    .posts-header p { margin: 0; color: rgba(255, 255, 255, 0.58); font-size: 1rem; line-height: 1.7; }
+    .post-card { padding: 0 0 32px; margin: 0 0 32px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+    .post-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 5px; line-height: 1.3; }
+    .post-name { font-weight: 700; font-size: 1.05rem; color: #fff; }
+    .post-handle, .post-dot, .post-date { color: rgba(255, 255, 255, 0.58); font-size: 0.98rem; }
+    .post-content { color: #f5f5f5; font-size: 1.35rem; line-height: 1.2; white-space: pre-line; margin-bottom: 24px; }
+    .ftr { color: #913A79; font-weight: 600; }
+    .hashtag { color: #1d9bf0; text-decoration: none; font-weight: 500; }
+    .hashtag:hover { text-decoration: underline; }
+    .post-figure { margin: 0; width: 100%; }
+    .post-image { width: 100%; max-width: 600px; margin: 0; border-radius: 22px; overflow: hidden; }
+    .post-image img { width: 100%; height: auto; display: block; }
+    .post-caption { margin-top: 10px; font-size: 0.78rem; line-height: 1.5; color: rgba(255, 255, 255, 0.42); text-align: left; }
     @media (max-width: 900px) {
-      .main {
-        margin-left: 0;
-        padding: 24px 16px 56px;
-        max-width: none;
-      }
-
-      .posts-header {
-        margin-bottom: 32px;
-      }
-
-      .post-card {
-        padding: 0 0 24px;
-        margin: 0 0 24px;
-      }
-
-      .post-meta {
-        margin-bottom: 6px;
-        gap: 8px;
-        line-height: 1.2;
-      }
-
-      .post-content {
-        font-size: 1.08rem;
-        line-height: 1.35;
-        margin-top: 0;
-        margin-bottom: 12px;
-      }
-
-      .post-image {
-        max-width: 100%;
-        margin: 0;
-      }
-
-      .post-caption {
-        font-size: 0.74rem;
-        margin-top: 8px;
-        text-align: left;
-      }
+      .main { margin-left: 0; padding: 24px 16px 56px; max-width: none; }
+      .posts-header { margin-bottom: 32px; }
+      .post-card { padding: 0 0 24px; margin: 0 0 24px; }
+      .post-meta { margin-bottom: 6px; gap: 8px; line-height: 1.2; }
+      .post-content { font-size: 1.08rem; line-height: 1.35; margin-top: 0; margin-bottom: 12px; }
+      .post-image { max-width: 100%; margin: 0; }
+      .post-caption { font-size: 0.74rem; margin-top: 8px; text-align: left; }
     }
   </style>
 </head>
-
 <body>
-  <aside class="sidebar">
-    <div class="sidebar-top">
-      <h1><a href="/en/">huihui.dev</a></h1>
-
-      <div class="lang-switch" aria-label="Language switch">
-        <a href="/">中</a>
-        <span>|</span>
-        <a href="/en/" class="active">English</a>
-        <span>|</span>
-        <a href="/ja/">日本語</a>
-      </div>
-
-      <nav>
-        <a href="/en/about/">About</a>
-        <a href="/en/works/">Works</a>
-        <a href="/en/posts/">Posts</a>
-        <a href="/en/contact/">Contact</a>
-      </nav>
-    </div>
-
-    <div class="sidebar-bottom">
-      © 2026 huihui.dev<br />
-      All rights reserved.
-    </div>
-  </aside>
+  <aside id="site-sidebar" class="sidebar"></aside>
 
   <main class="main">
     <section class="posts-header">
@@ -186,76 +44,33 @@
     </section>
 
     <article class="post-card">
-      <div class="post-meta">
-        <span class="post-name">huihui</span>
-        <span class="post-handle">@huihui</span>
-        <span class="post-dot">·</span>
-        <time class="post-date">Apr 19 2026</time>
-      </div>
-
+      <div class="post-meta"><span class="post-name">huihui</span><span class="post-handle">@huihui</span><span class="post-dot">·</span><time class="post-date">Apr 19 2026</time></div>
       <div class="post-content">
 Cyaegha <span class="future">FUTURE 10+</span> <span class="ex">EX+</span> !!!!!
 
-<a class="hashtag"
-   href="https://x.com/hashtag/arcaea?src=hashtag_click"
-   target="_blank"
-   rel="noopener noreferrer">#arcaea</a>
+<a class="hashtag" href="https://x.com/hashtag/arcaea?src=hashtag_click" target="_blank" rel="noopener noreferrer">#arcaea</a>
       </div>
-
-      <figure class="post-figure">
-        <div class="post-image">
-          <img src="/images/3002_p.webp" alt="Arcaea score screenshot" class="zoomable" />
-        </div>
-        <figcaption class="post-caption">
-          Arcaea images and properties belong to © lowiro.
-        </figcaption>
-      </figure>
+      <figure class="post-figure"><div class="post-image"><img src="/images/3002_p.webp" alt="Arcaea score screenshot" class="zoomable" /></div><figcaption class="post-caption">Arcaea images and properties belong to © lowiro.</figcaption></figure>
     </article>
 
     <article class="post-card">
-      <div class="post-meta">
-        <span class="post-name">huihui</span>
-        <span class="post-handle">@huihui</span>
-        <span class="post-dot">·</span>
-        <time class="post-date">Apr 18 2026</time>
-      </div>
-
+      <div class="post-meta"><span class="post-name">huihui</span><span class="post-handle">@huihui</span><span class="post-dot">·</span><time class="post-date">Apr 18 2026</time></div>
       <div class="post-content">
 Placbo♥battler <span class="future">FUTURE 10</span> <span class="ex">EX+</span> !!!
 
-<a class="hashtag"
-   href="https://x.com/hashtag/arcaea?src=hashtag_click"
-   target="_blank"
-   rel="noopener noreferrer">#arcaea</a>
+<a class="hashtag" href="https://x.com/hashtag/arcaea?src=hashtag_click" target="_blank" rel="noopener noreferrer">#arcaea</a>
       </div>
-
-      <figure class="post-figure">
-        <div class="post-image">
-          <img src="/images/3001_p.webp" alt="Arcaea score screenshot" class="zoomable" />
-        </div>
-        <figcaption class="post-caption">
-          Arcaea images and properties belong to © lowiro.
-        </figcaption>
-      </figure>
+      <figure class="post-figure"><div class="post-image"><img src="/images/3001_p.webp" alt="Arcaea score screenshot" class="zoomable" /></div><figcaption class="post-caption">Arcaea images and properties belong to © lowiro.</figcaption></figure>
     </article>
 
     <article class="post-card">
-      <div class="post-meta">
-        <span class="post-name">huihui</span>
-        <span class="post-handle">@huihui</span>
-        <span class="post-dot">·</span>
-        <time class="post-date">Apr 14 2026</time>
-      </div>
-
+      <div class="post-meta"><span class="post-name">huihui</span><span class="post-handle">@huihui</span><span class="post-dot">·</span><time class="post-date">Apr 14 2026</time></div>
       <div class="post-content">Hello, World!</div>
     </article>
   </main>
 
-  <div class="lightbox" id="lightbox">
-    <span class="lightbox-close" id="lightboxClose">&times;</span>
-    <img class="lightbox-img" id="lightboxImg" src="" alt="Preview" />
-  </div>
-
+  <div class="lightbox" id="lightbox"><span class="lightbox-close" id="lightboxClose">&times;</span><img class="lightbox-img" id="lightboxImg" src="" alt="Preview" /></div>
+  <script src="/js/layout.js"></script>
   <script src="/js/lightbox.js"></script>
 </body>
 </html>
