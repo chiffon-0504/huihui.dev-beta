@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ティアメーカー | huihui.dev</title>
+  <link rel="stylesheet" href="../../../style.css">
+  <link rel="stylesheet" href="../../../tools/tier-maker/style.css">
+</head>
+  
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <h1><a href="/ja/">huihui.dev</a></h1>
+      
+      <div class="lang-switch" aria-label="Language switch">
+        <a href="/">中</a>
+        <span>|</span>
+        <a href="/en/">English</a>
+        <span>|</span>
+        <a href="/ja/" class="active">日本語</a>
+      </div>
+      
+      <nav>
+        <a href="/ja/about/">About</a>
+        <a href="/ja/works/">Works</a>
+        <a href="/ja/posts/">Posts</a>
+        <a href="/ja/contact/">Contact</a>
+        <a href="/ja/tools/tier-maker/" class="tools-link">
+          Tools
+          <span class="beta-badge" aria-label="Beta">Beta</span>
+        </a>
+      </nav>
+    </div>
+    
+    <div class="sidebar-bottom">
+      © 2026 huihui.dev<br>
+      All rights reserved.
+    </div>
+  </aside>
+
+  <main class="main tier-maker-page">
+    <section class="tier-header">
+      <div class="tier-title-row">
+        <h1>ティアメーカー</h1>
+        <button type="button" id="saveBtn" class="save-button">PNGをダウンロード</button>
+      </div>
+      <p>素材ライブラリは内蔵されていません。画像はユーザーがアップロードし、ブラウザ内でのみ並び替えられます。</p>
+    </section>
+
+    <section class="tier-toolbar" aria-label="ティアメーカー操作">
+      <button type="button" id="addTierBtn">ティアを追加</button>
+      <label class="upload-button">
+        画像をアップロード
+        <input type="file" id="imageUpload" accept="image/*" multiple hidden>
+      </label>
+      <label class="size-control">
+        画像サイズ
+        <input type="range" id="sizeSlider" min="80" max="220" value="150">
+      </label>
+    </section>
+
+    <section class="tier-board" id="tierBoard">
+      <div class="tier-row">
+        <div class="tier-label-wrap" style="background:#ff7f7f">
+          <input class="tier-label" value="S" aria-label="ティア名">
+          <input class="tier-color" type="color" value="#ff7f7f" aria-label="ティアカラー">
+        </div>
+        <div class="tier-content" aria-label="S ティア"></div>
+        <button type="button" class="delete-tier" aria-label="ティア削除">×</button>
+      </div>
+      <div class="tier-row">
+        <div class="tier-label-wrap" style="background:#ffc07f">
+          <input class="tier-label" value="A" aria-label="ティア名">
+          <input class="tier-color" type="color" value="#ffc07f" aria-label="ティアカラー">
+        </div>
+        <div class="tier-content" aria-label="A ティア"></div>
+        <button type="button" class="delete-tier" aria-label="ティア削除">×</button>
+      </div>
+      <div class="tier-row">
+        <div class="tier-label-wrap" style="background:#ffff7f">
+          <input class="tier-label" value="B" aria-label="ティア名">
+          <input class="tier-color" type="color" value="#ffff7f" aria-label="ティアカラー">
+        </div>
+        <div class="tier-content" aria-label="B ティア"></div>
+        <button type="button" class="delete-tier" aria-label="ティア削除">×</button>
+      </div>
+    </section>
+
+    <section class="image-pool">
+      <h2>未分類</h2>
+      <div class="pool-content" id="poolContent"></div>
+    </section>
+
+    <p class="tier-note">注意：公開前に、画像の使用権を持っているか、または適切な利用範囲内であることを確認してください。</p>
+  </main>
+
+  <script src="../../../tools/tier-maker/script.js"></script>
+</body>
+</html>
