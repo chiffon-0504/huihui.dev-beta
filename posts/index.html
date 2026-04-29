@@ -67,7 +67,6 @@
       margin-bottom: 24px;
     }
 
-    /* ✅ FTR 顏色 */
     .ftr {
       color: #913A79;
       font-weight: 600;
@@ -89,17 +88,17 @@
     }
 
     .post-image {
-    width: 100%;
-    max-width: 600px;   /* 控制整體大小 */
-    margin: 0 ; 
-    border-radius: 22px;
-    overflow: hidden;
+      width: 100%;
+      max-width: 600px;
+      margin: 0;
+      border-radius: 22px;
+      overflow: hidden;
     }
 
     .post-image img {
-    width: 100%;
-    height: auto;       /* 保持比例 */
-    display: block;
+      width: 100%;
+      height: auto;
+      display: block;
     }
 
     .post-caption {
@@ -112,78 +111,49 @@
 
     @media (max-width: 900px) {
       .main {
-          margin-left: 0;
-          padding: 24px 16px 56px;
-          max-width: none;
+        margin-left: 0;
+        padding: 24px 16px 56px;
+        max-width: none;
       }
 
       .posts-header {
-          margin-bottom: 32px;
+        margin-bottom: 32px;
       }
 
       .post-card {
-          padding: 0 0 24px;
-          margin: 0 0 24px;
+        padding: 0 0 24px;
+        margin: 0 0 24px;
       }
 
       .post-meta {
-          margin-bottom: 6px;
-          gap: 8px;
-          line-height: 1.2;
+        margin-bottom: 6px;
+        gap: 8px;
+        line-height: 1.2;
       }
 
       .post-content {
-          font-size: 1.08rem;
-         line-height: 1.35;
-          margin-top: 0;
-          margin-bottom: 12px;
+        font-size: 1.08rem;
+        line-height: 1.35;
+        margin-top: 0;
+        margin-bottom: 12px;
       }
 
       .post-image {
-          max-width: 100%;
-          margin: 0;
+        max-width: 100%;
+        margin: 0;
       }
 
       .post-caption {
-          font-size: 0.74rem;
-          margin-top: 8px;
-          text-align: left;
+        font-size: 0.74rem;
+        margin-top: 8px;
+        text-align: left;
       }
     }
   </style>
 </head>
 
 <body>
-  <aside class="sidebar">
-    <div class="sidebar-top">
-      <h1><a href="/">huihui.dev</a></h1>
-      
-      <div class="lang-switch" aria-label="Language switch">
-        <a href="/" class="active">中</a>
-        <span>|</span>
-        <a href="/en/">English</a>
-        <span>|</span>
-        <a href="/ja/">日本語</a>
-      </div>
-
-      
-      <nav>
-        <a href="/about/">關於我</a>
-        <a href="/works/">作品</a>
-        <a href="/posts/">貼文</a>
-        <a href="/contact/">聯絡</a>
-        <a href="/tools/tier-maker/" class="tools-link">
-          工具
-          <span class="beta-badge" aria-label="Beta">Beta</span>
-        </a>
-      </nav>
-    </div>
-
-    <div class="sidebar-bottom">
-      © 2026 huihui.dev<br />
-      All rights reserved.
-    </div>
-  </aside>
+  <aside id="site-sidebar" class="sidebar"></aside>
 
   <main class="main">
     <section class="posts-header">
@@ -199,7 +169,6 @@
         <time class="post-date">Apr 19 2026</time>
       </div>
 
-      <!-- ✅ FUTURE 已套顏色 -->
       <div class="post-content">
 Cyaegha <span class="future">FUTURE 10+</span> <span class="ex">EX+</span> !!!!!
 
@@ -227,7 +196,6 @@ Cyaegha <span class="future">FUTURE 10+</span> <span class="ex">EX+</span> !!!!!
         <time class="post-date">Apr 18 2026</time>
       </div>
 
-      <!-- ✅ FUTURE 已套顏色 -->
       <div class="post-content">
 Placbo♥battler <span class="future">FUTURE 10</span> <span class="ex">EX+</span> !!!
 
@@ -264,6 +232,7 @@ Placbo♥battler <span class="future">FUTURE 10</span> <span class="ex">EX+</spa
     <img class="lightbox-img" id="lightboxImg" src="" alt="放大預覽" />
   </div>
 
+  <script src="../js/layout.js"></script>
   <script src="../js/lightbox.js"></script>
 </body>
 </html>
