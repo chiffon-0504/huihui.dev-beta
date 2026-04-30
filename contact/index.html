@@ -12,26 +12,29 @@
   <main class="main">
     <section class="contact-page">
       <div class="contact-content">
+        <p class="contact-eyebrow">Contact</p>
         <h1>聯絡我</h1>
-        <p>有問題、合作或回饋，可以用下面的表單聯絡我。</p>
+        <p class="contact-intro">有問題、合作或回饋，可以用下面的表單聯絡我。</p>
 
         <form class="contact-form" action="https://formspree.io/f/xlgzrzqk" method="POST">
-          <label>
-            名稱
-            <input type="text" name="name" placeholder="你的名稱" autocomplete="name" required>
-          </label>
+          <div class="contact-field-grid">
+            <label>
+              名稱
+              <input type="text" name="name" placeholder="你的名稱" autocomplete="name" required>
+            </label>
 
-          <label>
-            Email
-            <input type="email" name="email" placeholder="your@email.com" autocomplete="email" required>
-          </label>
+            <label>
+              Email
+              <input type="email" name="email" placeholder="your@email.com" autocomplete="email" required>
+            </label>
+          </div>
 
           <label>
             訊息
-            <textarea name="message" rows="6" placeholder="想說的內容" required></textarea>
+            <textarea name="message" rows="7" placeholder="想說的內容" required></textarea>
           </label>
 
-          <button type="submit">送出</button>
+          <button type="submit">送出訊息</button>
         </form>
 
         <p class="contact-fallback">
