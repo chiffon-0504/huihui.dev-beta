@@ -10,10 +10,33 @@
   <aside id="site-sidebar" class="sidebar"></aside>
 
   <main class="main">
-    <section class="home-hero">
-      <div class="home-text">
+    <section class="contact-page">
+      <div class="contact-content">
         <h1>聯絡我</h1>
-        <p><a href="mailto:contact@huihui.dev">contact@huihui.dev</a></p>
+        <p>有問題、合作或回饋，可以用下面的表單聯絡我。</p>
+
+        <form class="contact-form" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+          <label>
+            名稱
+            <input type="text" name="name" placeholder="你的名稱" autocomplete="name" required>
+          </label>
+
+          <label>
+            Email
+            <input type="email" name="email" placeholder="your@email.com" autocomplete="email" required>
+          </label>
+
+          <label>
+            訊息
+            <textarea name="message" rows="6" placeholder="想說的內容" required></textarea>
+          </label>
+
+          <button type="submit">送出</button>
+        </form>
+
+        <p class="contact-fallback">
+          或直接寄信：<a href="mailto:contact@huihui.dev">contact@huihui.dev</a>
+        </p>
       </div>
     </section>
   </main>
