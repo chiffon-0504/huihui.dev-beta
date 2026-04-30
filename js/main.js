@@ -172,13 +172,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+const HUIHUI_API_BASE = "https://huihui-api.huihuigames01.workers.dev";
+
 // ===== Tech Updates =====
 async function loadTechNews() {
   const container = document.getElementById("techNewsCards");
   if (!container) return;
 
   try {
-    const response = await fetch("https://api.huihui.dev/tech-news");
+    const response = await fetch(`${HUIHUI_API_BASE}/api/tech-news`);
 
     if (!response.ok) {
       throw new Error("API request failed");
@@ -226,7 +228,7 @@ async function loadApodCard() {
   if (!image || !link || !title || !desc || !date) return;
 
   try {
-    const res = await fetch("https://huihui-api.huihuigames01.workers.dev/api/apod");
+    const res = await fetch(`${HUIHUI_API_BASE}/api/apod`);
     if (!res.ok) throw new Error("APOD API failed");
 
     const data = await res.json();
