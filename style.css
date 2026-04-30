@@ -486,8 +486,28 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   text-decoration: underline;
 }
 
+.past {
+  color: #5CBAD3;
+  font-weight: 600;
+}
+
+.present {
+  color: #B5C76F;
+  font-weight: 600;
+}
+
 .future {
   color: #913A79;
+  font-weight: 600;
+}
+
+.etermal {
+  color: #8A7AA5;
+  font-weight: 600;
+}
+
+.beyond {
+  color: #BF0D25;
   font-weight: 600;
 }
 
