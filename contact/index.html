@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>聯絡 | huihui.dev</title>
   <link rel="stylesheet" href="../style.css">
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
   <aside id="site-sidebar" class="sidebar"></aside>
@@ -33,6 +34,11 @@
             訊息
             <textarea name="message" rows="7" placeholder="想說的內容" required></textarea>
           </label>
+
+          <div
+            class="cf-turnstile"
+            data-sitekey="0x4AAAAAADGNDJDS7_lhuZCV"
+          ></div>
 
           <button type="submit">送出訊息</button>
         </form>
