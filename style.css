@@ -322,11 +322,78 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   object-fit: cover;
 }
 
+/* NASA APOD */
+.daily-inspiration-section {
+  width: 100%;
+  max-width: 1200px;
+  margin: -36px auto 72px;
+}
+
+.apod-card {
+  display: grid;
+  grid-template-columns: minmax(220px, 360px) 1fr;
+  gap: 18px;
+  align-items: stretch;
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.apod-media-link {
+  display: block;
+  aspect-ratio: 16 / 10;
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.apod-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.apod-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.apod-label {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.apod-content h2 {
+  margin: 0 0 10px;
+  font-size: clamp(1.2rem, 2vw, 1.8rem);
+  line-height: 1.2;
+}
+
+.apod-content p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.7;
+}
+
+.apod-date {
+  margin-top: 12px !important;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
 /* Tech Updates */
 .tech-news-section {
   width: 100%;
   max-width: 1200px;
-  margin: -36px auto 72px;
+  margin: 0 auto 72px;
 }
 
 .tech-news-header {
@@ -647,12 +714,18 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
     border-radius: 22px;
   }
   
+  .daily-inspiration-section,
   .tech-news-section {
     margin: 40px auto 56px;
   }
 
+  .apod-card,
   .tech-news-grid {
     grid-template-columns: 1fr;
+  }
+
+  .apod-media-link {
+    aspect-ratio: 16 / 9;
   }
 
   .tech-news-card {
