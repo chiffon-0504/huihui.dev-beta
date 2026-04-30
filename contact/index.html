@@ -17,7 +17,7 @@
         <h1>聯絡我</h1>
         <p class="contact-intro">有問題、合作或回饋，可以用下面的表單聯絡我。</p>
 
-        <form class="contact-form" action="https://api.huihui.dev/api/contact" method="POST">
+        <form id="contact-form" class="contact-form" action="https://api.huihui.dev/api/contact" method="POST">
           <div class="contact-field-grid">
             <label>
               名稱
@@ -41,6 +41,7 @@
           ></div>
 
           <button type="submit">送出訊息</button>
+          <p id="contact-status" class="contact-status" aria-live="polite"></p>
         </form>
 
         <p class="contact-fallback">
@@ -50,6 +51,45 @@
     </section>
   </main>
 
-  <script src="../js/layout.js"></script>
+    <script src="../js/layout.js"></script>
+    <script>
+    const contactForm = document.getElementById("contact-form");
+    const contactStatus = document.getElementById("contact-status");
+
+    contactForm?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const submitButton = contactForm.querySelector("button[type='submit']");
+      submitButton.disabled = true;
+      submitButton.textContent = "送出中...";
+      contactStatus.textContent = "";
+
+      try {
+        const response = await fetch(contactForm.action, {
+          method: "POST",
+          body: new FormData(contactForm),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+          throw new Error(data.message || "送出失敗");
+        }
+
+        contactForm.reset();
+
+        if (window.turnstile) {
+          window.turnstile.reset();
+        }
+
+        contactStatus.textContent = "訊息已送出。";
+      } catch (error) {
+        contactStatus.textContent = "送出失敗，請稍後再試。";
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = "送出訊息";
+      }
+    });
+  </script>
 </body>
 </html>
