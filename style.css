@@ -224,3 +224,120 @@ img {
   padding: 28px;
   min-width: 0;
 }
+
+/* Hero */
+.hero {
+  position: relative;
+  height: 80vh;
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.hero-text {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+}
+
+/* Works Grid */
+.works-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-auto-rows: 120px;
+  gap: 20px;
+}
+
+.work-card {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.work-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.work-card.large {
+  grid-column: span 7;
+  grid-row: span 5;
+}
+
+.work-card.tall {
+  grid-column: span 5;
+  grid-row: span 5;
+}
+
+.work-card.small {
+  grid-column: span 4;
+  grid-row: span 4;
+}
+
+/* 不要圖片下面文字 */
+.work-info {
+  display: none;
+}
+
+/* Lightbox */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  z-index: 9999;
+}
+
+.lightbox.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.lightbox-img {
+  display: block;
+  width: auto !important;
+  height: auto !important;
+  max-width: 92vw !important;
+  max-height: 90vh !important;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  object-fit: contain !important;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 20px;
+  right: 28px;
+  font-size: 42px;
+  line-height: 1;
+  color: #fff;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Homepage */
+.home-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 56px;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: 680px;
+}
+
+.home-text {
+  flex: 1;
+  max-width: 560px;
+}
+
+/* =========================
+   Global Typography
