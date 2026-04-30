@@ -258,14 +258,9 @@ function shortenText(text, maxLength) {
   return text.length > maxLength ? `${text.slice(0, maxLength).trim()}...` : text;
 }
 
-document.addEventListener("DOMContentLoaded", loadApodCard);
-
 async function loadProjectUpdateCard() {
   const link = document.getElementById("projectUpdateLink");
-  const title = document.getElementById("projectUpdateTitle");
-  const desc = document.querySelector(".project-update-desc");
-
-  if (!link || !title || !desc) return;
+  if (!link) return;
 
   try {
     const res = await fetch(`${HUIHUI_API_BASE}/api/github-updates`);
@@ -280,17 +275,16 @@ async function loadProjectUpdateCard() {
       throw new Error("Invalid GitHub updates response");
     }
 
-    title.textContent = data.title || "Project Updates";
-    desc.textContent = data.description || "最近網站開發進度。";
     link.textContent = `${data.repo || "huihui_project-v1"} · Updated ${data.updatedText || ""}`;
     link.href = data.link || "https://github.com/chiffon-0504/huihui_project-v1";
   } catch (error) {
-    title.textContent = "Project Updates";
-    desc.textContent = "GitHub 專案更新暫時無法讀取。";
     link.textContent = "huihui_project-v1";
     link.href = "https://github.com/chiffon-0504/huihui_project-v1";
     console.error(error);
   }
 }
 
-document.addEventListener("DOMContentLoaded", loadProjectUpdateCard);
+document.addEventListener("DOMContentLoaded", () => {
+  loadProjectUpdateCard();
+  setInterval(loadProjectUpdateCard, 5 * 60 * 1000);
+});
