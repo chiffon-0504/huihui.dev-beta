@@ -697,6 +697,72 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   border-radius: 12px;
 }
 
+/* =========================
+   Basic Motion
+========================= */
+
+.fade-in {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: fadeInUp 0.6s ease forwards;
+}
+
+.fade-in-delay-1 {
+  animation-delay: 0.12s;
+}
+
+.fade-in-delay-2 {
+  animation-delay: 0.24s;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.work-card,
+.tech-news-card,
+.apod-card,
+.project-update-card,
+.hero-btn,
+.contact-form button {
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.work-card:hover,
+.apod-card:hover,
+.project-update-card:hover {
+  transform: translateY(-4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .fade-in {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  .work-card,
+  .tech-news-card,
+  .apod-card,
+  .project-update-card,
+  .hero-btn,
+  .contact-form button {
+    transition: none;
+  }
+}
+
 /* Mobile */
 @media (max-width: 900px) {
   .sidebar {
