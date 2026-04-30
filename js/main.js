@@ -285,6 +285,8 @@ async function loadProjectUpdateCard() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  loadApodCard();
+
   loadProjectUpdateCard();
   setInterval(loadProjectUpdateCard, 5 * 60 * 1000);
 });
