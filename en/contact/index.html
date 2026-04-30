@@ -10,10 +10,36 @@
   <aside id="site-sidebar" class="sidebar"></aside>
 
   <main class="main">
-    <section class="home-hero">
-      <div class="home-text">
+    <section class="contact-page">
+      <div class="contact-content">
+        <p class="contact-eyebrow">Contact</p>
         <h1>Contact</h1>
-        <p><a href="mailto:contact@huihui.dev">contact@huihui.dev</a></p>
+        <p class="contact-intro">For questions, collaborations, or feedback, you can reach me through the form below.</p>
+
+        <form class="contact-form" action="https://formspree.io/f/xlgzrzqk" method="POST">
+          <div class="contact-field-grid">
+            <label>
+              Name
+              <input type="text" name="name" placeholder="Your name" autocomplete="name" required>
+            </label>
+
+            <label>
+              Email
+              <input type="email" name="email" placeholder="your@email.com" autocomplete="email" required>
+            </label>
+          </div>
+
+          <label>
+            Message
+            <textarea name="message" rows="7" placeholder="Your message" required></textarea>
+          </label>
+
+          <button type="submit">Send Message</button>
+        </form>
+
+        <p class="contact-fallback">
+          Or email directly: <a href="mailto:contact@huihui.dev">contact@huihui.dev</a>
+        </p>
       </div>
     </section>
   </main>

@@ -10,10 +10,36 @@
   <aside id="site-sidebar" class="sidebar"></aside>
 
   <main class="main">
-    <section class="home-hero">
-      <div class="home-text">
+    <section class="contact-page">
+      <div class="contact-content">
+        <p class="contact-eyebrow">Contact</p>
         <h1>連絡先</h1>
-        <p><a href="mailto:contact@huihui.dev">contact@huihui.dev</a></p>
+        <p class="contact-intro">ご質問、コラボレーション、フィードバックなどは、下のフォームからご連絡ください。</p>
+
+        <form class="contact-form" action="https://formspree.io/f/xlgzrzqk" method="POST">
+          <div class="contact-field-grid">
+            <label>
+              名前
+              <input type="text" name="name" placeholder="お名前" autocomplete="name" required>
+            </label>
+
+            <label>
+              Email
+              <input type="email" name="email" placeholder="your@email.com" autocomplete="email" required>
+            </label>
+          </div>
+
+          <label>
+            メッセージ
+            <textarea name="message" rows="7" placeholder="メッセージ内容" required></textarea>
+          </label>
+
+          <button type="submit">送信する</button>
+        </form>
+
+        <p class="contact-fallback">
+          直接メールする場合：<a href="mailto:contact@huihui.dev">contact@huihui.dev</a>
+        </p>
       </div>
     </section>
   </main>
