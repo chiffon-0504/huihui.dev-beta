@@ -259,3 +259,38 @@ function shortenText(text, maxLength) {
 }
 
 document.addEventListener("DOMContentLoaded", loadApodCard);
+
+async function loadProjectUpdateCard() {
+  const link = document.getElementById("projectUpdateLink");
+  const title = document.getElementById("projectUpdateTitle");
+  const desc = document.querySelector(".project-update-desc");
+
+  if (!link || !title || !desc) return;
+
+  try {
+    const res = await fetch(`${HUIHUI_API_BASE}/api/github-updates`);
+
+    if (!res.ok) {
+      throw new Error("GitHub updates API failed");
+    }
+
+    const data = await res.json();
+
+    if (!data.ok) {
+      throw new Error("Invalid GitHub updates response");
+    }
+
+    title.textContent = data.title || "Project Updates";
+    desc.textContent = data.description || "最近網站開發進度。";
+    link.textContent = `${data.repo || "huihui_project-v1"} · Updated ${data.updatedText || ""}`;
+    link.href = data.link || "https://github.com/chiffon-0504/huihui_project-v1";
+  } catch (error) {
+    title.textContent = "Project Updates";
+    desc.textContent = "GitHub 專案更新暫時無法讀取。";
+    link.textContent = "huihui_project-v1";
+    link.href = "https://github.com/chiffon-0504/huihui_project-v1";
+    console.error(error);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", loadProjectUpdateCard);
