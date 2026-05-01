@@ -123,6 +123,13 @@ huihui = HuiHui()
   const STEAM_FAVORITE_APPIDS = [3418570, 2458530, 1044620, 3682050];
   const STEAM_CUSTOM_IMAGES = { 3418570: "/images/games/summer-pockets-rb.webp", 3682050: "/images/games/Sickly-Days-and-Summer-Traces.webp" };
   const STEAM_CUSTOM_NAMES = { 3418570: "Summer Pockets REFLECTION BLUE", 2458530: "Sabbat of the Witch", 1044620: "Aokana - Four Rhythms Across the Blue", 3682050: "Sickly Days and Summer Traces" };
+
+  function getAboutText(key) {
+    const locale = getCurrentLocale();
+    return window.HUIHUI_I18N?.[locale]?.about?.steam?.[key]
+      || window.HUIHUI_I18N?.zh?.about?.steam?.[key]
+      || "";
+  }
   async function renderSteamFavorites() {
     const container = document.getElementById("steamFavorites");
     const bannerLink = document.getElementById("galgameBannerLink");
@@ -139,11 +146,11 @@ huihui = HuiHui()
       if (bannerGame) {
         if (bannerLink) bannerLink.href = bannerGame.storeUrl;
         if (bannerName) bannerName.textContent = STEAM_CUSTOM_NAMES[bannerGame.appid] || bannerGame.name;
-        if (bannerHours) bannerHours.textContent = `${bannerGame.playtimeHours} hrs`;
+        if (bannerHours) bannerHours.textContent = `${bannerGame.playtimeHours} ${getAboutText("hours")}`;
       }
-      if (selectedGames.length === 0) { container.innerHTML = '<p class="steam-error">Steam games are temporarily unavailable.</p>'; return; }
-      container.innerHTML = selectedGames.map((game) => `<a class="steam-game-card" href="${game.storeUrl}" target="_blank" rel="noopener"><img src="${STEAM_CUSTOM_IMAGES[game.appid] || game.coverUrl}" alt="${STEAM_CUSTOM_NAMES[game.appid] || game.name}" loading="lazy" onerror="this.onerror=null; this.src='${game.capsuleUrl}';"><span class="steam-game-meta"><span class="steam-game-name">${STEAM_CUSTOM_NAMES[game.appid] || game.name}</span><span class="steam-game-hours">${game.playtimeHours} hrs</span></span></a>`).join("");
-    } catch (error) { container.innerHTML = '<p class="steam-error">Steam games are temporarily unavailable.</p>'; }
+      if (selectedGames.length === 0) { container.innerHTML = '<p class="steam-error">${getAboutText("error")}</p>'; return; }
+      container.innerHTML = selectedGames.map((game) => `<a class="steam-game-card" href="${game.storeUrl}" target="_blank" rel="noopener"><img src="${STEAM_CUSTOM_IMAGES[game.appid] || game.coverUrl}" alt="${STEAM_CUSTOM_NAMES[game.appid] || game.name}" loading="lazy" onerror="this.onerror=null; this.src='${game.capsuleUrl}';"><span class="steam-game-meta"><span class="steam-game-name">${STEAM_CUSTOM_NAMES[game.appid] || game.name}</span><span class="steam-game-hours">${game.playtimeHours} ${getAboutText("hours")}</span></span></a>`).join("");
+    } catch (error) { container.innerHTML = '<p class="steam-error">${getAboutText("error")}</p>'; }
   }
   renderSteamFavorites();
   </script>
