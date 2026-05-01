@@ -30,5 +30,17 @@ window.HUIHUI_I18N.en = {
     success: "Message sent.",
     error: "Failed to send. Please try again later.",
     fallbackPrefix: "Or email directly:"
+  },
+  works: {
+    title: "Works",
+    images: {
+      fuji: "Mount Fuji",
+      tsutenkaku: "Tsutenkaku",
+      yokohama: "Yokohama Port",
+      train: "Train",
+      deer: "Deer",
+      penguin: "Penguin",
+      preview: "Preview"
+    }
   }
 };
