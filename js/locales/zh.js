@@ -8,7 +8,9 @@ window.HUIHUI_I18N.zh = {
       contact: "聯絡"
     },
     projectUpdate: {
-      label: "Project Updates"
+      label: "Project Updates",
+      title: "新增 Steam API 遊戲展示",
+      desc: "關於我頁面已接入 Steam API，顯示自訂 Galgame 遊戲卡片。"
     },
     tech: {
       title: "科技動態",

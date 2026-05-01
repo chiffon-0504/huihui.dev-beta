@@ -8,7 +8,9 @@ window.HUIHUI_I18N.en = {
       contact: "Contact"
     },
     projectUpdate: {
-      label: "Project Updates"
+      label: "Project Updates",
+      title: "Added Steam API game showcase",
+      desc: "The About page now uses Steam API data to display selected Galgame cards."
     },
     tech: {
       title: "Tech Updates",
