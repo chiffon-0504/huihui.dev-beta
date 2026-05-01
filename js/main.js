@@ -117,7 +117,7 @@ function typeCodeBlock(block) {
         Prism.highlightElement(block);
       }
 
-      setTimeout(typing, 7);
+      setTimeout(typing, 5);
     } else {
       highlightCustomKeywords(block);
     }
