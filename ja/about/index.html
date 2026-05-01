@@ -1,331 +1,81 @@
 <!doctype html>
-< lang="ja">
+<html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>私について | huihui.dev</title>
-
   <link rel="stylesheet" href="/style.css" />
-
   <link href="https://cdn.jsdelivr.net/npm/prismjs/themes/prism-tomorrow.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/prismjs/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
-
   <style>
-    .about-page {
-      max-width: 1280px;
-      min-height: calc(100vh - 56px);
-      display: flex;
-      align-items: flex-start;
-      padding: 56px 0;
-    }
-
-    .about-content {
-      width: 100%;
-    }
-
-    .interest-cards {
-      display: grid;
-      gap: 56px;
-      margin-top: 28px;
-    }
-
-    .interest-card {
-      display: block;
-      padding: 8px 0;
-    }
-
-    .interest-card h4 {
-      margin: 0 0 18px;
-      font-size: clamp(2rem, 3vw, 3rem);
-      font-weight: 700;
-      line-height: 1.08;
-    }
-
-    .interest-gallery {
-      width: 100%;
-    }
-
-    .interest-gallery img {
-      width: 1000px !important;
-      max-width: none !important;
-      height: auto !important;
-      border-radius: 18px;
-      display: block;
-    }
-
-    .interest-note {
-      margin-top: 28px;
-      color: rgba(255, 255, 255, 0.55);
-      font-size: 0.8rem;
-    }
-
-    .steam-favorites {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(120px, 1fr));
-      gap: 24px;
-      width: 100%;
-      max-width: 1000px;
-      padding: 18px;
-      border-radius: 18px;
-      background: rgba(70, 110, 160, 0.28);
-    }
-
-    .steam-game-card {
-      display: block;
-      text-decoration: none;
-      color: inherit;
-    }
-
-    .steam-game-card img {
-      width: 100% !important;
-      max-width: 100% !important;
-      aspect-ratio: 600 / 900;
-      object-fit: cover;
-      border-radius: 4px;
-      display: block;
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
-      transition: transform 0.18s ease, box-shadow 0.18s ease;
-    }
-
-    .steam-game-card:hover img {
-      transform: translateY(-4px);
-      box-shadow: 0 16px 34px rgba(0, 0, 0, 0.38);
-    }
-
-    .steam-game-meta {
-      margin-top: 8px;
-      font-size: 0.78rem;
-      color: rgba(255, 255, 255, 0.68);
-    }
-
-    .steam-game-name {
-      display: block;
-      font-weight: 600;
-      color: rgba(255, 255, 255, 0.88);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .steam-game-hours {
-      display: block;
-      margin-top: 2px;
-    }
-
-    .steam-loading,
-    .steam-error {
-      margin: 0;
-      color: rgba(255, 255, 255, 0.65);
-    }
-
-    @media (max-width: 900px) {
-      .steam-favorites {
-        grid-template-columns: repeat(2, minmax(120px, 1fr));
-        gap: 16px;
-        padding: 14px;
-      }
-    }
-
-    @media (max-width: 900px) {
-      .main {
-        margin-left: 0;
-      }
-
-      .interest-cards {
-        gap: 34px;
-      }
-
-      .interest-gallery img {
-        width: 100% !important;
-        max-width: 100% !important;
-      }
-    }
+    .about-page { max-width: 1280px; min-height: calc(100vh - 56px); display: flex; align-items: flex-start; padding: 56px 0; }
+    .about-content { width: 100%; }
+    .interest-cards { display: grid; gap: 56px; margin-top: 28px; }
+    .interest-card { display: block; padding: 8px 0; }
+    .interest-card h4 { margin: 0 0 18px; font-size: clamp(2rem, 3vw, 3rem); font-weight: 700; line-height: 1.08; }
+    .interest-gallery { width: 100%; }
+    .interest-gallery img { width: 1000px !important; max-width: none !important; height: auto !important; border-radius: 18px; display: block; }
+    .interest-note { margin-top: 28px; color: rgba(255, 255, 255, 0.55); font-size: 0.8rem; }
+    .galgame-showcase { width: 100%; max-width: 1000px; padding: 18px; border-radius: 18px; background: rgba(70, 110, 160, 0.28); }
+    .galgame-banner-link { display: block; margin-bottom: 24px; border-radius: 10px; overflow: hidden; text-decoration: none; color: inherit; }
+    .galgame-banner { width: 100% !important; max-width: 100% !important; height: 420px !important; object-fit: cover; object-position: center 38%; border-radius: 10px; display: block; transition: transform 0.18s ease, filter 0.18s ease; }
+    .galgame-banner-link:hover .galgame-banner { transform: scale(1.015); filter: brightness(1.06); }
+    .galgame-banner-meta { display: block; margin-top: 10px; font-size: 0.78rem; color: rgba(255, 255, 255, 0.68); }
+    .steam-favorites { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 24px; width: 100%; }
+    .steam-game-card { display: block; text-decoration: none; color: inherit; }
+    .steam-game-card img { width: 100% !important; max-width: 100% !important; aspect-ratio: 600 / 900; object-fit: cover; border-radius: 4px; display: block; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28); transition: transform 0.18s ease, box-shadow 0.18s ease; }
+    .steam-game-card:hover img { transform: translateY(-4px); box-shadow: 0 16px 34px rgba(0, 0, 0, 0.38); }
+    .steam-game-meta { margin-top: 8px; font-size: 0.78rem; color: rgba(255, 255, 255, 0.68); }
+    .steam-game-name { display: block; font-weight: 600; color: rgba(255, 255, 255, 0.88); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .steam-game-hours { display: block; margin-top: 2px; }
+    .steam-loading, .steam-error { margin: 0; color: rgba(255, 255, 255, 0.65); }
+    @media (max-width: 900px) { .steam-favorites { grid-template-columns: repeat(2, minmax(120px, 1fr)); gap: 16px; } .galgame-banner { height: 280px !important; } }
+    @media (max-width: 900px) { .main { margin-left: 0; } .interest-cards { gap: 34px; } .interest-gallery img { width: 100% !important; max-width: 100% !important; } }
   </style>
 </head>
-
 <body>
   <aside id="site-sidebar" class="sidebar"></aside>
-
-  <main class="main">
-    <section class="about-page">
-      <div class="about-content">
-        <h1>About</h1>
-
-        <pre class="code-auto"><code class="language-python"># profile.py
+  <main class="main"><section class="about-page"><div class="about-content"><h1>私について</h1>
+    <pre class="code-auto"><code class="language-python"># profile.py
 
 from __future__ import annotations
 from typing import List, Optional
 
 class HuiHui:
-    """Developer profile object."""
-
     def __init__(self) -> None:
         self.name: str = "huihui"
         self.major: str = "Electronic Engineering"
         self.hobbies: List[str] = ["Photography", "Rhythm Games", "Galgame"]
         self.website: str = "huihui.dev"
         self.contact: str = "contact@huihui.dev"
-
-        self.skills: List[str] = [
-            "Python (OpenCV, Computer Vision, ML basics)",
-            "SwiftUI (basic)",
-            "JavaScript (basic)",
-            "HTML & CSS (basic)",
-        ]
-
-        self.projects: List[str] = [
-            "huihui.dev (personal website with custom UI and code rendering system)",
-            "Multimodal Health Analysis Prototype (Raspberry Pi + OpenCV)",
-        ]
-
-        self.favorite_composers: List[str] = [
-            "Laur",
-            "USAO",
-            "Sakuzyo",
-            "ak+q",
-        ]
-
-        self.favorite_bands: List[str] = [
-            "Morfonica",
-            "Ave Mujica",
-        ]
-
-        self.favorite_songs: List[str] = [
-            "Grievous Lady -nothing is but what is not- · Team Grimoire & Laur",
-            "PRAGMATISM -RESURRECTION- · Laur",
-            "Cyaegha · USAO",
-            "Cryptarithm · Sakuzyo",
-            "虚空の夢 · ak+q",
-            "One step at a time · Morfonica",
-            "顏 · Ave Mujica",
-        ]
-
-        self.favorite_illustrators: List[str] = [
-            "@momoco_haru",
-            "@horuhara",
-            "@kurumi_lm"
-        ]
-
-    def about(self) -> str:
-        return (
-            "A personal dev space focused on embedded systems, "
-            "computer vision, and experimental projects"
-        )
-
-huihui = HuiHui()
 </code></pre>
-
-        <section>
-          <h2>趣味</h2>
-
-          <div class="interest-cards">
-            <article class="interest-card">
-              <h4>maimai でらっくす</h4>
-              <div class="interest-gallery"><img src="/images/1001_a.webp" alt="maimai でらっくす" /></div>
-            </article>
-
-            <article class="interest-card">
-              <h4>Arcaea</h4>
-              <div class="interest-gallery"><img src="/images/1012_a.webp" alt="Arcaea" /></div>
-            </article>
-
-            <article class="interest-card steam-favorites-card">
-              <h4>美少女ゲーム</h4>
-
-              <div class="steam-favorites" id="steamFavorites" aria-live="polite">
-                <p class="steam-loading">Loading Steam library...</p>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <p class="interest-note">
-          Images © respective owners (SEGA, lowiro, VISUAL ARTS/Key, YUZUSOFT, sprite, NekoNyan Ltd., Sister Position, etc.)
-        </p>
-      </div>
-    </section>
-  </main>
-
-  <div class="lightbox" id="lightbox">
-    <span class="lightbox-close" id="lightboxClose">&times;</span>
-    <img class="lightbox-img no-lightbox" id="lightboxImg" src="" alt="" />
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-python.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/prismjs/plugins/line-numbers/prism-line-numbers.min.js"></script>
-  <script src="/js/layout.js"></script>
-  <script src="/js/main.js"></script>
-  <script src="/js/lightbox.js"></script>
+    <section><h2>趣味</h2><div class="interest-cards">
+      <article class="interest-card"><h4>maimai でらっくす</h4><div class="interest-gallery"><img src="/images/1001_a.webp" /></div></article>
+      <article class="interest-card"><h4>Arcaea</h4><div class="interest-gallery"><img src="/images/1012_a.webp" /></div></article>
+      <article class="interest-card"><h4>美少女ゲーム</h4><div class="galgame-showcase">
+        <a class="galgame-banner-link" id="galgameBannerLink" href="https://store.steampowered.com/app/3418570/" target="_blank">
+          <img class="galgame-banner" src="/images/games/summer-pockets-rb-wide.webp" />
+          <span class="galgame-banner-meta"><span id="galgameBannerName">Summer Pockets REFLECTION BLUE</span><span id="galgameBannerHours">Loading...</span></span>
+        </a>
+        <div class="steam-favorites" id="steamFavorites"></div>
+      </div></article>
+    </div></section>
+  </div></section></main>
   <script>
-  const STEAM_FAVORITE_APPIDS = [
-    3418570, // Summer Pockets REFLECTION BLUE
-    2458530, // 魔女的夜宴
-    1044620, // 蒼之彼方的四重奏
-    3682050, // 痴情哥哥與病弱妹妹的鄉間生活
-  ];
-
-  const STEAM_CUSTOM_IMAGES = {
-  3418570: "/images/games/summer-pockets-rb.webp",
-  3682050: "/images/games/Sickly-Days-and-Summer-Traces.webp",
-  };
-
-  const STEAM_CUSTOM_NAMES = {
-  3418570: "Summer Pockets REFLECTION BLUE",
-  2458530: "サノバウィッチ",
-  1044620: "蒼の彼方のフォーリズム",
-  3682050: "ド田舎兄妹",
-  };
-
-  async function renderSteamFavorites() {
-    const container = document.getElementById("steamFavorites");
-    if (!container) return;
-
-    try {
-      const res = await fetch("https://api.huihui.dev/api/steam-library");
-
-      if (!res.ok) {
-        throw new Error("Steam API failed");
-      }
-
-      const data = await res.json();
-      const games = Array.isArray(data.games) ? data.games : [];
-
-      const selectedGames = STEAM_FAVORITE_APPIDS
-        .map((appid) => games.find((game) => game.appid === appid))
-        .filter(Boolean);
-
-      if (selectedGames.length === 0) {
-        container.innerHTML =
-          '<p class="steam-error">Steam games are temporarily unavailable.</p>';
-        return;
-      }
-
-      container.innerHTML = selectedGames
-        .map(
-          (game) => `
-            <a class="steam-game-card" href="${game.storeUrl}" target="_blank" rel="noopener">
-              <img
-                src="${STEAM_CUSTOM_IMAGES[game.appid] || game.coverUrl}"
-                alt="${STEAM_CUSTOM_NAMES[game.appid] || game.name}"
-                loading="lazy"
-                onerror="this.onerror=null; this.src='${game.capsuleUrl}';"
-              >
-              <span class="steam-game-meta">
-                <span class="steam-game-name">${STEAM_CUSTOM_NAMES[game.appid] || game.name}</span>
-                <span class="steam-game-hours">${game.playtimeHours} hrs</span>
-              </span>
-            </a>
-          `
-        )
-        .join("");
-    } catch (error) {
-      container.innerHTML =
-        '<p class="steam-error">Steam games are temporarily unavailable.</p>';
-    }
+  const STEAM_FAVORITE_APPIDS=[3418570,2458530,1044620,3682050];
+  async function renderSteamFavorites(){
+    const c=document.getElementById("steamFavorites");
+    const l=document.getElementById("galgameBannerLink");
+    const n=document.getElementById("galgameBannerName");
+    const h=document.getElementById("galgameBannerHours");
+    const res=await fetch("https://api.huihui.dev/api/steam-library");
+    const data=await res.json();
+    const games=data.games||[];
+    const g=games.find(x=>x.appid===3418570);
+    if(g){l.href=g.storeUrl;n.textContent=g.name;h.textContent=g.playtimeHours+" hrs";}
+    c.innerHTML=games.filter(x=>STEAM_FAVORITE_APPIDS.includes(x.appid)).map(x=>`<a href="${x.storeUrl}"><img src="${x.coverUrl}"></a>`).join("");
   }
-
   renderSteamFavorites();
-</script>
+  </script>
 </body>
 </html>
