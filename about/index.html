@@ -310,7 +310,12 @@ huihui = HuiHui()
         .map(
           (game) => `
             <a class="steam-game-card" href="${game.storeUrl}" target="_blank" rel="noopener">
-              <img src="${game.coverUrl}" alt="${game.name}" loading="lazy">
+              <img
+                src="${game.coverUrl}"
+                alt="${game.name}"
+                loading="lazy"
+                onerror="this.onerror=null; this.src='${game.capsuleUrl}';"
+              >
               <span class="steam-game-meta">
                 <span class="steam-game-name">${game.name}</span>
                 <span class="steam-game-hours">${game.playtimeHours} hrs</span>
