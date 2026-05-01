@@ -157,9 +157,9 @@ huihui = HuiHui()
         if (bannerName) bannerName.textContent = STEAM_CUSTOM_NAMES[bannerGame.appid] || bannerGame.name;
         if (bannerHours) bannerHours.textContent = `${bannerGame.playtimeHours} ${getAboutText("hours")}`;
       }
-      if (selectedGames.length === 0) { container.innerHTML = '<p class="steam-error">${getAboutText("error")}</p>'; return; }
+      if (selectedGames.length === 0) { container.innerHTML = `<p class="steam-error">${getAboutText("error")}</p>`; return; }
       container.innerHTML = selectedGames.map((game) => `<a class="steam-game-card" href="${game.storeUrl}" target="_blank" rel="noopener"><img src="${STEAM_CUSTOM_IMAGES[game.appid] || game.coverUrl}" alt="${STEAM_CUSTOM_NAMES[game.appid] || game.name}" loading="lazy" onerror="this.onerror=null; this.src='${game.capsuleUrl}';"><span class="steam-game-meta"><span class="steam-game-name">${STEAM_CUSTOM_NAMES[game.appid] || game.name}</span><span class="steam-game-hours">${game.playtimeHours} ${getAboutText("hours")}</span></span></a>`).join("");
-    } catch (error) { container.innerHTML = '<p class="steam-error">${getAboutText("error")}</p>'; }
+    } catch (error) { container.innerHTML = `<p class="steam-error">${getAboutText("error")}</p>`; }
   }
   renderSteamFavorites();
   </script>
