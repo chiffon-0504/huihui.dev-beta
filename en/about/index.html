@@ -59,6 +59,73 @@
       font-size: 0.8rem;
     }
 
+    .steam-favorites {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 24px;
+      width: 100%;
+      max-width: 1000px;
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(70, 110, 160, 0.28);
+    }
+
+    .steam-game-card {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .steam-game-card img {
+      width: 100% !important;
+      max-width: 100% !important;
+      aspect-ratio: 600 / 900;
+      object-fit: cover;
+      border-radius: 4px;
+      display: block;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .steam-game-card:hover img {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 34px rgba(0, 0, 0, 0.38);
+    }
+
+    .steam-game-meta {
+      margin-top: 8px;
+      font-size: 0.78rem;
+      color: rgba(255, 255, 255, 0.68);
+    }
+
+    .steam-game-name {
+      display: block;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.88);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .steam-game-hours {
+      display: block;
+      margin-top: 2px;
+    }
+
+    .steam-loading,
+    .steam-error {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.65);
+    }
+
+    @media (max-width: 900px) {
+      .steam-favorites {
+        grid-template-columns: repeat(2, minmax(120px, 1fr));
+        gap: 16px;
+        padding: 14px;
+      }
+    }
+
     @media (max-width: 900px) {
       .main {
         margin-left: 0;
