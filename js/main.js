@@ -202,7 +202,9 @@ async function loadTechNews() {
         >
           <div class="tech-news-category">${item.category}</div>
           <h3>${item.title}</h3>
-          <p>${item.description}</p>
+          <p>
+            最新來源：${item.source}${item.timeAgo ? ` · ${item.timeAgo}` : ""}
+          </p>
           <span class="tech-news-tag">${item.tag}</span>
         </a>
       `)
