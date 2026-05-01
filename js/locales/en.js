@@ -42,5 +42,11 @@ window.HUIHUI_I18N.en = {
       penguin: "Penguin",
       preview: "Preview"
     }
+  },
+  posts: {
+    title: "Posts",
+    intro: "Recent updates, photos, and game records.",
+    scoreAlt: "Arcaea score screenshot",
+    preview: "Preview"
   }
 };

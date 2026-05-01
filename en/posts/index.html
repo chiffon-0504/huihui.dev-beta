@@ -23,6 +23,7 @@
     .post-image { width: 100%; max-width: 600px; margin: 0; border-radius: 22px; overflow: hidden; }
     .post-image img { width: 100%; height: auto; display: block; }
     .post-caption { margin-top: 10px; font-size: 0.78rem; line-height: 1.5; color: rgba(255, 255, 255, 0.42); text-align: left; }
+
     @media (max-width: 900px) {
       .main { margin-left: 0; padding: 24px 16px 56px; max-width: none; }
       .posts-header { margin-bottom: 32px; }
@@ -34,13 +35,14 @@
     }
   </style>
 </head>
+
 <body>
   <aside id="site-sidebar" class="sidebar"></aside>
 
   <main class="main">
     <section class="posts-header">
-      <h1>Posts</h1>
-      <p>Recent updates, photos, and game records. Post content remains in the original language.</p>
+      <h1 data-i18n="posts.title"></h1>
+      <p data-i18n="posts.intro"></p>
     </section>
 
     <article class="post-card">
@@ -62,7 +64,7 @@ KYOREN ROMANCE <span class="future">FUTURE 10+</span> <span class="ex">EX</span>
 
       <figure class="post-figure">
         <div class="post-image">
-          <img src="/images/3004_p.webp" alt="Arcaea score screenshot" class="zoomable" />
+          <img src="/images/3004_p.webp" data-i18n-alt="posts.scoreAlt" class="zoomable" />
         </div>
         <figcaption class="post-caption">
           Arcaea images and properties belong to © lowiro.
@@ -89,7 +91,7 @@ INCARNATOR₀₀ <span class="etermal">ETERNAL 10</span> <span class="ex">EX</sp
 
       <figure class="post-figure">
         <div class="post-image">
-          <img src="/images/3003_p.webp" alt="Arcaea score screenshot" class="zoomable" />
+          <img src="/images/3003_p.webp" data-i18n-alt="posts.scoreAlt" class="zoomable" />
         </div>
         <figcaption class="post-caption">
           Arcaea images and properties belong to © lowiro.
@@ -98,33 +100,75 @@ INCARNATOR₀₀ <span class="etermal">ETERNAL 10</span> <span class="ex">EX</sp
     </article>
 
     <article class="post-card">
-      <div class="post-meta"><span class="post-name">huihui</span><span class="post-handle">@huihui</span><span class="post-dot">·</span><time class="post-date">Apr 19 2026</time></div>
+      <div class="post-meta">
+        <span class="post-name">huihui</span>
+        <span class="post-handle">@huihui</span>
+        <span class="post-dot">·</span>
+        <time class="post-date">Apr 19 2026</time>
+      </div>
+
       <div class="post-content">
 Cyaegha <span class="future">FUTURE 10+</span> <span class="ex">EX+</span> !!!!!
 
 <a class="hashtag" href="https://x.com/hashtag/arcaea?src=hashtag_click" target="_blank" rel="noopener noreferrer">#arcaea</a>
       </div>
-      <figure class="post-figure"><div class="post-image"><img src="/images/3002_p.webp" alt="Arcaea score screenshot" class="zoomable" /></div><figcaption class="post-caption">Arcaea images and properties belong to © lowiro.</figcaption></figure>
+
+      <figure class="post-figure">
+        <div class="post-image">
+          <img src="/images/3002_p.webp" data-i18n-alt="posts.scoreAlt" class="zoomable" />
+        </div>
+        <figcaption class="post-caption">
+          Arcaea images and properties belong to © lowiro.
+        </figcaption>
+      </figure>
     </article>
 
     <article class="post-card">
-      <div class="post-meta"><span class="post-name">huihui</span><span class="post-handle">@huihui</span><span class="post-dot">·</span><time class="post-date">Apr 18 2026</time></div>
+      <div class="post-meta">
+        <span class="post-name">huihui</span>
+        <span class="post-handle">@huihui</span>
+        <span class="post-dot">·</span>
+        <time class="post-date">Apr 18 2026</time>
+      </div>
+
       <div class="post-content">
 Placbo♥battler <span class="future">FUTURE 10</span> <span class="ex">EX+</span> !!!
 
 <a class="hashtag" href="https://x.com/hashtag/arcaea?src=hashtag_click" target="_blank" rel="noopener noreferrer">#arcaea</a>
       </div>
-      <figure class="post-figure"><div class="post-image"><img src="/images/3001_p.webp" alt="Arcaea score screenshot" class="zoomable" /></div><figcaption class="post-caption">Arcaea images and properties belong to © lowiro.</figcaption></figure>
+
+      <figure class="post-figure">
+        <div class="post-image">
+          <img src="/images/3001_p.webp" data-i18n-alt="posts.scoreAlt" class="zoomable" />
+        </div>
+        <figcaption class="post-caption">
+          Arcaea images and properties belong to © lowiro.
+        </figcaption>
+      </figure>
     </article>
 
     <article class="post-card">
-      <div class="post-meta"><span class="post-name">huihui</span><span class="post-handle">@huihui</span><span class="post-dot">·</span><time class="post-date">Apr 14 2026</time></div>
+      <div class="post-meta">
+        <span class="post-name">huihui</span>
+        <span class="post-handle">@huihui</span>
+        <span class="post-dot">·</span>
+        <time class="post-date">Apr 14 2026</time>
+      </div>
+
       <div class="post-content">Hello, World!</div>
     </article>
   </main>
 
-  <div class="lightbox" id="lightbox"><span class="lightbox-close" id="lightboxClose">&times;</span><img class="lightbox-img" id="lightboxImg" src="" alt="Preview" /></div>
+  <div class="lightbox" id="lightbox">
+    <span class="lightbox-close" id="lightboxClose">&times;</span>
+    <img class="lightbox-img" id="lightboxImg" src="" data-i18n-alt="posts.preview" />
+  </div>
+
   <script src="/js/layout.js"></script>
   <script src="/js/lightbox.js"></script>
+  <script src="/js/locales/zh.js"></script>
+  <script src="/js/locales/en.js"></script>
+  <script src="/js/locales/ja.js"></script>
+  <script src="/js/i18n.js"></script>
 </body>
 </html>

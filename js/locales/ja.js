@@ -42,5 +42,11 @@ window.HUIHUI_I18N.ja = {
       penguin: "ペンギン",
       preview: "プレビュー"
     }
+  },
+  posts: {
+    title: "投稿",
+    intro: "最近の記録・写真・ゲーム。",
+    scoreAlt: "Arcaea スコアスクリーンショット",
+    preview: "プレビュー"
   }
 };

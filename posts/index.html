@@ -157,8 +157,8 @@
 
   <main class="main">
     <section class="posts-header">
-      <h1>貼文</h1>
-      <p>一些近況、照片、遊戲紀錄。</p>
+      <h1 data-i18n="posts.title"></h1>
+      <p data-i18n="posts.intro"></p>
     </section>
 
     <article class="post-card">
@@ -180,7 +180,7 @@ KYOREN ROMANCE <span class="future">FUTURE 10+</span> <span class="ex">EX</span>
 
       <figure class="post-figure">
         <div class="post-image">
-          <img src="../images/3004_p.webp" alt="Arcaea score screenshot" class="zoomable" />
+          <img src="../images/3004_p.webp" data-i18n-alt="posts.scoreAlt" class="zoomable" />
         </div>
         <figcaption class="post-caption">
           Arcaea images and properties belong to © lowiro.
@@ -207,7 +207,7 @@ INCARNATOR₀₀ <span class="etermal">ETERNAL 10</span> <span class="ex">EX</sp
 
       <figure class="post-figure">
         <div class="post-image">
-          <img src="../images/3003_p.webp" alt="Arcaea score screenshot" class="zoomable" />
+          <img src="../images/3003_p.webp" data-i18n-alt="posts.scoreAlt" class="zoomable" />
         </div>
         <figcaption class="post-caption">
           Arcaea images and properties belong to © lowiro.
@@ -234,7 +234,7 @@ Cyaegha <span class="future">FUTURE 10+</span> <span class="ex">EX+</span> !!!!!
 
       <figure class="post-figure">
         <div class="post-image">
-          <img src="../images/3002_p.webp" alt="Arcaea score screenshot" class="zoomable" />
+          <img src="../images/3002_p.webp" data-i18n-alt="posts.scoreAlt" class="zoomable" />
         </div>
         <figcaption class="post-caption">
           Arcaea images and properties belong to © lowiro.
@@ -261,7 +261,7 @@ Placbo♥battler <span class="future">FUTURE 10</span> <span class="ex">EX+</spa
 
       <figure class="post-figure">
         <div class="post-image">
-          <img src="../images/3001_p.webp" alt="Arcaea score screenshot" class="zoomable" />
+          <img src="../images/3001_p.webp" data-i18n-alt="posts.scoreAlt" class="zoomable" />
         </div>
         <figcaption class="post-caption">
           Arcaea images and properties belong to © lowiro.
@@ -283,10 +283,14 @@ Placbo♥battler <span class="future">FUTURE 10</span> <span class="ex">EX+</spa
 
   <div class="lightbox" id="lightbox">
     <span class="lightbox-close" id="lightboxClose">&times;</span>
-    <img class="lightbox-img" id="lightboxImg" src="" alt="放大預覽" />
+    <img class="lightbox-img" id="lightboxImg" src="" data-i18n-alt="posts.preview" />
   </div>
 
   <script src="../js/layout.js"></script>
   <script src="../js/lightbox.js"></script>
+  <script src="../js/locales/zh.js"></script>
+  <script src="../js/locales/en.js"></script>
+  <script src="../js/locales/ja.js"></script>
+  <script src="../js/i18n.js"></script>
 </body>
 </html>
