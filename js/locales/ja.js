@@ -48,5 +48,21 @@ window.HUIHUI_I18N.ja = {
     intro: "最近の記録・写真・ゲーム。",
     scoreAlt: "Arcaea スコアスクリーンショット",
     preview: "プレビュー"
+  },
+  about: {
+    title: "私について",
+    interests: "趣味",
+    images: {
+      maimai: "maimai DX",
+      arcaea: "Arcaea",
+      galgame: "Summer Pockets REFLECTION BLUE",
+      preview: "プレビュー"
+    },
+    steam: {
+      loading: "Steamライブラリを読み込み中...",
+      error: "Steamゲームを読み込めません。",
+      hours: "時間"
+    },
+    copyright: "Images © respective owners (SEGA, lowiro, VISUAL ARTS/Key, YUZUSOFT, sprite, NekoNyan Ltd., Sister Position, etc.)"
   }
 };
