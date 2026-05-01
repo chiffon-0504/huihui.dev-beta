@@ -282,6 +282,11 @@ huihui = HuiHui()
     3682050, // 痴情哥哥與病弱妹妹的鄉間生活
   ];
 
+  const STEAM_CUSTOM_IMAGES = {
+  3418570: "../images/games/summer-pockets-rb.webp",
+  3682050: "../images/games/Sickly-Days-and-Summer-Traces.webp",
+  };
+
   async function renderSteamFavorites() {
     const container = document.getElementById("steamFavorites");
     if (!container) return;
@@ -311,7 +316,7 @@ huihui = HuiHui()
           (game) => `
             <a class="steam-game-card" href="${game.storeUrl}" target="_blank" rel="noopener">
               <img
-                src="${game.coverUrl}"
+                src="${STEAM_CUSTOM_IMAGES[game.appid] || game.coverUrl}"
                 alt="${game.name}"
                 loading="lazy"
                 onerror="this.onerror=null; this.src='${game.capsuleUrl}';"
