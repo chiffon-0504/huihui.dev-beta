@@ -255,6 +255,13 @@ huihui = HuiHui()
   3682050: "/images/games/Sickly-Days-and-Summer-Traces.webp",
   };
 
+  const STEAM_CUSTOM_NAMES = {
+  3418570: "Summer Pockets REFLECTION BLUE",
+  2458530: "サノバウィッチ",
+  1044620: "蒼の彼方のフォーリズム",
+  3682050: "ド田舎兄妹",
+  };
+
   async function renderSteamFavorites() {
     const container = document.getElementById("steamFavorites");
     if (!container) return;
@@ -285,12 +292,12 @@ huihui = HuiHui()
             <a class="steam-game-card" href="${game.storeUrl}" target="_blank" rel="noopener">
               <img
                 src="${STEAM_CUSTOM_IMAGES[game.appid] || game.coverUrl}"
-                alt="${game.name}"
+                alt="${STEAM_CUSTOM_NAMES[game.appid] || game.name}"
                 loading="lazy"
                 onerror="this.onerror=null; this.src='${game.capsuleUrl}';"
               >
               <span class="steam-game-meta">
-                <span class="steam-game-name">${game.name}</span>
+                <span class="steam-game-name">${STEAM_CUSTOM_NAMES[game.appid] || game.name}</span>
                 <span class="steam-game-hours">${game.playtimeHours} hrs</span>
               </span>
             </a>
