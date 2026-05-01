@@ -13,33 +13,32 @@
   <aside id="site-sidebar" class="sidebar"></aside>
 
   <main class="main">
-    <h1>作品</h1>
+    <h1 data-i18n="works.title"></h1>
 
     <section class="hero" id="home">
-      <img src="../images/2001_w.webp" alt="富士山" class="zoomable" />
+      <img src="../images/2001_w.webp" data-i18n-alt="works.images.fuji" class="zoomable" />
     </section>
 
     <section id="works">
-
       <div class="works-grid">
         <article class="work-card large">
-          <img src="../images/2002_w.webp" alt="通天閣" class="zoomable" />
+          <img src="../images/2002_w.webp" data-i18n-alt="works.images.tsutenkaku" class="zoomable" />
         </article>
 
         <article class="work-card tall">
-          <img src="../images/2003_w.webp" alt="橫濱港" class="zoomable" />
+          <img src="../images/2003_w.webp" data-i18n-alt="works.images.yokohama" class="zoomable" />
         </article>
 
         <article class="work-card small">
-          <img src="../images/2004_w.webp" alt="電車" class="zoomable" />
+          <img src="../images/2004_w.webp" data-i18n-alt="works.images.train" class="zoomable" />
         </article>
 
         <article class="work-card small">
-          <img src="../images/2005_w.webp" alt="小鹿" class="zoomable" />
+          <img src="../images/2005_w.webp" data-i18n-alt="works.images.deer" class="zoomable" />
         </article>
 
         <article class="work-card small">
-          <img src="../images/2006_w.webp" alt="企鵝" class="zoomable" />
+          <img src="../images/2006_w.webp" data-i18n-alt="works.images.penguin" class="zoomable" />
         </article>
       </div>
     </section>
@@ -47,10 +46,14 @@
 
   <div class="lightbox" id="lightbox">
     <span class="lightbox-close" id="lightboxClose">&times;</span>
-    <img class="lightbox-img" id="lightboxImg" src="" alt="放大預覽" />
+    <img class="lightbox-img" id="lightboxImg" src="" data-i18n-alt="works.images.preview" />
   </div>
 
   <script src="../js/layout.js"></script>
   <script src="../js/lightbox.js"></script>
+  <script src="../js/locales/zh.js"></script>
+  <script src="../js/locales/en.js"></script>
+  <script src="../js/locales/ja.js"></script>
+  <script src="../js/i18n.js"></script>
 </body>
 </html>
