@@ -30,5 +30,17 @@ window.HUIHUI_I18N.ja = {
     success: "送信されました。",
     error: "送信に失敗しました。後でもう一度お試しください。",
     fallbackPrefix: "直接メールする場合："
+  },
+  works: {
+    title: "作品",
+    images: {
+      fuji: "富士山",
+      tsutenkaku: "通天閣",
+      yokohama: "横浜港",
+      train: "電車",
+      deer: "鹿",
+      penguin: "ペンギン",
+      preview: "プレビュー"
+    }
   }
 };
