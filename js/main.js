@@ -34,6 +34,7 @@ function formatLangLabel(lang) {
     sh: "SHELL",
     swift: "SWIFT"
   };
+
   return map[lang] || lang.toUpperCase();
 }
 
@@ -89,6 +90,40 @@ function highlightKeywordSafely(container, keyword, className) {
   textNodes.forEach((node) => {
     highlightKeywordInTextNode(node, keyword, className);
   });
+}
+
+function highlightCustomKeywords(block) {
+  block.querySelectorAll(".token.string").forEach((token) => {
+    highlightKeywordSafely(token, "Galgame", "kw-red");
+    highlightKeywordSafely(token, "Morfonica", "kw-blue");
+    highlightKeywordSafely(token, "Ave Mujica", "kw-reddishpurple");
+  });
+}
+
+function typeCodeBlock(block) {
+  if (!window.Prism) return;
+
+  const raw = block.textContent;
+  block.textContent = "";
+
+  let i = 0;
+
+  function typing() {
+    if (i < raw.length) {
+      block.textContent += raw.charAt(i);
+      i++;
+
+      if (i % 5 === 0 || i === raw.length) {
+        Prism.highlightElement(block);
+      }
+
+      setTimeout(typing, 10);
+    } else {
+      highlightCustomKeywords(block);
+    }
+  }
+
+  typing();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -159,17 +194,9 @@ document.addEventListener("DOMContentLoaded", () => {
     pre.parentNode.insertBefore(wrapper, pre);
     wrapper.appendChild(header);
     wrapper.appendChild(pre);
+
+    typeCodeBlock(code);
   });
-
-  if (window.Prism) {
-    Prism.highlightAll();
-
-    document.querySelectorAll("code.language-python .token.string").forEach((token) => {
-      highlightKeywordSafely(token, "Galgame", "kw-red");
-      highlightKeywordSafely(token, "Morfonica", "kw-blue");
-      highlightKeywordSafely(token, "Ave Mujica", "kw-reddishpurple");
-    });
-  }
 });
 
 const HUIHUI_API_BASE = "https://huihui-api.huihuigames01.workers.dev";
