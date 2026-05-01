@@ -51,15 +51,51 @@ class HuiHui:
         self.website: str = "huihui.dev"
         self.contact: str = "contact@huihui.dev"
 
-        self.skills: List[str] = ["Python (OpenCV, Computer Vision, ML basics)", "SwiftUI (basic)", "JavaScript (basic)", "HTML & CSS (basic)"]
-        self.projects: List[str] = ["huihui.dev (personal website with custom UI and code rendering system)", "Multimodal Health Analysis Prototype (Raspberry Pi + OpenCV)"]
-        self.favorite_composers: List[str] = ["Laur", "USAO", "Sakuzyo", "ak+q"]
-        self.favorite_bands: List[str] = ["Morfonica", "Ave Mujica"]
-        self.favorite_songs: List[str] = ["Grievous Lady -nothing is but what is not- · Team Grimoire & Laur", "PRAGMATISM -RESURRECTION- · Laur", "Cyaegha · USAO", "Cryptarithm · Sakuzyo", "虚空の夢 · ak+q", "One step at a time · Morfonica", "顏 · Ave Mujica"]
-        self.favorite_illustrators: List[str] = ["@momoco_haru", "@horuhara", "@kurumi_lm"]
+        self.skills: List[str] = [
+            "Python (OpenCV, Computer Vision, ML basics)",
+            "SwiftUI (basic)",
+            "JavaScript (basic)",
+            "HTML & CSS (basic)",
+        ]
+
+        self.projects: List[str] = [
+            "huihui.dev (personal website with custom UI and code rendering system)",
+            "Multimodal Health Analysis Prototype (Raspberry Pi + OpenCV)",
+        ]
+
+        self.favorite_composers: List[str] = [
+            "Laur",
+            "USAO",
+            "Sakuzyo",
+            "ak+q",
+        ]
+
+        self.favorite_bands: List[str] = [
+            "Morfonica",
+            "Ave Mujica",
+        ]
+
+        self.favorite_songs: List[str] = [
+            "Grievous Lady -nothing is but what is not- · Team Grimoire & Laur",
+            "PRAGMATISM -RESURRECTION- · Laur",
+            "Cyaegha · USAO",
+            "Cryptarithm · Sakuzyo",
+            "虚空の夢 · ak+q",
+            "One step at a time · Morfonica",
+            "顏 · Ave Mujica",
+        ]
+
+        self.favorite_illustrators: List[str] = [
+            "@momoco_haru",
+            "@horuhara",
+            "@kurumi_lm"
+        ]
 
     def about(self) -> str:
-        return "A personal dev space focused on embedded systems, computer vision, and experimental projects"
+        return (
+            "A personal dev space focused on embedded systems, "
+            "computer vision, and experimental projects"
+        )
 
 huihui = HuiHui()
 </code></pre>
