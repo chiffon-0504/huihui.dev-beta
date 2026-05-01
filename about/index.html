@@ -42,69 +42,7 @@
   <aside id="site-sidebar" class="sidebar"></aside>
   <main class="main">
     <section class="about-page"><div class="about-content"><h1 data-i18n="about.title"></h1>
-        <pre class="code-auto"><code class="language-python"># profile.py
-
-from __future__ import annotations
-from typing import List, Optional
-
-class HuiHui:
-    """Developer profile object."""
-
-    def __init__(self) -> None:
-        self.name: str = "huihui"
-        self.major: str = "Electronic Engineering"
-        self.hobbies: List[str] = ["Photography", "Rhythm Games", "Galgame"]
-        self.website: str = "huihui.dev"
-        self.contact: str = "contact@huihui.dev"
-
-        self.skills: List[str] = [
-            "Python (OpenCV, Computer Vision, ML basics)",
-            "SwiftUI (basic)",
-            "JavaScript (basic)",
-            "HTML & CSS (basic)",
-        ]
-
-        self.projects: List[str] = [
-            "huihui.dev (personal website with custom UI and code rendering system)",
-            "Multimodal Health Analysis Prototype (Raspberry Pi + OpenCV)",
-        ]
-
-        self.favorite_composers: List[str] = [
-            "Laur",
-            "USAO",
-            "Sakuzyo",
-            "ak+q",
-        ]
-
-        self.favorite_bands: List[str] = [
-            "Morfonica",
-            "Ave Mujica",
-        ]
-
-        self.favorite_songs: List[str] = [
-            "Grievous Lady -nothing is but what is not- · Team Grimoire & Laur",
-            "PRAGMATISM -RESURRECTION- · Laur",
-            "Cyaegha · USAO",
-            "Cryptarithm · Sakuzyo",
-            "虚空の夢 · ak+q",
-            "One step at a time · Morfonica",
-            "顏 · Ave Mujica",
-        ]
-
-        self.favorite_illustrators: List[str] = [
-            "@momoco_haru",
-            "@horuhara",
-            "@kurumi_lm"
-        ]
-
-    def about(self) -> str:
-        return (
-            "A personal dev space focused on embedded systems, "
-            "computer vision, and experimental projects"
-        )
-
-huihui = HuiHui()
-</code></pre>
+        <pre class="code-auto"><code id="profileCode" class="language-python"></code></pre>
         <section><h2 data-i18n="about.interests"></h2><div class="interest-cards">
             <article class="interest-card"><h4>maimai DX</h4><div class="interest-gallery"><img src="../images/1001_a.webp" data-i18n-alt="about.images.maimai" /></div></article>
             <article class="interest-card"><h4>Arcaea</h4><div class="interest-gallery"><img src="../images/1012_a.webp" data-i18n-alt="about.images.arcaea" /></div></article>
@@ -128,6 +66,7 @@ huihui = HuiHui()
   <script src="../js/locales/en.js"></script>
   <script src="../js/locales/ja.js"></script>
   <script src="../js/i18n.js"></script>
+  <script src="../js/profile-code.js"></script>
   <script>
   const STEAM_FAVORITE_APPIDS = [3418570, 2458530, 1044620, 3682050];
   const STEAM_CUSTOM_IMAGES = { 3418570: "../images/games/summer-pockets-rb.webp", 3682050: "../images/games/Sickly-Days-and-Summer-Traces.webp" };
