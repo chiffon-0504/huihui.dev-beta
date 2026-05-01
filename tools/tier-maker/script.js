@@ -1,141 +1,203 @@
-let dragged=null;
-let touchGhost=null;
+let dragged = null;
+let touchGhost = null;
 
-const upload=document.getElementById("imageUpload");
-const pool=document.getElementById("poolContent");
-const board=document.getElementById("tierBoard");
+const upload = document.getElementById("imageUpload");
+const pool = document.getElementById("poolContent");
+const board = document.getElementById("tierBoard");
 
-function setupTierItem(img){
-  img.className="tier-item";
-  img.draggable=true;
-  img.addEventListener("dragstart",()=>dragged=img);
+function getTierMakerText(key, fallback = "") {
+  const locale = typeof getCurrentLocale === "function" ? getCurrentLocale() : "zh";
 
-  img.addEventListener("touchstart",e=>{
-    dragged=img;
-    img.classList.add("is-dragging");
-    touchGhost=img.cloneNode(true);
-    touchGhost.className="tier-item touch-ghost";
-    document.body.appendChild(touchGhost);
-    moveGhost(e.touches[0]);
-  },{passive:false});
+  return (
+    window.HUIHUI_I18N?.[locale]?.tierMaker?.[key] ||
+    window.HUIHUI_I18N?.zh?.tierMaker?.[key] ||
+    fallback
+  );
+}
 
-  img.addEventListener("touchmove",e=>{
-    if(!dragged)return;
-    e.preventDefault();
-    moveGhost(e.touches[0]);
-  },{passive:false});
+function setupTierItem(img) {
+  img.className = "tier-item";
+  img.draggable = true;
 
-  img.addEventListener("touchend",e=>{
-    if(!dragged)return;
-    const t=e.changedTouches[0];
-    const target=document.elementFromPoint(t.clientX,t.clientY);
-    const zone=target?.closest(".tier-content,.pool-content");
-    if(zone)zone.appendChild(dragged);
+  if (!img.alt) {
+    img.alt = getTierMakerText("uploadedImageAlt", "Uploaded image");
+  }
+
+  img.addEventListener("dragstart", () => {
+    dragged = img;
+  });
+
+  img.addEventListener(
+    "touchstart",
+    (e) => {
+      dragged = img;
+      img.classList.add("is-dragging");
+
+      touchGhost = img.cloneNode(true);
+      touchGhost.className = "tier-item touch-ghost";
+      document.body.appendChild(touchGhost);
+
+      moveGhost(e.touches[0]);
+    },
+    { passive: false }
+  );
+
+  img.addEventListener(
+    "touchmove",
+    (e) => {
+      if (!dragged) return;
+
+      e.preventDefault();
+      moveGhost(e.touches[0]);
+    },
+    { passive: false }
+  );
+
+  img.addEventListener("touchend", (e) => {
+    if (!dragged) return;
+
+    const touch = e.changedTouches[0];
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    const zone = target?.closest(".tier-content,.pool-content");
+
+    if (zone) {
+      zone.appendChild(dragged);
+    }
+
     cleanupTouchDrag();
   });
 }
 
-function moveGhost(touch){
-  if(!touchGhost)return;
-  touchGhost.style.position='fixed';
-  touchGhost.style.pointerEvents='none';
-  touchGhost.style.transform='translate(-50%,-50%)';
-  touchGhost.style.left=touch.clientX+"px";
-  touchGhost.style.top=touch.clientY+"px";
+function moveGhost(touch) {
+  if (!touchGhost) return;
+
+  touchGhost.style.position = "fixed";
+  touchGhost.style.pointerEvents = "none";
+  touchGhost.style.transform = "translate(-50%,-50%)";
+  touchGhost.style.left = `${touch.clientX}px`;
+  touchGhost.style.top = `${touch.clientY}px`;
 }
 
-function cleanupTouchDrag(){
-  if(dragged)dragged.classList.remove("is-dragging");
-  dragged=null;
-  if(touchGhost){
+function cleanupTouchDrag() {
+  if (dragged) {
+    dragged.classList.remove("is-dragging");
+  }
+
+  dragged = null;
+
+  if (touchGhost) {
     touchGhost.remove();
-    touchGhost=null;
+    touchGhost = null;
   }
 }
 
-function prepareExportLabels(){
-  document.querySelectorAll(".tier-label-wrap").forEach(wrap=>{
-    const input=wrap.querySelector(".tier-label");
-    if(!input||wrap.querySelector(".tier-label-export"))return;
-    const span=document.createElement("span");
-    span.className="tier-label-export";
-    span.textContent=input.value;
+function prepareExportLabels() {
+  document.querySelectorAll(".tier-label-wrap").forEach((wrap) => {
+    const input = wrap.querySelector(".tier-label");
+
+    if (!input || wrap.querySelector(".tier-label-export")) return;
+
+    const span = document.createElement("span");
+    span.className = "tier-label-export";
+    span.textContent = input.value;
     wrap.appendChild(span);
   });
 }
 
-function cleanupExportLabels(){
-  document.querySelectorAll(".tier-label-export").forEach(el=>el.remove());
+function cleanupExportLabels() {
+  document.querySelectorAll(".tier-label-export").forEach((el) => el.remove());
 }
 
-upload.addEventListener("change",e=>{
-  for(let file of e.target.files){
-    const r=new FileReader();
-    r.onload=ev=>{
-      const img=document.createElement("img");
-      img.src=ev.target.result;
+upload.addEventListener("change", (e) => {
+  for (const file of e.target.files) {
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      const img = document.createElement("img");
+
+      img.src = event.target.result;
+      img.alt = file.name || getTierMakerText("uploadedImageAlt", "Uploaded image");
+
       setupTierItem(img);
       pool.appendChild(img);
     };
-    r.readAsDataURL(file);
+
+    reader.readAsDataURL(file);
   }
 });
 
-document.addEventListener("dragover",e=>e.preventDefault());
+document.addEventListener("dragover", (e) => {
+  e.preventDefault();
+});
 
-document.addEventListener("drop",e=>{
-  const zone=e.target.closest(".tier-content,.pool-content");
-  if(zone&&dragged){
+document.addEventListener("drop", (e) => {
+  const zone = e.target.closest(".tier-content,.pool-content");
+
+  if (zone && dragged) {
     zone.appendChild(dragged);
-    dragged=null;
+    dragged = null;
   }
 });
 
-const slider=document.getElementById("sizeSlider");
-slider.addEventListener("input",e=>{
-  document.querySelectorAll(".tier-item").forEach(img=>{
-    img.style.height=e.target.value+"px";
+const slider = document.getElementById("sizeSlider");
+
+slider.addEventListener("input", (e) => {
+  document.querySelectorAll(".tier-item").forEach((img) => {
+    img.style.height = `${e.target.value}px`;
   });
 });
 
-document.addEventListener("input",e=>{
-  if(e.target.classList.contains("tier-color")){
-    const wrap=e.target.closest(".tier-label-wrap");
-    wrap.style.background=e.target.value;
+document.addEventListener("input", (e) => {
+  if (e.target.classList.contains("tier-color")) {
+    const wrap = e.target.closest(".tier-label-wrap");
+
+    if (wrap) {
+      wrap.style.background = e.target.value;
+    }
   }
 });
 
-const addBtn=document.getElementById("addTierBtn");
-addBtn.addEventListener("click",()=>{
-  const row=document.createElement("div");
-  row.className="tier-row";
-  row.innerHTML=`
+const addBtn = document.getElementById("addTierBtn");
+
+addBtn.addEventListener("click", () => {
+  const tierName = getTierMakerText("newTier", "NEW");
+  const tierNameLabel = getTierMakerText("tierName", "Tier name");
+  const tierColorLabel = getTierMakerText("tierColor", "Tier color");
+  const deleteTierLabel = getTierMakerText("deleteTier", "Delete tier");
+
+  const row = document.createElement("div");
+  row.className = "tier-row";
+
+  row.innerHTML = `
     <div class="tier-label-wrap" style="background:#ccc">
-      <input class="tier-label" value="NEW">
-      <input class="tier-color" type="color" value="#ccc">
+      <input class="tier-label" value="${tierName}" aria-label="${tierNameLabel}" data-i18n-aria-label="tierMaker.tierName">
+      <input class="tier-color" type="color" value="#cccccc" aria-label="${tierColorLabel}" data-i18n-aria-label="tierMaker.tierColor">
     </div>
-    <div class="tier-content"></div>
-    <button class="delete-tier">×</button>
+    <div class="tier-content" aria-label="${tierName} tier"></div>
+    <button type="button" class="delete-tier" aria-label="${deleteTierLabel}" data-i18n-aria-label="tierMaker.deleteTier">×</button>
   `;
+
   board.appendChild(row);
 });
 
-document.addEventListener("click",e=>{
-  if(e.target.classList.contains("delete-tier")){
-    e.target.closest(".tier-row").remove();
+document.addEventListener("click", (e) => {
+  if (e.target.classList.contains("delete-tier")) {
+    e.target.closest(".tier-row")?.remove();
   }
 });
 
-document.getElementById("saveBtn").addEventListener("click",()=>{
+document.getElementById("saveBtn").addEventListener("click", () => {
   prepareExportLabels();
   board.classList.add("exporting");
-  import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm').then(({default:html2canvas})=>{
-    html2canvas(board,{backgroundColor:'#000'}).then(canvas=>{
+
+  import("https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm").then(({ default: html2canvas }) => {
+    html2canvas(board, { backgroundColor: "#000" }).then((canvas) => {
       board.classList.remove("exporting");
       cleanupExportLabels();
-      const link=document.createElement('a');
-      link.download='tier-list.png';
-      link.href=canvas.toDataURL();
+
+      const link = document.createElement("a");
+      link.download = getTierMakerText("downloadFileName", "tier-list.png");
+      link.href = canvas.toDataURL();
       link.click();
     });
   });
