@@ -80,6 +80,13 @@
       background: rgba(70, 110, 160, 0.28);
     }
 
+    .galgame-banner-link {
+      display: block;
+      margin-bottom: 24px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
     .galgame-banner {
       width: 100% !important;
       max-width: 100% !important;
@@ -88,7 +95,12 @@
       object-position: center 38%;
       border-radius: 10px;
       display: block;
-      margin-bottom: 24px;
+      transition: transform 0.18s ease, filter 0.18s ease;
+    }
+
+    .galgame-banner-link:hover .galgame-banner {
+      transform: scale(1.015);
+      filter: brightness(1.06);
     }
 
     .steam-favorites {
@@ -268,11 +280,19 @@ huihui = HuiHui()
               <h4>Galgame</h4>
 
               <div class="galgame-showcase">
-                <img
-                  class="galgame-banner"
-                  src="../images/games/summer-pockets-rb-wide.webp"
-                  alt="Summer Pockets REFLECTION BLUE"
-                />
+                <a
+                  class="galgame-banner-link"
+                  id="galgameBannerLink"
+                  href="https://store.steampowered.com/app/3418570/"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <img
+                    class="galgame-banner"
+                    src="../images/games/summer-pockets-rb-wide.webp"
+                    alt="Summer Pockets REFLECTION BLUE"
+                  />
+                </a>
 
                 <div class="steam-favorites" id="steamFavorites" aria-live="polite">
                   <p class="steam-loading">Loading Steam library...</p>
@@ -322,6 +342,7 @@ huihui = HuiHui()
 
   async function renderSteamFavorites() {
     const container = document.getElementById("steamFavorites");
+    const bannerLink = document.getElementById("galgameBannerLink");
     if (!container) return;
 
     try {
@@ -337,6 +358,11 @@ huihui = HuiHui()
       const selectedGames = STEAM_FAVORITE_APPIDS
         .map((appid) => games.find((game) => game.appid === appid))
         .filter(Boolean);
+
+      const bannerGame = games.find((game) => game.appid === 3418570);
+      if (bannerGame && bannerLink) {
+        bannerLink.href = bannerGame.storeUrl;
+      }
 
       if (selectedGames.length === 0) {
         container.innerHTML =
