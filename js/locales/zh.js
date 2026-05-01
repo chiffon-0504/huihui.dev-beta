@@ -30,5 +30,17 @@ window.HUIHUI_I18N.zh = {
     success: "訊息已送出。",
     error: "送出失敗，請稍後再試。",
     fallbackPrefix: "或直接寄信："
+  },
+  works: {
+    title: "作品",
+    images: {
+      fuji: "富士山",
+      tsutenkaku: "通天閣",
+      yokohama: "橫濱港",
+      train: "電車",
+      deer: "小鹿",
+      penguin: "企鵝",
+      preview: "放大預覽"
+    }
   }
 };
