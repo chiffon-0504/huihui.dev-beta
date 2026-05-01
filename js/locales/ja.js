@@ -65,7 +65,6 @@ window.HUIHUI_I18N.ja = {
     },
     copyright: "Images © respective owners (SEGA, lowiro, VISUAL ARTS/Key, YUZUSOFT, sprite, NekoNyan Ltd., Sister Position, etc.)"
   },
-  },
   tierMaker: {
     title: "Tier Maker",
     save: "PNGをダウンロード",

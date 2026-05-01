@@ -65,7 +65,6 @@ window.HUIHUI_I18N.zh = {
     },
     copyright: "Images © respective owners (SEGA, lowiro, VISUAL ARTS/Key, YUZUSOFT, sprite, NekoNyan Ltd., Sister Position, etc.)"
   },
-  },
   tierMaker: {
     title: "分級表製作器",
     save: "下載 PNG",
