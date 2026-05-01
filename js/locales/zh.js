@@ -16,5 +16,19 @@ window.HUIHUI_I18N.zh = {
       title: "科技動態",
       desc: "每日整理 AI、iOS 與 Android 的最新消息。"
     }
+  },
+  contact: {
+    title: "聯絡我",
+    intro: "有問題、合作或回饋，可以用下面的表單聯絡我。",
+    name: "名稱",
+    namePlaceholder: "你的名稱",
+    email: "Email",
+    message: "訊息",
+    messagePlaceholder: "想說的內容",
+    submit: "送出訊息",
+    submitting: "送出中...",
+    success: "訊息已送出。",
+    error: "送出失敗，請稍後再試。",
+    fallbackPrefix: "或直接寄信："
   }
 };

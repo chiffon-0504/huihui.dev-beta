@@ -16,5 +16,19 @@ window.HUIHUI_I18N.en = {
       title: "Tech Updates",
       desc: "Daily signals from AI, iOS and Android."
     }
+  },
+  contact: {
+    title: "Contact",
+    intro: "For questions, collaborations, or feedback, you can reach me through the form below.",
+    name: "Name",
+    namePlaceholder: "Your name",
+    email: "Email",
+    message: "Message",
+    messagePlaceholder: "Your message",
+    submit: "Send Message",
+    submitting: "Sending...",
+    success: "Message sent.",
+    error: "Failed to send. Please try again later.",
+    fallbackPrefix: "Or email directly:"
   }
 };
