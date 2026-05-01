@@ -23,12 +23,21 @@ function applyI18nText(messages) {
   });
 }
 
+function getDatasetKeyForI18nAttribute(attributeName) {
+  return `i18n${attributeName
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join("")}`;
+}
+
 function applyI18nAttributes(messages) {
   const supportedAttributes = ["alt", "title", "aria-label"];
 
   supportedAttributes.forEach((attributeName) => {
+    const datasetKey = getDatasetKeyForI18nAttribute(attributeName);
+
     document.querySelectorAll(`[data-i18n-${attributeName}]`).forEach((element) => {
-      const key = element.dataset[`i18n${attributeName.replace(/-./g, (match) => match[1].toUpperCase())}`];
+      const key = element.dataset[datasetKey];
       const value = getLocaleValue(messages, key);
 
       if (typeof value === "string") {

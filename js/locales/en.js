@@ -64,5 +64,19 @@ window.HUIHUI_I18N.en = {
       hours: "hrs"
     },
     copyright: "Images © respective owners (SEGA, lowiro, VISUAL ARTS/Key, YUZUSOFT, sprite, NekoNyan Ltd., Sister Position, etc.)"
+  },
+  tierMaker: {
+    title: "Tier Maker",
+    save: "Download PNG",
+    intro: "No built-in asset library. Images are uploaded by the user and sorted only in the browser.",
+    addTier: "Add Tier",
+    upload: "Upload Images",
+    imageSize: "Image Size",
+    pool: "Unsorted",
+    note: "Reminder: Before sharing publicly, make sure you have the rights to use the uploaded images or that your use fits fair-use conditions.",
+    toolbarLabel: "Tier Maker controls",
+    tierName: "Tier name",
+    tierColor: "Tier color",
+    deleteTier: "Delete tier"
   }
 };
