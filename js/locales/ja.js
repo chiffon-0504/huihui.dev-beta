@@ -8,7 +8,9 @@ window.HUIHUI_I18N.ja = {
       contact: "連絡先"
     },
     projectUpdate: {
-      label: "Project Updates"
+      label: "Project Updates",
+      title: "Steam API ゲーム表示を追加",
+      desc: "AboutページにSteam APIを接続し、選択したGalgameカードを表示します。"
     },
     tech: {
       title: "テックニュース",
