@@ -15,15 +15,15 @@
     <section class="home-hero fade-in">
       <div class="home-text">
         <h1>huihui.dev</h1>
-        <h4>開發者 / 攝影</h4>
+        <h4 data-i18n="home.hero.subtitle"></h4>
         <div class="hero-actions">
-          <a href="/about/" class="hero-btn">關於</a>
-          <a href="/contact/" class="hero-btn">聯絡</a>
+          <a href="/about/" class="hero-btn" data-i18n="home.hero.about"></a>
+          <a href="/contact/" class="hero-btn" data-i18n="home.hero.contact"></a>
         </div>
       </div>
 
       <article class="project-update-card" aria-labelledby="projectUpdateTitle">
-        <p class="project-update-label">Project Updates</p>
+        <p class="project-update-label" data-i18n="home.projectUpdate.label"></p>
         <h2 id="projectUpdateTitle">新增 Steam API 遊戲展示</h2>
         <p class="project-update-desc">關於我頁面已接入 Steam API，顯示自訂 Galgame 遊戲卡片。</p>
         <a
@@ -67,8 +67,8 @@
 
     <section class="tech-news-section fade-in fade-in-delay-1" aria-labelledby="techNewsTitle">
       <div class="tech-news-header">
-        <h2 id="techNewsTitle">科技動態</h2>
-        <p>每日整理 AI、iOS 與 Android 的最新消息。</p>
+        <h2 id="techNewsTitle" data-i18n="home.tech.title"></h2>
+        <p data-i18n="home.tech.desc"></p>
       </div>
 
       <div id="techNewsCards" class="tech-news-grid">
@@ -85,6 +85,10 @@
   <script src="js/layout.js"></script>
   <script src="js/main.js"></script>
   <script src="js/lightbox.js"></script>
+  <script src="js/locales/zh.js"></script>
+  <script src="js/locales/en.js"></script>
+  <script src="js/locales/ja.js"></script>
+  <script src="js/i18n.js"></script>
 
 </body>
 </html>
