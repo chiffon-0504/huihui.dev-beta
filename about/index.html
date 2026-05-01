@@ -41,7 +41,7 @@
 <body>
   <aside id="site-sidebar" class="sidebar"></aside>
   <main class="main">
-    <section class="about-page"><div class="about-content"><h1>關於我</h1>
+    <section class="about-page"><div class="about-content"><h1 data-i18n="about.title"></h1>
         <pre class="code-auto"><code class="language-python"># profile.py
 
 from __future__ import annotations
@@ -105,25 +105,29 @@ class HuiHui:
 
 huihui = HuiHui()
 </code></pre>
-        <section><h2>興趣</h2><div class="interest-cards">
-            <article class="interest-card"><h4>maimai DX</h4><div class="interest-gallery"><img src="../images/1001_a.webp" alt="maimai DX" /></div></article>
-            <article class="interest-card"><h4>Arcaea</h4><div class="interest-gallery"><img src="../images/1012_a.webp" alt="Arcaea" /></div></article>
+        <section><h2 data-i18n="about.interests"></h2><div class="interest-cards">
+            <article class="interest-card"><h4>maimai DX</h4><div class="interest-gallery"><img src="../images/1001_a.webp" data-i18n-alt="about.images.maimai" /></div></article>
+            <article class="interest-card"><h4>Arcaea</h4><div class="interest-gallery"><img src="../images/1012_a.webp" data-i18n-alt="about.images.arcaea" /></div></article>
             <article class="interest-card steam-favorites-card"><h4>Galgame</h4>
               <div class="galgame-showcase">
                 <a class="galgame-banner-link" id="galgameBannerLink" href="https://store.steampowered.com/app/3418570/" target="_blank" rel="noopener">
-                  <img class="galgame-banner" src="../images/games/summer-pockets-rb-wide.webp" alt="Summer Pockets REFLECTION BLUE" />
+                  <img class="galgame-banner" src="../images/games/summer-pockets-rb-wide.webp" data-i18n-alt="about.images.galgame" />
                   <span class="galgame-banner-meta"><span class="steam-game-name" id="galgameBannerName">Summer Pockets REFLECTION BLUE</span><span class="steam-game-hours" id="galgameBannerHours">Loading...</span></span>
                 </a>
-                <div class="steam-favorites" id="steamFavorites" aria-live="polite"><p class="steam-loading">Loading Steam library...</p></div>
+                <div class="steam-favorites" id="steamFavorites" aria-live="polite"><p class="steam-loading" data-i18n="about.steam.loading"></p></div>
               </div>
             </article>
           </div></section>
-        <p class="interest-note">Images © respective owners (SEGA, lowiro, VISUAL ARTS/Key, YUZUSOFT, sprite, NekoNyan Ltd., Sister Position, etc.)</p>
+        <p class="interest-note" data-i18n="about.copyright"></p>
       </div></section>
   </main>
-  <div class="lightbox" id="lightbox"><span class="lightbox-close" id="lightboxClose">&times;</span><img class="lightbox-img no-lightbox" id="lightboxImg" src="" alt="" /></div>
+  <div class="lightbox" id="lightbox"><span class="lightbox-close" id="lightboxClose">&times;</span><img class="lightbox-img no-lightbox" id="lightboxImg" src="" data-i18n-alt="about.images.preview" /></div>
   <script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script><script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-python.min.js"></script><script src="https://cdn.jsdelivr.net/npm/prismjs/plugins/line-numbers/prism-line-numbers.min.js"></script>
   <script src="../js/layout.js"></script><script src="../js/main.js"></script><script src="../js/lightbox.js"></script>
+  <script src="../js/locales/zh.js"></script>
+  <script src="../js/locales/en.js"></script>
+  <script src="../js/locales/ja.js"></script>
+  <script src="../js/i18n.js"></script>
   <script>
   const STEAM_FAVORITE_APPIDS = [3418570, 2458530, 1044620, 3682050];
   const STEAM_CUSTOM_IMAGES = { 3418570: "../images/games/summer-pockets-rb.webp", 3682050: "../images/games/Sickly-Days-and-Summer-Traces.webp" };

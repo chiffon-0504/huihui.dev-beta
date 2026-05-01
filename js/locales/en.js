@@ -48,5 +48,21 @@ window.HUIHUI_I18N.en = {
     intro: "Recent updates, photos, and game records.",
     scoreAlt: "Arcaea score screenshot",
     preview: "Preview"
+  },
+  about: {
+    title: "About Me",
+    interests: "Interests",
+    images: {
+      maimai: "maimai DX",
+      arcaea: "Arcaea",
+      galgame: "Summer Pockets REFLECTION BLUE",
+      preview: "Preview"
+    },
+    steam: {
+      loading: "Loading Steam library...",
+      error: "Steam games are temporarily unavailable.",
+      hours: "hrs"
+    },
+    copyright: "Images © respective owners (SEGA, lowiro, VISUAL ARTS/Key, YUZUSOFT, sprite, NekoNyan Ltd., Sister Position, etc.)"
   }
 };

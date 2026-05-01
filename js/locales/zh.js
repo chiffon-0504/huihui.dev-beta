@@ -48,5 +48,21 @@ window.HUIHUI_I18N.zh = {
     intro: "一些近況、照片、遊戲紀錄。",
     scoreAlt: "Arcaea 成績截圖",
     preview: "放大預覽"
+  },
+  about: {
+    title: "關於我",
+    interests: "興趣",
+    images: {
+      maimai: "maimai DX",
+      arcaea: "Arcaea",
+      galgame: "Summer Pockets REFLECTION BLUE",
+      preview: "放大預覽"
+    },
+    steam: {
+      loading: "正在載入 Steam 遊戲庫...",
+      error: "Steam 遊戲暫時無法載入。",
+      hours: "小時"
+    },
+    copyright: "Images © respective owners (SEGA, lowiro, VISUAL ARTS/Key, YUZUSOFT, sprite, NekoNyan Ltd., Sister Position, etc.)"
   }
 };
