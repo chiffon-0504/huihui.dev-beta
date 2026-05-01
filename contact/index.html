@@ -14,25 +14,25 @@
     <section class="contact-page">
       <div class="contact-content">
         <p class="contact-eyebrow">Contact</p>
-        <h1>聯絡我</h1>
-        <p class="contact-intro">有問題、合作或回饋，可以用下面的表單聯絡我。</p>
+        <h1 data-i18n="contact.title"></h1>
+        <p class="contact-intro" data-i18n="contact.intro"></p>
 
         <form id="contact-form" class="contact-form" action="https://api.huihui.dev/api/contact" method="POST">
           <div class="contact-field-grid">
             <label>
-              名稱
-              <input type="text" name="name" placeholder="你的名稱" autocomplete="name" required>
+              <span data-i18n="contact.name"></span>
+              <input type="text" name="name" data-i18n-placeholder="contact.namePlaceholder" autocomplete="name" required>
             </label>
 
             <label>
-              Email
+              <span data-i18n="contact.email"></span>
               <input type="email" name="email" placeholder="your@email.com" autocomplete="email" required>
             </label>
           </div>
 
           <label>
-            訊息
-            <textarea name="message" rows="7" placeholder="想說的內容" required></textarea>
+            <span data-i18n="contact.message"></span>
+            <textarea name="message" rows="7" data-i18n-placeholder="contact.messagePlaceholder" required></textarea>
           </label>
 
           <div
@@ -40,28 +40,37 @@
             data-sitekey="0x4AAAAAADGNDJDS7_lhuZCV"
           ></div>
 
-          <button type="submit">送出訊息</button>
+          <button type="submit" data-i18n="contact.submit"></button>
           <p id="contact-status" class="contact-status" aria-live="polite"></p>
         </form>
 
         <p class="contact-fallback">
-          或直接寄信：<a href="mailto:contact@huihui.dev">contact@huihui.dev</a>
+          <span data-i18n="contact.fallbackPrefix"></span><a href="mailto:contact@huihui.dev">contact@huihui.dev</a>
         </p>
       </div>
     </section>
   </main>
 
-    <script src="../js/layout.js"></script>
-    <script>
+  <script src="../js/layout.js"></script>
+  <script src="../js/locales/zh.js"></script>
+  <script src="../js/locales/en.js"></script>
+  <script src="../js/locales/ja.js"></script>
+  <script src="../js/i18n.js"></script>
+  <script>
     const contactForm = document.getElementById("contact-form");
     const contactStatus = document.getElementById("contact-status");
+
+    function getContactText(key) {
+      const locale = getCurrentLocale();
+      return window.HUIHUI_I18N?.[locale]?.contact?.[key] || window.HUIHUI_I18N?.zh?.contact?.[key] || "";
+    }
 
     contactForm?.addEventListener("submit", async (event) => {
       event.preventDefault();
 
       const submitButton = contactForm.querySelector("button[type='submit']");
       submitButton.disabled = true;
-      submitButton.textContent = "送出中...";
+      submitButton.textContent = getContactText("submitting");
       contactStatus.textContent = "";
 
       try {
@@ -73,7 +82,7 @@
         const data = await response.json();
 
         if (!response.ok || !data.ok) {
-          throw new Error(data.message || "送出失敗");
+          throw new Error(data.message || getContactText("error"));
         }
 
         contactForm.reset();
@@ -82,12 +91,12 @@
           window.turnstile.reset();
         }
 
-        contactStatus.textContent = "訊息已送出。";
+        contactStatus.textContent = getContactText("success");
       } catch (error) {
-        contactStatus.textContent = "送出失敗，請稍後再試。";
+        contactStatus.textContent = getContactText("error");
       } finally {
         submitButton.disabled = false;
-        submitButton.textContent = "送出訊息";
+        submitButton.textContent = getContactText("submit");
       }
     });
   </script>
