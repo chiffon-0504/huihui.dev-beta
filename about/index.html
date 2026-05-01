@@ -72,15 +72,29 @@
       font-size: 0.8rem;
     }
 
-    .steam-favorites {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(120px, 1fr));
-      gap: 24px;
+    .galgame-showcase {
       width: 100%;
       max-width: 1000px;
       padding: 18px;
       border-radius: 18px;
       background: rgba(70, 110, 160, 0.28);
+    }
+
+    .galgame-banner {
+      width: 100% !important;
+      max-width: 100% !important;
+      height: 260px !important;
+      object-fit: cover;
+      border-radius: 10px;
+      display: block;
+      margin-bottom: 24px;
+    }
+
+    .steam-favorites {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 24px;
+      width: 100%;
     }
 
     .steam-game-card {
@@ -135,7 +149,10 @@
       .steam-favorites {
         grid-template-columns: repeat(2, minmax(120px, 1fr));
         gap: 16px;
-        padding: 14px;
+      }
+
+      .galgame-banner {
+        height: 180px !important;
       }
     }
 
@@ -249,8 +266,16 @@ huihui = HuiHui()
             <article class="interest-card steam-favorites-card">
               <h4>Galgame</h4>
 
-              <div class="steam-favorites" id="steamFavorites" aria-live="polite">
-                <p class="steam-loading">Loading Steam library...</p>
+              <div class="galgame-showcase">
+                <img
+                  class="galgame-banner"
+                  src="../images/games/summer-pockets-rb-wide.webp"
+                  alt="Summer Pockets REFLECTION BLUE"
+                />
+
+                <div class="steam-favorites" id="steamFavorites" aria-live="polite">
+                  <p class="steam-loading">Loading Steam library...</p>
+                </div>
               </div>
             </article>
           </div>
