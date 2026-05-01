@@ -64,5 +64,20 @@ window.HUIHUI_I18N.ja = {
       hours: "時間"
     },
     copyright: "Images © respective owners (SEGA, lowiro, VISUAL ARTS/Key, YUZUSOFT, sprite, NekoNyan Ltd., Sister Position, etc.)"
+  },
+  },
+  tierMaker: {
+    title: "Tier Maker",
+    save: "PNGをダウンロード",
+    intro: "素材ライブラリは内蔵していません。画像はユーザーがアップロードし、ブラウザ内だけで並べ替えます。",
+    addTier: "ランクを追加",
+    upload: "画像をアップロード",
+    imageSize: "画像サイズ",
+    pool: "未分類",
+    note: "公開共有する前に、アップロードした画像の使用権または適切な利用条件を確認してください。",
+    toolbarLabel: "Tier Maker コントロール",
+    tierName: "ランク名",
+    tierColor: "ランク色",
+    deleteTier: "ランクを削除"
   }
 };

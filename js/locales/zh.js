@@ -64,5 +64,20 @@ window.HUIHUI_I18N.zh = {
       hours: "小時"
     },
     copyright: "Images © respective owners (SEGA, lowiro, VISUAL ARTS/Key, YUZUSOFT, sprite, NekoNyan Ltd., Sister Position, etc.)"
+  },
+  },
+  tierMaker: {
+    title: "分級表製作器",
+    save: "下載 PNG",
+    intro: "不內建素材庫。圖片由使用者自行上傳，並只在瀏覽器內排序。",
+    addTier: "新增等級",
+    upload: "上傳照片",
+    imageSize: "圖片大小",
+    pool: "待排序",
+    note: "提醒：公開分享前，請確認上傳圖片具有使用權或符合合理使用情境。",
+    toolbarLabel: "分級表製作器控制項",
+    tierName: "等級名稱",
+    tierColor: "等級顏色",
+    deleteTier: "刪除等級"
   }
 };
