@@ -1,6 +1,5 @@
 const ABOUT_PAGE_CONFIG = {
   zh: {
-    basePath: "..",
     maimaiTitle: "maimai DX",
     galgameTitle: "Galgame",
     steamNames: {
@@ -11,7 +10,6 @@ const ABOUT_PAGE_CONFIG = {
     },
   },
   en: {
-    basePath: "",
     maimaiTitle: "maimai DX",
     galgameTitle: "Galgame",
     steamNames: {
@@ -22,7 +20,6 @@ const ABOUT_PAGE_CONFIG = {
     },
   },
   ja: {
-    basePath: "",
     maimaiTitle: "maimai でらっくす",
     galgameTitle: "美少女ゲーム",
     steamNames: {
@@ -46,10 +43,7 @@ function getAboutPageConfig() {
 }
 
 function getAboutAssetPath(path) {
-  const { basePath } = getAboutPageConfig();
-
-  if (!basePath) return path;
-  return `${basePath}${path}`;
+  return path;
 }
 
 function getAboutText(key) {
@@ -196,8 +190,14 @@ async function renderSteamFavorites() {
 
 document.addEventListener("DOMContentLoaded", () => {
   renderAboutPage();
-  applyI18n();
-  renderProfileCode();
+
+  if (typeof applyI18n === "function") {
+    applyI18n();
+  }
+
+  if (typeof renderProfileCode === "function") {
+    renderProfileCode();
+  }
 
   if (window.Prism) {
     Prism.highlightAll();
