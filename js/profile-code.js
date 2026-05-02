@@ -199,10 +199,4 @@ function renderProfileCode() {
     window.HUIHUI_PROFILE_CODE?.[locale] ||
     window.HUIHUI_PROFILE_CODE?.zh ||
     "";
-
-  if (window.Prism) {
-    Prism.highlightElement(profileCode);
-  }
 }
-
-renderProfileCode();
