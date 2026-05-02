@@ -13,8 +13,8 @@ const ABOUT_PAGE_CONFIG = {
     maimaiTitle: "maimai DX",
     galgameTitle: "Galgame",
     steamNames: {
-      3418570: "Summer Pockets REFLECTION BLUE",
       2458530: "Sabbat of the Witch",
+      1829980: "Café Stella and the Reaper's Butterflies",
       1044620: "Aokana - Four Rhythms Across the Blue",
       3682050: "Sickly Days and Summer Traces",
     },
@@ -23,15 +23,15 @@ const ABOUT_PAGE_CONFIG = {
     maimaiTitle: "maimai でらっくす",
     galgameTitle: "美少女ゲーム",
     steamNames: {
-      3418570: "Summer Pockets REFLECTION BLUE",
       2458530: "サノバウィッチ",
+      1829980: "喫茶ステラと死神の蝶",
       1044620: "蒼の彼方のフォーリズム",
       3682050: "ド田舎兄妹",
     },
   },
 };
 
-const STEAM_FAVORITE_APPIDS = [3418570, 2458530, 1044620, 3682050];
+const STEAM_FAVORITE_APPIDS = [2458530, 1829980, 1044620, 3682050];
 const STEAM_CUSTOM_IMAGES = {
   3418570: "/images/games/summer-pockets-rb.webp",
   3682050: "/images/games/Sickly-Days-and-Summer-Traces.webp",
