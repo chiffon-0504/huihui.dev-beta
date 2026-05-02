@@ -42,10 +42,6 @@ function getAboutPageConfig() {
   return ABOUT_PAGE_CONFIG[locale] || ABOUT_PAGE_CONFIG.zh;
 }
 
-function getAboutAssetPath(path) {
-  return path;
-}
-
 function getAboutText(key) {
   const locale = getCurrentLocale();
 
@@ -63,14 +59,14 @@ function renderAboutInterestCards() {
     <article class="interest-card">
       <h4>${config.maimaiTitle}</h4>
       <div class="interest-gallery">
-        <img src="${getAboutAssetPath("/images/1001_a.webp")}" data-i18n-alt="about.images.maimai" />
+        <img src="/images/1001_a.webp" data-i18n-alt="about.images.maimai" />
       </div>
     </article>
 
     <article class="interest-card">
       <h4>Arcaea</h4>
       <div class="interest-gallery">
-        <img src="${getAboutAssetPath("/images/1012_a.webp")}" data-i18n-alt="about.images.arcaea" />
+        <img src="/images/1012_a.webp" data-i18n-alt="about.images.arcaea" />
       </div>
     </article>
 
@@ -86,7 +82,7 @@ function renderAboutInterestCards() {
         >
           <img
             class="galgame-banner"
-            src="${getAboutAssetPath("/images/games/summer-pockets-rb-wide.webp")}"
+            src="/images/games/summer-pockets-rb-wide.webp"
             data-i18n-alt="about.images.galgame"
           />
           <span class="galgame-banner-meta">
@@ -199,8 +195,8 @@ document.addEventListener("DOMContentLoaded", () => {
     renderProfileCode();
   }
 
-  if (window.Prism) {
-    Prism.highlightAll();
+  if (typeof initCodeBlocks === "function") {
+    initCodeBlocks();
   }
 
   renderSteamFavorites();
