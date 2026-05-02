@@ -3,8 +3,8 @@ const ABOUT_PAGE_CONFIG = {
     maimaiTitle: "maimai DX",
     galgameTitle: "Galgame",
     steamNames: {
-      3418570: "Summer Pockets REFLECTION BLUE",
       2458530: "魔女的夜宴",
+      1829980: "星光咖啡館與死神之蝶",
       1044620: "蒼之彼方的四重奏",
       3682050: "痴情哥哥與病弱妹妹的鄉間生活",
     },
