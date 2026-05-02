@@ -126,7 +126,7 @@ function typeCodeBlock(block) {
   typing();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+function initCodeBlocks() {
   const blocks = document.querySelectorAll("pre.code-auto");
 
   blocks.forEach((pre) => {
@@ -197,7 +197,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     typeCodeBlock(code);
   });
-});
+}
+
+document.addEventListener("DOMContentLoaded", initCodeBlocks);
 
 const HUIHUI_API_BASE = "https://huihui-api.huihuigames01.workers.dev";
 

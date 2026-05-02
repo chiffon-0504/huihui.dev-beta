@@ -4,94 +4,37 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>About | huihui.dev</title>
+
   <link rel="stylesheet" href="/style.css" />
   <link href="https://cdn.jsdelivr.net/npm/prismjs/themes/prism-tomorrow.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/prismjs/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
-  <style>
-    .about-page { max-width: 1280px; min-height: calc(100vh - 56px); display: flex; align-items: flex-start; padding: 56px 0; }
-    .about-content { width: 100%; }
-    .interest-cards { display: grid; gap: 56px; margin-top: 28px; }
-    .interest-card { display: block; padding: 8px 0; }
-    .interest-card h4 { margin: 0 0 18px; font-size: clamp(2rem, 3vw, 3rem); font-weight: 700; line-height: 1.08; }
-    .interest-gallery { width: 100%; }
-    .interest-gallery img { width: 1000px !important; max-width: none !important; height: auto !important; border-radius: 18px; display: block; }
-    .interest-note { margin-top: 28px; color: rgba(255, 255, 255, 0.55); font-size: 0.8rem; }
-    .galgame-showcase { width: 100%; max-width: 1000px; padding: 18px; border-radius: 18px; background: rgba(70, 110, 160, 0.28); }
-    .galgame-banner-link { display: block; margin-bottom: 24px; border-radius: 10px; overflow: hidden; text-decoration: none; color: inherit; }
-    .galgame-banner { width: 100% !important; max-width: 100% !important; height: 420px !important; object-fit: cover; object-position: center 38%; border-radius: 10px; display: block; transition: transform 0.18s ease, filter 0.18s ease; }
-    .galgame-banner-link:hover .galgame-banner { transform: scale(1.015); filter: brightness(1.06); }
-    .galgame-banner-meta { display: block; margin-top: 10px; font-size: 0.78rem; color: rgba(255, 255, 255, 0.68); }
-    .steam-favorites { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 24px; width: 100%; }
-    .steam-game-card { display: block; text-decoration: none; color: inherit; }
-    .steam-game-card img { width: 100% !important; max-width: 100% !important; aspect-ratio: 600 / 900; object-fit: cover; border-radius: 4px; display: block; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28); transition: transform 0.18s ease, box-shadow 0.18s ease; }
-    .steam-game-card:hover img { transform: translateY(-4px); box-shadow: 0 16px 34px rgba(0, 0, 0, 0.38); }
-    .steam-game-meta { margin-top: 8px; font-size: 0.78rem; color: rgba(255, 255, 255, 0.68); }
-    .steam-game-name { display: block; font-weight: 600; color: rgba(255, 255, 255, 0.88); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .steam-game-hours { display: block; margin-top: 2px; }
-    .steam-loading, .steam-error { margin: 0; color: rgba(255, 255, 255, 0.65); }
-    @media (max-width: 900px) { .steam-favorites { grid-template-columns: repeat(2, minmax(120px, 1fr)); gap: 16px; } .galgame-banner { height: 280px !important; } }
-    @media (max-width: 900px) { .main { margin-left: 0; } .interest-cards { gap: 34px; } .interest-gallery img { width: 100% !important; max-width: 100% !important; } }
-  </style>
 </head>
 <body>
   <aside id="site-sidebar" class="sidebar"></aside>
-  <main class="main"><section class="about-page"><div class="about-content"><h1 data-i18n="about.title"></h1>
-    <pre class="code-auto"><code id="profileCode" class="language-python"></code></pre>
-    <section><h2 data-i18n="about.interests"></h2><div class="interest-cards">
-      <article class="interest-card"><h4>maimai DX</h4><div class="interest-gallery"><img src="/images/1001_a.webp" data-i18n-alt="about.images.maimai" /></div></article>
-      <article class="interest-card"><h4>Arcaea</h4><div class="interest-gallery"><img src="/images/1012_a.webp" data-i18n-alt="about.images.arcaea" /></div></article>
-      <article class="interest-card steam-favorites-card"><h4>Galgame</h4><div class="galgame-showcase">
-        <a class="galgame-banner-link" id="galgameBannerLink" href="https://store.steampowered.com/app/3418570/" target="_blank" rel="noopener">
-          <img class="galgame-banner" src="/images/games/summer-pockets-rb-wide.webp" data-i18n-alt="about.images.galgame" />
-          <span class="galgame-banner-meta"><span class="steam-game-name" id="galgameBannerName">Summer Pockets REFLECTION BLUE</span><span class="steam-game-hours" id="galgameBannerHours">Loading...</span></span>
-        </a>
-        <div class="steam-favorites" id="steamFavorites" aria-live="polite"><p class="steam-loading" data-i18n="about.steam.loading"></p></div>
-      </div></article>
-    </div></section>
-    <p class="interest-note" data-i18n="about.copyright"></p>
-  </div></section></main>
-  <div class="lightbox" id="lightbox"><span class="lightbox-close" id="lightboxClose">&times;</span><img class="lightbox-img no-lightbox" id="lightboxImg" src="" data-i18n-alt="about.images.preview" /></div>
-  <script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script><script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-python.min.js"></script><script src="https://cdn.jsdelivr.net/npm/prismjs/plugins/line-numbers/prism-line-numbers.min.js"></script>
-  <script src="/js/layout.js"></script><script src="/js/main.js"></script><script src="/js/lightbox.js"></script>
+
+  <main class="main">
+    <section id="aboutPage"></section>
+  </main>
+
+  <div class="lightbox" id="lightbox">
+    <span class="lightbox-close" id="lightboxClose">&times;</span>
+    <img class="lightbox-img no-lightbox" id="lightboxImg" src="" data-i18n-alt="about.images.preview" />
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-python.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/plugins/line-numbers/prism-line-numbers.min.js"></script>
+
+  <script src="/js/layout.js"></script>
+  <script src="/js/main.js"></script>
+  <script src="/js/lightbox.js"></script>
+
   <script src="/js/locales/zh.js"></script>
   <script src="/js/locales/en.js"></script>
   <script src="/js/locales/ja.js"></script>
   <script src="/js/i18n.js"></script>
-  <script src="/js/profile-code.js"></script>
-  <script>
-  const STEAM_FAVORITE_APPIDS = [3418570, 2458530, 1044620, 3682050];
-  const STEAM_CUSTOM_IMAGES = { 3418570: "/images/games/summer-pockets-rb.webp", 3682050: "/images/games/Sickly-Days-and-Summer-Traces.webp" };
-  const STEAM_CUSTOM_NAMES = { 3418570: "Summer Pockets REFLECTION BLUE", 2458530: "Sabbat of the Witch", 1044620: "Aokana - Four Rhythms Across the Blue", 3682050: "Sickly Days and Summer Traces" };
 
-  function getAboutText(key) {
-    const locale = getCurrentLocale();
-    return window.HUIHUI_I18N?.[locale]?.about?.steam?.[key]
-      || window.HUIHUI_I18N?.zh?.about?.steam?.[key]
-      || "";
-  }
-  async function renderSteamFavorites() {
-    const container = document.getElementById("steamFavorites");
-    const bannerLink = document.getElementById("galgameBannerLink");
-    const bannerName = document.getElementById("galgameBannerName");
-    const bannerHours = document.getElementById("galgameBannerHours");
-    if (!container) return;
-    try {
-      const res = await fetch("https://api.huihui.dev/api/steam-library");
-      if (!res.ok) throw new Error("Steam API failed");
-      const data = await res.json();
-      const games = Array.isArray(data.games) ? data.games : [];
-      const selectedGames = STEAM_FAVORITE_APPIDS.map((appid) => games.find((game) => game.appid === appid)).filter(Boolean);
-      const bannerGame = games.find((game) => game.appid === 3418570);
-      if (bannerGame) {
-        if (bannerLink) bannerLink.href = bannerGame.storeUrl;
-        if (bannerName) bannerName.textContent = STEAM_CUSTOM_NAMES[bannerGame.appid] || bannerGame.name;
-        if (bannerHours) bannerHours.textContent = `${bannerGame.playtimeHours} ${getAboutText("hours")}`;
-      }
-      if (selectedGames.length === 0) { container.innerHTML = `<p class="steam-error">${getAboutText("error")}</p>`; return; }
-      container.innerHTML = selectedGames.map((game) => `<a class="steam-game-card" href="${game.storeUrl}" target="_blank" rel="noopener"><img src="${STEAM_CUSTOM_IMAGES[game.appid] || game.coverUrl}" alt="${STEAM_CUSTOM_NAMES[game.appid] || game.name}" loading="lazy" onerror="this.onerror=null; this.src='${game.capsuleUrl}';"><span class="steam-game-meta"><span class="steam-game-name">${STEAM_CUSTOM_NAMES[game.appid] || game.name}</span><span class="steam-game-hours">${game.playtimeHours} ${getAboutText("hours")}</span></span></a>`).join("");
-    } catch (error) { container.innerHTML = `<p class="steam-error">${getAboutText("error")}</p>`; }
-  }
-  renderSteamFavorites();
-  </script>
+  <script src="/js/profile-code.js"></script>
+  <script src="/js/about-page.js"></script>
 </body>
 </html>
