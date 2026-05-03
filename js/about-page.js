@@ -66,7 +66,7 @@ function renderAboutInterestCards() {
     <article class="interest-card">
       <h4>Arcaea</h4>
       <div class="interest-gallery">
-        <img src="/images/1022_a.webp" data-i18n-alt="about.images.arcaea" />
+        <img src="/images/1032_a.webp" data-i18n-alt="about.images.arcaea" />
       </div>
     </article>
 
