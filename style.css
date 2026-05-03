@@ -2619,3 +2619,217 @@ body::before {
     inset 0 1px 0 rgba(255, 255, 255, 0.34),
     0 8px 20px rgba(80, 140, 210, 0.1);
 }
+
+/* =========================
+   Tahoe Dynamic Material System
+========================= */
+
+:root {
+  --blur-sidebar: 30px;
+  --blur-hero: 20px;
+  --blur-card: 14px;
+  --text-main-light: rgba(255, 255, 255, 0.88);
+  --text-muted-light: rgba(255, 255, 255, 0.64);
+  --text-main-dark: rgba(24, 32, 46, 0.84);
+  --text-muted-dark: rgba(56, 68, 86, 0.62);
+  --glass-tint-top: 0.45;
+  --glass-tint-bottom: 0.25;
+  --glass-tint-top-hover: 0.52;
+  --glass-tint-bottom-hover: 0.31;
+}
+
+body::before {
+  inset: -220px -180px;
+  width: auto;
+  height: auto;
+  background:
+    radial-gradient(980px circle at 12% 10%, rgba(74, 158, 255, 0.34), transparent 58%),
+    radial-gradient(920px circle at 82% 6%, rgba(176, 128, 255, 0.22), transparent 56%),
+    radial-gradient(1060px circle at 64% 88%, rgba(92, 220, 230, 0.24), transparent 60%),
+    radial-gradient(820px circle at 34% 54%, rgba(255, 255, 255, 0.58), transparent 62%);
+  filter: blur(42px) saturate(118%);
+  opacity: 0.9;
+  transform: none;
+}
+
+.sidebar {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(46, 84, 128, 0.36),
+      rgba(34, 62, 98, 0.22)
+    );
+  border-color: transparent;
+  color: var(--text-main-light);
+  box-shadow:
+    inset 1px 0 0 rgba(255, 255, 255, 0.2),
+    inset -1px 0 0 rgba(255, 255, 255, 0.07),
+    0 18px 46px rgba(62, 122, 190, 0.13);
+  backdrop-filter: blur(var(--blur-sidebar)) saturate(170%);
+  -webkit-backdrop-filter: blur(var(--blur-sidebar)) saturate(170%);
+}
+
+.sidebar-top h1 a,
+.sidebar-top nav,
+.lang-switch {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: var(--text-main-light);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+}
+
+.sidebar-top nav a,
+.lang-switch a,
+.sidebar-bottom {
+  color: var(--text-muted-light);
+}
+
+.sidebar-top nav a:hover,
+.lang-switch a.active,
+.lang-switch a:hover {
+  color: var(--text-main-light) !important;
+}
+
+.home-hero {
+  color: var(--text-main-dark);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, var(--glass-tint-top)),
+      rgba(255, 255, 255, var(--glass-tint-bottom))
+    );
+  backdrop-filter: blur(var(--blur-hero)) saturate(155%);
+  -webkit-backdrop-filter: blur(var(--blur-hero)) saturate(155%);
+}
+
+.project-update-card,
+.apod-card,
+.tech-news-card,
+.work-card,
+.post-card,
+.contact-form,
+.code-block {
+  color: var(--text-main-dark);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, var(--glass-tint-top)),
+      rgba(255, 255, 255, var(--glass-tint-bottom))
+    );
+  border-color: rgba(255, 255, 255, 0.26);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 10px 30px rgba(0, 0, 0, 0.055),
+    0 26px 58px rgba(80, 140, 210, 0.105);
+  backdrop-filter: blur(var(--blur-card)) saturate(145%);
+  -webkit-backdrop-filter: blur(var(--blur-card)) saturate(145%);
+}
+
+.home-text h3,
+.project-update-desc,
+.apod-content p,
+.tech-news-header p,
+.tech-news-card p,
+.contact-intro,
+.post-content,
+.post-handle,
+.post-dot,
+.post-date,
+.post-caption,
+.steam-game-meta,
+.interest-note {
+  color: var(--text-muted-dark);
+}
+
+.tech-news-card:hover,
+.apod-card:hover,
+.project-update-card:hover,
+.work-card:hover,
+.post-card:hover {
+  transform: none;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, var(--glass-tint-top-hover)),
+      rgba(255, 255, 255, var(--glass-tint-bottom-hover))
+    );
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 12px 32px rgba(0, 0, 0, 0.06),
+    0 30px 64px rgba(80, 140, 210, 0.12);
+}
+
+.hero-btn:hover,
+.contact-form button:hover,
+.copy-btn:hover,
+.steam-game-card:hover,
+.work-card:hover img,
+.steam-game-card:hover img {
+  transform: none;
+}
+
+:root {
+  --glass-tint-opacity: 0.25;
+  --glass-tint-hover-opacity: 0.31;
+}
+
+.home-hero,
+.project-update-card,
+.apod-card,
+.tech-news-card,
+.work-card,
+.post-card,
+.contact-form,
+.code-block {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, calc(var(--glass-tint-opacity) + 0.2)),
+      rgba(255, 255, 255, var(--glass-tint-opacity))
+    );
+}
+
+.tech-news-card:hover,
+.apod-card:hover,
+.project-update-card:hover,
+.work-card:hover,
+.post-card:hover {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, calc(var(--glass-tint-hover-opacity) + 0.21)),
+      rgba(255, 255, 255, var(--glass-tint-hover-opacity))
+    );
+}
+
+.light-text {
+  color: var(--text-main-light);
+}
+
+.light-text p,
+.light-text span,
+.light-text small,
+.light-text .project-update-desc,
+.light-text .apod-content p,
+.light-text .tech-news-card p,
+.light-text .post-content,
+.light-text .post-caption {
+  color: var(--text-muted-light);
+}
+
+.dark-text {
+  color: var(--text-main-dark);
+}
+
+.dark-text p,
+.dark-text span,
+.dark-text small,
+.dark-text .project-update-desc,
+.dark-text .apod-content p,
+.dark-text .tech-news-card p,
+.dark-text .post-content,
+.dark-text .post-caption {
+  color: var(--text-muted-dark);
+}

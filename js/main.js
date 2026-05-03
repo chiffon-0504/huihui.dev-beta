@@ -321,3 +321,60 @@ document.addEventListener("DOMContentLoaded", () => {
   loadProjectUpdateCard();
   setInterval(loadProjectUpdateCard, 5 * 60 * 1000);
 });
+
+(() => {
+  const root = document.documentElement;
+  const glassSelector = ".sidebar,.home-hero,.project-update-card,.apod-card,.tech-news-card,.work-card,.post-card,.contact-form,.code-block";
+  let glassElements = [];
+  const luminance = ([r, g, b]) => (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  const rgbFromStyle = (value) => {
+    const match = value.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    return match ? match.slice(1, 4).map(Number) : null;
+  };
+  const ambientRgb = (el) => {
+    if (el.classList.contains("sidebar")) return [42, 76, 118];
+    const rect = el.getBoundingClientRect();
+    const x = (rect.left + rect.width / 2) / Math.max(innerWidth, 1);
+    const y = (rect.top + rect.height / 2) / Math.max(innerHeight, 1);
+    return [226 - Math.round(y * 28), 240 - Math.round(x * 22), 255 - Math.round((x + y) * 18)];
+  };
+  const cacheGlassElements = () => {
+    glassElements = Array.from(document.querySelectorAll(glassSelector));
+  };
+  const updateMaterial = () => {
+    const maxScroll = Math.max(document.documentElement.scrollHeight - innerHeight, 1);
+    const depth = Math.min(scrollY / maxScroll, 1);
+    root.style.setProperty("--glass-tint-opacity", (0.25 + depth * 0.08).toFixed(3));
+    root.style.setProperty("--glass-tint-hover-opacity", (0.31 + depth * 0.08).toFixed(3));
+    glassElements.forEach((el) => {
+      const rgb = rgbFromStyle(getComputedStyle(el).backgroundColor) || ambientRgb(el);
+      const lightness = luminance(rgb);
+      if (lightness > 0.6) {
+        el.classList.add("dark-text");
+        el.classList.remove("light-text");
+      } else if (lightness < 0.4) {
+        el.classList.add("light-text");
+        el.classList.remove("dark-text");
+      }
+    });
+  };
+  let ticking = false;
+  const requestUpdate = () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      updateMaterial();
+      ticking = false;
+    });
+  };
+  document.addEventListener("DOMContentLoaded", () => {
+    cacheGlassElements();
+    updateMaterial();
+    setTimeout(() => { cacheGlassElements(); updateMaterial(); }, 800);
+  });
+  addEventListener("scroll", requestUpdate, { passive: true });
+  addEventListener("resize", () => {
+    cacheGlassElements();
+    requestUpdate();
+  });
+})();
