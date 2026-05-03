@@ -3057,3 +3057,40 @@ code[class*="language-"] {
 .lang-switch a {
   color: var(--text-muted-light) !important;
 }
+
+/* =========================
+   Final Readability Tuning
+========================= */
+
+.sidebar,
+.sidebar a,
+.sidebar nav a,
+.sidebar-top nav a,
+.lang-switch a,
+.sidebar-footer,
+.sidebar-bottom {
+  color: rgba(10, 15, 25, 0.82) !important;
+}
+
+.sidebar nav a.active,
+.sidebar nav a:hover,
+.sidebar-top nav a.active,
+.sidebar-top nav a:hover {
+  color: rgba(10, 15, 25, 0.94) !important;
+}
+
+.sidebar-top h1 a {
+  color: rgba(10, 15, 25, 0.9) !important;
+}
+
+.posts-header h1,
+.main > h1,
+.page-title {
+  color: rgba(10, 15, 25, 0.94) !important;
+  -webkit-text-fill-color: currentColor;
+}
+
+.posts-header p,
+.page-subtitle {
+  color: rgba(45, 58, 78, 0.76) !important;
+}
