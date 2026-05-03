@@ -2076,6 +2076,7 @@ textarea {
     height: calc(100vh - 16px);
     margin-top: 8px;
     margin-bottom: 8px;
+    border-radius: 28px;
   }
 
   .home-hero {
