@@ -1925,3 +1925,59 @@ textarea {
     gap: 16px;
   }
 }
+
+/* =========================
+   Above-the-fold Spacing Fix
+========================= */
+
+:root {
+  --sidebar-offset: 32px;
+}
+
+.main {
+  padding-top: 16px;
+}
+
+.home-hero {
+  min-height: calc(100vh - var(--sidebar-offset, 0px));
+  margin-top: 0;
+  padding-top: clamp(20px, 3vw, 44px);
+}
+
+.about-page,
+.contact-page,
+.page-shell,
+.content-wrapper {
+  min-height: calc(100vh - var(--sidebar-offset, 0px));
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.contact-page {
+  align-items: flex-start;
+  padding-top: clamp(16px, 3vw, 36px);
+}
+
+.posts-header,
+.main > h1 {
+  margin-top: 0;
+}
+
+@media (max-width: 900px) {
+  :root {
+    --sidebar-offset: 0px;
+  }
+
+  .main {
+    padding-top: 8px;
+  }
+
+  .home-hero,
+  .about-page,
+  .contact-page,
+  .page-shell,
+  .content-wrapper {
+    min-height: auto;
+    margin-top: 0;
+  }
+}
