@@ -3278,3 +3278,38 @@ body {
     display: none !important;
   }
 }
+
+/* =========================
+   Posts Drawer Safety
+========================= */
+
+@media (max-width: 900px) {
+  .posts-header,
+  #postsList,
+  .post-card {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .sidebar,
+  .sidebar * {
+    max-width: 100%;
+  }
+
+  .sidebar,
+  body .sidebar {
+    width: 260px;
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open,
+  body .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-top nav,
+  body .sidebar-top nav {
+    flex-direction: column;
+    overflow-x: visible;
+  }
+}
