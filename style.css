@@ -1934,11 +1934,18 @@ textarea {
   --sidebar-offset: 32px;
 }
 
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
 .main {
   padding-top: 16px;
 }
 
 .home-hero {
+  align-items: flex-start;
   min-height: calc(100vh - var(--sidebar-offset, 0px));
   margin-top: 0;
   padding-top: clamp(20px, 3vw, 44px);
@@ -1968,8 +1975,60 @@ textarea {
     --sidebar-offset: 0px;
   }
 
+  .sidebar {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    height: 56px;
+    margin: 0;
+    padding: 8px 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .sidebar-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: max-content;
+  }
+
+  .sidebar-top h1 {
+    margin: 0;
+    flex: 0 0 auto;
+  }
+
+  .sidebar-top h1 a {
+    padding: 7px 10px;
+  }
+
+  .lang-switch {
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 4px;
+  }
+
+  .sidebar-top nav {
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: center;
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .sidebar-top nav a {
+    padding: 7px 9px;
+    white-space: nowrap;
+  }
+
+  .sidebar-bottom {
+    display: none;
+  }
+
   .main {
-    padding-top: 8px;
+    padding-top: 72px;
   }
 
   .home-hero,
