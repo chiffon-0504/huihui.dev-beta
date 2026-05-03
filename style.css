@@ -2040,3 +2040,29 @@ textarea {
     margin-top: 0;
   }
 }
+
+/* =========================
+   Homepage Hero Height Fix
+========================= */
+
+.home-hero {
+  min-height: clamp(360px, 52vh, 480px);
+  padding-top: clamp(24px, 3vw, 44px);
+  padding-bottom: clamp(24px, 3vw, 44px);
+}
+
+.daily-inspiration-section {
+  margin-top: 20px;
+}
+
+@media (max-width: 900px) {
+  .home-hero {
+    min-height: auto;
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
+
+  .daily-inspiration-section {
+    margin-top: 20px;
+  }
+}
