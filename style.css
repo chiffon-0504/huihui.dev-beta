@@ -2185,3 +2185,437 @@ body {
       linear-gradient(145deg, #080b16 0%, #11162a 100%);
   }
 }
+
+/* =========================
+   Apple Liquid Glass Light Theme
+========================= */
+
+:root {
+  color-scheme: light;
+  --glass-bg: rgba(255, 255, 255, 0.58);
+  --glass-bg-strong: rgba(255, 255, 255, 0.72);
+  --glass-bg-soft: rgba(255, 255, 255, 0.42);
+  --glass-border: rgba(255, 255, 255, 0.72);
+  --glass-border-soft: rgba(255, 255, 255, 0.52);
+  --glass-highlight: rgba(255, 255, 255, 0.86);
+  --glass-shadow: 0 24px 80px rgba(80, 140, 210, 0.22);
+  --glass-shadow-soft: 0 18px 56px rgba(80, 140, 210, 0.16);
+  --accent-blue: #1d68d8;
+  --accent-cyan: #0d7fa8;
+  --accent-pink: #b653b9;
+  --accent-lime: #217a45;
+  --text-main: rgba(20, 28, 40, 0.92);
+  --text-muted: rgba(70, 82, 100, 0.72);
+  --text-soft: rgba(82, 96, 118, 0.52);
+}
+
+body {
+  background:
+    radial-gradient(circle at 10% 12%, rgba(88, 170, 255, 0.36), transparent 28vw),
+    radial-gradient(circle at 86% 18%, rgba(255, 255, 255, 0.82), transparent 30vw),
+    radial-gradient(circle at 76% 78%, rgba(160, 214, 255, 0.42), transparent 36vw),
+    linear-gradient(135deg, #eaf6ff 0%, #f8fbff 42%, #dcebfb 100%);
+  color: var(--text-main);
+}
+
+.sidebar,
+.home-hero,
+.project-update-card,
+.apod-card,
+.tech-news-card,
+.work-card,
+.post-card,
+.contact-form,
+.code-block {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.34)),
+    var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.28),
+    var(--glass-shadow);
+}
+
+.sidebar::before,
+.home-hero::before,
+.project-update-card::before,
+.apod-card::before,
+.tech-news-card::before,
+.work-card::before,
+.contact-form::before,
+.code-block::before {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.18) 34%, transparent 62%),
+    radial-gradient(circle at 12% 8%, rgba(255, 255, 255, 0.58), transparent 24%);
+  opacity: 0.72;
+}
+
+.sidebar-top h1 a,
+.lang-switch,
+.sidebar-top nav,
+.hero-btn,
+.copy-btn,
+.tech-news-tag,
+.beta-badge {
+  background: rgba(255, 255, 255, 0.46);
+  border-color: rgba(255, 255, 255, 0.68);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 10px 30px rgba(80, 140, 210, 0.12);
+}
+
+.home-text h1 {
+  background: linear-gradient(120deg, #101722 0%, #245fba 48%, #287f9e 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+}
+
+.home-text h3,
+.home-text h4,
+.home-text h5,
+.home-text h6,
+.project-update-desc,
+.apod-content p,
+.tech-news-header p,
+.tech-news-card p,
+.contact-intro,
+.post-content,
+.post-handle,
+.post-dot,
+.post-date,
+.post-caption,
+.steam-game-meta,
+.interest-note,
+.sidebar-bottom {
+  color: var(--text-muted);
+}
+
+.sidebar-top nav a,
+.lang-switch a,
+.contact-form label,
+.post-name,
+.steam-game-name,
+.code-file {
+  color: var(--text-main);
+}
+
+.lang-switch a.active,
+.sidebar-top nav a:hover,
+.contact-fallback a {
+  color: rgba(15, 23, 42, 0.96) !important;
+}
+
+.project-update-label,
+.apod-label,
+.tech-news-category,
+.contact-eyebrow,
+.project-update-meta,
+.hashtag {
+  color: var(--accent-blue) !important;
+}
+
+.contact-form input,
+.contact-form textarea,
+.code-block pre[class*="language-"] {
+  background: rgba(255, 255, 255, 0.48) !important;
+  border-color: rgba(255, 255, 255, 0.7);
+  color: var(--text-main);
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+  border-color: rgba(72, 134, 220, 0.66);
+  background: rgba(255, 255, 255, 0.68) !important;
+  box-shadow:
+    0 0 0 4px rgba(80, 140, 210, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.code-block {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.38)),
+    rgba(255, 255, 255, 0.54);
+}
+
+.code-lang,
+.code-block .line-numbers-rows > span::before {
+  color: rgba(70, 82, 100, 0.48);
+}
+
+.tech-news-card:hover,
+.apod-card:hover,
+.project-update-card:hover,
+.work-card:hover {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.46)),
+    var(--glass-bg-strong);
+  border-color: rgba(255, 255, 255, 0.84);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 30px 90px rgba(80, 140, 210, 0.26);
+}
+
+@media (max-width: 900px) {
+  body {
+    background:
+      radial-gradient(circle at 14% 6%, rgba(88, 170, 255, 0.28), transparent 58vw),
+      radial-gradient(circle at 88% 20%, rgba(255, 255, 255, 0.78), transparent 56vw),
+      linear-gradient(145deg, #eaf6ff 0%, #f8fbff 48%, #dcebfb 100%);
+  }
+}
+
+/* =========================
+   macOS Glass Refinement
+========================= */
+
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.42);
+  --glass-bg-strong: rgba(255, 255, 255, 0.55);
+  --glass-bg-soft: rgba(255, 255, 255, 0.28);
+  --glass-border: rgba(255, 255, 255, 0.45);
+  --glass-border-soft: rgba(255, 255, 255, 0.25);
+  --glass-highlight: rgba(255, 255, 255, 0.52);
+  --glass-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.08),
+    0 30px 60px rgba(80, 140, 210, 0.12);
+  --glass-shadow-soft:
+    0 8px 24px rgba(0, 0, 0, 0.06),
+    0 22px 46px rgba(80, 140, 210, 0.1);
+}
+
+.sidebar,
+.home-hero,
+.project-update-card,
+.apod-card,
+.tech-news-card,
+.work-card,
+.post-card,
+.contact-form,
+.code-block {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.18)),
+    var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    var(--glass-shadow);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+}
+
+.sidebar {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.16)),
+    rgba(255, 255, 255, 0.32);
+  border-color: rgba(255, 255, 255, 0.34);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    0 14px 44px rgba(80, 140, 210, 0.14);
+  backdrop-filter: blur(30px) saturate(150%);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+}
+
+.home-hero {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.12)),
+    rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.34);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    0 18px 54px rgba(80, 140, 210, 0.12);
+}
+
+.project-update-card,
+.apod-card,
+.tech-news-card,
+.work-card,
+.post-card,
+.contact-form,
+.code-block {
+  border-color: rgba(255, 255, 255, 0.38);
+}
+
+.sidebar::before,
+.home-hero::before,
+.project-update-card::before,
+.apod-card::before,
+.tech-news-card::before,
+.work-card::before,
+.contact-form::before,
+.code-block::before {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.1) 32%, transparent 60%),
+    radial-gradient(circle at 12% 8%, rgba(255, 255, 255, 0.28), transparent 26%);
+  opacity: 0.45;
+}
+
+.sidebar-top h1 a,
+.lang-switch,
+.sidebar-top nav,
+.hero-btn,
+.copy-btn,
+.tech-news-tag,
+.beta-badge {
+  background: rgba(255, 255, 255, 0.26);
+  border-color: rgba(255, 255, 255, 0.32);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    0 8px 22px rgba(80, 140, 210, 0.08);
+  backdrop-filter: blur(18px) saturate(135%);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+}
+
+.code-block {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.18)),
+    rgba(255, 255, 255, 0.34);
+}
+
+.contact-form input,
+.contact-form textarea,
+.code-block pre[class*="language-"] {
+  background: rgba(255, 255, 255, 0.34) !important;
+  border-color: rgba(255, 255, 255, 0.38);
+}
+
+.tech-news-card:hover,
+.apod-card:hover,
+.project-update-card:hover,
+.work-card:hover {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.22)),
+    var(--glass-bg-strong);
+  border-color: rgba(255, 255, 255, 0.48);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 12px 34px rgba(0, 0, 0, 0.08),
+    0 34px 68px rgba(80, 140, 210, 0.14);
+}
+
+/* =========================
+   macOS Texture Pass
+========================= */
+
+:root {
+  --text-main: rgba(28, 36, 52, 0.78);
+  --text-muted: rgba(60, 72, 90, 0.55);
+}
+
+.home-hero,
+.project-update-card,
+.apod-card,
+.tech-news-card,
+.work-card,
+.post-card,
+.contact-form,
+.code-block {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.55),
+      rgba(255, 255, 255, 0.35)
+    );
+  backdrop-filter: blur(20px) saturate(135%);
+  -webkit-backdrop-filter: blur(20px) saturate(135%);
+}
+
+.sidebar {
+  border-radius: 26px;
+  backdrop-filter: blur(32px) saturate(160%);
+  -webkit-backdrop-filter: blur(32px) saturate(160%);
+}
+
+.home-hero {
+  border-radius: 30px;
+}
+
+.project-update-card,
+.apod-card,
+.tech-news-card,
+.work-card,
+.post-card,
+.contact-form,
+.code-block {
+  border-radius: 22px;
+}
+
+/* =========================
+   macOS Ambient Pass
+========================= */
+
+body {
+  position: relative;
+}
+
+body::before {
+  inset: -18vh -14vw;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background:
+    radial-gradient(circle at 16% 18%, rgba(116, 187, 255, 0.32), transparent 0 30%),
+    radial-gradient(circle at 78% 12%, rgba(255, 255, 255, 0.62), transparent 0 26%),
+    radial-gradient(circle at 64% 82%, rgba(150, 207, 255, 0.24), transparent 0 34%);
+  filter: blur(34px);
+  opacity: 0.84;
+  z-index: 0;
+}
+
+.main {
+  position: relative;
+  z-index: 1;
+}
+
+.sidebar {
+  border-color: transparent;
+  box-shadow:
+    inset 1px 0 0 rgba(255, 255, 255, 0.24),
+    inset -1px 0 0 rgba(255, 255, 255, 0.08),
+    0 12px 34px rgba(80, 140, 210, 0.1);
+}
+
+.tech-news-card:hover,
+.apod-card:hover,
+.project-update-card:hover,
+.work-card:hover,
+.post-card:hover,
+.hero-btn:hover,
+.contact-form button:hover,
+.copy-btn:hover,
+.steam-game-card:hover {
+  transform: none;
+}
+
+.sidebar-top nav a:hover {
+  transform: none;
+}
+
+.tech-news-card:hover,
+.apod-card:hover,
+.project-update-card:hover,
+.work-card:hover,
+.post-card:hover {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.6),
+      rgba(255, 255, 255, 0.39)
+    );
+  border-color: rgba(255, 255, 255, 0.34);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 10px 28px rgba(0, 0, 0, 0.06),
+    0 24px 46px rgba(80, 140, 210, 0.11);
+}
+
+.hero-btn:hover,
+.contact-form button:hover,
+.copy-btn:hover {
+  background: rgba(255, 255, 255, 0.34);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    0 8px 20px rgba(80, 140, 210, 0.1);
+}
