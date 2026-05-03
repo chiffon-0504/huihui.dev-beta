@@ -2066,3 +2066,51 @@ textarea {
     margin-top: 20px;
   }
 }
+
+/* =========================
+   Liquid Glass Micro Polish
+========================= */
+
+@media (min-width: 901px) {
+  .sidebar {
+    height: calc(100vh - 16px);
+    margin-top: 8px;
+    margin-bottom: 8px;
+  }
+
+  .home-hero {
+    align-items: center;
+    gap: clamp(28px, 4vw, 44px);
+    justify-content: center;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 520px);
+    padding-left: clamp(36px, 5vw, 68px);
+    padding-right: clamp(36px, 5vw, 68px);
+  }
+
+  .home-text {
+    flex: 0 1 560px;
+  }
+
+  .project-update-card {
+    flex: 0 1 500px;
+  }
+}
+
+.apod-image {
+  filter: brightness(1.08) contrast(1.05);
+}
+
+.tech-news-card {
+  transition:
+    transform 0.24s ease,
+    border-color 0.24s ease,
+    background 0.24s ease,
+    box-shadow 0.24s ease;
+}
+
+.tech-news-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 28px 72px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
