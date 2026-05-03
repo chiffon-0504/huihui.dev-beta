@@ -2923,3 +2923,137 @@ body::before {
 .lang-switch a {
   color: var(--text-muted-light);
 }
+
+/* =========================
+   Production Readability Recovery
+========================= */
+
+:root {
+  --content-text-main: rgba(10, 15, 25, 0.94);
+  --content-text-muted: rgba(45, 58, 78, 0.76);
+}
+
+.home-hero,
+.project-update-card,
+.apod-card,
+.tech-news-card,
+.work-card,
+.post-card,
+.contact-form,
+.code-block {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.72),
+      rgba(235, 248, 255, 0.58)
+    );
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: var(--content-text-main);
+}
+
+.main,
+.main h1,
+.main h2,
+.main h3,
+.posts-header h1,
+.contact-page h1,
+.about-page h1,
+.home-text h1,
+.tech-news-section h2,
+.tech-news-card h3,
+.project-update-card h2,
+.apod-card h2,
+.post-card h1,
+.post-card h2,
+.post-card h3,
+.contact-form label,
+.code-file {
+  color: var(--content-text-main) !important;
+  -webkit-text-fill-color: currentColor;
+}
+
+.main p,
+.project-update-desc,
+.project-update-meta,
+.apod-content p,
+.apod-date,
+.tech-news-header p,
+.tech-news-card p,
+.contact-intro,
+.post-content,
+.post-handle,
+.post-dot,
+.post-date,
+.post-caption,
+.steam-game-meta,
+.interest-note,
+.code-lang {
+  color: var(--content-text-muted) !important;
+}
+
+.hero-btn,
+.contact-form button,
+.copy-btn,
+.sidebar .hero-btn,
+.sidebar .copy-btn {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  color: rgba(10, 15, 25, 0.88) !important;
+  -webkit-text-fill-color: currentColor;
+}
+
+.hero-btn:hover,
+.contact-form button:hover,
+.copy-btn:hover {
+  background: rgba(255, 255, 255, 0.64);
+  border-color: rgba(255, 255, 255, 0.58);
+  color: rgba(10, 15, 25, 0.92) !important;
+}
+
+.code-block,
+.code-block pre[class*="language-"],
+.code-block code[class*="language-"],
+pre[class*="language-"],
+code[class*="language-"] {
+  background: rgba(245, 250, 255, 0.72) !important;
+  color: rgba(20, 28, 40, 0.88) !important;
+  text-shadow: none !important;
+}
+
+.code-block .line-numbers-rows > span::before {
+  color: rgba(45, 58, 78, 0.5) !important;
+}
+
+.post-card {
+  max-width: 760px;
+  min-height: auto;
+  padding: clamp(18px, 3vw, 28px);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.78),
+      rgba(235, 248, 255, 0.64)
+    );
+}
+
+.posts-list,
+.posts-grid {
+  align-items: start;
+}
+
+.sidebar,
+.sidebar h1,
+.sidebar h1 a,
+.sidebar-top nav,
+.sidebar-top nav a,
+.lang-switch,
+.lang-switch a,
+.sidebar-bottom {
+  color: var(--text-main-light) !important;
+}
+
+.sidebar-bottom,
+.sidebar-top nav a,
+.lang-switch a {
+  color: var(--text-muted-light) !important;
+}

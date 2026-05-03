@@ -325,10 +325,8 @@ document.addEventListener("DOMContentLoaded", () => {
 (() => {
   const root = document.documentElement;
   const updateMaterial = () => {
-    const maxScroll = Math.max(document.documentElement.scrollHeight - innerHeight, 1);
-    const depth = Math.min(scrollY / maxScroll, 1);
-    root.style.setProperty("--glass-tint-opacity", (0.25 + depth * 0.08).toFixed(3));
-    root.style.setProperty("--glass-tint-hover-opacity", (0.31 + depth * 0.08).toFixed(3));
+    root.style.setProperty("--glass-tint-opacity", "0.58");
+    root.style.setProperty("--glass-tint-hover-opacity", "0.64");
   };
   let ticking = false;
   const requestUpdate = () => {
