@@ -2833,3 +2833,93 @@ body::before {
 .dark-text .post-caption {
   color: var(--text-muted-dark);
 }
+
+/* =========================
+   Material Readability Fix
+========================= */
+
+:root {
+  --content-text-main: rgba(10, 15, 25, 0.92);
+  --content-text-muted: rgba(40, 55, 75, 0.72);
+}
+
+.home-hero,
+.project-update-card,
+.apod-card,
+.tech-news-card,
+.work-card,
+.post-card,
+.contact-form,
+.code-block {
+  color: var(--content-text-main);
+}
+
+.home-hero h1,
+.home-hero h2,
+.home-hero h3,
+.project-update-card h1,
+.project-update-card h2,
+.project-update-card h3,
+.apod-card h1,
+.apod-card h2,
+.apod-card h3,
+.tech-news-card h1,
+.tech-news-card h2,
+.tech-news-card h3,
+.work-card h1,
+.work-card h2,
+.work-card h3,
+.post-card h1,
+.post-card h2,
+.post-card h3,
+.contact-form h1,
+.contact-form h2,
+.contact-form h3,
+.code-block h1,
+.code-block h2,
+.code-block h3,
+.post-name,
+.steam-game-name,
+.code-file {
+  color: var(--content-text-main);
+}
+
+.home-text h3,
+.home-text h4,
+.home-text h5,
+.home-text h6,
+.project-update-desc,
+.project-update-meta,
+.apod-content p,
+.apod-date,
+.tech-news-header p,
+.tech-news-card p,
+.contact-intro,
+.post-content,
+.post-handle,
+.post-dot,
+.post-date,
+.post-caption,
+.steam-game-meta,
+.interest-note,
+.code-lang,
+.code-block .line-numbers-rows > span::before {
+  color: var(--content-text-muted) !important;
+}
+
+.sidebar,
+.sidebar h1,
+.sidebar h1 a,
+.sidebar-top nav,
+.sidebar-top nav a,
+.lang-switch,
+.lang-switch a,
+.sidebar-bottom {
+  color: var(--text-main-light);
+}
+
+.sidebar-bottom,
+.sidebar-top nav a,
+.lang-switch a {
+  color: var(--text-muted-light);
+}
