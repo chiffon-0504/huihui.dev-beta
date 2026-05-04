@@ -1,7 +1,7 @@
 # huihui.dev
 
 <p align="center">
-  <strong>A static-first personal website with multilingual pages, reusable UI components, interactive tools, and Cloudflare Workers APIs.</strong>
+  <strong>A static-first personal website with Liquid Glass UI, multilingual components, interactive tools, and Cloudflare Workers APIs.</strong>
 </p>
 
 <p align="center">
@@ -24,14 +24,18 @@
 
 **huihui.dev** is a personal portfolio and development website built with HTML, CSS, and Vanilla JavaScript.
 
-The project started as a static website and has gradually evolved into a small web system with shared frontend components, multilingual content, dynamic API cards, and selected serverless backend features powered by Cloudflare Workers.
+The project started as a static website and has evolved into a small web system with:
 
-The core direction is:
+- a Tahoe-style Liquid Glass UI system
+- reusable layout components
+- ZH / EN / JA multilingual content
+- API-powered homepage cards
+- Steam-powered About page content
+- an interactive Tier Maker tool
+- Cloudflare Workers backend APIs
+- Turnstile-protected contact form flow
 
-- keep the frontend static, fast, and maintainable
-- centralize repeated layout and multilingual content
-- add backend APIs only when dynamic behavior is actually useful
-- avoid unnecessary framework or CMS complexity
+The goal is to keep the site lightweight and maintainable while still supporting dynamic content, polished UI details, and selected serverless backend features.
 
 ---
 
@@ -50,10 +54,11 @@ The core direction is:
 
 ---
 
-## Features
+## Highlights
 
 | Feature | Description |
 |---|---|
+| Liquid Glass UI | Tahoe-style glass interface with layered blur, tint separation, translucent surfaces, and responsive mobile drawer navigation |
 | Static-first frontend | HTML / CSS / Vanilla JavaScript pages deployed through Cloudflare Pages |
 | Shared layout system | Sidebar, navigation, language switcher, and footer are injected through `js/layout.js` |
 | Multilingual support | ZH / EN / JA content is managed through locale files under `js/locales/` |
@@ -62,7 +67,25 @@ The core direction is:
 | Code block UI | Prism.js-based syntax highlighting with filename display, line numbers, copy button, and typing animation |
 | Tier Maker | Browser-based ranking tool with custom tiers, image upload, drag-and-drop sorting, and PNG export |
 | Contact protection | Cloudflare Turnstile with server-side Worker validation before forwarding messages |
-| Responsive UI | Desktop and mobile layouts are handled with shared CSS rules |
+
+---
+
+## UI System
+
+The site uses a **Tahoe-style Liquid Glass UI system** as its main visual language.
+
+The UI system includes:
+
+- layered blur surfaces
+- translucent glass panels
+- separated tint layers
+- soft border highlights
+- depth-based card stacking
+- mobile drawer navigation
+- responsive sidebar behavior
+- readable contrast on dark backgrounds
+
+The glass effect is designed as a controlled interface layer, not just decoration. Blur, tint, opacity, border, and shadow are separated so the UI can stay readable across desktop and mobile layouts.
 
 ---
 
@@ -74,6 +97,7 @@ Browser
   |-- Static frontend
   |     |-- HTML pages
   |     |-- CSS styling
+  |     |-- Liquid Glass UI system
   |     |-- Vanilla JavaScript
   |     |-- Shared layout injection
   |     |-- Locale-based i18n
@@ -105,7 +129,7 @@ Current sources:
 - Apple Developer News
 - Android Developers Blog
 
-The frontend receives normalized data from a Worker endpoint instead of directly parsing external RSS feeds in the browser.
+The frontend receives normalized data from a Worker endpoint instead of parsing external RSS feeds directly in the browser.
 
 ### NASA APOD
 
@@ -115,9 +139,9 @@ The Worker handles API fetching, caching, and fallback behavior so the card can 
 
 ### GitHub Project Updates
 
-The homepage can show the latest repository update information through the GitHub API.
+The homepage displays recent repository update information through the GitHub API.
 
-This is used as a lightweight development activity card for the site itself.
+This works as a lightweight development activity card for the site itself.
 
 ### Steam Game Display
 
@@ -126,8 +150,8 @@ The About page includes Steam-powered game cards with:
 - app ID mapping
 - playtime display
 - custom display names
-- cover image fallback handling
 - selected favorite games
+- cover image fallback handling
 
 ---
 
@@ -154,7 +178,7 @@ The renderer automatically adds:
 - copy button
 - typing animation
 
-This keeps article and About-page code blocks consistent across the site.
+This keeps article, About-page, and project code blocks visually consistent across the site.
 
 ---
 
@@ -183,6 +207,7 @@ Turnstile is only used for user-submitted data. Static pages and read-only conte
 | Layer | Tools |
 |---|---|
 | Frontend | HTML5, CSS3, Vanilla JavaScript |
+| UI system | Liquid Glass UI, custom CSS, responsive drawer navigation |
 | UI behavior | Custom JavaScript components |
 | Code rendering | Prism.js |
 | i18n | Locale files + path-based routing |
@@ -243,6 +268,8 @@ After pushing to GitHub, Cloudflare Pages rebuilds and deploys the latest versio
 ## Design Principles
 
 - Keep static pages fast and simple
+- Use Liquid Glass as a readable UI system, not a heavy visual gimmick
+- Separate blur, tint, border, and shadow layers for maintainable glass effects
 - Use shared components for repeated layout
 - Manage multilingual text through locale files
 - Keep tools client-side when no persistence is required
@@ -258,6 +285,9 @@ After pushing to GitHub, Cloudflare Pages rebuilds and deploys the latest versio
 ### Included
 
 - Personal portfolio pages
+- Tahoe-style Liquid Glass UI system
+- Layered blur and tint-based glass surfaces
+- Responsive mobile drawer navigation
 - ZH / EN / JA multilingual structure
 - Shared layout system
 - Locale-based content management
@@ -284,4 +314,4 @@ After pushing to GitHub, Cloudflare Pages rebuilds and deploys the latest versio
 
 Actively maintained.
 
-Current direction: a static-first personal website with reusable multilingual components, interactive frontend tools, and selective Cloudflare Workers backend features.
+Current direction: a static-first personal website with Liquid Glass UI, reusable multilingual components, interactive frontend tools, and selective Cloudflare Workers backend features.
