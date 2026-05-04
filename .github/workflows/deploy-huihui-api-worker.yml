@@ -1,0 +1,26 @@
+name: Deploy huihui API Worker
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "workers/huihui-api/**"
+      - ".github/workflows/deploy-huihui-api-worker.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy Cloudflare Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: workers/huihui-api
