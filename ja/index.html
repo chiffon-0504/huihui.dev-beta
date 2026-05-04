@@ -15,25 +15,25 @@
     <section class="home-hero fade-in">
       <div class="home-text">
         <h1>huihui.dev</h1>
-        <h4>開発者 / 写真</h4>
+        <h4 data-i18n="home.hero.subtitle"></h4>
         <div class="hero-actions">
-          <a href="/ja/about/" class="hero-btn">私について</a>
-          <a href="/ja/contact/" class="hero-btn">連絡先</a>
+          <a href="/ja/about/" class="hero-btn" data-i18n="home.hero.about"></a>
+          <a href="/ja/contact/" class="hero-btn" data-i18n="home.hero.contact"></a>
         </div>
       </div>
 
       <article class="project-update-card" aria-labelledby="projectUpdateTitle">
-        <p class="project-update-label">Project Updates</p>
-        <h2 id="projectUpdateTitle">Steam API ゲーム表示を追加</h2>
-        <p class="project-update-desc">AboutページにSteam APIを接続し、選択したGalgameカードを表示します。</p>
+        <p class="project-update-label" data-i18n="home.projectUpdate.label"></p>
+        <h2 id="projectUpdateTitle" data-i18n="home.projectUpdate.title"></h2>
+        <p class="project-update-desc" data-i18n="home.projectUpdate.desc"></p>
         <a
           id="projectUpdateLink"
           class="project-update-meta"
-          href="https://github.com/chiffon-0504/huihui_project-v1"
+          href="https://github.com/chiffon-0504/huihui.dev-project-v1"
           target="_blank"
           rel="noopener noreferrer"
         >
-          huihui_project-v1 · Loading...
+          huihui.dev-project-v1 · Loading...
         </a>
       </article>
     </section>
@@ -58,8 +58,8 @@
 
         <div class="apod-content">
           <p class="apod-label">Daily Inspiration</p>
-          <h2 id="apodTitle">NASA APOD 読み込み中...</h2>
-          <p id="apod-desc">天文画像を取得しています。</p>
+          <h2 id="apodTitle">NASA APODを読み込み中...</h2>
+          <p id="apod-desc">今日の天文画像を取得しています。</p>
           <p id="apod-date" class="apod-date"></p>
         </div>
       </article>
@@ -67,12 +67,12 @@
 
     <section class="tech-news-section fade-in fade-in-delay-1" aria-labelledby="techNewsTitle">
       <div class="tech-news-header">
-        <h2 id="techNewsTitle">テックニュース</h2>
-        <p>AI・iOS・Android の最新情報を表示します。</p>
+        <h2 id="techNewsTitle" data-i18n="home.tech.title"></h2>
+        <p data-i18n="home.tech.desc"></p>
       </div>
 
       <div id="techNewsCards" class="tech-news-grid">
-        <p class="tech-news-loading">読み込み中...</p>
+        <p class="tech-news-loading">最新情報を読み込み中...</p>
       </div>
     </section>
   </main>
@@ -85,6 +85,10 @@
   <script src="/js/layout.js"></script>
   <script src="/js/main.js"></script>
   <script src="/js/lightbox.js"></script>
+  <script src="/js/locales/zh.js"></script>
+  <script src="/js/locales/en.js"></script>
+  <script src="/js/locales/ja.js"></script>
+  <script src="/js/i18n.js"></script>
 
 </body>
 </html>
