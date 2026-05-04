@@ -1,13 +1,13 @@
 # huihui.dev
 
 <p align="center">
-  <strong>A static-first personal website with multilingual pages, dynamic API cards, interactive tools, and a Cloudflare serverless backend.</strong>
+  <strong>A static-first personal website with multilingual pages, reusable UI components, interactive tools, and Cloudflare Workers APIs.</strong>
 </p>
 
 <p align="center">
   <a href="https://huihui.dev">Live Site</a>
   ·
-  <a href="https://github.com/chiffon-0504/huihui_project-v1">Repository</a>
+  <a href="https://github.com/chiffon-0504/huihui.dev-project-v1">Repository</a>
 </p>
 
 <p align="center">
@@ -22,24 +22,20 @@
 
 ## Overview
 
-**huihui.dev** is a personal portfolio and development-focused website.
+**huihui.dev** is a personal portfolio and development website built with HTML, CSS, and Vanilla JavaScript.
 
-The project began as a static HTML / CSS / JavaScript website and has evolved into a small but structured web system with:
+The project started as a static website and has gradually evolved into a small web system with shared frontend components, multilingual content, dynamic API cards, and selected serverless backend features powered by Cloudflare Workers.
 
-- shared layout components
-- ZH / EN / JA multilingual pages
-- API-driven homepage cards
-- Steam-powered About page content
-- a custom code block renderer
-- a browser-based Tier Maker tool
-- Cloudflare Workers backend APIs
-- Turnstile-protected contact form flow
+The core direction is:
 
-The main design goal is simple: keep the frontend fast and maintainable, then use serverless APIs only where dynamic behavior is actually needed.
+- keep the frontend static, fast, and maintainable
+- centralize repeated layout and multilingual content
+- add backend APIs only when dynamic behavior is actually useful
+- avoid unnecessary framework or CMS complexity
 
 ---
 
-## Demo
+## Live Pages
 
 | Area | URL |
 |---|---|
@@ -54,18 +50,19 @@ The main design goal is simple: keep the frontend fast and maintainable, then us
 
 ---
 
-## Highlights
+## Features
 
 | Feature | Description |
 |---|---|
-| Static-first frontend | HTML / CSS / Vanilla JavaScript pages deployed on Cloudflare Pages |
-| Shared layout | Sidebar, navigation, language switcher, and footer are injected through `js/layout.js` |
-| Multilingual content | ZH / EN / JA text is managed through locale files under `js/locales/` |
-| Dynamic homepage cards | Tech Updates, NASA APOD, and GitHub project updates are loaded from API endpoints |
-| About page renderer | `js/about-page.js` renders profile content, interest cards, and Steam-powered game cards |
-| Code block system | Prism.js-based syntax highlighting with filename display, line numbers, copy button, and typing animation |
-| Tier Maker | Client-side ranking tool with image upload, custom tiers, drag-and-drop sorting, and PNG export |
-| Contact security | Cloudflare Turnstile + Workers server-side validation before forwarding messages |
+| Static-first frontend | HTML / CSS / Vanilla JavaScript pages deployed through Cloudflare Pages |
+| Shared layout system | Sidebar, navigation, language switcher, and footer are injected through `js/layout.js` |
+| Multilingual support | ZH / EN / JA content is managed through locale files under `js/locales/` |
+| API-powered homepage | Tech Updates, NASA APOD, and GitHub project updates are loaded through Workers endpoints |
+| About page renderer | Profile content, interest cards, and Steam-powered game cards are rendered through JavaScript |
+| Code block UI | Prism.js-based syntax highlighting with filename display, line numbers, copy button, and typing animation |
+| Tier Maker | Browser-based ranking tool with custom tiers, image upload, drag-and-drop sorting, and PNG export |
+| Contact protection | Cloudflare Turnstile with server-side Worker validation before forwarding messages |
+| Responsive UI | Desktop and mobile layouts are handled with shared CSS rules |
 
 ---
 
@@ -74,63 +71,71 @@ The main design goal is simple: keep the frontend fast and maintainable, then us
 ```text
 Browser
   |
-  |-- Static pages
-  |     HTML / CSS / Vanilla JavaScript
-  |     Shared layout
-  |     Locale files
-  |     Client-side tools
+  |-- Static frontend
+  |     |-- HTML pages
+  |     |-- CSS styling
+  |     |-- Vanilla JavaScript
+  |     |-- Shared layout injection
+  |     |-- Locale-based i18n
+  |     |-- Client-side tools
   |
-  |-- Dynamic cards / form actions
-        Cloudflare Workers APIs
-          |-- RSS feeds
-          |-- GitHub API
-          |-- NASA APOD API
-          |-- Steam Web API
-          |-- Turnstile verification
+  |-- Dynamic data / form actions
+        |-- Cloudflare Workers APIs
+              |-- RSS feeds
+              |-- GitHub API
+              |-- NASA APOD API
+              |-- Steam Web API
+              |-- Turnstile verification
 
 Deployment
-  GitHub → Cloudflare Pages → huihui.dev
+  GitHub -> Cloudflare Pages -> huihui.dev
 ```
 
 ---
 
-## Main Features
+## Dynamic Content
 
-### Pages
+### Tech Updates
 
-- Homepage
-- About
-- Works
-- Posts
-- Contact
-- Tier Maker
-- English pages
-- Japanese pages
+The homepage displays technology news through API-backed cards.
 
-### Dynamic Cards
+Current sources:
 
-The homepage loads dynamic content through Cloudflare Workers:
+- OpenAI News
+- Apple Developer News
+- Android Developers Blog
 
-- **Tech Updates**
-  - OpenAI News
-  - Apple Developer News
-  - Android Developers Blog
-- **NASA APOD**
-- **GitHub Project Updates**
+The frontend receives normalized data from a Worker endpoint instead of directly parsing external RSS feeds in the browser.
 
-### About Page
+### NASA APOD
 
-The About page is rendered through JavaScript components and includes:
+The homepage includes a NASA Astronomy Picture of the Day card.
 
-- localized profile section
-- generated Python-style profile code block
-- maimai / Arcaea / Galgame interest cards
-- Steam API game display
-- custom game names and fallback images
+The Worker handles API fetching, caching, and fallback behavior so the card can remain stable even when the external response changes or fails.
 
-### Code Block Renderer
+### GitHub Project Updates
 
-Use this pattern anywhere in the site:
+The homepage can show the latest repository update information through the GitHub API.
+
+This is used as a lightweight development activity card for the site itself.
+
+### Steam Game Display
+
+The About page includes Steam-powered game cards with:
+
+- app ID mapping
+- playtime display
+- custom display names
+- cover image fallback handling
+- selected favorite games
+
+---
+
+## Code Block System
+
+Code blocks use Prism.js plus custom JavaScript behavior.
+
+Example:
 
 ```html
 <pre class="code-auto"><code class="language-python">
@@ -140,7 +145,7 @@ print("Hello World")
 </code></pre>
 ```
 
-It automatically adds:
+The renderer automatically adds:
 
 - language label
 - filename display
@@ -149,7 +154,11 @@ It automatically adds:
 - copy button
 - typing animation
 
-### Contact Form Security
+This keeps article and About-page code blocks consistent across the site.
+
+---
+
+## Contact Form Flow
 
 ```text
 Contact form
@@ -158,14 +167,14 @@ Cloudflare Turnstile
   ↓
 Cloudflare Worker
   ↓
-Server-side token validation
+Server-side token verification
   ↓
 Form handler
   ↓
 Inbox
 ```
 
-Turnstile is only used where user input is accepted. Static display pages do not need it.
+Turnstile is only used for user-submitted data. Static pages and read-only content do not need verification.
 
 ---
 
@@ -174,12 +183,13 @@ Turnstile is only used where user input is accepted. Static display pages do not
 | Layer | Tools |
 |---|---|
 | Frontend | HTML5, CSS3, Vanilla JavaScript |
-| UI / Code rendering | Prism.js, custom JS renderer |
+| UI behavior | Custom JavaScript components |
+| Code rendering | Prism.js |
 | i18n | Locale files + path-based routing |
 | Hosting | Cloudflare Pages |
-| Backend | Cloudflare Workers |
+| Backend APIs | Cloudflare Workers |
 | Security | Cloudflare Turnstile |
-| APIs | GitHub API, Steam Web API, NASA APOD API, RSS feeds |
+| External APIs | GitHub API, Steam Web API, NASA APOD API, RSS feeds |
 | Version control | Git / GitHub |
 
 ---
@@ -218,7 +228,7 @@ Turnstile is only used where user input is accepted. Static display pages do not
 
 ## Deployment
 
-The site is deployed through Cloudflare Pages.
+The site is deployed through Cloudflare Pages with automatic builds from GitHub.
 
 ```bash
 git add .
@@ -226,18 +236,20 @@ git commit -m "update"
 git push
 ```
 
-After pushing to GitHub, Cloudflare Pages automatically rebuilds and deploys the latest version.
+After pushing to GitHub, Cloudflare Pages rebuilds and deploys the latest version automatically.
 
 ---
 
 ## Design Principles
 
 - Keep static pages fast and simple
-- Avoid backend complexity unless the feature actually needs it
-- Centralize repeated layout and multilingual text
-- Cache API responses where possible
+- Use shared components for repeated layout
+- Manage multilingual text through locale files
 - Keep tools client-side when no persistence is required
-- Use Turnstile only for user-submitted data
+- Cache API responses where possible
+- Use Workers only for API normalization, secrets, caching, and validation
+- Use Turnstile only where users can submit data
+- Avoid full CMS or framework complexity unless the project actually needs it
 
 ---
 
@@ -246,23 +258,25 @@ After pushing to GitHub, Cloudflare Pages automatically rebuilds and deploys the
 ### Included
 
 - Personal portfolio pages
-- Multilingual structure
+- ZH / EN / JA multilingual structure
 - Shared layout system
 - Locale-based content management
 - API-driven homepage cards
 - Steam-powered About section
-- Contact form with Turnstile validation
+- Turnstile-protected contact form
 - Tier Maker tool
-- Custom code block rendering
+- Custom code block renderer
+- Cloudflare Pages deployment
+- Cloudflare Workers backend endpoints
 
 ### Not Included by Design
 
 - Full CMS
 - User accounts
-- Full authentication system
 - Database-backed content editing
 - Heavy backend processing
 - AI model training or inference
+- Public API platform
 
 ---
 
@@ -270,4 +284,4 @@ After pushing to GitHub, Cloudflare Pages automatically rebuilds and deploys the
 
 Actively maintained.
 
-Current direction: a static-first personal website with reusable multilingual components and selective Cloudflare Workers backend features.
+Current direction: a static-first personal website with reusable multilingual components, interactive frontend tools, and selective Cloudflare Workers backend features.
