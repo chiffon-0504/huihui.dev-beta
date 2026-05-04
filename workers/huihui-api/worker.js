@@ -173,7 +173,7 @@ async function handleTechNews(request, env, ctx) {
   const techNews = await getTechNews();
 
   const response = jsonResponse(
-    { ok: true, techNews},
+    { ok: true, techNews },
     {
       "Cache-Control": "public, max-age=300",
       "X-Cache": "MISS",
@@ -697,7 +697,7 @@ export default {
     return jsonResponse(
       {
         ok: true,
-        message: "huihui.dev API",
+        message: "test deploy",
         endpoints: [
           "/api/tech-news",
           "/api/apod",
