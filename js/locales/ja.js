@@ -9,8 +9,8 @@ window.HUIHUI_I18N.ja = {
     },
     projectUpdate: {
       label: "Project Updates",
-      title: "Steam API ゲーム表示を追加",
-      desc: "AboutページにSteam APIを接続し、選択したGalgameカードを表示します。"
+      title: "Liquid Glass UI 公開",
+      desc: "Tahoe風のガラスUIを導入し、レイヤーブラー・ティント・モバイルドロワーに対応。"
     },
     tech: {
       title: "テックニュース",

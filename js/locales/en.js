@@ -9,8 +9,8 @@ window.HUIHUI_I18N.en = {
     },
     projectUpdate: {
       label: "Project Updates",
-      title: "Added Steam API game showcase",
-      desc: "The About page now uses Steam API data to display selected Galgame cards."
+      title: "Liquid Glass UI Released",
+      desc: "Introduced a Tahoe-style glass system with layered blur, tint, and mobile drawer navigation."
     },
     tech: {
       title: "Tech Updates",

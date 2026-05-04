@@ -9,8 +9,8 @@ window.HUIHUI_I18N.zh = {
     },
     projectUpdate: {
       label: "Project Updates",
-      title: "新增 Steam API 遊戲展示",
-      desc: "關於我頁面已接入 Steam API，顯示自訂 Galgame 遊戲卡片。"
+      title: "Liquid Glass UI 上線",
+      desc: "導入 Tahoe-style 玻璃系統，包含 layered blur、tint 分層與 mobile drawer。"
     },
     tech: {
       title: "科技動態",
