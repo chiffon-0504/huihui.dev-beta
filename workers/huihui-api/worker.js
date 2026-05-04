@@ -697,7 +697,7 @@ export default {
     return jsonResponse(
       {
         ok: true,
-        message: "test deploy",
+        message: "huihui.dev API",
         endpoints: [
           "/api/tech-news",
           "/api/apod",
