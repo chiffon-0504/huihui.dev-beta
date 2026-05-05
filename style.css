@@ -3383,3 +3383,128 @@ body {
     0 10px 24px rgba(47, 140, 255, 0.22);
   backdrop-filter: blur(12px);
 }
+
+/* =========================
+   Page Title Alignment Fix
+   統一各頁標題位置，只改版面不改內容
+========================= */
+
+:root {
+  --page-max-width: 1280px;
+  --page-top-offset: 56px;
+  --page-side-offset: 64px;
+  --page-title-gap: 36px;
+}
+
+/* 統一一般頁面主內容起點 */
+.main {
+  padding: var(--page-top-offset) var(--page-side-offset);
+}
+
+/* About */
+.about-page {
+  width: 100%;
+  max-width: var(--page-max-width);
+  min-height: auto;
+  margin: 0 auto;
+  padding: 0;
+  display: block;
+}
+
+.about-title {
+  margin-top: 0;
+}
+
+/* Works */
+.works-page,
+.work-page {
+  width: 100%;
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+}
+
+.works-page .section-title,
+.work-page .section-title,
+.main > .section-title {
+  margin-top: 0;
+}
+
+/* Posts */
+.posts-page,
+.post-page {
+  width: 100%;
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+}
+
+.posts-page .section-title,
+.post-page .section-title {
+  margin-top: 0;
+}
+
+/* Contact */
+.contact-page {
+  width: 100%;
+  max-width: var(--page-max-width);
+  min-height: auto;
+  margin: 0 auto;
+  display: block;
+  align-items: initial;
+}
+
+.contact-content {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.contact-eyebrow {
+  margin-top: 0;
+}
+
+/* Tier Maker / Tools */
+.tools-page,
+.tier-maker-page,
+.tier-page {
+  width: 100%;
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+}
+
+.tools-page h1,
+.tier-maker-page h1,
+.tier-page h1 {
+  margin-top: 0;
+}
+
+/* 統一標題下方間距 */
+.about-title,
+.section-title,
+.contact-content h1,
+.tools-page h1,
+.tier-maker-page h1,
+.tier-page h1 {
+  margin-bottom: var(--page-title-gap);
+}
+
+/* Works 圖片區不要貼太近標題 */
+.works-grid {
+  margin-top: 0;
+}
+
+/* Mobile */
+@media (max-width: 900px) {
+  :root {
+    --page-top-offset: 32px;
+    --page-side-offset: 20px;
+    --page-title-gap: 24px;
+  }
+
+  .main {
+    padding: var(--page-top-offset) var(--page-side-offset);
+  }
+
+  .contact-content {
+    max-width: 100%;
+  }
+}
