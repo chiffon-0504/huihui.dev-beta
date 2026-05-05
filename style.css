@@ -3385,120 +3385,57 @@ body {
 }
 
 /* =========================
-   Page Title Alignment Fix
-   統一各頁標題位置，只改版面不改內容
-========================= */
-
-/* =========================
-   Global Page Center Layout
-   統一各頁內容置中，只改版面不改內容
+   Unified Page Rail
+   統一所有內頁標題與內容左邊界
 ========================= */
 
 :root {
-  --page-max-width: 1000px;
-  --page-wide-max-width: 1200px;
+  --page-rail-width: 1000px;
   --page-top-offset: 56px;
   --page-side-offset: 48px;
   --page-title-gap: 32px;
 }
 
-/* 全站主內容統一 */
 .main {
   padding: var(--page-top-offset) var(--page-side-offset);
 }
 
-/* About */
-.about-page {
-  width: 100%;
-  max-width: var(--page-max-width);
-  min-height: auto;
-  margin: 0 auto;
-  padding: 0;
-  display: block;
-}
-
-.about-content {
-  width: 100%;
-}
-
-.about-title {
-  margin: 0 0 var(--page-title-gap);
-  text-align: left;
-}
-
-/* Works */
+/* 所有內頁統一同一條內容軌道 */
+.about-page,
 .works-page,
 .work-page,
-.main:has(.works-grid) {
-  width: 100%;
-  max-width: var(--page-wide-max-width);
-  margin: 0 auto;
-}
-
-.main > .section-title,
-.works-page .section-title,
-.work-page .section-title {
-  margin-top: 0;
-  margin-bottom: var(--page-title-gap);
-  text-align: left;
-}
-
-/* Posts */
 .posts-page,
 .post-page,
+.contact-page,
+.tools-page,
+.tier-maker-page,
+.tier-page,
+.main:has(.works-grid),
 .main:has(.post-card),
-.main:has(.posts-grid) {
+.main:has(.posts-grid),
+.main:has(.tier-board),
+.main:has(.tier-list) {
   width: 100%;
-  max-width: var(--page-max-width);
-  margin: 0 auto;
+  max-width: var(--page-rail-width);
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.posts-page .section-title,
-.post-page .section-title {
-  margin-top: 0;
-  margin-bottom: var(--page-title-gap);
-  text-align: left;
-}
-
-/* Contact */
+/* 取消各頁原本造成上下位置不同的設定 */
+.about-page,
 .contact-page {
-  width: 100%;
-  max-width: var(--page-max-width);
   min-height: auto;
-  margin: 0 auto;
+  padding-top: 0;
+  padding-bottom: 0;
   display: block;
   align-items: initial;
 }
 
-.contact-content {
-  width: 100%;
-  max-width: 720px;
-  margin: 0 auto;
-}
-
-.contact-eyebrow {
-  margin-top: 0;
-}
-
+/* 標題全部從同一條左邊界開始 */
+.about-title,
+.section-title,
 .contact-content h1,
-.contact-title {
-  margin-top: 0;
-  margin-bottom: var(--page-title-gap);
-  text-align: left;
-}
-
-/* Tier Maker / Tools */
-.tools-page,
-.tier-maker-page,
-.tier-page,
-.main:has(.tier-maker),
-.main:has(.tier-board),
-.main:has(.tier-list) {
-  width: 100%;
-  max-width: var(--page-wide-max-width);
-  margin: 0 auto;
-}
-
+.contact-title,
 .tools-page h1,
 .tier-maker-page h1,
 .tier-page h1,
@@ -3509,14 +3446,31 @@ body {
   text-align: left;
 }
 
-/* 圖片／卡片內容跟著容器置中 */
+/* Contact 不要自己縮成小版 */
+.contact-content,
+.contact-form,
+.contact-intro {
+  width: 100%;
+  max-width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Works / Posts / Tools 內容跟標題同軌道 */
 .works-grid,
 .posts-grid,
 .post-list,
 .tier-board,
 .tier-list {
-  margin-left: auto;
-  margin-right: auto;
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* About code block 跟標題同軌道 */
+.about-content,
+.about-content .code-block {
+  width: 100%;
 }
 
 /* Mobile */
@@ -3530,32 +3484,4 @@ body {
   .main {
     padding: var(--page-top-offset) var(--page-side-offset);
   }
-
-  .contact-content {
-    max-width: 100%;
-  }
-}
-
-/* Contact center override */
-.contact-page {
-  width: 100%;
-  max-width: var(--page-wide-max-width);
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.contact-content {
-  width: 100%;
-  max-width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.contact-form {
-  width: 100%;
-  max-width: 100%;
-}
-
-.contact-intro {
-  max-width: 100%;
 }
