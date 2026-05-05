@@ -39,6 +39,14 @@ const layoutText = {
   }
 };
 
+const navIcons = {
+  about: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></svg>`,
+  works: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="3"/><path d="m7 16 3.2-3.2 2.6 2.6 2.2-2.2L17.5 16"/><circle cx="9" cy="9" r="1.2"/></svg>`,
+  posts: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h7l3 3v13H7z"/><path d="M14 4v4h4"/><path d="M9.5 12h5"/><path d="M9.5 15.5h5"/></svg>`,
+  contact: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="16" height="12" rx="2.5"/><path d="m5 8 7 5 7-5"/></svg>`,
+  tools: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.8 5.2a4.2 4.2 0 0 0-5 5L5 15v4h4l4.8-4.8a4.2 4.2 0 0 0 5-5l-3 3-3-3z"/></svg>`
+};
+
 function getLocalizedPath(lang, page) {
   const prefix = lang === "zh" ? "/" : `/${lang}/`;
 
@@ -81,12 +89,12 @@ function renderSidebar() {
       </div>
 
       <nav>
-          ${renderNavLink(getLocalizedPath(lang, "about"), "⌾", t.about)}
-          ${renderNavLink(getLocalizedPath(lang, "works"), "▣", t.works)}
-          ${renderNavLink(getLocalizedPath(lang, "posts"), "☰", t.posts)}
-          ${renderNavLink(getLocalizedPath(lang, "contact"), "✉", t.contact)}
+        ${renderNavLink(getLocalizedPath(lang, "about"), navIcons.about, t.about)}
+        ${renderNavLink(getLocalizedPath(lang, "works"), navIcons.works, t.works)}
+        ${renderNavLink(getLocalizedPath(lang, "posts"), navIcons.posts, t.posts)}
+        ${renderNavLink(getLocalizedPath(lang, "contact"), navIcons.contact, t.contact)}
         <a href="${getToolsPath(lang)}" class="nav-link tools-link" data-nav="tools">
-          <span class="nav-icon">⌘</span>
+          <span class="nav-icon">${navIcons.tools}</span>
           <span class="nav-label">${t.tools}</span>
           <span class="beta-badge" aria-label="Beta">Beta</span>
         </a>
@@ -117,16 +125,16 @@ function setActiveSidebarLink() {
       link.classList.add("active");
     }
 
-   if (
-    link.dataset.nav === "tools" &&
-    (
-      currentPath.includes("/tools/") ||
-      currentPath.includes("/en/tools/") ||
-      currentPath.includes("/ja/tools/")
-    )
-  ) {
-    link.classList.add("active");
-  }
+    if (
+      link.dataset.nav === "tools" &&
+      (
+        currentPath.includes("/tools/") ||
+        currentPath.includes("/en/tools/") ||
+        currentPath.includes("/ja/tools/")
+      )
+    ) {
+      link.classList.add("active");
+    }
   });
 }
 
