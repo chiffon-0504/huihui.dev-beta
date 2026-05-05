@@ -85,7 +85,7 @@ function renderSidebar() {
           ${renderNavLink(getLocalizedPath(lang, "works"), "▣", t.works)}
           ${renderNavLink(getLocalizedPath(lang, "posts"), "☰", t.posts)}
           ${renderNavLink(getLocalizedPath(lang, "contact"), "✉", t.contact)}
-        <a href="${getToolsPath(lang)}" class="nav-link tools-link">
+        <a href="${getToolsPath(lang)}" class="nav-link tools-link" data-nav="tools">
           <span class="nav-icon">⌘</span>
           <span class="nav-label">${t.tools}</span>
           <span class="beta-badge" aria-label="Beta">Beta</span>
@@ -117,12 +117,16 @@ function setActiveSidebarLink() {
       link.classList.add("active");
     }
 
-    if (
-      currentPath.includes("/tools/") &&
-      normalizedHref.includes("/tools/")
-    ) {
-      link.classList.add("active");
-    }
+   if (
+    link.dataset.nav === "tools" &&
+    (
+      currentPath.includes("/tools/") ||
+      currentPath.includes("/en/tools/") ||
+      currentPath.includes("/ja/tools/")
+    )
+  ) {
+    link.classList.add("active");
+  }
   });
 }
 
