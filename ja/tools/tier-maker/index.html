@@ -13,7 +13,7 @@
     <div class="sidebar-top">
       <h1><a href="/ja/">huihui.dev</a></h1>
 
-      <div class="lang-switch" aria-label="Language switch">
+      <div class="lang-switch">
         <a href="/">中</a>
         <span>|</span>
         <a href="/en/">English</a>
@@ -28,7 +28,7 @@
         <a href="/ja/contact/">連絡</a>
         <a href="/ja/tools/tier-maker/" class="tools-link">
           ツール
-          <span class="beta-badge" aria-label="Beta">Beta</span>
+          <span class="beta-badge">Beta</span>
         </a>
       </nav>
     </div>
@@ -39,62 +39,66 @@
     </div>
   </aside>
 
-  <main class="main tier-maker-page">
-    <section class="tier-header">
-      <div class="tier-title-row">
-        <h1 data-i18n="tierMaker.title"></h1>
-        <button type="button" id="saveBtn" class="save-button" data-i18n="tierMaker.save"></button>
-      </div>
-      <p data-i18n="tierMaker.intro"></p>
-    </section>
-
-    <section class="tier-toolbar" aria-label="Tier Maker controls" data-i18n-aria-label="tierMaker.toolbarLabel">
-      <button type="button" id="addTierBtn" data-i18n="tierMaker.addTier"></button>
-      <label class="upload-button">
-        <span data-i18n="tierMaker.upload"></span>
-        <input type="file" id="imageUpload" accept="image/*" multiple hidden>
-      </label>
-      <label class="size-control">
-        <span data-i18n="tierMaker.imageSize"></span>
-        <input type="range" id="sizeSlider" min="80" max="220" value="150">
-      </label>
-    </section>
-
-    <section class="tier-board" id="tierBoard">
-      <div class="tier-row">
-        <div class="tier-label-wrap" style="background:#ff7f7f">
-          <input class="tier-label" value="S" aria-label="Tier name" data-i18n-aria-label="tierMaker.tierName">
-          <input class="tier-color" type="color" value="#ff7f7f" aria-label="Tier color" data-i18n-aria-label="tierMaker.tierColor">
+  <main class="main">
+    <section class="page-shell tier-maker-page">
+      <header class="page-header tier-header">
+        <div class="tier-title-row">
+          <h1 data-i18n="tierMaker.title"></h1>
+          <button type="button" id="saveBtn" class="save-button" data-i18n="tierMaker.save"></button>
         </div>
-        <div class="tier-content" aria-label="S ティア"></div>
-        <button type="button" class="delete-tier" aria-label="Delete tier" data-i18n-aria-label="tierMaker.deleteTier">×</button>
-      </div>
+        <p data-i18n="tierMaker.intro"></p>
+      </header>
 
-      <div class="tier-row">
-        <div class="tier-label-wrap" style="background:#ffc07f">
-          <input class="tier-label" value="A" aria-label="Tier name" data-i18n-aria-label="tierMaker.tierName">
-          <input class="tier-color" type="color" value="#ffc07f" aria-label="Tier color" data-i18n-aria-label="tierMaker.tierColor">
-        </div>
-        <div class="tier-content" aria-label="A ティア"></div>
-        <button type="button" class="delete-tier" aria-label="Delete tier" data-i18n-aria-label="tierMaker.deleteTier">×</button>
-      </div>
+      <div class="page-body">
+        <section class="tier-toolbar">
+          <button type="button" id="addTierBtn" data-i18n="tierMaker.addTier"></button>
+          <label class="upload-button">
+            <span data-i18n="tierMaker.upload"></span>
+            <input type="file" id="imageUpload" accept="image/*" multiple hidden>
+          </label>
+          <label class="size-control">
+            <span data-i18n="tierMaker.imageSize"></span>
+            <input type="range" id="sizeSlider" min="80" max="220" value="150">
+          </label>
+        </section>
 
-      <div class="tier-row">
-        <div class="tier-label-wrap" style="background:#ffff7f">
-          <input class="tier-label" value="B" aria-label="Tier name" data-i18n-aria-label="tierMaker.tierName">
-          <input class="tier-color" type="color" value="#ffff7f" aria-label="Tier color" data-i18n-aria-label="tierMaker.tierColor">
-        </div>
-        <div class="tier-content" aria-label="B ティア"></div>
-        <button type="button" class="delete-tier" aria-label="Delete tier" data-i18n-aria-label="tierMaker.deleteTier">×</button>
+        <section class="tier-board" id="tierBoard">
+          <div class="tier-row">
+            <div class="tier-label-wrap" style="background:#ff7f7f">
+              <input class="tier-label" value="S">
+              <input class="tier-color" type="color" value="#ff7f7f">
+            </div>
+            <div class="tier-content"></div>
+            <button type="button" class="delete-tier">×</button>
+          </div>
+
+          <div class="tier-row">
+            <div class="tier-label-wrap" style="background:#ffc07f">
+              <input class="tier-label" value="A">
+              <input class="tier-color" type="color" value="#ffc07f">
+            </div>
+            <div class="tier-content"></div>
+            <button type="button" class="delete-tier">×</button>
+          </div>
+
+          <div class="tier-row">
+            <div class="tier-label-wrap" style="background:#ffff7f">
+              <input class="tier-label" value="B">
+              <input class="tier-color" type="color" value="#ffff7f">
+            </div>
+            <div class="tier-content"></div>
+            <button type="button" class="delete-tier">×</button>
+          </div>
+        </section>
+
+        <section class="image-pool">
+          <h2 data-i18n="tierMaker.pool"></h2>
+          <div class="pool-content" id="poolContent"></div>
+        </section>
+
+        <p class="tier-note" data-i18n="tierMaker.note"></p>
       </div>
     </section>
-
-    <section class="image-pool">
-      <h2 data-i18n="tierMaker.pool"></h2>
-      <div class="pool-content" id="poolContent"></div>
-    </section>
-
-    <p class="tier-note" data-i18n="tierMaker.note"></p>
   </main>
 
   <script src="/js/locales/zh.js"></script>

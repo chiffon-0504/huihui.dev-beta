@@ -107,7 +107,11 @@ function renderAboutPage() {
   root.classList.add("about-page");
   root.innerHTML = `
     <div class="about-content">
-      <h1 data-i18n="about.title"></h1>
+      <header class="page-header">
+        <h1 data-i18n="about.title"></h1>
+      </header>
+
+    <div class="page-body">
 
       <pre class="code-auto"><code id="profileCode" class="language-python"></code></pre>
 
@@ -119,7 +123,8 @@ function renderAboutPage() {
         </div>
       </section>
 
-      <p class="interest-note" data-i18n="about.copyright"></p>
+            <p class="interest-note" data-i18n="about.copyright"></p>
+      </div>
     </div>
   `;
 }
