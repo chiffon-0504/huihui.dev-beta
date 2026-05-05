@@ -3855,3 +3855,22 @@ body {
     margin-left: 0 !important;
   }
 }
+
+/* =========================
+   Sidebar Home Link
+========================= */
+
+.sidebar .sidebar-top h1 a {
+  font-size: 28px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  letter-spacing: -0.035em !important;
+  color: #132033 !important;
+
+  padding: 18px 26px !important;
+  min-height: 52px !important;
+}
+
+.sidebar .sidebar-top h1 a:hover {
+  color: #1677ff !important;
+}
