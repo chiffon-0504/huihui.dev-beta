@@ -81,12 +81,12 @@ function renderSidebar() {
       </div>
 
       <nav>
-        ${renderNavLink(getLocalizedPath(lang, "about"), "👤", t.about)}
-        ${renderNavLink(getLocalizedPath(lang, "works"), "📁", t.works)}
-        ${renderNavLink(getLocalizedPath(lang, "posts"), "📝", t.posts)}
-        ${renderNavLink(getLocalizedPath(lang, "contact"), "✉️", t.contact)}
+          ${renderNavLink(getLocalizedPath(lang, "about"), "⌾", t.about)}
+          ${renderNavLink(getLocalizedPath(lang, "works"), "▣", t.works)}
+          ${renderNavLink(getLocalizedPath(lang, "posts"), "☰", t.posts)}
+          ${renderNavLink(getLocalizedPath(lang, "contact"), "✉", t.contact)}
         <a href="${getToolsPath(lang)}" class="nav-link tools-link">
-          <span class="nav-icon">🛠</span>
+          <span class="nav-icon">⌘</span>
           <span class="nav-label">${t.tools}</span>
           <span class="beta-badge" aria-label="Beta">Beta</span>
         </a>

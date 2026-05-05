@@ -83,6 +83,7 @@ img {
   gap: 14px;
 }
 
+
 .nav-link {
   display: flex;
   align-items: center;
@@ -131,6 +132,7 @@ img {
   display: flex;
   align-items: center;
 }
+
 
 .beta-badge {
   display: inline-flex;
