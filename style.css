@@ -3911,3 +3911,14 @@ body {
 .sidebar .sidebar-top h1 a:hover {
   color: #1677ff !important;
 }
+
+.sidebar-top nav a.nav-link.active,
+.sidebar-top nav a.nav-link.active .nav-label,
+.sidebar-top nav a.nav-link.active .nav-icon {
+  color: #009AFF !important;
+}
+
+.sidebar-top nav a.nav-link.active {
+  background: rgba(0, 154, 255, 0.10);
+  border-color: rgba(0, 154, 255, 0.36);
+}
