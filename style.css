@@ -3813,33 +3813,38 @@ body {
 }
 
 /* =========================
-   Mobile menu button final position
+   Mobile left drawer safe header
 ========================= */
 
 @media (max-width: 900px) {
   #menuToggle {
     position: fixed !important;
-    top: 14px !important;
-    left: auto !important;
-    right: 14px !important;
-    width: 46px !important;
-    height: 46px !important;
-    min-width: 46px !important;
-    min-height: 46px !important;
+    top: 12px !important;
+    left: 12px !important;
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
     padding: 0 !important;
-    border-radius: 14px !important;
+    border-radius: 16px !important;
     font-size: 24px !important;
     line-height: 1 !important;
     z-index: 2000 !important;
   }
 
-  .home-text h1,
   .about-title,
   .section-title,
-  .contact-content > h1,
   .posts-page > h1,
+  .contact-content > h1,
   .tier-maker-page > h1,
   .works-page > h1 {
+    margin-top: 72px !important;
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+  }
+
+  .home-text h1 {
+    margin-top: 0 !important;
     padding-left: 0 !important;
     margin-left: 0 !important;
   }
