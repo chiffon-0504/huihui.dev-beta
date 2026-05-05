@@ -3811,3 +3811,33 @@ body {
     border-radius: 18px;
   }
 }
+
+/* =========================
+   Mobile title safe area
+========================= */
+
+@media (max-width: 900px) {
+  .main {
+    padding-top: max(96px, calc(env(safe-area-inset-top) + 72px));
+  }
+
+  .home-hero,
+  .about-page,
+  .posts-page,
+  .contact-page,
+  .tier-maker-page,
+  .tools-page,
+  .works-page {
+    padding-top: 0;
+  }
+
+  .section-title,
+  .about-title,
+  .contact-title,
+  .tier-maker-title,
+  .posts-title,
+  .works-title,
+  .home-text h1 {
+    scroll-margin-top: 96px;
+  }
+}
