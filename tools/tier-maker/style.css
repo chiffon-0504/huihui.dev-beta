@@ -1,6 +1,12 @@
-.tier-maker-page{max-width:2000px}
+.tier-maker-page{
+  max-width:none;
+}
 
-.tier-title-row{display:flex;align-items:center;justify-content:space-between}
+.tier-title-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
 
 .save-button{
   padding:12px 28px;
@@ -54,10 +60,6 @@
 .tier-board.exporting .delete-tier{display:none}
 
 /* Liquid Glass Theme Layer */
-
-.tier-maker-page{
-  max-width:2000px;
-}
 
 .tier-header,
 .tier-toolbar,
@@ -404,4 +406,32 @@ button:hover,
   background: rgba(255,255,255,.76);
   border-color: rgba(80,120,170,.28);
   color: rgba(10,15,25,.94);
+}
+
+/* Page shell containment fix */
+.main > .page-shell.tier-maker-page {
+  width: 100%;
+  max-width: var(--page-shell-width,1000px);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.tier-maker-page .tier-header,
+.tier-maker-page .tier-toolbar,
+.tier-maker-page .tier-board,
+.tier-maker-page .image-pool,
+.tier-maker-page .tier-note {
+  width: 100%;
+  max-width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.tier-maker-page .tier-header {
+  margin-top: 0;
+}
+
+.tier-maker-page .tier-board,
+.tier-maker-page .pool-content {
+  overflow: hidden;
 }
