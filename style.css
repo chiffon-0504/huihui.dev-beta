@@ -3957,3 +3957,7 @@ body {
 .sidebar-top nav a.nav-link.active .nav-label {
   color: #009AFF !important;
 }
+
+.nav-icon svg {
+  transform: translateY(2px);
+}
