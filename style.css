@@ -3601,7 +3601,13 @@ body {
 
 /* 主內容起點固定 */
 .main {
-  padding: var(--page-top-offset) var(--page-side-offset) !important;
+  padding: var(--page-top-offset) var(--page-side-offset);
+}
+
+@media (max-width: 900px) {
+  .main {
+    padding-top: 72px !important;
+  }
 }
 
 /* 所有內頁版心固定 */
