@@ -52,6 +52,15 @@ function getToolsPath(lang) {
   return "/tools/tier-maker/";
 }
 
+function renderNavLink(href, icon, label, extraClass = "") {
+  return `
+    <a href="${href}" class="nav-link ${extraClass}">
+      <span class="nav-icon">${icon}</span>
+      <span class="nav-label">${label}</span>
+    </a>
+  `;
+}
+
 function renderSidebar() {
   const lang = getCurrentLang();
   const t = layoutText[lang] || layoutText.zh;
@@ -72,12 +81,13 @@ function renderSidebar() {
       </div>
 
       <nav>
-        <a href="${getLocalizedPath(lang, "about")}">${t.about}</a>
-        <a href="${getLocalizedPath(lang, "works")}">${t.works}</a>
-        <a href="${getLocalizedPath(lang, "posts")}">${t.posts}</a>
-        <a href="${getLocalizedPath(lang, "contact")}">${t.contact}</a>
-        <a href="${getToolsPath(lang)}" class="tools-link">
-          ${t.tools}
+        ${renderNavLink(getLocalizedPath(lang, "about"), "👤", t.about)}
+        ${renderNavLink(getLocalizedPath(lang, "works"), "📁", t.works)}
+        ${renderNavLink(getLocalizedPath(lang, "posts"), "📝", t.posts)}
+        ${renderNavLink(getLocalizedPath(lang, "contact"), "✉️", t.contact)}
+        <a href="${getToolsPath(lang)}" class="nav-link tools-link">
+          <span class="nav-icon">🛠</span>
+          <span class="nav-label">${t.tools}</span>
           <span class="beta-badge" aria-label="Beta">Beta</span>
         </a>
       </nav>
