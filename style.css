@@ -3866,6 +3866,9 @@ body {
   line-height: 1 !important;
   letter-spacing: -0.035em !important;
   color: #132033 !important;
+
+  padding: 18px 26px !important;
+  min-height: 52px !important;
 }
 
 .sidebar .sidebar-top h1 a:hover {
