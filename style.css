@@ -3535,3 +3535,27 @@ body {
     max-width: 100%;
   }
 }
+
+/* Contact center override */
+.contact-page {
+  width: 100%;
+  max-width: var(--page-wide-max-width);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.contact-content {
+  width: 100%;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.contact-form {
+  width: 100%;
+  max-width: 100%;
+}
+
+.contact-intro {
+  max-width: 100%;
+}
