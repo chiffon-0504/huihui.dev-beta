@@ -3376,8 +3376,8 @@ body {
 .sidebar-top nav a.active {
   background: rgba(47, 140, 255, 0.2);
   border-color: rgba(47, 140, 255, 0.5);
-  color: #006ee6;
-  font-weight: 600;
+  color: #005fc7;
+  font-weight: 700;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.32),
     0 10px 24px rgba(47, 140, 255, 0.22);
