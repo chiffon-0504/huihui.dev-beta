@@ -3813,32 +3813,23 @@ body {
 }
 
 /* =========================
-   Mobile drawer button safe area
+   Mobile fixed menu overlap fix
 ========================= */
 
 @media (max-width: 900px) {
   .main {
     margin-left: 0;
-    padding: 96px 32px 32px;
+    padding: 28px;
   }
 
-  .home-hero,
-  .about-page,
-  .posts-page,
-  .contact-page,
-  .tier-maker-page,
-  .tools-page,
-  .works-page {
-    padding-top: 0;
-  }
-
-  .section-title,
+  .home-text h1,
   .about-title,
-  .contact-title,
-  .posts-title,
-  .works-title,
-  .tier-maker-title,
-  .home-text h1 {
-    margin-left: 0;
+  .section-title,
+  .contact-content > h1,
+  .posts-page > h1,
+  .tier-maker-page > h1,
+  .tools-page > h1,
+  .works-page > h1 {
+    padding-left: 64px;
   }
 }
