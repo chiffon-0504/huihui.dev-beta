@@ -3389,14 +3389,20 @@ body {
    統一各頁標題位置，只改版面不改內容
 ========================= */
 
+/* =========================
+   Global Page Center Layout
+   統一各頁內容置中，只改版面不改內容
+========================= */
+
 :root {
-  --page-max-width: 1280px;
+  --page-max-width: 1000px;
+  --page-wide-max-width: 1200px;
   --page-top-offset: 56px;
-  --page-side-offset: 64px;
-  --page-title-gap: 36px;
+  --page-side-offset: 48px;
+  --page-title-gap: 32px;
 }
 
-/* 統一一般頁面主內容起點 */
+/* 全站主內容統一 */
 .main {
   padding: var(--page-top-offset) var(--page-side-offset);
 }
@@ -3411,27 +3417,37 @@ body {
   display: block;
 }
 
+.about-content {
+  width: 100%;
+}
+
 .about-title {
-  margin-top: 0;
+  margin: 0 0 var(--page-title-gap);
+  text-align: left;
 }
 
 /* Works */
 .works-page,
-.work-page {
+.work-page,
+.main:has(.works-grid) {
   width: 100%;
-  max-width: var(--page-max-width);
+  max-width: var(--page-wide-max-width);
   margin: 0 auto;
 }
 
+.main > .section-title,
 .works-page .section-title,
-.work-page .section-title,
-.main > .section-title {
+.work-page .section-title {
   margin-top: 0;
+  margin-bottom: var(--page-title-gap);
+  text-align: left;
 }
 
 /* Posts */
 .posts-page,
-.post-page {
+.post-page,
+.main:has(.post-card),
+.main:has(.posts-grid) {
   width: 100%;
   max-width: var(--page-max-width);
   margin: 0 auto;
@@ -3440,6 +3456,8 @@ body {
 .posts-page .section-title,
 .post-page .section-title {
   margin-top: 0;
+  margin-bottom: var(--page-title-gap);
+  text-align: left;
 }
 
 /* Contact */
@@ -3462,34 +3480,43 @@ body {
   margin-top: 0;
 }
 
+.contact-content h1,
+.contact-title {
+  margin-top: 0;
+  margin-bottom: var(--page-title-gap);
+  text-align: left;
+}
+
 /* Tier Maker / Tools */
 .tools-page,
 .tier-maker-page,
-.tier-page {
+.tier-page,
+.main:has(.tier-maker),
+.main:has(.tier-board),
+.main:has(.tier-list) {
   width: 100%;
-  max-width: var(--page-max-width);
+  max-width: var(--page-wide-max-width);
   margin: 0 auto;
 }
 
 .tools-page h1,
 .tier-maker-page h1,
-.tier-page h1 {
+.tier-page h1,
+.main:has(.tier-board) h1,
+.main:has(.tier-list) h1 {
   margin-top: 0;
-}
-
-/* 統一標題下方間距 */
-.about-title,
-.section-title,
-.contact-content h1,
-.tools-page h1,
-.tier-maker-page h1,
-.tier-page h1 {
   margin-bottom: var(--page-title-gap);
+  text-align: left;
 }
 
-/* Works 圖片區不要貼太近標題 */
-.works-grid {
-  margin-top: 0;
+/* 圖片／卡片內容跟著容器置中 */
+.works-grid,
+.posts-grid,
+.post-list,
+.tier-board,
+.tier-list {
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* Mobile */
