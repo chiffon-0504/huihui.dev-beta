@@ -3861,10 +3861,10 @@ body {
 ========================= */
 
 .sidebar .sidebar-top h1 a {
-  font-size: 34px !important;
-  font-weight: 600 !important;
+  font-size: 28px !important;
+  font-weight: 700 !important;
   line-height: 1 !important;
-  letter-spacing: -0.045em !important;
+  letter-spacing: -0.035em !important;
   color: #132033 !important;
 }
 
