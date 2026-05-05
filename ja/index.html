@@ -1,66 +1,94 @@
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <link rel="stylesheet" href="../style.css" />
-
-  <title>作品 | huihui.dev</title>
+  <link rel="stylesheet" href="/style.css" />
+  <title>huihui.dev</title>
 </head>
 
 <body>
+
   <aside id="site-sidebar" class="sidebar"></aside>
 
   <main class="main">
-    <section class="page-shell works-page">
-      <header class="works-hero">
-        <p class="works-eyebrow">Photography / Travel / Visual Records</p>
-        <h1 data-i18n="works.title"></h1>
-        <p class="works-intro">
-          用照片整理旅行、城市、動物與日常觀察。這裡放的是我覺得有記憶點的畫面。
-        </p>
-      </header>
+    <section class="home-hero fade-in">
+      <div class="home-text">
+        <h1>huihui.dev</h1>
+        <h4 data-i18n="home.hero.subtitle"></h4>
+        <div class="hero-actions">
+          <a href="/ja/about/" class="hero-btn" data-i18n="home.hero.about"></a>
+          <a href="/ja/contact/" class="hero-btn" data-i18n="home.hero.contact"></a>
+        </div>
+      </div>
 
-      <section class="works-feature">
-        <img src="../images/2001_w.webp" data-i18n-alt="works.images.fuji" class="zoomable" />
-      </section>
+      <article class="project-update-card" aria-labelledby="projectUpdateTitle">
+        <p class="project-update-label" data-i18n="home.projectUpdate.label"></p>
+        <h2 id="projectUpdateTitle" data-i18n="home.projectUpdate.title"></h2>
+        <p class="project-update-desc" data-i18n="home.projectUpdate.desc"></p>
+        <a
+          id="projectUpdateLink"
+          class="project-update-meta"
+          href="https://github.com/chiffon-0504/huihui.dev-project-v1"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          huihui.dev-project-v1 · Loading...
+        </a>
+      </article>
+    </section>
 
-      <section class="works-gallery" aria-label="Works gallery">
-        <article class="work-card work-card-wide">
-          <img src="../images/2002_w.webp" data-i18n-alt="works.images.tsutenkaku" class="zoomable" />
-        </article>
+    <section class="daily-inspiration-section fade-in fade-in-delay-2" aria-labelledby="apodTitle">
+      <article class="apod-card">
+        <a
+          class="apod-media-link"
+          id="apod-link"
+          href="https://apod.nasa.gov/apod/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <img
+            id="apod-image"
+            class="apod-image"
+            src="/images/0001_hp.webp"
+            alt="NASA APOD"
+            loading="lazy"
+          />
+        </a>
 
-        <article class="work-card work-card-tall">
-          <img src="../images/2003_w.webp" data-i18n-alt="works.images.yokohama" class="zoomable" />
-        </article>
+        <div class="apod-content">
+          <p class="apod-label">Daily Inspiration</p>
+          <h2 id="apodTitle">NASA APODを読み込み中...</h2>
+          <p id="apod-desc">今日の天文画像を取得しています。</p>
+          <p id="apod-date" class="apod-date"></p>
+        </div>
+      </article>
+    </section>
 
-        <article class="work-card">
-          <img src="../images/2004_w.webp" data-i18n-alt="works.images.train" class="zoomable" />
-        </article>
+    <section class="tech-news-section fade-in fade-in-delay-1" aria-labelledby="techNewsTitle">
+      <div class="tech-news-header">
+        <h2 id="techNewsTitle" data-i18n="home.tech.title"></h2>
+        <p data-i18n="home.tech.desc"></p>
+      </div>
 
-        <article class="work-card">
-          <img src="../images/2005_w.webp" data-i18n-alt="works.images.deer" class="zoomable" />
-        </article>
-
-        <article class="work-card">
-          <img src="../images/2006_w.webp" data-i18n-alt="works.images.penguin" class="zoomable" />
-        </article>
-      </section>
+      <div id="techNewsCards" class="tech-news-grid">
+        <p class="tech-news-loading">最新情報を読み込み中...</p>
+      </div>
     </section>
   </main>
 
   <div class="lightbox" id="lightbox">
     <span class="lightbox-close" id="lightboxClose">&times;</span>
-    <img class="lightbox-img" id="lightboxImg" src="" data-i18n-alt="works.images.preview" />
+    <img class="lightbox-img" id="lightboxImg" src="" alt="プレビュー" />
   </div>
 
-  <script src="../js/layout.js"></script>
-  <script src="../js/main.js"></script>
-  <script src="../js/lightbox.js"></script>
-  <script src="../js/locales/zh.js"></script>
-  <script src="../js/locales/en.js"></script>
-  <script src="../js/locales/ja.js"></script>
-  <script src="../js/i18n.js"></script>
+  <script src="/js/layout.js"></script>
+  <script src="/js/main.js"></script>
+  <script src="/js/lightbox.js"></script>
+  <script src="/js/locales/zh.js"></script>
+  <script src="/js/locales/en.js"></script>
+  <script src="/js/locales/ja.js"></script>
+  <script src="/js/i18n.js"></script>
+
 </body>
 </html>
