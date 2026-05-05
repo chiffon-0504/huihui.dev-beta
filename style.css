@@ -3813,23 +3813,16 @@ body {
 }
 
 /* =========================
-   Mobile fixed menu overlap fix
+   Mobile menu button position
 ========================= */
 
 @media (max-width: 900px) {
-  .main {
-    margin-left: 0;
-    padding: 28px;
-  }
-
-  .home-text h1,
-  .about-title,
-  .section-title,
-  .contact-content > h1,
-  .posts-page > h1,
-  .tier-maker-page > h1,
-  .tools-page > h1,
-  .works-page > h1 {
-    padding-left: 64px;
+  .sidebar-toggle,
+  .menu-toggle,
+  .drawer-toggle,
+  .mobile-menu-toggle {
+    top: 20px !important;
+    left: 20px !important;
+    transform: none !important;
   }
 }
