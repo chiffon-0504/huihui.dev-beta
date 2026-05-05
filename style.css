@@ -3813,12 +3813,13 @@ body {
 }
 
 /* =========================
-   Mobile title safe area
+   Mobile drawer button safe area
 ========================= */
 
 @media (max-width: 900px) {
   .main {
-    padding-top: max(96px, calc(env(safe-area-inset-top) + 72px));
+    margin-left: 0;
+    padding: 96px 32px 32px;
   }
 
   .home-hero,
@@ -3834,10 +3835,10 @@ body {
   .section-title,
   .about-title,
   .contact-title,
-  .tier-maker-title,
   .posts-title,
   .works-title,
+  .tier-maker-title,
   .home-text h1 {
-    scroll-margin-top: 96px;
+    margin-left: 0;
   }
 }
