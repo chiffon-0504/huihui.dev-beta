@@ -91,14 +91,26 @@ function renderSidebar() {
 }
 
 function setActiveSidebarLink() {
-  const currentPath = window.location.pathname;
+  const currentPath = window.location.pathname.replace(/\/$/, "");
 
   document.querySelectorAll(".sidebar-top nav a").forEach((link) => {
     const href = link.getAttribute("href");
-
     if (!href) return;
 
-    if (currentPath === href || currentPath.startsWith(href)) {
+    const normalizedHref = href.replace(/\/$/, "");
+    link.classList.remove("active");
+
+    if (
+      currentPath === normalizedHref ||
+      currentPath.startsWith(`${normalizedHref}/`)
+    ) {
+      link.classList.add("active");
+    }
+
+    if (
+      currentPath.includes("/tools/") &&
+      normalizedHref.includes("/tools/")
+    ) {
       link.classList.add("active");
     }
   });
