@@ -3813,24 +3813,33 @@ body {
 }
 
 /* =========================
-   Mobile page title safe offset
+   Mobile menu button compact fix
 ========================= */
 
 @media (max-width: 900px) {
   #menuToggle {
     position: fixed !important;
-    top: 14px !important;
-    left: 14px !important;
+    top: 10px !important;
+    left: 10px !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    padding: 0 !important;
+    border-radius: 14px !important;
+    font-size: 24px !important;
+    line-height: 1 !important;
     z-index: 2000 !important;
   }
 
-  /* 只修子頁標題，不碰首頁 huihui.dev */
-  body:not(.home) .about-title,
-  body:not(.home) .section-title,
-  body:not(.home) .contact-content > h1,
-  body:not(.home) .posts-page > h1,
-  body:not(.home) .tier-maker-page > h1,
-  body:not(.home) .works-page > h1 {
-    padding-left: 68px !important;
+  .about-title,
+  .section-title,
+  .contact-content > h1,
+  .posts-page > h1,
+  .tier-maker-page > h1,
+  .works-page > h1,
+  .home-text h1 {
+    padding-left: 0 !important;
+    margin-left: 0 !important;
   }
 }
