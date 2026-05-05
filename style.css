@@ -3354,10 +3354,17 @@ body {
 
 /* ✅ active（重點） */
 .sidebar-top nav a.active {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  position: relative;
+}
 
-  color: #5DAEFF;
-
-  backdrop-filter: blur(8px);
+.sidebar-top nav a.active::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  width: 4px;
+  height: 22px;
+  border-radius: 999px;
+  background: #2f8cff;
+  transform: translateY(-50%);
 }
