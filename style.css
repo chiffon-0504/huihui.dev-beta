@@ -3857,26 +3857,17 @@ body {
 }
 
 /* =========================
-   Sidebar Brand Home Button
+   Sidebar Home Link
 ========================= */
 
-.sidebar-brand {
-  font-size: 30px;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  padding: 18px 24px;
+.sidebar .sidebar-top h1 a {
+  font-size: 36px !important;
+  font-weight: 850 !important;
+  line-height: 1 !important;
+  letter-spacing: -0.05em !important;
+  color: #132033 !important;
 }
 
-.sidebar-brand:hover {
-  transform: translateY(-1px);
-  border-color: rgba(80, 150, 255, 0.55);
-  background: rgba(255, 255, 255, 0.20);
-}
-
-.brand-home-hint {
-  margin-left: 10px;
-  font-size: 12px;
-  font-weight: 700;
-  opacity: 0.65;
-  letter-spacing: 0.02em;
+.sidebar .sidebar-top h1 a:hover {
+  color: #1677ff !important;
 }
