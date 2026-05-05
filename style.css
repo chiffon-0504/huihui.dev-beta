@@ -3855,3 +3855,28 @@ body {
     margin-left: 0 !important;
   }
 }
+
+/* =========================
+   Sidebar Brand Home Button
+========================= */
+
+.sidebar-brand {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  padding: 18px 24px;
+}
+
+.sidebar-brand:hover {
+  transform: translateY(-1px);
+  border-color: rgba(80, 150, 255, 0.55);
+  background: rgba(255, 255, 255, 0.20);
+}
+
+.brand-home-hint {
+  margin-left: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0.65;
+  letter-spacing: 0.02em;
+}
