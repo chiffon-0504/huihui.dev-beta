@@ -3813,18 +3813,19 @@ body {
 }
 
 /* =========================
-   Mobile menu button compact fix
+   Mobile menu button final position
 ========================= */
 
 @media (max-width: 900px) {
   #menuToggle {
     position: fixed !important;
-    top: 10px !important;
-    left: 10px !important;
-    width: 44px !important;
-    height: 44px !important;
-    min-width: 44px !important;
-    min-height: 44px !important;
+    top: 14px !important;
+    left: auto !important;
+    right: 14px !important;
+    width: 46px !important;
+    height: 46px !important;
+    min-width: 46px !important;
+    min-height: 46px !important;
     padding: 0 !important;
     border-radius: 14px !important;
     font-size: 24px !important;
@@ -3832,13 +3833,13 @@ body {
     z-index: 2000 !important;
   }
 
+  .home-text h1,
   .about-title,
   .section-title,
   .contact-content > h1,
   .posts-page > h1,
   .tier-maker-page > h1,
-  .works-page > h1,
-  .home-text h1 {
+  .works-page > h1 {
     padding-left: 0 !important;
     margin-left: 0 !important;
   }
