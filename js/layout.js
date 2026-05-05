@@ -90,4 +90,21 @@ function renderSidebar() {
   `;
 }
 
-document.addEventListener("DOMContentLoaded", renderSidebar);
+function setActiveSidebarLink() {
+  const currentPath = window.location.pathname;
+
+  document.querySelectorAll(".sidebar-top nav a").forEach((link) => {
+    const href = link.getAttribute("href");
+
+    if (!href) return;
+
+    if (currentPath === href || currentPath.startsWith(href)) {
+      link.classList.add("active");
+    }
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  renderSidebar();
+  setActiveSidebarLink();
+});

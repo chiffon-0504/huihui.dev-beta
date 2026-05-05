@@ -3338,3 +3338,26 @@ body {
   color: rgba(45, 58, 78, 0.72) !important;
   font-weight: 500;
 }
+
+/* sidebar item 基礎 */
+.sidebar-top nav a {
+  display: block;
+  padding: 10px 14px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+/* hover */
+.sidebar-top nav a:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ✅ active（重點） */
+.sidebar-top nav a.active {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+
+  color: #5DAEFF;
+
+  backdrop-filter: blur(8px);
+}
