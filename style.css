@@ -4267,7 +4267,7 @@ body {
 
 /* =========================
    Sidebar Offset Override Patch
-   修正桌面版 sidebar 蓋住貼文 / 工具頁內容
+   修正桌面版 sidebar 與主內容寬度
 ========================= */
 
 :root {
@@ -4277,11 +4277,16 @@ body {
 @media (min-width: 901px) {
   .main {
     margin-left: var(--sidebar-offset) !important;
+    width: calc(100vw - var(--sidebar-offset)) !important;
+    max-width: calc(100vw - var(--sidebar-offset)) !important;
+    overflow-x: hidden;
   }
 }
 
 @media (max-width: 900px) {
   .main {
     margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 }
