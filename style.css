@@ -3911,7 +3911,7 @@ body {
   width: var(--sidebar-width);
   min-width: var(--sidebar-width);
   max-width: var(--sidebar-width);
-  height: 720px;
+  height: calc(100vh - 16px);
   min-height: 0;
   max-height: calc(100vh - 16px);
   align-self: flex-start;
@@ -4013,7 +4013,7 @@ body {
     position: fixed;
     top: 8px;
     bottom: auto;
-    height: 680px;
+    height: calc(100vh - 16px);
     min-height: 0;
     max-height: calc(100vh - 16px);
     display: flex;
@@ -4047,7 +4047,7 @@ body {
     position: fixed;
     top: 8px;
     bottom: auto;
-    height: 720px;
+    height: calc(100vh - 16px);
     min-height: 0;
     max-height: calc(100vh - 16px);
     display: flex;
