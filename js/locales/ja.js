@@ -31,41 +31,44 @@ window.HUIHUI_I18N.ja = {
     error: "送信に失敗しました。後でもう一度お試しください。",
     fallbackPrefix: "直接メールする場合："
   },
-works: {
-  title: "作品",
-  lead: "プロジェクト、UI実験、そしてhuihui.devの写真作品。",
-  cards: {
-    website: {
-      type: "Webサイト",
-      title: "huihui.dev",
-      desc: "共通レイアウト、多言語ページ、Cloudflareデプロイを使った個人サイト。",
-      tag: "HTML / CSS / JavaScript"
+  works: {
+    title: "作品",
+    lead: "プロジェクト、UI実験、そしてhuihui.devの写真作品。",
+    cards: {
+      website: {
+        type: "Webサイト",
+        title: "huihui.dev",
+        desc: "共通レイアウト、多言語ページ、Cloudflareデプロイを使った個人サイト。",
+        tag: "HTML / CSS / JavaScript"
+      },
+      tierMaker: {
+        type: "ツール",
+        title: "Tier Maker",
+        desc: "ドラッグ＆ドロップ排序、カスタム画像、PNG書き出しに対応したランク表ツール。",
+        tag: "Canvas / UI"
+      },
+      workers: {
+        type: "API",
+        title: "Workers API",
+        desc: "Tech Updates、NASA APOD、GitHub更新、Steamデータ、Contactフォームのルーティングを統合。",
+        tag: "Cloudflare Workers"
+      },
+      photography: "写真",
+      travel: "旅写真",
+      train: "鉄道",
+      deer: "奈良",
+      penguin: "水族館"
     },
-    tierMaker: {
-      type: "ツール",
-      title: "Tier Maker",
-      desc: "ドラッグ＆ドロップ排序、カスタム画像、PNG書き出しに対応したランク表ツール。",
-      tag: "Canvas / UI"
-    },
-    workers: {
-      type: "API",
-      title: "Workers API",
-      desc: "Tech Updates、NASA APOD、GitHub更新、Steamデータ、Contactフォームのルーティングを統合。",
-      tag: "Cloudflare Workers"
-    },
-    photography: "写真",
-    travel: "旅写真"
+    images: {
+      fuji: "富士山",
+      tsutenkaku: "通天閣",
+      yokohama: "横浜港",
+      train: "電車",
+      deer: "鹿",
+      penguin: "ペンギン",
+      preview: "拡大プレビュー"
+    }
   },
-  images: {
-    fuji: "富士山",
-    tsutenkaku: "通天閣",
-    yokohama: "横浜港",
-    train: "電車",
-    deer: "鹿",
-    penguin: "ペンギン",
-    preview: "拡大プレビュー"
-  }
-},
   posts: {
     title: "投稿",
     intro: "最近の記録・写真・ゲーム。",
