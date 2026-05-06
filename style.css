@@ -4180,3 +4180,74 @@ body {
   background: rgba(255, 255, 255, 0.18);
   backdrop-filter: blur(10px);
 }
+
+/* =========================
+   Works Showcase color overrides
+========================= */
+
+/* huihui.dev card: keep photo, force readable white text */
+.showcase-card-large .showcase-card-info h2,
+.showcase-card-large .showcase-card-info p {
+  color: #fff !important;
+  opacity: 1;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.85);
+}
+
+.showcase-card-large .showcase-card-info {
+  color: #fff;
+}
+
+.showcase-card-large::after {
+  background:
+    linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.78) 0%,
+      rgba(0, 0, 0, 0.48) 34%,
+      rgba(0, 0, 0, 0.12) 68%,
+      rgba(0, 0, 0, 0.02) 100%
+    );
+}
+
+/* Tier Maker: red-yellow gradient + black text */
+.showcase-text-card:nth-of-type(1) {
+  background:
+    linear-gradient(135deg, #ff4d4d 0%, #ffb347 45%, #fff176 100%) !important;
+}
+
+.showcase-text-card:nth-of-type(1)::after {
+  background:
+    linear-gradient(
+      to top,
+      rgba(255, 255, 255, 0.28),
+      rgba(255, 255, 255, 0.08)
+    ) !important;
+}
+
+/* Workers API: Cloudflare orange + black text */
+.showcase-text-card:nth-of-type(2) {
+  background: #F6821F !important;
+}
+
+.showcase-text-card:nth-of-type(2)::after {
+  background:
+    linear-gradient(
+      to top,
+      rgba(255, 255, 255, 0.22),
+      rgba(255, 255, 255, 0.04)
+    ) !important;
+}
+
+/* Text cards: black text */
+.showcase-text-card .showcase-card-info,
+.showcase-text-card .showcase-card-info h2,
+.showcase-text-card .showcase-card-info p {
+  color: #111827 !important;
+  text-shadow: none !important;
+}
+
+.showcase-text-card .showcase-type,
+.showcase-text-card .showcase-tag {
+  color: #111827 !important;
+  background: rgba(255, 255, 255, 0.42) !important;
+  backdrop-filter: blur(10px);
+}
