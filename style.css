@@ -156,9 +156,10 @@ img {
 
 /* Main */
 .main {
-  margin-left: 320px;
+  margin-left: 340px;
   padding: 28px;
   min-width: 0;
+  overflow-x: clip;
 }
 
 /* Hero */
@@ -770,8 +771,8 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 }
 
 .interest-gallery img {
-  width: 1000px !important;
-  max-width: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
   height: auto !important;
   border-radius: 18px;
   display: block;
@@ -4266,48 +4267,15 @@ body {
 }
 
 /* =========================
-   Layout Width Safety Patch
-   sidebar offset + prevent content clipping
+   Final targeted layout fixes
 ========================= */
-
-:root {
-  --sidebar-offset: 340px;
-}
 
 @media (min-width: 901px) {
   .main {
-    margin-left: var(--sidebar-offset) !important;
-    width: auto !important;
-    max-width: none !important;
-    overflow-x: visible !important;
+    margin-left: 340px !important;
   }
 
-  .page-shell,
-  .home-hero,
-  .daily-inspiration-section,
-  .tech-news-section,
-  .about-page,
-  .about-content,
-  .contact-page,
-  .tier-maker-page {
-    width: 100% !important;
-    max-width: 1200px !important;
-  }
-
-  .apod-card,
-  .project-update-card,
-  .galgame-showcase,
-  .tier-board,
-  .waiting-area {
-    width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-  }
-
-  .interest-gallery,
-  .interest-gallery > img,
-  .galgame-banner,
-  .apod-image {
+  .interest-gallery img {
     width: 100% !important;
     max-width: 100% !important;
   }
@@ -4316,8 +4284,5 @@ body {
 @media (max-width: 900px) {
   .main {
     margin-left: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    overflow-x: hidden;
   }
 }
