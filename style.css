@@ -4313,3 +4313,24 @@ body {
     margin-left: 0 !important;
   }
 }
+
+/* =========================
+   Tablet Width Fix
+   901–1200px 使用 drawer，避免 sidebar 擠爆內容
+========================= */
+
+@media (min-width: 901px) and (max-width: 1200px) {
+  .sidebar {
+    display: none !important;
+  }
+
+  .main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .mobile-menu-toggle {
+    display: flex !important;
+  }
+}
