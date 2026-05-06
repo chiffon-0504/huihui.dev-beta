@@ -4204,3 +4204,61 @@ body {
   color: #111827;
   background: rgba(255, 255, 255, 0.46);
 }
+
+/* =========================
+   Works Showcase final overrides
+========================= */
+
+/* huihui.dev: force white readable text */
+.showcase-card-large .showcase-card-info,
+.showcase-card-large .showcase-card-info h2,
+.showcase-card-large .showcase-card-info p {
+  color: #fff !important;
+  opacity: 1 !important;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.9) !important;
+}
+
+.showcase-card-large .showcase-type,
+.showcase-card-large .showcase-tag {
+  color: #fff !important;
+  background: rgba(0, 0, 0, 0.32) !important;
+}
+
+/* Tier Maker: keep color even on hover */
+.showcase-tier-card,
+.showcase-tier-card:hover {
+  background:
+    linear-gradient(135deg, #ff4d4d 0%, #ffb347 45%, #fff176 100%) !important;
+}
+
+/* Workers API: keep color even on hover */
+.showcase-workers-card,
+.showcase-workers-card:hover {
+  background: #f6821f !important;
+}
+
+/* Prevent text cards from turning white / faded on hover */
+.showcase-tier-card:hover,
+.showcase-workers-card:hover {
+  border-color: rgba(17, 24, 39, 0.16) !important;
+}
+
+/* Bright cards: black text */
+.showcase-tier-card .showcase-card-info,
+.showcase-tier-card .showcase-card-info h2,
+.showcase-tier-card .showcase-card-info p,
+.showcase-workers-card .showcase-card-info,
+.showcase-workers-card .showcase-card-info h2,
+.showcase-workers-card .showcase-card-info p {
+  color: #111827 !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+.showcase-tier-card .showcase-type,
+.showcase-tier-card .showcase-tag,
+.showcase-workers-card .showcase-type,
+.showcase-workers-card .showcase-tag {
+  color: #111827 !important;
+  background: rgba(255, 255, 255, 0.46) !important;
+}
