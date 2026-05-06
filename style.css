@@ -4290,3 +4290,27 @@ body {
     max-width: 100% !important;
   }
 }
+
+/* =========================
+   About Page Width Safety Patch
+   修正 About 圖片 / Galgame 區塊超出主內容被裁切
+========================= */
+
+.about-page,
+.about-content,
+.interest-card,
+.interest-gallery,
+.galgame-showcase {
+  max-width: 100% !important;
+  overflow-x: hidden;
+}
+
+.interest-gallery > img,
+.galgame-banner {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.galgame-showcase {
+  box-sizing: border-box;
+}
