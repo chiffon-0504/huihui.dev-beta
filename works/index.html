@@ -13,33 +13,61 @@
   <aside id="site-sidebar" class="sidebar"></aside>
 
   <main class="main">
-    <section class="page-shell works-page">
-      <header class="works-hero">
+    <section class="page-shell works-page works-showcase-page">
+      <header class="works-hero works-showcase-hero">
+        <p class="works-kicker">SHOWCASE</p>
         <h1 data-i18n="works.title"></h1>
+        <p class="works-lead">Projects, interface experiments, and selected photography from huihui.dev.</p>
       </header>
 
-      <section class="works-feature">
-        <img src="../images/2001_w.webp" data-i18n-alt="works.images.fuji" class="zoomable" />
-      </section>
+      <section class="works-showcase-grid" aria-label="Works showcase">
+        <a class="showcase-card showcase-card-large showcase-project-card" href="/" aria-label="huihui.dev project">
+          <img src="../images/2001_w.webp" data-i18n-alt="works.images.fuji" class="zoomable" />
+          <div class="showcase-card-info">
+            <span class="showcase-type">Website</span>
+            <h2>huihui.dev</h2>
+            <p>Personal portfolio site with shared layout, multilingual pages, and Cloudflare deployment.</p>
+            <span class="showcase-tag">HTML / CSS / JavaScript</span>
+          </div>
+        </a>
 
-      <section class="works-gallery" aria-label="Works gallery">
-        <article class="work-card work-card-wide">
+        <a class="showcase-card showcase-project-card" href="/tools/tier-maker/" aria-label="Tier Maker tool">
+          <div class="showcase-card-info static-info">
+            <span class="showcase-type">Tool</span>
+            <h2>Tier Maker</h2>
+            <p>Drag-and-drop ranking tool with client-side image handling and PNG export.</p>
+            <span class="showcase-tag">Canvas / UI</span>
+          </div>
+        </a>
+
+        <article class="showcase-card showcase-project-card">
+          <div class="showcase-card-info static-info">
+            <span class="showcase-type">API</span>
+            <h2>Workers API</h2>
+            <p>Tech Updates, NASA APOD, GitHub updates, Steam data, and contact form routing.</p>
+            <span class="showcase-tag">Cloudflare Workers</span>
+          </div>
+        </article>
+
+        <article class="showcase-card showcase-photo-card showcase-card-wide">
           <img src="../images/2002_w.webp" data-i18n-alt="works.images.tsutenkaku" class="zoomable" />
+          <div class="showcase-photo-label">Photography</div>
         </article>
 
-        <article class="work-card work-card-tall">
+        <article class="showcase-card showcase-photo-card showcase-card-tall">
           <img src="../images/2003_w.webp" data-i18n-alt="works.images.yokohama" class="zoomable" />
+          <div class="showcase-photo-label">Travel</div>
         </article>
 
-        <article class="work-card">
+        <article class="showcase-card showcase-photo-card">
           <img src="../images/2004_w.webp" data-i18n-alt="works.images.train" class="zoomable" />
         </article>
 
-        <article class="work-card">
+        <article class="showcase-card showcase-photo-card">
           <img src="../images/2005_w.webp" data-i18n-alt="works.images.deer" class="zoomable" />
         </article>
 
-        <article class="work-card">
+        <article class="showcase-card showcase-photo-card">
           <img src="../images/2006_w.webp" data-i18n-alt="works.images.penguin" class="zoomable" />
         </article>
       </section>
