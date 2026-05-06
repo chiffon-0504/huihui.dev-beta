@@ -306,8 +306,9 @@ async function loadProjectUpdateCard() {
       throw new Error("Invalid GitHub updates response");
     }
 
-    link.textContent = `${data.repo || "huihui.dev-stable"} · Updated ${data.updatedText || ""}`;
+    link.textContent = `huihui.dev-stable · Updated ${data.updatedText || ""}`;
     link.href = data.link || "https://github.com/chiffon-0504/huihui.dev-stable";
+    
   } catch (error) {
     link.textContent = "huihui.dev-stable";
     link.href = "https://github.com/chiffon-0504/huihui.dev-stable";
