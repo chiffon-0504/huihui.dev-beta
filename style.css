@@ -369,7 +369,7 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 
 .apod-card {
   display: grid;
-  grid-template-columns: minmax(220px, 360px) 1fr;
+  grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
   gap: 18px;
   align-items: stretch;
   padding: 18px;
@@ -381,6 +381,7 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 
 .apod-media-link {
   display: block;
+  min-width: 0;
   aspect-ratio: 16 / 10;
   border-radius: 18px;
   overflow: hidden;
@@ -425,6 +426,20 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   margin-top: 12px !important;
   font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.45) !important;
+}
+
+@media (min-width: 901px) and (max-width: 1200px) {
+  .apod-card {
+    grid-template-columns: 1fr;
+  }
+
+  .apod-media-link {
+    aspect-ratio: 16 / 9;
+  }
+
+  .apod-content {
+    min-width: 0;
+  }
 }
 
 /* Tech Updates */
