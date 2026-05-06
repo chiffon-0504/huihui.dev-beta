@@ -4116,3 +4116,67 @@ body {
     min-height: 420px;
   }
 }
+
+/* =========================
+   Works Showcase readability fixes
+========================= */
+
+/* Text-only project cards: remove empty white look */
+.showcase-text-card {
+  background:
+    radial-gradient(circle at 20% 0%, rgba(0, 154, 255, 0.20), transparent 42%),
+    linear-gradient(145deg, rgba(38, 87, 132, 0.42), rgba(10, 24, 42, 0.84));
+}
+
+.showcase-text-card::after {
+  background:
+    linear-gradient(
+      to top,
+      rgba(3, 10, 20, 0.92) 0%,
+      rgba(8, 20, 36, 0.76) 40%,
+      rgba(255, 255, 255, 0.05) 100%
+    );
+}
+
+/* Fuji card: improve text readability */
+.showcase-card-large::after {
+  background:
+    linear-gradient(
+      to top,
+      rgba(2, 8, 18, 0.96) 0%,
+      rgba(2, 8, 18, 0.82) 28%,
+      rgba(2, 8, 18, 0.36) 58%,
+      rgba(2, 8, 18, 0.04) 100%
+    );
+}
+
+.showcase-card-large .showcase-card-info {
+  padding: 2px 0;
+}
+
+.showcase-card-large .showcase-card-info h2 {
+  color: rgba(255, 255, 255, 0.98);
+  text-shadow: 0 3px 18px rgba(0, 0, 0, 0.82);
+}
+
+.showcase-card-large .showcase-card-info p {
+  max-width: 560px;
+  color: rgba(255, 255, 255, 0.82);
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.82);
+}
+
+/* Project card text should stay readable on dark overlays */
+.showcase-project-card .showcase-card-info h2 {
+  color: rgba(255, 255, 255, 0.96);
+}
+
+.showcase-project-card .showcase-card-info p {
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.showcase-type,
+.showcase-tag {
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(10px);
+}
