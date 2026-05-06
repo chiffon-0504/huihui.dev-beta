@@ -4270,7 +4270,7 @@ body {
    Final targeted layout fixes
 ========================= */
 
-@media (min-width: 901px) {
+@media (min-width: 1201px) {
   .main {
     margin-left: 340px !important;
   }
@@ -4281,8 +4281,19 @@ body {
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1200px) {
+  .sidebar {
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
   .main {
     margin-left: 0 !important;
+  }
+
+  .interest-gallery img {
+    width: 100% !important;
+    max-width: 100% !important;
   }
 }
