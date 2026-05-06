@@ -4270,16 +4270,19 @@ body {
    Final responsive sidebar/content fix
 ========================= */
 
-/* Desktop: full left sidebar */
 @media (min-width: 1201px) {
+  .sidebar {
+    display: flex !important;
+  }
+
   .main {
     margin-left: 340px !important;
   }
 }
 
-/* Narrow desktop / tablet: keep sidebar fixed, reduce content offset */
 @media (min-width: 901px) and (max-width: 1200px) {
   .sidebar {
+    display: flex !important;
     position: fixed !important;
     top: 8px !important;
     left: 8px !important;
@@ -4289,75 +4292,11 @@ body {
 
   .main {
     margin-left: 320px !important;
-  }
-
-  .page-shell,
-  .about-page,
-  .contact-page,
-  .tier-maker-page,
-  .home-hero,
-  .daily-inspiration-section,
-  .tech-news-section {
-    max-width: 100% !important;
   }
 
   .interest-gallery img {
     width: 100% !important;
     max-width: 100% !important;
-  }
-}
-
-/* Mobile: only mobile breakpoint should collapse sidebar */
-@media (max-width: 900px) {
-  .main {
-    margin-left: 0 !important;
-  }
-}
-
-/* =========================
-   Tablet Width Fix
-   901–1200px 使用 drawer，避免 sidebar 擠爆內容
-========================= */
-
-@media (min-width: 901px) and (max-width: 1200px) {
-  .sidebar {
-    display: none !important;
-  }
-
-  .main {
-    margin-left: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-
-  .mobile-menu-toggle {
-    display: flex !important;
-  }
-}
-
-/* =========================
-   Final Responsive Sidebar Fix
-   901px 以上保留側邊欄，避免導航消失
-========================= */
-
-@media (min-width: 1201px) {
-  .main {
-    margin-left: 340px !important;
-  }
-}
-
-@media (min-width: 901px) and (max-width: 1200px) {
-  .sidebar {
-    display: flex !important;
-    position: fixed !important;
-    top: 8px !important;
-    left: 8px !important;
-    width: 300px !important;
-    height: calc(100vh - 16px) !important;
-  }
-
-  .main {
-    margin-left: 320px !important;
   }
 }
 
