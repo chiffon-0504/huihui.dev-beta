@@ -4279,7 +4279,6 @@ body {
     margin-left: var(--sidebar-offset) !important;
     width: calc(100vw - var(--sidebar-offset)) !important;
     max-width: calc(100vw - var(--sidebar-offset)) !important;
-    overflow-x: hidden;
   }
 }
 
@@ -4292,25 +4291,53 @@ body {
 }
 
 /* =========================
-   About Page Width Safety Patch
-   修正 About 圖片 / Galgame 區塊超出主內容被裁切
+   Sidebar Offset Override Patch
+   修正桌面版 sidebar 與主內容可用寬度
 ========================= */
 
-.about-page,
-.about-content,
-.interest-card,
-.interest-gallery,
-.galgame-showcase {
-  max-width: 100% !important;
-  overflow-x: hidden;
+:root {
+  --sidebar-offset: 340px;
 }
 
-.interest-gallery > img,
-.galgame-banner {
-  width: 100% !important;
-  max-width: 100% !important;
+@media (min-width: 901px) {
+  .main {
+    margin-left: var(--sidebar-offset) !important;
+    width: calc(100% - var(--sidebar-offset)) !important;
+    max-width: none !important;
+    overflow-x: visible !important;
+  }
+
+  .page-shell,
+  .home-hero,
+  .daily-inspiration-section,
+  .tech-news-section,
+  .about-page,
+  .about-content,
+  .contact-page,
+  .tier-maker-page {
+    max-width: min(100%, 1200px) !important;
+  }
+
+  .apod-card,
+  .project-update-card,
+  .galgame-showcase,
+  .tier-board,
+  .waiting-area {
+    max-width: 100% !important;
+  }
+
+  .interest-gallery > img,
+  .galgame-banner,
+  .apod-image {
+    max-width: 100% !important;
+  }
 }
 
-.galgame-showcase {
-  box-sizing: border-box;
+@media (max-width: 900px) {
+  .main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden;
+  }
 }
