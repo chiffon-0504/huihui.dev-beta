@@ -3901,14 +3901,20 @@ body {
 .sidebar {
   box-sizing: border-box;
   display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   flex: 0 0 var(--sidebar-width);
   position: fixed;
   top: 8px;
+  bottom: 8px;
   left: 8px;
   width: var(--sidebar-width);
   min-width: var(--sidebar-width);
   max-width: var(--sidebar-width);
-  height: calc(100vh - 16px);
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  align-self: flex-start;
   margin: 0;
   padding: 30px 22px;
   overflow-x: visible;
@@ -4003,6 +4009,17 @@ body {
   }
 
   .sidebar {
+    position: fixed;
+    top: 8px;
+    bottom: 8px;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-self: flex-start;
+    margin: 0;
     flex-basis: var(--sidebar-width);
     width: var(--sidebar-width);
     min-width: var(--sidebar-width);
@@ -4021,6 +4038,17 @@ body {
   }
 
   .sidebar {
+    position: fixed;
+    top: 8px;
+    bottom: 8px;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-self: flex-start;
+    margin: 0;
     flex-basis: var(--sidebar-width);
     width: var(--sidebar-width);
     min-width: var(--sidebar-width);
@@ -4057,11 +4085,15 @@ body {
     position: fixed;
     top: 0;
     right: auto;
+    bottom: auto;
     left: 0;
     width: var(--sidebar-width);
     min-width: var(--sidebar-width);
     max-width: var(--sidebar-width);
     height: 100vh;
+    min-height: 100vh;
+    max-height: 100vh;
+    align-self: flex-start;
     margin: 0;
     padding: 72px 18px 22px;
     overflow-x: hidden;
