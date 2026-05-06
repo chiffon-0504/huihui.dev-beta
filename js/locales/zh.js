@@ -33,6 +33,7 @@ window.HUIHUI_I18N.zh = {
   },
   works: {
     title: "作品",
+    lead: "專案、介面實驗，以及我拍攝的精選照片。",
     images: {
       fuji: "富士山",
       tsutenkaku: "通天閣",

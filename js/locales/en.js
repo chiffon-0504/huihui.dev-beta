@@ -33,6 +33,7 @@ window.HUIHUI_I18N.en = {
   },
   works: {
     title: "Works",
+    lead: "Projects, interface experiments, and selected photography from huihui.dev.",
     images: {
       fuji: "Mount Fuji",
       tsutenkaku: "Tsutenkaku",

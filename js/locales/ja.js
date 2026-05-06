@@ -33,6 +33,7 @@ window.HUIHUI_I18N.ja = {
   },
   works: {
     title: "作品",
+    lead: "プロジェクト、UI実験、そしてhuihui.devの写真作品。",
     images: {
       fuji: "富士山",
       tsutenkaku: "通天閣",
