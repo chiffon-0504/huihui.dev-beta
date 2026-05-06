@@ -3899,13 +3899,18 @@ body {
 }
 
 .sidebar {
+  box-sizing: border-box;
   display: flex;
+  flex: 0 0 var(--sidebar-width);
   position: fixed;
   top: 8px;
   left: 8px;
   width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  max-width: var(--sidebar-width);
   height: calc(100vh - 16px);
   margin: 0;
+  padding: 30px 22px;
   overflow-x: visible;
 }
 
@@ -3998,6 +4003,10 @@ body {
   }
 
   .sidebar {
+    flex-basis: var(--sidebar-width);
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    max-width: var(--sidebar-width);
     padding: 24px 18px;
   }
 }
@@ -4009,6 +4018,14 @@ body {
     --page-top-offset: 56px;
     --page-side-offset: 48px;
     --page-header-gap: 32px;
+  }
+
+  .sidebar {
+    flex-basis: var(--sidebar-width);
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    max-width: var(--sidebar-width);
+    padding: 30px 22px;
   }
 }
 
@@ -4035,11 +4052,15 @@ body {
 
   .sidebar,
   body .sidebar {
+    box-sizing: border-box;
+    flex: 0 0 var(--sidebar-width);
     position: fixed;
     top: 0;
     right: auto;
     left: 0;
     width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    max-width: var(--sidebar-width);
     height: 100vh;
     margin: 0;
     padding: 72px 18px 22px;
