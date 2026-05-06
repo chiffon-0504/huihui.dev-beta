@@ -4092,3 +4092,21 @@ img,
   max-width: 100% !important;
   box-sizing: border-box !important;
 }
+
+@media (min-width: 901px) and (max-width: 1200px) {
+  .apod-card {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .apod-media-link,
+  .apod-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .apod-media-link {
+    aspect-ratio: 16 / 9 !important;
+  }
+}
