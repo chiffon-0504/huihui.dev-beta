@@ -4267,12 +4267,38 @@ body {
 }
 
 /* =========================
-   Final targeted layout fixes
+   Final responsive sidebar/content fix
 ========================= */
 
+/* Desktop: full left sidebar */
 @media (min-width: 1201px) {
   .main {
     margin-left: 340px !important;
+  }
+}
+
+/* Narrow desktop / tablet: keep sidebar fixed, reduce content offset */
+@media (min-width: 901px) and (max-width: 1200px) {
+  .sidebar {
+    position: fixed !important;
+    top: 8px !important;
+    left: 8px !important;
+    width: 300px !important;
+    height: calc(100vh - 16px) !important;
+  }
+
+  .main {
+    margin-left: 320px !important;
+  }
+
+  .page-shell,
+  .about-page,
+  .contact-page,
+  .tier-maker-page,
+  .home-hero,
+  .daily-inspiration-section,
+  .tech-news-section {
+    max-width: 100% !important;
   }
 
   .interest-gallery img {
@@ -4281,19 +4307,9 @@ body {
   }
 }
 
-@media (max-width: 1200px) {
-  .sidebar {
-    position: static !important;
-    width: 100% !important;
-    height: auto !important;
-  }
-
+/* Mobile: only mobile breakpoint should collapse sidebar */
+@media (max-width: 900px) {
   .main {
     margin-left: 0 !important;
-  }
-
-  .interest-gallery img {
-    width: 100% !important;
-    max-width: 100% !important;
   }
 }
