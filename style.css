@@ -4305,3 +4305,89 @@ body {
     margin-left: 0 !important;
   }
 }
+
+/* =========================
+   Emergency Final Layout Stabilizer
+   必須放在 style.css 最底部
+========================= */
+
+/* 大桌面：左側固定 sidebar */
+@media (min-width: 1281px) {
+  .sidebar {
+    display: flex !important;
+    position: fixed !important;
+    top: 8px !important;
+    left: 8px !important;
+    width: 300px !important;
+    height: calc(100vh - 16px) !important;
+    margin: 0 !important;
+  }
+
+  .main {
+    margin-left: 340px !important;
+    width: auto !important;
+    max-width: none !important;
+    overflow-x: visible !important;
+  }
+}
+
+/* 中間寬度：仍保留 sidebar，但縮小，避免內容被裁 */
+@media (min-width: 901px) and (max-width: 1280px) {
+  .sidebar {
+    display: flex !important;
+    position: fixed !important;
+    top: 8px !important;
+    left: 8px !important;
+    width: 260px !important;
+    height: calc(100vh - 16px) !important;
+    margin: 0 !important;
+    padding: 24px 18px !important;
+  }
+
+  .main {
+    margin-left: 290px !important;
+    width: auto !important;
+    max-width: none !important;
+    overflow-x: visible !important;
+  }
+
+  .page-shell,
+  .about-page,
+  .contact-page,
+  .tier-maker-page,
+  .works-page,
+  .works-showcase-page,
+  .home-hero,
+  .daily-inspiration-section,
+  .tech-news-section {
+    max-width: 100% !important;
+  }
+}
+
+/* 手機：drawer 接手 */
+@media (max-width: 900px) {
+  .main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+}
+
+/* 全站寬元素安全收斂 */
+img,
+.apod-card,
+.project-update-card,
+.galgame-showcase,
+.interest-gallery,
+.interest-gallery img,
+.galgame-banner,
+.post-image,
+.tier-board,
+.image-pool,
+.waiting-area,
+.works-gallery,
+.works-showcase-grid {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
