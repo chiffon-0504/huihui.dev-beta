@@ -33,6 +33,32 @@ window.HUIHUI_I18N.zh = {
   },
   works: {
     title: "作品",
+    lead: "專案、介面實驗，以及我拍攝的精選照片。",
+    cards: {
+      website: {
+        type: "網站",
+        title: "huihui.dev",
+        desc: "使用共用版面、多語系頁面與 Cloudflare 部署的個人網站。",
+        tag: "HTML / CSS / JavaScript"
+      },
+      tierMaker: {
+        type: "工具",
+        title: "Tier Maker",
+        desc: "支援拖曳排序、自訂圖片與 PNG 匯出的分級表工具。",
+        tag: "Canvas / UI"
+      },
+      workers: {
+        type: "API",
+        title: "Workers API",
+        desc: "整合科技動態、NASA APOD、GitHub 更新、Steam 資料與聯絡表單路由。",
+        tag: "Cloudflare Workers"
+      },
+      photography: "攝影",
+      travel: "旅拍",
+      train: "鐵道",
+      deer: "奈良",
+      penguin: "水族館"
+    },
     images: {
       fuji: "富士山",
       tsutenkaku: "通天閣",

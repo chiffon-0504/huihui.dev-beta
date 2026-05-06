@@ -33,6 +33,32 @@ window.HUIHUI_I18N.en = {
   },
   works: {
     title: "Works",
+    lead: "Projects, interface experiments, and selected photography from huihui.dev.",
+    cards: {
+      website: {
+        type: "Website",
+        title: "huihui.dev",
+        desc: "Personal portfolio site with shared layout, multilingual pages, and Cloudflare deployment.",
+        tag: "HTML / CSS / JavaScript"
+      },
+      tierMaker: {
+        type: "Tool",
+        title: "Tier Maker",
+        desc: "Drag-and-drop ranking tool with custom images and PNG export.",
+        tag: "Canvas / UI"
+      },
+      workers: {
+        type: "API",
+        title: "Workers API",
+        desc: "Integrates Tech Updates, NASA APOD, GitHub updates, Steam data, and contact form routing.",
+        tag: "Cloudflare Workers"
+      },
+      photography: "Photography",
+      travel: "Travel",
+      train: "Railway",
+      deer: "Nara",
+      penguin: "Aquarium"
+    },
     images: {
       fuji: "Mount Fuji",
       tsutenkaku: "Tsutenkaku",
@@ -40,7 +66,7 @@ window.HUIHUI_I18N.en = {
       train: "Train",
       deer: "Deer",
       penguin: "Penguin",
-      preview: "Preview"
+      preview: "Image preview"
     }
   },
   posts: {
