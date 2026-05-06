@@ -4334,3 +4334,35 @@ body {
     display: flex !important;
   }
 }
+
+/* =========================
+   Final Responsive Sidebar Fix
+   901px 以上保留側邊欄，避免導航消失
+========================= */
+
+@media (min-width: 1201px) {
+  .main {
+    margin-left: 340px !important;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1200px) {
+  .sidebar {
+    display: flex !important;
+    position: fixed !important;
+    top: 8px !important;
+    left: 8px !important;
+    width: 300px !important;
+    height: calc(100vh - 16px) !important;
+  }
+
+  .main {
+    margin-left: 320px !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .main {
+    margin-left: 0 !important;
+  }
+}
