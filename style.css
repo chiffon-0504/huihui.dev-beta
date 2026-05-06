@@ -156,7 +156,7 @@ img {
 
 /* Main */
 .main {
-  margin-left: 240px;
+  margin-left: 320px;
   padding: 28px;
   min-width: 0;
 }
@@ -3630,6 +3630,7 @@ body {
 ========================= */
 
 :root {
+  --sidebar-offset: 340px;
   --page-shell-width: 1000px;
   --page-top-offset: 56px;
   --page-side-offset: 48px;
@@ -3638,13 +3639,8 @@ body {
 
 /* 主內容起點固定 */
 .main {
+  margin-left: var(--sidebar-offset);
   padding: var(--page-top-offset) var(--page-side-offset);
-}
-
-@media (max-width: 900px) {
-  .main {
-    padding-top: 72px !important;
-  }
 }
 
 /* 所有內頁版心固定 */
@@ -3729,9 +3725,15 @@ body {
 
 @media (max-width: 900px) {
   :root {
+    --sidebar-offset: 0px;
     --page-top-offset: 32px;
     --page-side-offset: 20px;
     --page-header-gap: 24px;
+  }
+
+  .main {
+    margin-left: 0;
+    padding-top: 72px !important;
   }
 }
 
@@ -4261,4 +4263,25 @@ body {
 .showcase-workers-card .showcase-tag {
   color: #111827 !important;
   background: rgba(255, 255, 255, 0.46) !important;
+}
+
+/* =========================
+   Sidebar Offset Override Patch
+   修正桌面版 sidebar 蓋住貼文 / 工具頁內容
+========================= */
+
+:root {
+  --sidebar-offset: 340px;
+}
+
+@media (min-width: 901px) {
+  .main {
+    margin-left: var(--sidebar-offset) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .main {
+    margin-left: 0 !important;
+  }
 }
