@@ -4266,8 +4266,8 @@ body {
 }
 
 /* =========================
-   Sidebar Offset Override Patch
-   修正桌面版 sidebar 與主內容寬度
+   Layout Width Safety Patch
+   sidebar offset + prevent content clipping
 ========================= */
 
 :root {
@@ -4277,32 +4277,7 @@ body {
 @media (min-width: 901px) {
   .main {
     margin-left: var(--sidebar-offset) !important;
-    width: calc(100vw - var(--sidebar-offset)) !important;
-    max-width: calc(100vw - var(--sidebar-offset)) !important;
-  }
-}
-
-@media (max-width: 900px) {
-  .main {
-    margin-left: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-}
-
-/* =========================
-   Sidebar Offset Override Patch
-   修正桌面版 sidebar 與主內容可用寬度
-========================= */
-
-:root {
-  --sidebar-offset: 340px;
-}
-
-@media (min-width: 901px) {
-  .main {
-    margin-left: var(--sidebar-offset) !important;
-    width: calc(100% - var(--sidebar-offset)) !important;
+    width: auto !important;
     max-width: none !important;
     overflow-x: visible !important;
   }
@@ -4315,7 +4290,8 @@ body {
   .about-content,
   .contact-page,
   .tier-maker-page {
-    max-width: min(100%, 1200px) !important;
+    width: 100% !important;
+    max-width: 1200px !important;
   }
 
   .apod-card,
@@ -4323,12 +4299,16 @@ body {
   .galgame-showcase,
   .tier-board,
   .waiting-area {
+    width: 100% !important;
     max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
+  .interest-gallery,
   .interest-gallery > img,
   .galgame-banner,
   .apod-image {
+    width: 100% !important;
     max-width: 100% !important;
   }
 }
