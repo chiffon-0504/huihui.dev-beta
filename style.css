@@ -3902,22 +3902,23 @@ body {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   flex: 0 0 var(--sidebar-width);
   position: fixed;
   top: 8px;
-  bottom: 8px;
+  bottom: auto;
   left: 8px;
   width: var(--sidebar-width);
   min-width: var(--sidebar-width);
   max-width: var(--sidebar-width);
   height: auto;
-  min-height: 0;
-  max-height: none;
+  min-height: auto;
+  max-height: calc(100vh - 16px);
   align-self: flex-start;
   margin: 0;
   padding: 30px 22px;
   overflow-x: visible;
+  overflow-y: auto;
 }
 
 .main {
@@ -4011,20 +4012,25 @@ body {
   .sidebar {
     position: fixed;
     top: 8px;
-    bottom: 8px;
+    bottom: auto;
     height: auto;
-    min-height: 0;
-    max-height: none;
+    min-height: auto;
+    max-height: calc(100vh - 16px);
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-self: flex-start;
     margin: 0;
+    overflow-y: auto;
     flex-basis: var(--sidebar-width);
     width: var(--sidebar-width);
     min-width: var(--sidebar-width);
     max-width: var(--sidebar-width);
     padding: 24px 18px;
+  }
+
+  .sidebar-bottom {
+    margin-top: 28px;
   }
 }
 
@@ -4040,20 +4046,25 @@ body {
   .sidebar {
     position: fixed;
     top: 8px;
-    bottom: 8px;
+    bottom: auto;
     height: auto;
-    min-height: 0;
-    max-height: none;
+    min-height: auto;
+    max-height: calc(100vh - 16px);
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-self: flex-start;
     margin: 0;
+    overflow-y: auto;
     flex-basis: var(--sidebar-width);
     width: var(--sidebar-width);
     min-width: var(--sidebar-width);
     max-width: var(--sidebar-width);
     padding: 30px 22px;
+  }
+
+  .sidebar-bottom {
+    margin-top: 28px;
   }
 }
 
