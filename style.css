@@ -3583,6 +3583,22 @@ body {
   transform: translateY(2px);
 }
 
+/* Sidebar nav height normalization */
+@media (min-width: 901px) {
+  .sidebar-top nav a.nav-link {
+    display: flex;
+    align-items: center;
+    height: 52px;
+    min-height: 52px;
+    line-height: 1.2;
+    box-sizing: border-box;
+  }
+
+  .sidebar-top nav a.nav-link .nav-label {
+    line-height: 1.2;
+  }
+}
+
 /* =========================
    Works Showcase
 ========================= */
