@@ -4173,6 +4173,52 @@ img,
   box-sizing: border-box !important;
 }
 
+/* About page desktop overflow safety */
+body:has(#aboutPage) .main {
+  width: calc(100vw - var(--main-offset));
+  max-width: calc(100vw - var(--main-offset));
+}
+
+body:has(#aboutPage) .page-shell,
+body:has(#aboutPage) .about-page,
+body:has(#aboutPage) .about-content,
+body:has(#aboutPage) .page-body,
+body:has(#aboutPage) .interest-cards,
+body:has(#aboutPage) .interest-card,
+body:has(#aboutPage) .interest-gallery,
+body:has(#aboutPage) .galgame-showcase,
+body:has(#aboutPage) .galgame-banner-link,
+body:has(#aboutPage) .steam-favorites,
+body:has(#aboutPage) .steam-game-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+body:has(#aboutPage) .interest-card,
+body:has(#aboutPage) .galgame-showcase {
+  width: 100%;
+  overflow: hidden;
+}
+
+body:has(#aboutPage) .interest-gallery img,
+body:has(#aboutPage) .galgame-banner {
+  inline-size: 100%;
+  max-inline-size: 100%;
+}
+
+@media (min-width: 901px) and (max-width: 1100px) {
+  body:has(#aboutPage) .steam-favorites {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  body:has(#aboutPage) .main {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
 @media (min-width: 901px) and (max-width: 1200px) {
   .apod-card {
     display: grid !important;
