@@ -423,7 +423,7 @@ async function handleGitHubUpdates(request, env, ctx) {
    Steam Library
 ========================= */
 
-const STEAM_LIBRARY_CACHE_TTL_SECONDS = 60 * 60 * 6;
+const STEAM_LIBRARY_CACHE_TTL_SECONDS = 60 * 60;
 
 function getSteamCoverUrl(appid) {
   return `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/library_600x900.jpg`;
