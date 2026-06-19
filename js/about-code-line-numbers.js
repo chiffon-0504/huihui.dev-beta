@@ -3,16 +3,18 @@ function rebuildAboutCodeLineNumbers() {
 
   blocks.forEach((pre) => {
     const code = pre.querySelector("code");
-    if (!code) return;
+    const wrapper = pre.closest(".code-block");
+    if (!code || !wrapper) return;
 
-    pre.classList.add("line-numbers");
+    pre.classList.remove("line-numbers");
+    wrapper.classList.add("code-block-with-gutter");
 
-    pre.querySelectorAll(":scope > .line-numbers-rows").forEach((rows) => {
+    pre.querySelectorAll(".line-numbers-rows").forEach((rows) => {
       rows.remove();
     });
 
-    code.querySelectorAll(":scope > .line-numbers-rows").forEach((rows) => {
-      rows.remove();
+    wrapper.querySelectorAll(":scope > .custom-line-numbers").forEach((gutter) => {
+      gutter.remove();
     });
 
     const lineCount = Math.max(
@@ -20,12 +22,15 @@ function rebuildAboutCodeLineNumbers() {
       1
     );
 
-    const rows = document.createElement("span");
-    rows.className = "line-numbers-rows";
-    rows.setAttribute("aria-hidden", "true");
-    rows.innerHTML = Array.from({ length: lineCount }, () => "<span></span>").join("");
+    const gutter = document.createElement("div");
+    gutter.className = "custom-line-numbers";
+    gutter.setAttribute("aria-hidden", "true");
+    gutter.innerHTML = Array.from(
+      { length: lineCount },
+      (_, index) => `<span>${index + 1}</span>`
+    ).join("");
 
-    code.appendChild(rows);
+    wrapper.insertBefore(gutter, pre);
   });
 
   if (typeof requestScrollRevealUpdate === "function") {
