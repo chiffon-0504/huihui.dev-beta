@@ -100,6 +100,23 @@ function highlightCustomKeywords(block) {
   });
 }
 
+function ensureCodeLineNumbers(pre, code) {
+  if (!pre || !code) return;
+
+  pre.classList.add("line-numbers");
+
+  let rows = pre.querySelector(".line-numbers-rows");
+  if (!rows) {
+    rows = document.createElement("span");
+    rows.setAttribute("aria-hidden", "true");
+    rows.className = "line-numbers-rows";
+    pre.appendChild(rows);
+  }
+
+  const lineCount = Math.max(code.textContent.replace(/\n$/, "").split("\n").length, 1);
+  rows.innerHTML = Array.from({ length: lineCount }, () => "<span></span>").join("");
+}
+
 const scrollRevealCodeBlocks = new Set();
 let scrollRevealTicking = false;
 let scrollRevealListenersReady = false;
@@ -245,6 +262,7 @@ function initCodeBlocks() {
       Prism.highlightElement(code);
     }
 
+    ensureCodeLineNumbers(pre, code);
     highlightCustomKeywords(code);
     initScrollRevealCodeBlock(wrapper);
   });
