@@ -1,0 +1,65 @@
+/* About page code block mobile tuning */
+
+.about-page .code-block code[class*="language-"],
+.about-page .code-block pre[class*="language-"] {
+  font-family: "SFMono-Regular", "SF Mono", Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace !important;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+@media (max-width: 900px) {
+  .about-page .code-block {
+    padding: 14px 14px 12px;
+    border-radius: 18px;
+  }
+
+  .about-page .code-header {
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .about-page .code-left {
+    min-width: 0;
+    gap: 8px;
+  }
+
+  .about-page .code-file {
+    font-size: 0.9rem;
+  }
+
+  .about-page .code-lang {
+    font-size: 0.86rem;
+  }
+
+  .about-page .code-block pre[class*="language-"] {
+    padding: 0.8rem 0.75rem !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .about-page .code-block code[class*="language-"] {
+    font-size: 0.72rem;
+    line-height: 1.55;
+    letter-spacing: -0.02em;
+  }
+
+  .about-page .code-block pre.line-numbers {
+    padding-left: 0.75rem !important;
+  }
+
+  .about-page .code-block .line-numbers .line-numbers-rows {
+    display: none;
+  }
+}
+
+@media (max-width: 430px) {
+  .about-page .code-block {
+    padding: 12px;
+  }
+
+  .about-page .code-block code[class*="language-"] {
+    font-size: 0.68rem;
+    line-height: 1.5;
+  }
+}
