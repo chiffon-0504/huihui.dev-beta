@@ -2,64 +2,70 @@
 
 .about-page .code-block code[class*="language-"],
 .about-page .code-block pre[class*="language-"] {
-  font-family: "SFMono-Regular", "SF Mono", Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace !important;
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
+  font-family: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Monaco,
+    Consolas, "Liberation Mono", "Courier New", monospace !important;
+  -webkit-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
 }
 
 @media (max-width: 900px) {
   .about-page .code-block {
-    padding: 14px 14px 12px;
-    border-radius: 18px;
+    padding: 14px 14px 12px !important;
+    border-radius: 18px !important;
   }
 
   .about-page .code-header {
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 8px !important;
+    margin-bottom: 8px !important;
   }
 
   .about-page .code-left {
-    min-width: 0;
-    gap: 8px;
+    min-width: 0 !important;
+    gap: 8px !important;
   }
 
   .about-page .code-file {
-    font-size: 0.9rem;
+    font-size: 0.9rem !important;
   }
 
   .about-page .code-lang {
-    font-size: 0.86rem;
+    font-size: 0.86rem !important;
   }
 
   .about-page .code-block pre[class*="language-"] {
     padding: 0.8rem 0.75rem !important;
-    overflow-x: auto;
+    overflow-x: auto !important;
     -webkit-overflow-scrolling: touch;
   }
 
   .about-page .code-block code[class*="language-"] {
-    font-size: 0.72rem;
-    line-height: 1.55;
-    letter-spacing: -0.02em;
+    min-width: max-content !important;
+    font-size: 0.68rem !important;
+    line-height: 1.5 !important;
+    letter-spacing: -0.02em !important;
   }
 
   .about-page .code-block pre.line-numbers {
     padding-left: 0.75rem !important;
   }
 
-  .about-page .code-block .line-numbers .line-numbers-rows {
-    display: none;
+  .about-page .code-block pre.line-numbers > code {
+    padding-left: 0 !important;
+  }
+
+  .about-page .code-block .line-numbers .line-numbers-rows,
+  .about-page .code-block .line-numbers-rows {
+    display: none !important;
   }
 }
 
 @media (max-width: 430px) {
   .about-page .code-block {
-    padding: 12px;
+    padding: 12px !important;
   }
 
   .about-page .code-block code[class*="language-"] {
-    font-size: 0.68rem;
-    line-height: 1.5;
+    font-size: 0.62rem !important;
+    line-height: 1.48 !important;
   }
 }
