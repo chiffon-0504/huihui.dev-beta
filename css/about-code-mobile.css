@@ -22,8 +22,8 @@
   left: 1.35rem;
   width: 2.5rem;
   padding-right: 0.85rem;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.32);
+  border-right: 1px solid rgba(19, 26, 38, 0.14);
+  color: rgba(19, 26, 38, 0.45);
   font-family: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Monaco,
     Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 0.98rem;
@@ -31,7 +31,7 @@
   text-align: right;
   pointer-events: none;
   user-select: none;
-  z-index: 1;
+  z-index: 4;
 }
 
 .about-page .custom-line-numbers span {
