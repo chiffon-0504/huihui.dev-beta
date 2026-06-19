@@ -20,19 +20,19 @@ function copyCode(button) {
 
 function formatLangLabel(lang) {
   const map = {
-    python: "PYTHON",
-    javascript: "JAVASCRIPT",
+    python: "Python",
+    javascript: "JavaScript",
     css: "CSS",
     markup: "HTML",
     html: "HTML",
-    js: "JAVASCRIPT",
-    typescript: "TYPESCRIPT",
-    ts: "TYPESCRIPT",
+    js: "JavaScript",
+    typescript: "TypeScript",
+    ts: "TypeScript",
     json: "JSON",
-    bash: "BASH",
-    shell: "SHELL",
-    sh: "SHELL",
-    swift: "SWIFT"
+    bash: "Bash",
+    shell: "Shell",
+    sh: "Shell",
+    swift: "Swift"
   };
 
   return map[lang] || lang.toUpperCase();
