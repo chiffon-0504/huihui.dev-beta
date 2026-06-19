@@ -46,7 +46,7 @@
   }
 
   .about-page .code-block pre.line-numbers {
-    padding-left: 0.75rem !important;
+    padding-left: 3.1em !important;
   }
 
   .about-page .code-block pre.line-numbers > code {
@@ -55,7 +55,15 @@
 
   .about-page .code-block .line-numbers .line-numbers-rows,
   .about-page .code-block .line-numbers-rows {
-    display: none !important;
+    display: block !important;
+    left: -3.1em !important;
+    width: 2.45em !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+
+  .about-page .code-block .line-numbers-rows > span::before {
+    padding-right: 0.7em !important;
+    color: rgba(255, 255, 255, 0.32) !important;
   }
 }
 
@@ -67,5 +75,15 @@
   .about-page .code-block code[class*="language-"] {
     font-size: 0.62rem !important;
     line-height: 1.48 !important;
+  }
+
+  .about-page .code-block pre.line-numbers {
+    padding-left: 2.9em !important;
+  }
+
+  .about-page .code-block .line-numbers .line-numbers-rows,
+  .about-page .code-block .line-numbers-rows {
+    left: -2.9em !important;
+    width: 2.3em !important;
   }
 }
