@@ -1,5 +1,5 @@
 window.HUIHUI_PROFILE_CODE = {
-  zh: `# profile.py
+  zh: `# </>
 
 from __future__ import annotations
 from typing import List, Optional
@@ -62,7 +62,7 @@ class HuiHui:
 
 huihui = HuiHui()
 `,
-  en: `# profile.py
+  en: `# </>
 
 from __future__ import annotations
 from typing import List, Optional
@@ -125,7 +125,7 @@ class HuiHui:
 
 huihui = HuiHui()
 `,
-  ja: `# profile.py
+  ja: `# </>
 
 from __future__ import annotations
 from typing import List, Optional
