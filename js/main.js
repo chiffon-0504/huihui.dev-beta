@@ -241,11 +241,9 @@ function initCodeBlocks() {
     button.type = "button";
     button.setAttribute("aria-label", "複製程式碼");
     button.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <g transform="translate(24,0) scale(-1,1)">
-          <path d="M9 9m-2 2a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z"></path>
-          <path d="M5 15a2 2 0 0 1 -2 -2v-6a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2"></path>
-        </g>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
       </svg>
     `;
 
