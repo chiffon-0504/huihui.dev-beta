@@ -242,8 +242,8 @@ function initCodeBlocks() {
     button.setAttribute("aria-label", "複製程式碼");
     button.innerHTML = `
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <rect x="9" y="2" width="11" height="11" rx="3"></rect>
-        <rect x="4" y="7" width="11" height="11" rx="3"></rect>
+        <rect x="9" y="2" width="9" height="9" rx="2.5"></rect>
+        <rect x="3" y="9" width="9" height="9" rx="2.5"></rect>
       </svg>
     `;
 
