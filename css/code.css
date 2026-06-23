@@ -202,3 +202,37 @@
     width: 2.8em;
   }
 }
+
+.about-page .code-block.code-block-with-gutter pre[class*="language-"] {
+  padding-left: 4.05rem !important;
+}
+
+.about-page .code-block.code-block-with-gutter .custom-line-numbers {
+  left: 1.2rem;
+  width: 2.25rem;
+  padding-right: 0.65rem;
+}
+
+@media (max-width: 900px) {
+  .about-page .code-block.code-block-with-gutter pre[class*="language-"] {
+    padding-left: 3.15rem !important;
+  }
+
+  .about-page .code-block.code-block-with-gutter .custom-line-numbers {
+    left: 0.85rem;
+    width: 1.7rem;
+    padding-right: 0.45rem;
+  }
+}
+
+@media (max-width: 430px) {
+  .about-page .code-block.code-block-with-gutter pre[class*="language-"] {
+    padding-left: 2.95rem !important;
+  }
+
+  .about-page .code-block.code-block-with-gutter .custom-line-numbers {
+    left: 0.7rem;
+    width: 1.55rem;
+    padding-right: 0.4rem;
+  }
+}
