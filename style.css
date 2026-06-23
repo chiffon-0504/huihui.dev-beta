@@ -1,3 +1,32 @@
+/* =========================
+   CSS Architecture Inventory
+   Stage 1 documentation only: comments and section markers were added without
+   changing selectors, declarations, values, media queries, imports, or order.
+
+   Observed selector sources:
+   - Static pages: root, about, works, posts, contact, and tools pages across
+     zh / en / ja variants.
+   - js/layout.js: injects .sidebar-top, .lang-switch, .nav-link, .nav-icon,
+     .nav-label, .tools-link, and .beta-badge, then toggles .active.
+   - js/main.js: injects #menuToggle, .sidebar-overlay, .code-block,
+     .code-header, .code-left, .code-file, .code-lang, .copy-btn,
+     .line-numbers-rows, .tech-news-card, and APOD/project update content.
+   - js/about-page.js: injects .about-page, .about-content, .page-header,
+     .page-body, .interest-card, .interest-gallery, .galgame-showcase,
+     .galgame-banner*, .steam-* selectors, and #galgameBanner* IDs.
+   - js/posts-render.js: injects .post-card, .post-meta, .post-name,
+     .post-handle, .post-dot, .post-date, .post-content, .post-figure,
+     .post-image, and .post-caption.
+
+   Likely stale selectors are marked near their blocks for later verification.
+   Do not remove them until usage is checked across static HTML, generated JS
+   templates, and all zh / en / ja page variants.
+========================= */
+
+/* =========================
+   Base Reset And Global Elements
+========================= */
+
 * {
   box-sizing: border-box;
 }
@@ -29,6 +58,12 @@ img {
 .zoomable {
   cursor: zoom-in;
 }
+
+/* =========================
+   Sidebar And Injected Navigation Base
+   Used by js/layout.js across all languages; later layout/theme sections
+   intentionally override many of these declarations.
+========================= */
 
 /* Sidebar */
 .sidebar {
@@ -154,6 +189,11 @@ img {
   color: rgba(255, 255, 255, 0.4);
 }
 
+/* =========================
+   Main Layout Base
+   Competing layout values are documented again in "Unified Layout Source".
+========================= */
+
 /* Main */
 .main {
   margin-left: 340px;
@@ -161,6 +201,14 @@ img {
   min-width: 0;
   overflow-x: visible;
 }
+
+/* =========================
+   Legacy Hero And Works Grid Candidates
+   LIKELY STALE - VERIFY BEFORE REMOVAL: .hero, .hero-text, .works-grid,
+   .work-card.large, .work-card.tall, .work-card.small, and .work-info did not
+   appear in sampled current page markup; .work-card itself is still reused by
+   later global card/material rules, so treat it separately.
+========================= */
 
 /* Hero */
 .hero {
@@ -347,6 +395,9 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   color: rgba(255, 255, 255, 0.78);
 }
 
+/* LIKELY STALE - VERIFY BEFORE REMOVAL: .home-image and .home-image img were
+   not found in sampled current homepage markup, which now pairs .home-text with
+   .project-update-card. */
 .home-image {
   flex: 1;
   display: flex;
@@ -359,6 +410,12 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   border-radius: 28px;
   object-fit: cover;
 }
+
+/* =========================
+   Homepage Dynamic Content: APOD And Tech Updates
+   APOD markup is static on the homepage; tech cards and error/loading states
+   are populated by js/main.js.
+========================= */
 
 /* NASA APOD */
 .daily-inspiration-section {
@@ -528,6 +585,12 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   color: rgba(255, 255, 255, 0.62);
   font-size: 0.95rem;
 }
+
+/* =========================
+   Inline Text Utility Classes
+   LIKELY STALE - VERIFY BEFORE REMOVAL: .past, .present, .future, .eternal,
+   .beyond, and .ex were not found in sampled current HTML/JS usage.
+========================= */
 
 /* Hashtag */
 .hashtag {
@@ -960,6 +1023,12 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   }
 }
 
+/* =========================
+   Early Responsive Overrides
+   Competes with later mobile drawer, posts safety, safe header, and unified
+   layout media queries. Keep order stable until visual checks are complete.
+========================= */
+
 /* Mobile */
 @media (max-width: 900px) {
   .work-card {
@@ -1071,6 +1140,11 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   }
 }
 
+/* =========================
+   Homepage CTA And Shared Button Base
+   Later material/readability passes override .hero-btn and related controls.
+========================= */
+
 /* CTA Buttons */
 .hero-actions {
   margin-top: 22px;   /* 原本 18，稍微拉開 */
@@ -1096,6 +1170,8 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   background: rgba(255, 255, 255, 0.05);
 }
 
+/* LIKELY STALE - VERIFY BEFORE REMOVAL: .section-title was not found in sampled
+   current HTML/JS usage, but mobile safe-header rules still reference it. */
 .section-title {
   font-size: 3rem;
   font-weight: 800;
@@ -1105,6 +1181,8 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 
 /* =========================
    Contact Page
+   Static form markup uses these selectors; the inline contact script updates
+   #contact-status and submit button text only.
 ========================= */
 
 .contact-page {
@@ -1221,6 +1299,11 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================
+   Homepage Project Update Card
+   Static homepage card with link text updated by js/main.js.
+========================= */
 
 .project-update-card {
   flex: 1;
@@ -1376,6 +1459,8 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 
 /* =========================
    Liquid Glass Theme Layer
+   COMPETING OVERRIDE SECTION: introduces first shared material token layer and
+   overrides body, sidebar, cards, forms, code blocks, and hover states.
 ========================= */
 
 :root {
@@ -1970,6 +2055,8 @@ textarea {
 
 /* =========================
    Above-the-fold Spacing Fix
+   COMPETING OVERRIDE SECTION: adjusts layout height/offset values that are
+   later revised by homepage height and unified layout sections.
 ========================= */
 
 :root {
@@ -2019,6 +2106,8 @@ textarea {
 
 /* =========================
    Homepage Hero Height Fix
+   COMPETING OVERRIDE SECTION: revises .home-hero min-height after the
+   above-the-fold spacing fix.
 ========================= */
 
 .home-hero {
@@ -2045,6 +2134,8 @@ textarea {
 
 /* =========================
    Liquid Glass Micro Polish
+   COMPETING OVERRIDE SECTION: further tunes sidebar, hero, project card, and
+   tech-news hover behavior after the base glass layer.
 ========================= */
 
 @media (min-width: 901px) {
@@ -2094,6 +2185,8 @@ textarea {
 
 /* =========================
    Final Glass Clarity Polish
+   COMPETING OVERRIDE SECTION: redefines glass tokens and shared card/body
+   backgrounds after earlier glass passes.
 ========================= */
 
 :root {
@@ -2164,6 +2257,8 @@ body {
 
 /* =========================
    Apple Liquid Glass Light Theme
+   COMPETING OVERRIDE SECTION: switches color-scheme/tokens and overrides the
+   same body, sidebar, card, button, input, code, and hover surfaces.
 ========================= */
 
 :root {
@@ -2345,6 +2440,8 @@ body {
 
 /* =========================
    macOS Glass Refinement
+   COMPETING OVERRIDE SECTION: redefines glass tokens and material surfaces
+   after the Apple light theme block.
 ========================= */
 
 :root {
@@ -2473,6 +2570,8 @@ body {
 
 /* =========================
    macOS Texture Pass
+   COMPETING OVERRIDE SECTION: changes text tokens and shared material
+   backgrounds/radii after prior macOS refinement.
 ========================= */
 
 :root {
@@ -2520,6 +2619,8 @@ body {
 
 /* =========================
    macOS Ambient Pass
+   COMPETING OVERRIDE SECTION: changes body ambient pseudo-element, sidebar
+   shadow, hover transforms, and card hover surfaces.
 ========================= */
 
 body {
@@ -2598,6 +2699,8 @@ body::before {
 
 /* =========================
    Tahoe Dynamic Material System
+   COMPETING OVERRIDE SECTION: introduces another material token set and
+   overrides sidebar, hero, card, text, and hover surfaces.
 ========================= */
 
 :root {
@@ -2812,6 +2915,8 @@ body::before {
 
 /* =========================
    Material Readability Fix
+   COMPETING OVERRIDE SECTION: applies readability tokens and broad color
+   overrides after Tahoe material settings.
 ========================= */
 
 :root {
@@ -2902,6 +3007,8 @@ body::before {
 
 /* =========================
    Production Readability Recovery
+   COMPETING OVERRIDE SECTION: broad final readability and code-block color
+   overrides; keep exact order until screenshots confirm behavior.
 ========================= */
 
 :root {
@@ -3036,6 +3143,8 @@ code[class*="language-"] {
 
 /* =========================
    Final Readability Tuning
+   COMPETING OVERRIDE SECTION: final sidebar/title/subtitle color corrections
+   layered after production readability recovery.
 ========================= */
 
 .sidebar,
@@ -3073,6 +3182,8 @@ code[class*="language-"] {
 
 /* =========================
    Apple Typography Polish
+   COMPETING OVERRIDE SECTION: final global font, heading, paragraph, and
+   contact-input tuning.
 ========================= */
 
 body {
@@ -3125,6 +3236,8 @@ body {
 
 /* =========================
    Mobile iOS Drawer
+   Dynamic nodes are created by js/main.js. Later posts drawer safety, safe
+   header, and unified layout sections repeat some sidebar/mobile rules.
 ========================= */
 
 #menuToggle,
@@ -3253,6 +3366,8 @@ body {
 
 /* =========================
    Posts Drawer Safety
+   COMPETING OVERRIDE SECTION: repeats sidebar open/closed mobile state to
+   protect generated posts layout.
 ========================= */
 
 @media (max-width: 900px) {
@@ -3288,7 +3403,12 @@ body {
 
 /* =========================
    Fix galgame banner hours color
+   About Galgame Banner Fixes
+   COMPETING OVERRIDE SECTION: #galgameBannerHours is declared twice here; keep
+   both declarations until the generated about-page markup is visually checked.
 ========================= */
+
+/* Fix galgame banner hours color */
 
 #galgameBannerHours {
   color: rgba(45, 58, 78, 0.72) !important;
@@ -3310,6 +3430,12 @@ body {
   color: rgba(45, 58, 78, 0.72) !important;
   font-weight: 500;
 }
+
+/* =========================
+   Sidebar Nav Late Overrides
+   COMPETING OVERRIDE SECTION: repeats .sidebar-top nav a base, hover, and
+   active styles before the final nav-link-specific overrides.
+========================= */
 
 /* sidebar item 基礎 */
 .sidebar-top nav a {
@@ -3358,6 +3484,10 @@ body {
 
 /* =========================
    Works Page Redesign
+   LIKELY STALE - VERIFY BEFORE REMOVAL: .works-eyebrow, .works-intro,
+   .works-feature, .works-gallery, .work-card-wide, and .work-card-tall were
+   not found in sampled current Works page markup, which uses the Works
+   Showcase classes below.
 ========================= */
 
 .works-page {
@@ -3478,6 +3608,9 @@ body {
 
 /* =========================
    Mobile left drawer safe header
+   Mobile Left Drawer Safe Header
+   COMPETING OVERRIDE SECTION: final mobile #menuToggle dimensions and page
+   heading offsets after the Mobile iOS Drawer block.
 ========================= */
 
 @media (max-width: 900px) {
@@ -3516,6 +3649,9 @@ body {
 
 /* =========================
    Sidebar Home Link
+   Sidebar Home Link And Nav Icon Final Overrides
+   COMPETING OVERRIDE SECTION: nav-link-specific active/icon styles layered on
+   top of generic .sidebar-top nav a rules.
 ========================= */
 
 .sidebar .sidebar-top h1 a {
@@ -3601,6 +3737,8 @@ body {
 
 /* =========================
    Works Showcase
+   Active Works page structure in zh / en / ja variants uses .works-showcase-*
+   and .showcase-* selectors.
 ========================= */
 
 .works-showcase-page {
@@ -3902,6 +4040,8 @@ body {
 
 /* =========================
    Unified Layout Source
+   COMPETING OVERRIDE SECTION: current shared layout source of truth for
+   sidebar width, main offset, page shell width, and responsive offsets.
 ========================= */
 
 :root {
@@ -4156,6 +4296,12 @@ body {
     min-width: 0;
   }
 }
+
+/* =========================
+   Global Overflow Safety Patch
+   COMPETING OVERRIDE SECTION: broad max-width/box-sizing safety net including
+   selectors from global pages and the page-specific Tier Maker stylesheet.
+========================= */
 img,
 .apod-card,
 .project-update-card,
@@ -4172,6 +4318,12 @@ img,
   max-width: 100% !important;
   box-sizing: border-box !important;
 }
+
+/* =========================
+   About Page Overflow Safety
+   COMPETING OVERRIDE SECTION: :has(#aboutPage) desktop/mobile safeguards for
+   generated About/Galgame/Steam markup.
+========================= */
 
 /* About page desktop overflow safety */
 body:has(#aboutPage) .main {
@@ -4218,6 +4370,12 @@ body:has(#aboutPage) .galgame-banner {
     max-width: 100%;
   }
 }
+
+/* =========================
+   APOD Tablet Safety Override
+   COMPETING OVERRIDE SECTION: final APOD tablet grid correction after earlier
+   APOD and unified layout media queries.
+========================= */
 
 @media (min-width: 901px) and (max-width: 1200px) {
   .apod-card {
