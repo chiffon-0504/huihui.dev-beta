@@ -204,7 +204,7 @@
 }
 
 .about-page .code-block.code-block-with-gutter pre[class*="language-"] {
-  padding-left: 3.3rem !important;
+  padding-left: 3.6rem !important;
 }
 
 .about-page .code-block.code-block-with-gutter .custom-line-numbers {
@@ -227,9 +227,9 @@
   }
 
   .about-page .code-block.code-block-with-gutter .custom-line-numbers {
-    left: 0.85rem;
-    width: 1.7rem;
-    padding-right: 0.45rem;
+    left: 1.2rem;
+    width: 2.15rem;
+    padding-right: 0.25rem;
   }
 }
 
