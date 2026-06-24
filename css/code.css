@@ -209,7 +209,7 @@
 
 .about-page .code-block.code-block-with-gutter .custom-line-numbers {
   left: 1.2rem;
-  width: 2.65rem;
+  width: 2.15rem;
   padding-right: 0.25rem;
 }
 
@@ -227,9 +227,9 @@
   }
 
   .about-page .code-block.code-block-with-gutter .custom-line-numbers {
-    left: 1.2rem;
-    width: 2.15rem;
-    padding-right: 0.25rem;
+    left: 0.85rem;
+    width: 1.7rem;
+    padding-right: 0.45rem;
   }
 }
 
