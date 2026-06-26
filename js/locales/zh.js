@@ -70,8 +70,8 @@ window.HUIHUI_I18N.zh = {
     }
   },
   posts: {
-    title: "貼文",
-    intro: "一些近況、照片、遊戲紀錄。",
+    title: "里程碑",
+    intro: "一些近況、成就與遊戲紀錄。",
     scoreAlt: "Arcaea 成績截圖",
     preview: "放大預覽"
   },

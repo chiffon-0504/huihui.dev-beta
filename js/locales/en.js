@@ -70,8 +70,8 @@ window.HUIHUI_I18N.en = {
     }
   },
   posts: {
-    title: "Posts",
-    intro: "Recent updates, photos, and game records.",
+    title: "Milestones",
+    intro: "Recent moments, achievements, and game records.",
     scoreAlt: "Arcaea score screenshot",
     preview: "Preview"
   },
