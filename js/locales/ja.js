@@ -70,8 +70,8 @@ window.HUIHUI_I18N.ja = {
     }
   },
   posts: {
-    title: "投稿",
-    intro: "最近の記録・写真・ゲーム。",
+    title: "マイルストーン",
+    intro: "近況、実績、ゲーム記録など。",
     scoreAlt: "Arcaea スコアスクリーンショット",
     preview: "プレビュー"
   },
