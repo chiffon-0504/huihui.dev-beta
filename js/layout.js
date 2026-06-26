@@ -61,13 +61,29 @@ function getToolsPath(lang) {
   return "/tools/tier-maker/";
 }
 
-function renderNavLink(href, icon, label, extraClass = "") {
+function renderNavLink({
+  href,
+  icon,
+  label,
+  extraClass = "",
+  navKey = ""
+}) {
+  const navAttribute = navKey ? ` data-nav="${navKey}"` : "";
+
   return `
-    <a href="${href}" class="nav-link ${extraClass}">
+    <a href="${href}" class="nav-link ${extraClass}"${navAttribute}>
       <span class="nav-icon">${icon}</span>
       <span class="nav-label">${label}</span>
     </a>
   `;
+}
+
+function getActiveNavKey(path) {
+  const segments = path.replace(/^\/+|\/+$/g, "").split("/");
+  const pageSegment = segments[0] === "en" || segments[0] === "ja" ? segments[1] : segments[0];
+
+  if (pageSegment === "milestones" || pageSegment === "posts") return "posts";
+  return pageSegment || "home";
 }
 
 function renderSidebar() {
@@ -90,10 +106,30 @@ function renderSidebar() {
       </div>
 
       <nav>
-        ${renderNavLink(getLocalizedPath(lang, "about"), navIcons.about, t.about)}
-        ${renderNavLink(getLocalizedPath(lang, "works"), navIcons.works, t.works)}
-        ${renderNavLink(getLocalizedPath(lang, "posts"), navIcons.posts, t.posts)}
-        ${renderNavLink(getLocalizedPath(lang, "contact"), navIcons.contact, t.contact)}
+        ${renderNavLink({
+          href: getLocalizedPath(lang, "about"),
+          icon: navIcons.about,
+          label: t.about,
+          navKey: "about"
+        })}
+        ${renderNavLink({
+          href: getLocalizedPath(lang, "works"),
+          icon: navIcons.works,
+          label: t.works,
+          navKey: "works"
+        })}
+        ${renderNavLink({
+          href: getLocalizedPath(lang, "posts"),
+          icon: navIcons.posts,
+          label: t.posts,
+          navKey: "posts"
+        })}
+        ${renderNavLink({
+          href: getLocalizedPath(lang, "contact"),
+          icon: navIcons.contact,
+          label: t.contact,
+          navKey: "contact"
+        })}
         <a href="${getToolsPath(lang)}" class="nav-link tools-link" data-nav="tools">
           <span class="nav-icon">${navIcons.tools}</span>
           <span class="nav-label">${t.tools}</span>
@@ -111,6 +147,7 @@ function renderSidebar() {
 
 function setActiveSidebarLink() {
   const currentPath = window.location.pathname.replace(/\/$/, "");
+  const activeNavKey = getActiveNavKey(window.location.pathname);
 
   document.querySelectorAll(".sidebar-top nav a").forEach((link) => {
     const href = link.getAttribute("href");
@@ -120,6 +157,7 @@ function setActiveSidebarLink() {
     link.classList.remove("active");
 
     if (
+      link.dataset.nav === activeNavKey ||
       currentPath === normalizedHref ||
       currentPath.startsWith(`${normalizedHref}/`)
     ) {
