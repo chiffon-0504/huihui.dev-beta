@@ -49,9 +49,10 @@ const navIcons = {
 
 function getLocalizedPath(lang, page) {
   const prefix = lang === "zh" ? "/" : `/${lang}/`;
+  const pathSegment = page === "posts" ? "milestones" : page;
 
   if (page === "home") return prefix;
-  return `${prefix}${page}/`;
+  return `${prefix}${pathSegment}/`;
 }
 
 function getToolsPath(lang) {
