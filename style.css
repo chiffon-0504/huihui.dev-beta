@@ -3956,7 +3956,6 @@ body:has(#aboutPage) .galgame-banner {
   border: 1px solid rgba(80, 94, 112, 0.42);
   background: rgba(255, 255, 255, 0.72);
   box-shadow:
-    0 0 0 6px rgba(90, 105, 125, 0.12),
     0 14px 34px rgba(31, 53, 82, 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
@@ -3965,7 +3964,6 @@ body:has(#aboutPage) .galgame-banner {
   border-color: rgba(80, 94, 112, 0.58);
   background: rgba(255, 255, 255, 0.86);
   box-shadow:
-    0 0 0 8px rgba(90, 105, 125, 0.18),
     0 20px 44px rgba(31, 53, 82, 0.24),
     inset 0 1px 0 rgba(255, 255, 255, 1);
 }
