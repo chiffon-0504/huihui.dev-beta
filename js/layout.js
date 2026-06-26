@@ -61,7 +61,13 @@ function getToolsPath(lang) {
   return "/tools/tier-maker/";
 }
 
-function renderNavLink(href, icon, label, extraClass = "", navKey = "") {
+function renderNavLink({
+  href,
+  icon,
+  label,
+  extraClass = "",
+  navKey = ""
+}) {
   const navAttribute = navKey ? ` data-nav="${navKey}"` : "";
 
   return `
@@ -100,10 +106,30 @@ function renderSidebar() {
       </div>
 
       <nav>
-        ${renderNavLink(getLocalizedPath(lang, "about"), navIcons.about, t.about, "", "about")}
-        ${renderNavLink(getLocalizedPath(lang, "works"), navIcons.works, t.works, "", "works")}
-        ${renderNavLink(getLocalizedPath(lang, "posts"), navIcons.posts, t.posts, "", "posts")}
-        ${renderNavLink(getLocalizedPath(lang, "contact"), navIcons.contact, t.contact, "", "contact")}
+        ${renderNavLink({
+          href: getLocalizedPath(lang, "about"),
+          icon: navIcons.about,
+          label: t.about,
+          navKey: "about"
+        })}
+        ${renderNavLink({
+          href: getLocalizedPath(lang, "works"),
+          icon: navIcons.works,
+          label: t.works,
+          navKey: "works"
+        })}
+        ${renderNavLink({
+          href: getLocalizedPath(lang, "posts"),
+          icon: navIcons.posts,
+          label: t.posts,
+          navKey: "posts"
+        })}
+        ${renderNavLink({
+          href: getLocalizedPath(lang, "contact"),
+          icon: navIcons.contact,
+          label: t.contact,
+          navKey: "contact"
+        })}
         <a href="${getToolsPath(lang)}" class="nav-link tools-link" data-nav="tools">
           <span class="nav-icon">${navIcons.tools}</span>
           <span class="nav-label">${t.tools}</span>
