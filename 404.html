@@ -5,57 +5,78 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>404 | huihui.dev</title>
   <link rel="stylesheet" href="/style.css">
-    <style>
-  main h1 {
-    color: #465f7c;
-  }
 
-  main p {
-    color: #4f647c;
-  }
+  <style>
+    main {
+      padding: 4rem;
+    }
 
-  .error-home-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    main h1 {
+      color: #263f5f;
+    }
 
-    margin-top: 2rem;
-    padding: 1.2rem 3rem;
+    main p {
+      color: #2f455f;
+      font-weight: 500;
+    }
 
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.72);
-    color: #1f2937;
-    text-decoration: none;
+    .error-home-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
 
-    font-size: 1.75rem;
-    font-weight: 700;
+      margin-top: 2rem;
+      padding: 1.2rem 3rem;
 
-    box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.9),
-      0 0 0 8px rgba(255, 255, 255, 0.22),
-      0 24px 60px rgba(70, 100, 140, 0.32);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.78);
+      color: #111827;
+      text-decoration: none;
 
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
+      font-size: 1.75rem;
+      font-weight: 700;
 
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
+      box-shadow:
+        0 0 0 2px rgba(110, 125, 145, 0.28),
+        0 0 0 10px rgba(110, 125, 145, 0.16),
+        0 24px 60px rgba(55, 75, 100, 0.35);
 
-  .error-home-button:hover {
-    transform: translateY(-2px);
-    box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 1),
-      0 0 0 10px rgba(255, 255, 255, 0.3),
-      0 30px 70px rgba(70, 100, 140, 0.42);
-  }
-    </style>
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .error-home-button:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 0 0 2px rgba(110, 125, 145, 0.38),
+        0 0 0 12px rgba(110, 125, 145, 0.22),
+        0 30px 72px rgba(55, 75, 100, 0.45);
+    }
+
+    @media (max-width: 640px) {
+      main {
+        padding: 3rem 1.5rem;
+      }
+
+      .error-home-button {
+        width: 100%;
+        padding: 1rem 1.5rem;
+        font-size: 1.25rem;
+      }
+    }
+  </style>
 </head>
+
 <body>
-  <main style="padding: 4rem;">
+  <main>
     <h1>404</h1>
+
     <p>這個頁面不存在。</p>
     <p>This page does not exist.</p>
     <p>このページは存在しません。</p>
+
     <a class="error-home-button" href="/">回首頁 / Home / ホーム</a>
   </main>
 </body>
