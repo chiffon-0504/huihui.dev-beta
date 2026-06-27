@@ -10,7 +10,7 @@ window.HUIHUI_I18N.zh = {
     projectUpdate: {
       label: "Website Status",
       title: "🟢 更新中",
-      desc: "huihui.dev-stable · Stable channel"
+      desc: "huihui.dev · 持續更新"
     },
     tech: {
       title: "科技動態",
