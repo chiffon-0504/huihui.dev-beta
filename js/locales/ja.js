@@ -8,9 +8,9 @@ window.HUIHUI_I18N.ja = {
       contact: "連絡先"
     },
     projectUpdate: {
-      label: "Project Updates",
-      title: "Liquid Glass UI 公開",
-      desc: "Tahoe風のガラスUIを導入し、レイヤーブラー・ティント・モバイルドロワーに対応。"
+      label: "Website Status",
+      title: "🟢 更新中",
+      desc: "huihui.dev · 継続更新中"
     },
     tech: {
       title: "テックニュース",
