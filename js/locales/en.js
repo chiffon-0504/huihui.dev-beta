@@ -8,9 +8,9 @@ window.HUIHUI_I18N.en = {
       contact: "Contact"
     },
     projectUpdate: {
-      label: "Project Updates",
-      title: "Liquid Glass UI Released",
-      desc: "Introduced a Tahoe-style glass system with layered blur, tint, and mobile drawer navigation."
+      label: "Website Status",
+      title: "🟢 Active",
+      desc: "huihui.dev · Continuously updated"
     },
     tech: {
       title: "Tech Updates",
