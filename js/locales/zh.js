@@ -8,9 +8,9 @@ window.HUIHUI_I18N.zh = {
       contact: "聯絡"
     },
     projectUpdate: {
-      label: "Project Updates",
-      title: "Liquid Glass UI 上線",
-      desc: "導入 Tahoe-style 玻璃系統，包含 layered blur、tint 分層與 mobile drawer。"
+      label: "Website Status",
+      title: "🟢 更新中",
+      desc: "huihui.dev-stable · Maintained"
     },
     tech: {
       title: "科技動態",
