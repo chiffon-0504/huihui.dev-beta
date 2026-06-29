@@ -30,7 +30,7 @@ class HuiHui:
         ]
 
         self.projects: List[str] = [
-            "huihui.dev (personal website with custom UI and code rendering system)",
+            "huihui.dev (personal website with custom UI, code rendering system, and GitHub-based deployment workflow)",
         ]
 
         self.favorite_composers: List[str] = [
@@ -56,7 +56,7 @@ class HuiHui:
         self.favorite_illustrators: List[str] = [
             "@momoco_haru",
             "@horuhara",
-            "@kurumi_lm"
+            "@kurumi_lm",
         ]
 
     def about(self) -> str:
@@ -97,7 +97,7 @@ class HuiHui:
         ]
 
         self.projects: List[str] = [
-            "huihui.dev (personal website with custom UI and code rendering system)",
+            "huihui.dev (personal website with custom UI, code rendering system, and GitHub-based deployment workflow)",
         ]
 
         self.favorite_composers: List[str] = [
@@ -122,7 +122,7 @@ class HuiHui:
         self.favorite_illustrators: List[str] = [
             "@momoco_haru",
             "@horuhara",
-            "@kurumi_lm"
+            "@kurumi_lm",
         ]
 
     def about(self) -> str:
@@ -163,7 +163,7 @@ class HuiHui:
         ]
 
         self.projects: List[str] = [
-            "huihui.dev (personal website with custom UI and code rendering system)",
+            "huihui.dev (personal website with custom UI, code rendering system, and GitHub-based deployment workflow)",
         ]
 
         self.favorite_composers: List[str] = [
@@ -188,7 +188,7 @@ class HuiHui:
         self.favorite_illustrators: List[str] = [
             "@momoco_haru",
             "@horuhara",
-            "@kurumi_lm"
+            "@kurumi_lm",
         ]
 
     def about(self) -> str:
