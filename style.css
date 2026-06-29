@@ -3986,3 +3986,16 @@ body:has(#aboutPage) .galgame-banner {
     0 20px 44px rgba(31, 53, 82, 0.24),
     inset 0 1px 0 rgba(255, 255, 255, 1);
 }
+
+.release-notes p {
+  margin: 0 0 0.45rem;
+}
+
+.release-notes ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.release-notes li {
+  margin: 0.25rem 0;
+}
