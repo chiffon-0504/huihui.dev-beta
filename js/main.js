@@ -92,11 +92,75 @@ function highlightKeywordSafely(container, keyword, className) {
   });
 }
 
+function highlightMultiColorKeyword(container, keyword, segments) {
+  const walker = document.createTreeWalker(
+    container,
+    NodeFilter.SHOW_TEXT,
+    {
+      acceptNode(node) {
+        if (!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        if (!node.nodeValue.includes(keyword)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    }
+  );
+
+  const textNodes = [];
+  let current;
+
+  while ((current = walker.nextNode())) {
+    textNodes.push(current);
+  }
+
+  textNodes.forEach((textNode) => {
+    const text = textNode.textContent;
+    const fragment = document.createDocumentFragment();
+    let lastIndex = 0;
+    let index = text.indexOf(keyword);
+
+    while (index !== -1) {
+      if (index > lastIndex) {
+        fragment.appendChild(document.createTextNode(text.slice(lastIndex, index)));
+      }
+
+      segments.forEach(({ text, className }) => {
+        if (!className) {
+          fragment.appendChild(document.createTextNode(text));
+          return;
+        }
+
+        const span = document.createElement("span");
+        span.className = className;
+        span.textContent = text;
+        fragment.appendChild(span);
+      });
+
+      lastIndex = index + keyword.length;
+      index = text.indexOf(keyword, lastIndex);
+    }
+
+    if (lastIndex < text.length) {
+      fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+    }
+
+    textNode.parentNode.replaceChild(fragment, textNode);
+  });
+}
+
 function highlightCustomKeywords(block) {
   block.querySelectorAll(".token.string").forEach((token) => {
     highlightKeywordSafely(token, "Galgame", "kw-red");
     highlightKeywordSafely(token, "Morfonica", "kw-blue");
     highlightKeywordSafely(token, "Ave Mujica", "kw-reddishpurple");
+
+    highlightMultiColorKeyword(token, "TOGENASHI TOGEARI", [
+      { text: "TOG", className: "kw-togenashi-tog" },
+      { text: "ENA", className: "kw-togenashi-ena" },
+      { text: "SHI", className: "kw-togenashi-shi" },
+      { text: " ", className: "" },
+      { text: "TOG", className: "kw-togeari-tog" },
+      { text: "EARI", className: "kw-togeari-eari" }
+    ]);
   });
 }
 

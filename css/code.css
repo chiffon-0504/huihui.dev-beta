@@ -158,6 +158,26 @@
   color: #881144;
 }
 
+.kw-togenashi-tog {
+  color: #D90E2C;
+}
+
+.kw-togenashi-ena {
+  color: #85C9DC;
+}
+
+.kw-togenashi-shi {
+  color: #76BD53;
+}
+
+.kw-togeari-tog {
+  color: #E34D8D;
+}
+
+.kw-togeari-eari {
+  color: #EEDA01;
+}
+
 @media (max-width: 900px) {
   .code-block {
     padding: 16px 16px 14px;
