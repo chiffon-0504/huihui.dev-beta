@@ -75,6 +75,21 @@
   display: block;
 }
 
+.post-images {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.post-images img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 22px;
+}
+
 .post-caption {
   margin-top: 10px;
   font-size: 0.78rem;
@@ -109,6 +124,10 @@
   .post-image {
     max-width: 100%;
     margin: 0;
+  }
+
+  .post-images {
+    max-width: 100%;
   }
 
   .post-caption {
