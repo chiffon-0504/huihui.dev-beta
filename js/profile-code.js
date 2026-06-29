@@ -2,7 +2,7 @@ window.HUIHUI_PROFILE_CODE = {
   zh: `# </>
 
 from __future__ import annotations
-from typing import List, Optional
+from typing import List
 
 class HuiHui:
     """Developer profile object."""
@@ -15,15 +15,22 @@ class HuiHui:
         self.contact: str = "contact@huihui.dev"
 
         self.skills: List[str] = [
-            "Python (OpenCV, Computer Vision, ML basics)",
-            "SwiftUI (basic)",
-            "JavaScript (basic)",
-            "HTML & CSS (basic)",
+            "HTML",
+            "CSS",
+            "JavaScript",
+            "Git",
+            "GitHub",
+        ]
+
+        self.workflow: List[str] = [
+            "Issues",
+            "Branches",
+            "Pull Requests",
+            "GitHub Actions",
         ]
 
         self.projects: List[str] = [
             "huihui.dev (personal website with custom UI and code rendering system)",
-            "Multimodal Health Analysis Prototype (Raspberry Pi + OpenCV)",
         ]
 
         self.favorite_composers: List[str] = [
@@ -40,12 +47,10 @@ class HuiHui:
 
         self.favorite_songs: List[str] = [
             "Grievous Lady -nothing is but what is not- · Team Grimoire & Laur",
-            "PRAGMATISM -RESURRECTION- · Laur",
-            "Cyaegha · USAO",
-            "Cryptarithm · Sakuzyo",
-            "虚空の夢 · ak+q",
             "One step at a time · Morfonica",
             "顏 · Ave Mujica",
+            "雑踏、僕らの街 · TOGENASHI TOGEARI",
+            "誰にもなれない私だから · TOGENASHI TOGEARI",
         ]
 
         self.favorite_illustrators: List[str] = [
@@ -56,8 +61,7 @@ class HuiHui:
 
     def about(self) -> str:
         return (
-            "A personal dev space focused on embedded systems, "
-            "computer vision, and experimental projects"
+            "A personal dev space focused on web UI, code rendering, and embedded systems"
         )
 
 huihui = HuiHui()
@@ -65,7 +69,7 @@ huihui = HuiHui()
   en: `# </>
 
 from __future__ import annotations
-from typing import List, Optional
+from typing import List
 
 class HuiHui:
     """Developer profile object."""
@@ -78,15 +82,22 @@ class HuiHui:
         self.contact: str = "contact@huihui.dev"
 
         self.skills: List[str] = [
-            "Python (OpenCV, Computer Vision, ML basics)",
-            "SwiftUI (basic)",
-            "JavaScript (basic)",
-            "HTML & CSS (basic)",
+            "HTML",
+            "CSS",
+            "JavaScript",
+            "Git",
+            "GitHub",
+        ]
+
+        self.workflow: List[str] = [
+            "Issues",
+            "Branches",
+            "Pull Requests",
+            "GitHub Actions",
         ]
 
         self.projects: List[str] = [
             "huihui.dev (personal website with custom UI and code rendering system)",
-            "Multimodal Health Analysis Prototype (Raspberry Pi + OpenCV)",
         ]
 
         self.favorite_composers: List[str] = [
@@ -103,12 +114,9 @@ class HuiHui:
 
         self.favorite_songs: List[str] = [
             "Grievous Lady -nothing is but what is not- · Team Grimoire & Laur",
-            "PRAGMATISM -RESURRECTION- · Laur",
-            "Cyaegha · USAO",
-            "Cryptarithm · Sakuzyo",
-            "虚空の夢 · ak+q",
             "One step at a time · Morfonica",
             "顏 · Ave Mujica",
+            "雑踏、僕らの街 · TOGENASHI TOGEARI",
         ]
 
         self.favorite_illustrators: List[str] = [
@@ -119,8 +127,7 @@ class HuiHui:
 
     def about(self) -> str:
         return (
-            "A personal dev space focused on embedded systems, "
-            "computer vision, and experimental projects"
+            "A personal dev space focused on web UI, code rendering, and embedded systems"
         )
 
 huihui = HuiHui()
@@ -128,7 +135,7 @@ huihui = HuiHui()
   ja: `# </>
 
 from __future__ import annotations
-from typing import List, Optional
+from typing import List
 
 class HuiHui:
     """Developer profile object."""
@@ -141,15 +148,22 @@ class HuiHui:
         self.contact: str = "contact@huihui.dev"
 
         self.skills: List[str] = [
-            "Python (OpenCV, Computer Vision, ML basics)",
-            "SwiftUI (basic)",
-            "JavaScript (basic)",
-            "HTML & CSS (basic)",
+            "HTML",
+            "CSS",
+            "JavaScript",
+            "Git",
+            "GitHub",
+        ]
+
+        self.workflow: List[str] = [
+            "Issues",
+            "Branches",
+            "Pull Requests",
+            "GitHub Actions",
         ]
 
         self.projects: List[str] = [
             "huihui.dev (personal website with custom UI and code rendering system)",
-            "Multimodal Health Analysis Prototype (Raspberry Pi + OpenCV)",
         ]
 
         self.favorite_composers: List[str] = [
@@ -166,12 +180,9 @@ class HuiHui:
 
         self.favorite_songs: List[str] = [
             "Grievous Lady -nothing is but what is not- · Team Grimoire & Laur",
-            "PRAGMATISM -RESURRECTION- · Laur",
-            "Cyaegha · USAO",
-            "Cryptarithm · Sakuzyo",
-            "虚空の夢 · ak+q",
             "One step at a time · Morfonica",
             "顏 · Ave Mujica",
+            "雑踏、僕らの街 · TOGENASHI TOGEARI",
         ]
 
         self.favorite_illustrators: List[str] = [
@@ -182,13 +193,12 @@ class HuiHui:
 
     def about(self) -> str:
         return (
-            "A personal dev space focused on embedded systems, "
-            "computer vision, and experimental projects"
+            "A personal dev space focused on web UI, code rendering, and embedded systems"
         )
 
 huihui = HuiHui()
 `
-};
+}
 
 function renderProfileCode() {
   const profileCode = document.getElementById("profileCode");
