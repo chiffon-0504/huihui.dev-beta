@@ -3987,8 +3987,23 @@ body:has(#aboutPage) .galgame-banner {
     inset 0 1px 0 rgba(255, 255, 255, 1);
 }
 
-.release-notes {
-  max-width: 720px;
+/* Website Version */
+.website-version-section .apod-card {
+  grid-template-columns: 1fr;
+}
+
+.website-version-section .apod-content {
+  width: 100%;
+  max-width: none;
+}
+
+.website-version-section .release-notes {
+  width: 100%;
+  max-width: none;
+}
+
+.release-notes p {
+  margin: 0 0 0.45rem;
 }
 
 .release-notes ul {
@@ -3998,5 +4013,4 @@ body:has(#aboutPage) .galgame-banner {
 
 .release-notes li {
   margin: 0.25rem 0;
-  max-width: 720px;
 }
