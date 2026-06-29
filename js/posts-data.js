@@ -3,7 +3,7 @@ const HUIHUI_POSTS = [
     authorName: "huihui",
     authorHandle: "@huihui",
     date: "June 28 2026",
-    content: `初代魔王 Grievous Lady <span class="future">FUTURE 11</span> <span class="ex">EX</span>\n\n3.0 魔王 Tempestissimo <span class="future">FUTURE 10+</span> <span class="ex">EX</span>\n\n6.0 Lament Rain <span class="future">FUTURE 10</span> <span class="ex">EX</span>\n\n<a class="hashtag" href="https://x.com/hashtag/arcaea?src=hashtag_click" target="_blank" rel="noopener noreferrer">#arcaea</a>`,
+    content: `初代魔王 Grievous Lady <span class="future">FUTURE 11</span> <span class="ex">EX</span>\n3.0 魔王 Tempestissimo <span class="future">FUTURE 10+</span> <span class="ex">EX</span>\n6.0 Lament Rain <span class="future">FUTURE 10</span> <span class="ex">EX</span>\n\n<a class="hashtag" href="https://x.com/hashtag/arcaea?src=hashtag_click" target="_blank" rel="noopener noreferrer">#arcaea</a>`,
     images: [
       {
         src: "/images/3008_p.webp",
