@@ -3998,4 +3998,5 @@ body:has(#aboutPage) .galgame-banner {
 
 .release-notes li {
   margin: 0.25rem 0;
+  max-width: 900px;
 }
