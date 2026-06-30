@@ -50,7 +50,7 @@ window.HUIHUI_I18N.en = {
       workers: {
         type: "API",
         title: "Workers API",
-        desc: "Integrates Tech Updates, NASA APOD, GitHub updates, Steam data, and contact form routing.",
+        desc: "Fetches tech updates, processes Steam data, and forwards contact forms.",
         tag: "Cloudflare Workers"
       },
       photography: "Photography",

@@ -50,7 +50,7 @@ window.HUIHUI_I18N.zh = {
       workers: {
         type: "API",
         title: "Workers API",
-        desc: "整合科技動態、NASA APOD、GitHub 更新、Steam 資料與聯絡表單路由。",
+        desc: "處理科技動態抓取、Steam 資料整理與聯絡表單轉送。",
         tag: "Cloudflare Workers"
       },
       photography: "攝影",

@@ -50,7 +50,7 @@ window.HUIHUI_I18N.ja = {
       workers: {
         type: "API",
         title: "Workers API",
-        desc: "Tech Updates、NASA APOD、GitHub更新、Steamデータ、Contactフォームのルーティングを統合。",
+        desc: "テック更新の取得、Steamデータ処理、問い合わせフォーム転送を担当。",
         tag: "Cloudflare Workers"
       },
       photography: "写真",
