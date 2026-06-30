@@ -56,14 +56,54 @@ function renderAboutInterestCards() {
   const config = getAboutPageConfig();
 
   return `
-    <article class="interest-card">
+    <article class="interest-card rhythm-card maimai-card">
       <h4>${config.maimaiTitle}</h4>
-      <div class="interest-gallery">
-        <img src="/images/1001_a.webp" data-i18n-alt="about.images.maimai" />
+
+      <div class="rhythm-profile">
+        <img
+          src="/images/1001_am.webp"
+          alt="maimai DX profile"
+          class="zoomable"
+          data-i18n-alt="about.images.maimai"
+        />
+      </div>
+
+      <div class="rhythm-records">
+        <div class="rhythm-record">
+          <img
+            src="/images/1002_amf.webp"
+            alt="Favorite maimai DX song"
+            class="rhythm-record-img zoomable"
+            onerror="this.onerror=null; this.src='/images/1001_a.webp';"
+          />
+
+          <div class="rhythm-record-text">
+            <h5>Favorite</h5>
+            <p>Straight into the lights</p>
+            <p>Cosmograph</p>
+          </div>
+        </div>
+
+        <div class="rhythm-record">
+          <img
+            src="/images/1003_amb.webp"
+            alt="Best maimai DX record"
+            class="rhythm-record-img zoomable"
+            onerror="this.onerror=null; this.src='/images/1001_a.webp';"
+          />
+
+          <div class="rhythm-record-text">
+            <h5>Best</h5>
+            <p>Ref:rain (for 7th Heaven)</p>
+            <p>カモメサノエレクトリックオーケストラ include Limonène</p>
+            <p>Level: MASTER</p>
+            <p>Best Score: 100.0943%</p>
+          </div>
+        </div>
       </div>
     </article>
 
-    <article class="interest-card arcaea-card">
+    <article class="interest-card rhythm-card arcaea-card">
       <h4>
         <a
           href="https://arcaea.lowiro.com/zh-hant"
@@ -75,9 +115,9 @@ function renderAboutInterestCards() {
         </a>
       </h4>
 
-      <div class="arcaea-profile">
+      <div class="rhythm-profile">
         <img
-          src="/images/1033_a.webp"
+          src="/images/1004_aa.webp"
           alt="Arcaea profile"
           class="zoomable"
           data-i18n-alt="about.images.arcaea"
@@ -85,16 +125,16 @@ function renderAboutInterestCards() {
         />
       </div>
 
-      <div class="arcaea-records">
-        <div class="arcaea-record">
+      <div class="rhythm-records">
+        <div class="rhythm-record">
           <img
-            src="/images/1003_af.webp"
+            src="/images/1005_aaf.webp"
             alt="Favorite Arcaea song"
-            class="arcaea-record-img zoomable"
+            class="rhythm-record-img zoomable"
             onerror="this.onerror=null; this.src='/images/1032_a.webp';"
           />
 
-          <div class="arcaea-record-text">
+          <div class="rhythm-record-text">
             <h5>Favorite</h5>
             <p>
               <a
@@ -110,15 +150,15 @@ function renderAboutInterestCards() {
           </div>
         </div>
 
-        <div class="arcaea-record">
+        <div class="rhythm-record">
           <img
-            src="/images/1004_ab.webp"
+            src="/images/1006_aab.webp"
             alt="Best Arcaea record"
-            class="arcaea-record-img zoomable"
+            class="rhythm-record-img zoomable"
             onerror="this.onerror=null; this.src='/images/1032_a.webp';"
           />
 
-          <div class="arcaea-record-text">
+          <div class="rhythm-record-text">
             <h5>Best</h5>
             <p>
               <a
