@@ -63,10 +63,49 @@ function renderAboutInterestCards() {
       </div>
     </article>
 
-    <article class="interest-card">
+    <article class="interest-card arcaea-card">
       <h4>Arcaea</h4>
-      <div class="interest-gallery">
-        <img src="/images/1032_a.webp" data-i18n-alt="about.images.arcaea" />
+
+      <div class="arcaea-profile">
+        <img
+          src="/images/1033_a.webp"
+          alt="Arcaea profile"
+          class="zoomable"
+          data-i18n-alt="about.images.arcaea"
+          onerror="this.onerror=null; this.src='/images/1032_a.webp';"
+        />
+      </div>
+
+      <div class="arcaea-records">
+        <div class="arcaea-record">
+          <img
+            src="/images/1034_af.webp"
+            alt="Favorite Arcaea song"
+            class="arcaea-record-img zoomable"
+            onerror="this.onerror=null; this.src='/images/1032_a.webp';"
+          />
+
+          <div class="arcaea-record-text">
+            <h5>Favorite</h5>
+            <p>ΛZΛLEΛ</p>
+            <p>ak+q × onoken</p>
+          </div>
+        </div>
+
+        <div class="arcaea-record">
+          <img
+            src="/images/1035_ab.webp"
+            alt="Best Arcaea record"
+            class="arcaea-record-img zoomable"
+            onerror="this.onerror=null; this.src='/images/1032_a.webp';"
+          />
+
+          <div class="arcaea-record-text">
+            <h5>Best</h5>
+            <p>Cyaegha</p>
+            <p>USAO</p>
+          </div>
+        </div>
       </div>
     </article>
 
@@ -206,3 +245,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
   renderSteamFavorites();
 });
+
