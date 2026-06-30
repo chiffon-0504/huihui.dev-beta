@@ -4039,3 +4039,14 @@ body:has(#aboutPage) .arcaea-text-link:hover {
     flex-basis: 150px;
   }
 }
+
+body:has(#aboutPage) .steam-game-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+body:has(#aboutPage) .steam-game-hours {
+  font-size: 1.05rem;
+  line-height: 1.4;
+}
