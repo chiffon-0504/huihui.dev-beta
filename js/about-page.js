@@ -57,7 +57,16 @@ function renderAboutInterestCards() {
 
   return `
     <article class="interest-card rhythm-card maimai-card">
-      <h4>${config.maimaiTitle}</h4>
+      <h4>
+        <a
+          href="https://maimai.sega.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="rhythm-title-link"
+        >
+          ${config.maimaiTitle}
+        </a>
+      </h4>
 
       <div class="rhythm-profile">
         <img
@@ -79,7 +88,16 @@ function renderAboutInterestCards() {
 
           <div class="rhythm-record-text">
             <h5>Favorite</h5>
-            <p>Straight into the lights</p>
+            <p>
+              <a
+                href="https://www.youtube.com/watch?v=zqH9qgVNzHI"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="rhythm-text-link"
+              >
+                Straight into the lights
+              </a>
+            </p>
             <p>Cosmograph</p>
           </div>
         </div>
@@ -94,7 +112,16 @@ function renderAboutInterestCards() {
 
           <div class="rhythm-record-text">
             <h5>Best</h5>
-            <p>Ref:rain (for 7th Heaven)</p>
+            <p>
+              <a
+                href="https://www.youtube.com/watch?v=-3wzWwhHW3g"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="rhythm-text-link"
+              >
+                Ref:rain (for 7th Heaven)
+              </a>
+            </p>
             <p>カモメサノエレクトリックオーケストラ include Limonène</p>
             <p>Level: MASTER</p>
             <p>Best Score: 100.0943%</p>
