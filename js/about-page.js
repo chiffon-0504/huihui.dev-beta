@@ -123,7 +123,7 @@ function renderAboutInterestCards() {
               </a>
             </p>
             <p>カモメサノエレクトリックオーケストラ include Limonène</p>
-            <p>Level: MASTER</p>
+            <p>Level: MASTER 14</p>
             <p>Best Score: 100.0943%</p>
           </div>
         </div>
