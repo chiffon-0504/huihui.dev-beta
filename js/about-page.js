@@ -64,7 +64,16 @@ function renderAboutInterestCards() {
     </article>
 
     <article class="interest-card arcaea-card">
-      <h4>Arcaea</h4>
+      <h4>
+        <a
+          href="https://arcaea.lowiro.com/zh-hant"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="arcaea-title-link"
+        >
+          Arcaea
+        </a>
+      </h4>
 
       <div class="arcaea-profile">
         <img
@@ -79,7 +88,7 @@ function renderAboutInterestCards() {
       <div class="arcaea-records">
         <div class="arcaea-record">
           <img
-            src="/images/1034_af.webp"
+            src="/images/1003_af.webp"
             alt="Favorite Arcaea song"
             class="arcaea-record-img zoomable"
             onerror="this.onerror=null; this.src='/images/1032_a.webp';"
@@ -87,14 +96,23 @@ function renderAboutInterestCards() {
 
           <div class="arcaea-record-text">
             <h5>Favorite</h5>
-            <p>ΛZΛLEΛ</p>
+            <p>
+              <a
+                href="https://soundcloud.com/7ijhvp0echx6/ak-q-x-onoken-lzllel"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="arcaea-text-link"
+              >
+                ΛZΛLEΛ
+              </a>
+            </p>
             <p>ak+q × onoken</p>
           </div>
         </div>
 
         <div class="arcaea-record">
           <img
-            src="/images/1035_ab.webp"
+            src="/images/1004_ab.webp"
             alt="Best Arcaea record"
             class="arcaea-record-img zoomable"
             onerror="this.onerror=null; this.src='/images/1032_a.webp';"
@@ -102,7 +120,16 @@ function renderAboutInterestCards() {
 
           <div class="arcaea-record-text">
             <h5>Best</h5>
-            <p>Cyaegha</p>
+            <p>
+              <a
+                href="https://soundcloud.com/kss01/usao-cyaegha"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="arcaea-text-link"
+              >
+                Cyaegha
+              </a>
+            </p>
             <p>USAO</p>
           </div>
         </div>
