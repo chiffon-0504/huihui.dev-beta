@@ -93,6 +93,8 @@ function renderSidebar() {
 
   if (!sidebar) return;
 
+  sidebar.classList.add("liquid-glass-strong");
+
   sidebar.innerHTML = `
     <div class="sidebar-top">
       <h1><a href="${getLocalizedPath(lang, "home")}">huihui.dev</a></h1>

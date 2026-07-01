@@ -381,6 +381,22 @@ async function loadTechNews() {
 
 document.addEventListener("DOMContentLoaded", loadTechNews);
 
+function initLiquidGlassPointer() {
+  document.querySelectorAll(".liquid-glass-strong").forEach((el) => {
+    el.addEventListener("mousemove", (event) => {
+      const rect = el.getBoundingClientRect();
+
+      const x = ((event.clientX - rect.left) / rect.width) * 100;
+      const y = ((event.clientY - rect.top) / rect.height) * 100;
+
+      el.style.setProperty("--mx", `${x}%`);
+      el.style.setProperty("--my", `${y}%`);
+    });
+  });
+}
+
+document.addEventListener("DOMContentLoaded", initLiquidGlassPointer);
+
 // ===== NASA APOD =====
 async function loadApodCard() {
   const image = document.getElementById("apod-image");
