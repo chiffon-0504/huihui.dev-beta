@@ -34,6 +34,7 @@ const ABOUT_PAGE_CONFIG = {
 const STEAM_FAVORITE_APPIDS = [2458530, 1829980, 1044620, 3682050];
 const STEAM_CUSTOM_IMAGES = {
   3418570: "/images/games/summer-pockets-rb.webp",
+  1829980: "/images/games/Cafe-Stella-and-the-Reapers-Butterflies.webp",
   3682050: "/images/games/Sickly-Days-and-Summer-Traces.webp",
 };
 
@@ -56,17 +57,150 @@ function renderAboutInterestCards() {
   const config = getAboutPageConfig();
 
   return `
-    <article class="interest-card">
-      <h4>${config.maimaiTitle}</h4>
-      <div class="interest-gallery">
-        <img src="/images/1001_a.webp" data-i18n-alt="about.images.maimai" />
+    <article class="interest-card rhythm-card maimai-card">
+      <h4>
+        <a
+          href="https://maimai.sega.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="rhythm-title-link"
+        >
+          ${config.maimaiTitle}
+        </a>
+      </h4>
+
+      <div class="rhythm-profile">
+        <img
+          src="/images/1001_am.webp"
+          alt="maimai DX profile"
+          class="zoomable"
+          data-i18n-alt="about.images.maimai"
+        />
+      </div>
+
+      <div class="rhythm-records">
+        <div class="rhythm-record">
+          <img
+            src="/images/1002_amf.webp"
+            alt="Favorite maimai DX song"
+            class="rhythm-record-img zoomable"
+            onerror="this.onerror=null; this.src='/images/1001_a.webp';"
+          />
+
+          <div class="rhythm-record-text">
+            <h5>Favorite</h5>
+            <p>
+              <a
+                href="https://www.youtube.com/watch?v=zqH9qgVNzHI"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="rhythm-text-link"
+              >
+                Straight into the lights
+              </a>
+            </p>
+            <p>Cosmograph</p>
+          </div>
+        </div>
+
+        <div class="rhythm-record">
+          <img
+            src="/images/1003_amb.webp"
+            alt="Best maimai DX record"
+            class="rhythm-record-img zoomable"
+            onerror="this.onerror=null; this.src='/images/1001_a.webp';"
+          />
+
+          <div class="rhythm-record-text">
+            <h5>Best</h5>
+            <p>
+              <a
+                href="https://www.youtube.com/watch?v=-3wzWwhHW3g"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="rhythm-text-link"
+              >
+                Ref:rain (for 7th Heaven)
+              </a>
+            </p>
+            <p>カモメサノエレクトリックオーケストラ include Limonène</p>
+            <p>Level: MASTER 14</p>
+            <p>Best Score: 100.0943%</p>
+          </div>
+        </div>
       </div>
     </article>
 
-    <article class="interest-card">
-      <h4>Arcaea</h4>
-      <div class="interest-gallery">
-        <img src="/images/1032_a.webp" data-i18n-alt="about.images.arcaea" />
+    <article class="interest-card rhythm-card arcaea-card">
+      <h4>
+        <a
+          href="https://arcaea.lowiro.com/zh-hant"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="arcaea-title-link"
+        >
+          Arcaea
+        </a>
+      </h4>
+
+      <div class="rhythm-profile">
+        <img
+          src="/images/1004_aa.webp"
+          alt="Arcaea profile"
+          class="zoomable"
+          data-i18n-alt="about.images.arcaea"
+          onerror="this.onerror=null; this.src='/images/1032_a.webp';"
+        />
+      </div>
+
+      <div class="rhythm-records">
+        <div class="rhythm-record">
+          <img
+            src="/images/1005_aaf.webp"
+            alt="Favorite Arcaea song"
+            class="rhythm-record-img zoomable"
+            onerror="this.onerror=null; this.src='/images/1032_a.webp';"
+          />
+
+          <div class="rhythm-record-text">
+            <h5>Favorite</h5>
+            <p>
+              <a
+                href="https://soundcloud.com/7ijhvp0echx6/ak-q-x-onoken-lzllel"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="arcaea-text-link"
+              >
+                ΛZΛLEΛ
+              </a>
+            </p>
+            <p>ak+q × onoken</p>
+          </div>
+        </div>
+
+        <div class="rhythm-record">
+          <img
+            src="/images/1006_aab.webp"
+            alt="Best Arcaea record"
+            class="rhythm-record-img zoomable"
+            onerror="this.onerror=null; this.src='/images/1032_a.webp';"
+          />
+
+          <div class="rhythm-record-text">
+            <h5>Best</h5>
+            <p>
+              <a
+                href="https://soundcloud.com/kss01/usao-cyaegha"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="arcaea-text-link"
+              >
+                Cyaegha
+              </a>
+            </p>
+            <p>USAO</p>
+          </div>
+        </div>
       </div>
     </article>
 
@@ -206,3 +340,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
   renderSteamFavorites();
 });
+
