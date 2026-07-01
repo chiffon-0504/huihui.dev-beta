@@ -4068,3 +4068,29 @@ body:has(#aboutPage) .steam-game-hours {
 .website-version-section .apod-card {
   grid-template-columns: 1fr;
 }
+
+.website-version-section .version-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 0.35rem 0 1.25rem;
+}
+
+.website-version-section .version-heading h2 {
+  margin: 0;
+}
+
+.website-version-section .version-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #16794c;
+  background: rgba(34, 197, 94, 0.14);
+  border: 1px solid rgba(34, 197, 94, 0.28);
+}
