@@ -4040,6 +4040,10 @@ body:has(#aboutPage) .arcaea-text-link:hover {
   }
 }
 
+body:has(#aboutPage) .steam-game-meta {
+  min-width: 0;
+}
+
 body:has(#aboutPage) .steam-game-name {
   font-size: 1.1rem;
   font-weight: 700;
@@ -4049,6 +4053,9 @@ body:has(#aboutPage) .steam-game-name {
   -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
+
+  white-space: normal;
+  word-break: break-word;
   overflow: hidden;
 }
 
