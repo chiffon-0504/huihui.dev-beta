@@ -2574,8 +2574,18 @@ body::before {
 
 .home-hero,
 .project-update-card,
-.apod-card,
-.tech-news-card,
+.website-version-section .apod-card,
+.tech-news-card {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.58),
+      rgba(235, 248, 255, 0.44)
+    );
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: var(--content-text-main);
+}
+
 .work-card,
 .post-card,
 .contact-form,
@@ -2630,7 +2640,13 @@ body::before {
   color: var(--content-text-muted) !important;
 }
 
-.hero-btn,
+.home-hero .hero-btn {
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  color: rgba(10, 15, 25, 0.88) !important;
+  -webkit-text-fill-color: currentColor;
+}
+
 .contact-form button,
 .copy-btn,
 .sidebar .hero-btn,
@@ -2641,7 +2657,12 @@ body::before {
   -webkit-text-fill-color: currentColor;
 }
 
-.hero-btn:hover,
+.home-hero .hero-btn:hover {
+  background: rgba(255, 255, 255, 0.50);
+  border-color: rgba(255, 255, 255, 0.58);
+  color: rgba(10, 15, 25, 0.92) !important;
+}
+
 .contact-form button:hover,
 .copy-btn:hover {
   background: rgba(255, 255, 255, 0.64);
