@@ -94,6 +94,25 @@ function renderSidebar() {
   if (!sidebar) return;
 
   sidebar.innerHTML = `
+    <svg class="sidebar-liquid-glass-filter" aria-hidden="true" focusable="false">
+      <filter id="sidebarLiquidGlassFilter">
+        <feTurbulence
+          type="turbulence"
+          baseFrequency="0.012 0.018"
+          numOctaves="2"
+          seed="8"
+          result="turbulence"
+        />
+        <feDisplacementMap
+          in="SourceGraphic"
+          in2="turbulence"
+          scale="18"
+          xChannelSelector="R"
+          yChannelSelector="G"
+        />
+      </filter>
+    </svg>
+
     <div class="sidebar-top">
       <h1><a href="${getLocalizedPath(lang, "home")}">huihui.dev</a></h1>
 
