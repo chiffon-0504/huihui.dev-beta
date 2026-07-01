@@ -2579,8 +2579,8 @@ body::before {
   background:
     linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.58),
-      rgba(235, 248, 255, 0.44)
+      rgba(46, 84, 128, 0.16),
+      rgba(34, 62, 98, 0.08)
     );
   border: 1px solid rgba(255, 255, 255, 0.55);
   color: var(--content-text-main);
@@ -2641,7 +2641,7 @@ body::before {
 }
 
 .home-hero .hero-btn {
-  background: rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.24);
   border: 1px solid rgba(255, 255, 255, 0.5);
   color: rgba(10, 15, 25, 0.88) !important;
   -webkit-text-fill-color: currentColor;
@@ -2658,7 +2658,7 @@ body::before {
 }
 
 .home-hero .hero-btn:hover {
-  background: rgba(255, 255, 255, 0.50);
+  background: rgba(255, 255, 255, 0.32);
   border-color: rgba(255, 255, 255, 0.58);
   color: rgba(10, 15, 25, 0.92) !important;
 }
