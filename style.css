@@ -2426,9 +2426,17 @@ body::before {
     );
 }
 
-.tech-news-card:hover,
-.apod-card:hover,
 .project-update-card:hover,
+.website-version-section .apod-card:hover,
+.tech-news-card:hover {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(46, 84, 128, 0.20),
+      rgba(34, 62, 98, 0.12)
+    );
+}
+
 .work-card:hover,
 .post-card:hover {
   background:
@@ -2658,7 +2666,7 @@ body::before {
 }
 
 .home-hero .hero-btn:hover {
-  background: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.22);
   border-color: rgba(255, 255, 255, 0.58);
   color: rgba(10, 15, 25, 0.92) !important;
 }
