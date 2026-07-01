@@ -4063,3 +4063,8 @@ body:has(#aboutPage) .steam-game-hours {
   font-size: 1.05rem;
   line-height: 1.4;
 }
+
+/* Website Version */
+.website-version-section .apod-card {
+  grid-template-columns: 1fr;
+}
