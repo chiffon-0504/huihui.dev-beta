@@ -34,6 +34,7 @@ const ABOUT_PAGE_CONFIG = {
 const STEAM_FAVORITE_APPIDS = [2458530, 1829980, 1044620, 3682050];
 const STEAM_CUSTOM_IMAGES = {
   3418570: "/images/games/summer-pockets-rb.webp",
+  1829980: "/images/games/Cafe-Stella-and-the-Reapers-Butterflies.webp",
   3682050: "/images/games/Sickly-Days-and-Summer-Traces.webp",
 };
 
