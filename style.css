@@ -2291,8 +2291,8 @@ body::before {
   background:
     linear-gradient(
       180deg,
-      rgba(46, 84, 128, 0.36),
-      rgba(34, 62, 98, 0.22)
+      rgba(46, 84, 128, 0.20),
+      rgba(34, 62, 98, 0.10)
     );
   border-color: transparent;
   color: var(--text-main-light);
