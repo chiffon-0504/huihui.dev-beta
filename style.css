@@ -4286,20 +4286,56 @@ body:has(#aboutPage) .steam-game-hours {
 }
 
 .sidebar-top nav a.nav-link.active {
-  color: rgba(0, 64, 150, 0.96) !important;
-  border-color: rgba(232, 252, 255, 0.54);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: rgba(0, 48, 128, 0.98) !important;
+  border-color: rgba(238, 254, 255, 0.72);
   background:
-    radial-gradient(circle at 15% 10%, rgba(255, 255, 255, 0.36), transparent 0 26%),
-    radial-gradient(circle at 92% 42%, rgba(94, 214, 255, 0.12), transparent 34%),
-    linear-gradient(150deg, rgba(255, 255, 255, 0.16), rgba(83, 204, 255, 0.082) 52%, rgba(8, 110, 220, 0.052));
+    radial-gradient(circle at 15% 10%, rgba(255, 255, 255, 0.54), transparent 0 28%),
+    radial-gradient(circle at 92% 42%, rgba(98, 218, 255, 0.22), transparent 36%),
+    linear-gradient(150deg, rgba(255, 255, 255, 0.28), rgba(89, 208, 255, 0.16) 52%, rgba(8, 110, 220, 0.078));
   box-shadow:
-    inset 3px 0 0 rgba(120, 226, 255, 0.42),
-    inset 0 1px 0 rgba(248, 254, 255, 0.64),
-    inset 0 -1px 0 rgba(38, 188, 255, 0.16),
-    inset 0 0 18px rgba(137, 228, 255, 0.12),
-    0 16px 34px rgba(0, 126, 255, 0.16),
-    0 0 24px rgba(108, 224, 255, 0.11);
-  transform: translateX(3px);
+    inset 4px 0 0 rgba(118, 226, 255, 0.68),
+    inset 0 1px 0 rgba(250, 255, 255, 0.86),
+    inset 0 -1px 0 rgba(38, 188, 255, 0.26),
+    inset 0 0 28px rgba(137, 228, 255, 0.22),
+    0 20px 42px rgba(0, 126, 255, 0.23),
+    0 0 34px rgba(108, 224, 255, 0.2);
+  transform: translateX(4px);
+  backdrop-filter: blur(16px) saturate(172%);
+  -webkit-backdrop-filter: blur(16px) saturate(172%);
+}
+
+.sidebar-top nav a.nav-link.active::before,
+.sidebar-top nav a.nav-link.active::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.sidebar-top nav a.nav-link.active::before {
+  inset: -1px;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 18% 4%, rgba(255, 255, 255, 0.62), transparent 0 30%),
+    linear-gradient(90deg, rgba(176, 240, 255, 0.32), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 58%);
+  opacity: 0.92;
+}
+
+.sidebar-top nav a.nav-link.active::after {
+  inset: 2px;
+  z-index: 0;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  background:
+    linear-gradient(110deg, rgba(255, 255, 255, 0.38), transparent 22%),
+    linear-gradient(270deg, rgba(80, 211, 255, 0.18), transparent 42%);
+  box-shadow:
+    inset 0 0 18px rgba(255, 255, 255, 0.16),
+    inset 0 -12px 24px rgba(60, 196, 255, 0.12);
+  opacity: 0.88;
 }
 
 .sidebar-top nav a.nav-link:hover {
@@ -4308,8 +4344,12 @@ body:has(#aboutPage) .steam-game-hours {
 
 .sidebar-top nav a.nav-link.active .nav-icon,
 .sidebar-top nav a.nav-link.active .nav-label {
-  color: rgba(0, 64, 150, 0.98) !important;
-  text-shadow: 0 1px 0 rgba(238, 253, 255, 0.72);
+  position: relative;
+  z-index: 1;
+  color: rgba(0, 48, 128, 0.99) !important;
+  text-shadow:
+    0 1px 0 rgba(244, 254, 255, 0.86),
+    0 0 12px rgba(96, 211, 255, 0.24);
 }
 
 .lang-switch a:hover {
@@ -4323,17 +4363,50 @@ body:has(#aboutPage) .steam-game-hours {
 }
 
 .lang-switch a.active {
-  color: rgba(0, 62, 144, 0.98) !important;
-  border: 1px solid rgba(238, 253, 255, 0.46);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: rgba(0, 48, 128, 0.99) !important;
+  border: 1px solid rgba(244, 254, 255, 0.68);
   background:
-    radial-gradient(circle at 26% 16%, rgba(255, 255, 255, 0.34), transparent 0 34%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.17), rgba(88, 204, 255, 0.07) 58%, rgba(255, 255, 255, 0.052));
+    radial-gradient(circle at 28% 14%, rgba(255, 255, 255, 0.58), transparent 0 34%),
+    radial-gradient(circle at 82% 74%, rgba(91, 211, 255, 0.16), transparent 38%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.29), rgba(88, 204, 255, 0.13) 58%, rgba(255, 255, 255, 0.078));
   box-shadow:
-    inset 0 1px 0 rgba(248, 254, 255, 0.64),
-    inset 0 -1px 0 rgba(42, 184, 255, 0.13),
-    0 8px 18px rgba(0, 132, 255, 0.11),
-    0 0 16px rgba(124, 226, 255, 0.12);
-  text-shadow: 0 1px 0 rgba(238, 253, 255, 0.68);
+    inset 0 1px 0 rgba(250, 255, 255, 0.86),
+    inset 0 -1px 0 rgba(42, 184, 255, 0.22),
+    inset 0 0 14px rgba(142, 230, 255, 0.18),
+    0 10px 22px rgba(0, 132, 255, 0.18),
+    0 0 22px rgba(124, 226, 255, 0.2);
+  text-shadow:
+    0 1px 0 rgba(244, 254, 255, 0.84),
+    0 0 10px rgba(94, 211, 255, 0.22);
+  transform: translateY(-1px);
+}
+
+.lang-switch a.active::before,
+.lang-switch a.active::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.lang-switch a.active::before {
+  inset: -1px;
+  background:
+    radial-gradient(circle at 28% 0%, rgba(255, 255, 255, 0.68), transparent 0 38%),
+    linear-gradient(120deg, rgba(255, 255, 255, 0.24), rgba(90, 210, 255, 0.12));
+  opacity: 0.9;
+}
+
+.lang-switch a.active::after {
+  inset: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.34), transparent 34%),
+    linear-gradient(270deg, rgba(80, 205, 255, 0.12), transparent 54%);
+  opacity: 0.82;
 }
 
 .sidebar-top nav a.nav-link.active .nav-icon {
@@ -4341,6 +4414,8 @@ body:has(#aboutPage) .steam-game-hours {
 }
 
 .sidebar-top nav a.nav-link.active .beta-badge {
+  position: relative;
+  z-index: 1;
   color: rgba(0, 76, 150, 0.92);
   border-color: rgba(214, 248, 255, 0.42);
   background:
