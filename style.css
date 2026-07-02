@@ -4171,6 +4171,43 @@ body:has(#aboutPage) .steam-game-hours {
   opacity: 0.66;
 }
 
+@media (min-width: 901px) {
+  .sidebar {
+    border-color: rgba(232, 250, 255, 0.3);
+    background:
+      radial-gradient(circle at 18% 8%, rgba(255, 255, 255, 0.18), transparent 0 15%),
+      radial-gradient(circle at 88% 12%, rgba(91, 212, 255, 0.09), transparent 32%),
+      radial-gradient(circle at 20% 86%, rgba(48, 137, 255, 0.035), transparent 42%),
+      linear-gradient(160deg, rgba(245, 251, 255, 0.055), rgba(122, 199, 242, 0.03) 42%, rgba(40, 112, 188, 0.024) 72%, rgba(255, 255, 255, 0.028));
+    box-shadow:
+      inset 1px 1px 0 rgba(246, 254, 255, 0.5),
+      inset -1px -1px 0 rgba(82, 194, 255, 0.075),
+      inset 0 0 34px rgba(160, 228, 255, 0.045),
+      0 26px 82px rgba(18, 112, 210, 0.16),
+      0 8px 30px rgba(4, 30, 74, 0.12);
+    backdrop-filter: blur(34px) saturate(178%) contrast(1.06);
+    -webkit-backdrop-filter: blur(34px) saturate(178%) contrast(1.06);
+  }
+
+  .sidebar::before {
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.3), transparent 24%),
+      linear-gradient(270deg, rgba(84, 210, 255, 0.075), transparent 40%),
+      radial-gradient(circle at 22% 12%, rgba(232, 253, 255, 0.17), transparent 16%);
+    opacity: 0.64;
+  }
+
+  .sidebar::after {
+    background:
+      linear-gradient(90deg, rgba(240, 253, 255, 0.24), transparent 12%),
+      linear-gradient(180deg, rgba(165, 232, 255, 0.045), transparent 28%, rgba(42, 154, 255, 0.032));
+    box-shadow:
+      inset 0 0 0 1px rgba(232, 252, 255, 0.16),
+      inset 0 -22px 48px rgba(20, 142, 235, 0.045);
+    opacity: 0.62;
+  }
+}
+
 .sidebar-top h1 a,
 .sidebar-top nav,
 .lang-switch,
