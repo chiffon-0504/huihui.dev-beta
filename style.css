@@ -4562,6 +4562,20 @@ body:has(#aboutPage) .steam-game-hours {
     0 12px 26px rgba(20, 52, 92, 0.1);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .home-hero .project-update-card,
+  .website-version-section .apod-card,
+  .tech-news-section .tech-news-card {
+    transition: none;
+  }
+
+  .home-hero .project-update-card:hover,
+  .website-version-section .apod-card:hover,
+  .tech-news-section .tech-news-card:hover {
+    transform: none;
+  }
+}
+
 .home-hero .hero-actions .hero-btn {
   position: relative;
   overflow: hidden;
