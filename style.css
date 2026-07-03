@@ -4123,3 +4123,537 @@ body:has(#aboutPage) .steam-game-hours {
   background: rgba(34, 197, 94, 0.14);
   border: 1px solid rgba(34, 197, 94, 0.28);
 }
+
+/* =========================
+   Homepage And Sidebar Liquid Glass Polish
+========================= */
+
+.sidebar {
+  isolation: isolate;
+  border: 1px solid rgba(226, 248, 255, 0.34);
+  background:
+    radial-gradient(circle at 18% 8%, rgba(255, 255, 255, 0.2), transparent 0 15%),
+    radial-gradient(circle at 88% 12%, rgba(83, 214, 255, 0.16), transparent 32%),
+    radial-gradient(circle at 20% 86%, rgba(24, 128, 255, 0.06), transparent 42%),
+    linear-gradient(160deg, rgba(235, 248, 255, 0.06), rgba(62, 172, 242, 0.055) 42%, rgba(14, 104, 192, 0.04) 72%, rgba(255, 255, 255, 0.03));
+  box-shadow:
+    inset 1px 1px 0 rgba(242, 254, 255, 0.5),
+    inset -1px -1px 0 rgba(42, 178, 255, 0.1),
+    inset 0 0 34px rgba(135, 220, 255, 0.06),
+    0 26px 82px rgba(18, 112, 210, 0.2),
+    0 8px 30px rgba(4, 30, 74, 0.13);
+  backdrop-filter: blur(34px) saturate(185%) contrast(1.06);
+  -webkit-backdrop-filter: blur(34px) saturate(185%) contrast(1.06);
+}
+
+.sidebar::before {
+  z-index: 0;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.32), transparent 24%),
+    linear-gradient(270deg, rgba(64, 204, 255, 0.12), transparent 40%),
+    radial-gradient(circle at 22% 12%, rgba(226, 252, 255, 0.2), transparent 16%);
+  opacity: 0.68;
+}
+
+.sidebar::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, rgba(235, 252, 255, 0.26), transparent 12%),
+    linear-gradient(180deg, rgba(151, 229, 255, 0.075), transparent 28%, rgba(30, 150, 255, 0.055));
+  box-shadow:
+    inset 0 0 0 1px rgba(226, 250, 255, 0.18),
+    inset 0 -22px 48px rgba(20, 142, 235, 0.065);
+  opacity: 0.66;
+}
+
+@media (min-width: 901px) {
+  .sidebar {
+    border-color: rgba(232, 250, 255, 0.3);
+    background:
+      radial-gradient(circle at 18% 8%, rgba(255, 255, 255, 0.18), transparent 0 15%),
+      radial-gradient(circle at 88% 12%, rgba(91, 212, 255, 0.09), transparent 32%),
+      radial-gradient(circle at 20% 86%, rgba(48, 137, 255, 0.035), transparent 42%),
+      linear-gradient(160deg, rgba(245, 251, 255, 0.055), rgba(122, 199, 242, 0.03) 42%, rgba(40, 112, 188, 0.024) 72%, rgba(255, 255, 255, 0.028));
+    box-shadow:
+      inset 1px 1px 0 rgba(246, 254, 255, 0.5),
+      inset -1px -1px 0 rgba(82, 194, 255, 0.075),
+      inset 0 0 34px rgba(160, 228, 255, 0.045),
+      0 26px 82px rgba(18, 112, 210, 0.16),
+      0 8px 30px rgba(4, 30, 74, 0.12);
+    backdrop-filter: blur(34px) saturate(178%) contrast(1.06);
+    -webkit-backdrop-filter: blur(34px) saturate(178%) contrast(1.06);
+  }
+
+  .sidebar::before {
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.3), transparent 24%),
+      linear-gradient(270deg, rgba(84, 210, 255, 0.075), transparent 40%),
+      radial-gradient(circle at 22% 12%, rgba(232, 253, 255, 0.17), transparent 16%);
+    opacity: 0.64;
+  }
+
+  .sidebar::after {
+    background:
+      linear-gradient(90deg, rgba(240, 253, 255, 0.24), transparent 12%),
+      linear-gradient(180deg, rgba(165, 232, 255, 0.045), transparent 28%, rgba(42, 154, 255, 0.032));
+    box-shadow:
+      inset 0 0 0 1px rgba(232, 252, 255, 0.16),
+      inset 0 -22px 48px rgba(20, 142, 235, 0.045);
+    opacity: 0.62;
+  }
+}
+
+.sidebar-top h1 a,
+.sidebar-top nav,
+.lang-switch,
+.sidebar-bottom {
+  position: relative;
+  z-index: 1;
+  border: 1px solid rgba(225, 248, 255, 0.24);
+  background:
+    radial-gradient(circle at 14% 8%, rgba(255, 255, 255, 0.14), transparent 0 22%),
+    linear-gradient(150deg, rgba(255, 255, 255, 0.055), rgba(89, 205, 255, 0.045)),
+    rgba(22, 76, 130, 0.02);
+  box-shadow:
+    inset 0 1px 0 rgba(242, 254, 255, 0.38),
+    inset 0 -1px 0 rgba(42, 180, 255, 0.075),
+    0 12px 34px rgba(11, 108, 210, 0.09);
+  backdrop-filter: blur(24px) saturate(168%);
+  -webkit-backdrop-filter: blur(24px) saturate(168%);
+}
+
+.sidebar .sidebar-top h1 a {
+  border-color: rgba(235, 252, 255, 0.32);
+  background:
+    radial-gradient(circle at 18% 10%, rgba(255, 255, 255, 0.18), transparent 0 24%),
+    linear-gradient(140deg, rgba(255, 255, 255, 0.105), rgba(83, 210, 255, 0.045) 46%, rgba(255, 255, 255, 0.035));
+  color: rgba(6, 24, 48, 0.94) !important;
+  text-shadow: 0 1px 0 rgba(220, 250, 255, 0.46);
+}
+
+.lang-switch {
+  border-color: rgba(225, 248, 255, 0.22);
+  background:
+    radial-gradient(circle at 16% 12%, rgba(255, 255, 255, 0.12), transparent 0 26%),
+    linear-gradient(155deg, rgba(255, 255, 255, 0.05), rgba(86, 200, 255, 0.035));
+}
+
+.lang-switch a {
+  border: 1px solid transparent;
+  box-sizing: border-box;
+}
+
+.sidebar-top nav {
+  border-color: rgba(218, 246, 255, 0.26);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(42, 94, 150, 0.025)),
+    radial-gradient(circle at 86% 8%, rgba(87, 208, 255, 0.055), transparent 34%);
+  box-shadow:
+    inset 0 1px 0 rgba(242, 254, 255, 0.32),
+    inset 0 -1px 0 rgba(28, 154, 240, 0.06),
+    0 14px 36px rgba(4, 70, 150, 0.095);
+}
+
+.sidebar-top nav a.nav-link {
+  border-color: rgba(230, 251, 255, 0.2);
+  background:
+    radial-gradient(circle at 12% 10%, rgba(255, 255, 255, 0.13), transparent 0 26%),
+    linear-gradient(150deg, rgba(255, 255, 255, 0.07), rgba(60, 188, 255, 0.032));
+  box-shadow:
+    inset 0 1px 0 rgba(242, 254, 255, 0.28),
+    inset 0 -1px 0 rgba(40, 178, 255, 0.045),
+    0 8px 20px rgba(9, 94, 190, 0.055);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  color: rgba(8, 30, 58, 0.72) !important;
+}
+
+.sidebar-top nav a.nav-link:hover {
+  color: rgba(0, 75, 165, 0.92) !important;
+  border-color: rgba(222, 250, 255, 0.34);
+  background:
+    radial-gradient(circle at 14% 12%, rgba(255, 255, 255, 0.2), transparent 0 24%),
+    linear-gradient(150deg, rgba(255, 255, 255, 0.1), rgba(67, 202, 255, 0.055) 56%, rgba(11, 112, 212, 0.032));
+  box-shadow:
+    inset 0 1px 0 rgba(244, 254, 255, 0.46),
+    inset 0 -1px 0 rgba(43, 190, 255, 0.1),
+    0 14px 30px rgba(0, 132, 255, 0.11);
+}
+
+.sidebar-top nav a.nav-link.active {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: rgba(0, 48, 128, 0.98) !important;
+  border-color: rgba(238, 254, 255, 0.72);
+  background:
+    radial-gradient(circle at 15% 10%, rgba(255, 255, 255, 0.54), transparent 0 28%),
+    radial-gradient(circle at 92% 42%, rgba(98, 218, 255, 0.22), transparent 36%),
+    linear-gradient(150deg, rgba(255, 255, 255, 0.28), rgba(89, 208, 255, 0.16) 52%, rgba(8, 110, 220, 0.078));
+  box-shadow:
+    inset 4px 0 0 rgba(118, 226, 255, 0.68),
+    inset 0 1px 0 rgba(250, 255, 255, 0.86),
+    inset 0 -1px 0 rgba(38, 188, 255, 0.26),
+    inset 0 0 28px rgba(137, 228, 255, 0.22),
+    0 20px 42px rgba(0, 126, 255, 0.23),
+    0 0 34px rgba(108, 224, 255, 0.2);
+  transform: translateX(4px);
+  backdrop-filter: blur(16px) saturate(172%);
+  -webkit-backdrop-filter: blur(16px) saturate(172%);
+}
+
+.sidebar-top nav a.nav-link.active::before,
+.sidebar-top nav a.nav-link.active::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.sidebar-top nav a.nav-link.active::before {
+  inset: -1px;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 18% 4%, rgba(255, 255, 255, 0.62), transparent 0 30%),
+    linear-gradient(90deg, rgba(176, 240, 255, 0.32), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 58%);
+  opacity: 0.92;
+}
+
+.sidebar-top nav a.nav-link.active::after {
+  inset: 2px;
+  z-index: 0;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  background:
+    linear-gradient(110deg, rgba(255, 255, 255, 0.38), transparent 22%),
+    linear-gradient(270deg, rgba(80, 211, 255, 0.18), transparent 42%);
+  box-shadow:
+    inset 0 0 18px rgba(255, 255, 255, 0.16),
+    inset 0 -12px 24px rgba(60, 196, 255, 0.12);
+  opacity: 0.88;
+}
+
+.sidebar-top nav a.nav-link:hover {
+  transform: translateX(4px);
+}
+
+.sidebar-top nav a.nav-link.active .nav-icon,
+.sidebar-top nav a.nav-link.active .nav-label {
+  position: relative;
+  z-index: 1;
+  color: rgba(0, 48, 128, 0.99) !important;
+  text-shadow:
+    0 1px 0 rgba(244, 254, 255, 0.86),
+    0 0 12px rgba(96, 211, 255, 0.24);
+}
+
+.lang-switch a:hover {
+  color: rgba(0, 76, 165, 0.92) !important;
+  border: 1px solid rgba(226, 250, 255, 0.2);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.105), rgba(91, 207, 255, 0.045));
+  box-shadow:
+    inset 0 1px 0 rgba(244, 254, 255, 0.38),
+    0 8px 18px rgba(0, 132, 255, 0.08);
+}
+
+.lang-switch a.active {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: rgba(0, 48, 128, 0.99) !important;
+  border: 1px solid rgba(244, 254, 255, 0.68);
+  background:
+    radial-gradient(circle at 28% 14%, rgba(255, 255, 255, 0.58), transparent 0 34%),
+    radial-gradient(circle at 82% 74%, rgba(91, 211, 255, 0.16), transparent 38%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.29), rgba(88, 204, 255, 0.13) 58%, rgba(255, 255, 255, 0.078));
+  box-shadow:
+    inset 0 1px 0 rgba(250, 255, 255, 0.86),
+    inset 0 -1px 0 rgba(42, 184, 255, 0.22),
+    inset 0 0 14px rgba(142, 230, 255, 0.18),
+    0 10px 22px rgba(0, 132, 255, 0.18),
+    0 0 22px rgba(124, 226, 255, 0.2);
+  text-shadow:
+    0 1px 0 rgba(244, 254, 255, 0.84),
+    0 0 10px rgba(94, 211, 255, 0.22);
+  transform: translateY(-1px);
+}
+
+.lang-switch a.active::before,
+.lang-switch a.active::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.lang-switch a.active::before {
+  inset: -1px;
+  background:
+    radial-gradient(circle at 28% 0%, rgba(255, 255, 255, 0.68), transparent 0 38%),
+    linear-gradient(120deg, rgba(255, 255, 255, 0.24), rgba(90, 210, 255, 0.12));
+  opacity: 0.9;
+}
+
+.lang-switch a.active::after {
+  inset: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.34), transparent 34%),
+    linear-gradient(270deg, rgba(80, 205, 255, 0.12), transparent 54%);
+  opacity: 0.82;
+}
+
+.sidebar-top nav a.nav-link.active .nav-icon {
+  filter: drop-shadow(0 0 8px rgba(76, 198, 255, 0.28));
+}
+
+.sidebar-top nav a.nav-link.active .beta-badge {
+  position: relative;
+  z-index: 1;
+  color: rgba(0, 76, 150, 0.92);
+  border-color: rgba(214, 248, 255, 0.42);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(89, 207, 255, 0.07));
+  box-shadow:
+    inset 0 1px 0 rgba(248, 254, 255, 0.5),
+    0 5px 14px rgba(0, 132, 255, 0.1);
+}
+
+.sidebar .beta-badge {
+  color: rgba(0, 90, 180, 0.86);
+  border-color: rgba(205, 244, 255, 0.26);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(72, 200, 255, 0.04));
+  box-shadow:
+    inset 0 1px 0 rgba(242, 254, 255, 0.3),
+    0 6px 16px rgba(0, 132, 255, 0.075);
+}
+
+.sidebar-bottom {
+  padding: 12px 14px;
+  border-radius: 18px;
+  border-color: rgba(230, 251, 255, 0.2);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.15), transparent 0 28%),
+    linear-gradient(150deg, rgba(255, 255, 255, 0.06), rgba(65, 195, 255, 0.028));
+  box-shadow:
+    inset 0 1px 0 rgba(244, 254, 255, 0.3),
+    inset 0 -1px 0 rgba(34, 174, 255, 0.045),
+    0 10px 26px rgba(4, 70, 150, 0.08);
+}
+
+.home-hero {
+  isolation: isolate;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background:
+    radial-gradient(circle at 12% 8%, rgba(255, 255, 255, 0.72), transparent 0 16%),
+    radial-gradient(circle at 86% 12%, rgba(115, 213, 255, 0.38), transparent 32%),
+    radial-gradient(circle at 78% 86%, rgba(160, 132, 255, 0.18), transparent 36%),
+    linear-gradient(155deg, rgba(255, 255, 255, 0.5), rgba(226, 248, 255, 0.32) 48%, rgba(255, 255, 255, 0.22));
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.82),
+    inset -1px -1px 0 rgba(75, 160, 230, 0.16),
+    inset 0 0 42px rgba(255, 255, 255, 0.18),
+    0 32px 90px rgba(42, 116, 198, 0.22),
+    0 12px 34px rgba(10, 38, 80, 0.1);
+  backdrop-filter: blur(28px) saturate(185%) contrast(1.03);
+  -webkit-backdrop-filter: blur(28px) saturate(185%) contrast(1.03);
+}
+
+.home-hero::before {
+  z-index: 0;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.82), transparent 28%),
+    linear-gradient(315deg, rgba(84, 204, 255, 0.24), transparent 34%),
+    radial-gradient(circle at 16% 12%, rgba(255, 255, 255, 0.55), transparent 18%);
+  opacity: 0.9;
+}
+
+.home-hero::after {
+  right: -12%;
+  top: -18%;
+  z-index: 0;
+  width: min(620px, 62vw);
+  height: min(620px, 62vw);
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.74), transparent 0 8%),
+    radial-gradient(circle at 48% 46%, rgba(117, 218, 255, 0.34), transparent 58%),
+    radial-gradient(circle at 76% 72%, rgba(210, 178, 255, 0.26), transparent 48%);
+  filter: blur(3px) saturate(128%);
+  opacity: 0.92;
+}
+
+.home-hero .project-update-card,
+.website-version-section .apod-card,
+.tech-news-section .tech-news-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.56);
+  background:
+    radial-gradient(circle at 12% 8%, rgba(255, 255, 255, 0.58), transparent 0 20%),
+    radial-gradient(circle at 90% 12%, rgba(97, 205, 255, 0.28), transparent 36%),
+    linear-gradient(155deg, rgba(255, 255, 255, 0.48), rgba(224, 248, 255, 0.28) 52%, rgba(255, 255, 255, 0.2));
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.76),
+    inset -1px -1px 0 rgba(70, 150, 220, 0.14),
+    0 24px 62px rgba(45, 115, 195, 0.17),
+    0 8px 20px rgba(20, 52, 92, 0.08);
+  backdrop-filter: blur(24px) saturate(178%);
+  -webkit-backdrop-filter: blur(24px) saturate(178%);
+  transition:
+    transform 0.24s ease,
+    border-color 0.24s ease,
+    box-shadow 0.24s ease,
+    background 0.24s ease;
+}
+
+.home-hero .project-update-card::before,
+.website-version-section .apod-card::before,
+.tech-news-section .tech-news-card::before {
+  z-index: 0;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.68), transparent 30%),
+    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.46), transparent 20%);
+  opacity: 0.84;
+}
+
+.home-hero .project-update-card::after,
+.website-version-section .apod-card::after,
+.tech-news-section .tech-news-card::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.36), transparent 34%),
+    linear-gradient(90deg, rgba(111, 213, 255, 0.18), transparent 48%);
+  opacity: 0.76;
+}
+
+.home-hero .project-update-card > *,
+.website-version-section .apod-card > *,
+.tech-news-section .tech-news-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.home-hero .project-update-card:hover,
+.website-version-section .apod-card:hover,
+.tech-news-section .tech-news-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(255, 255, 255, 0.72);
+  background:
+    radial-gradient(circle at 14% 10%, rgba(255, 255, 255, 0.7), transparent 0 22%),
+    radial-gradient(circle at 86% 10%, rgba(80, 204, 255, 0.34), transparent 38%),
+    linear-gradient(155deg, rgba(255, 255, 255, 0.56), rgba(222, 248, 255, 0.34) 54%, rgba(255, 255, 255, 0.24));
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.86),
+    inset -1px -1px 0 rgba(70, 150, 220, 0.18),
+    0 30px 78px rgba(45, 120, 205, 0.22),
+    0 12px 26px rgba(20, 52, 92, 0.1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero .project-update-card,
+  .website-version-section .apod-card,
+  .tech-news-section .tech-news-card {
+    transition: none;
+  }
+
+  .home-hero .project-update-card:hover,
+  .website-version-section .apod-card:hover,
+  .tech-news-section .tech-news-card:hover {
+    transform: none;
+  }
+}
+
+.home-hero .hero-actions .hero-btn {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(255, 255, 255, 0.58);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.48), rgba(213, 244, 255, 0.22)),
+    rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    inset 0 -1px 0 rgba(60, 170, 245, 0.12),
+    0 14px 34px rgba(37, 110, 190, 0.16);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+}
+
+.home-hero .hero-actions .hero-btn::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.64), transparent 34%),
+    radial-gradient(circle at 12% 14%, rgba(255, 255, 255, 0.52), transparent 18%);
+  opacity: 0.72;
+}
+
+.home-hero .hero-actions .hero-btn:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.74);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.58), rgba(198, 241, 255, 0.28)),
+    rgba(255, 255, 255, 0.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.86),
+    inset 0 -1px 0 rgba(60, 170, 245, 0.16),
+    0 18px 42px rgba(0, 154, 255, 0.2);
+}
+
+.website-version-section .version-badge {
+  color: rgba(0, 108, 78, 0.96);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.5), rgba(187, 247, 208, 0.28));
+  border-color: rgba(74, 222, 128, 0.38);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 8px 18px rgba(34, 197, 94, 0.12);
+}
+
+@media (max-width: 900px) {
+  #menuToggle {
+    border-color: rgba(226, 250, 255, 0.36);
+    background:
+      radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.18), transparent 0 22%),
+      linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(72, 202, 255, 0.055));
+    box-shadow:
+      inset 0 1px 0 rgba(242, 254, 255, 0.42),
+      inset 0 -1px 0 rgba(36, 184, 255, 0.085),
+      0 14px 34px rgba(15, 113, 214, 0.14);
+    backdrop-filter: blur(24px) saturate(175%);
+    -webkit-backdrop-filter: blur(24px) saturate(175%);
+  }
+
+  .sidebar-overlay {
+    background:
+      radial-gradient(circle at 16% 12%, rgba(120, 205, 255, 0.12), transparent 34%),
+      rgba(4, 18, 38, 0.26);
+    backdrop-filter: blur(10px) saturate(140%);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
+  }
+
+  .sidebar,
+  body .sidebar {
+    border-right: 1px solid rgba(226, 248, 255, 0.36);
+    box-shadow:
+      inset 1px 1px 0 rgba(242, 254, 255, 0.5),
+      inset -1px -1px 0 rgba(42, 178, 255, 0.1),
+      inset 0 0 34px rgba(135, 220, 255, 0.06),
+      18px 0 68px rgba(10, 100, 205, 0.19);
+  }
+}
