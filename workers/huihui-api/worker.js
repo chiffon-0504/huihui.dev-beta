@@ -72,12 +72,52 @@ function getLink(entry, fallbackLink) {
   return cleanUrl(rssLink) || cleanUrl(fallbackLink);
 }
 
+const PRODUCTION_ALLOWED_ORIGINS = new Set([
+  "https://huihui.dev",
+  "https://www.huihui.dev",
+]);
+const BETA_ALLOWED_ORIGINS = new Set(["https://beta.huihui.dev"]);
+
+function allowedOrigins(env) {
+  return env?.WORKER_ENV === "beta"
+    ? BETA_ALLOWED_ORIGINS
+    : PRODUCTION_ALLOWED_ORIGINS;
+}
+
+function allowedCorsOrigin(request, env) {
+  const origin = request.headers.get("Origin") || "";
+  return allowedOrigins(env).has(origin) ? origin : "";
+}
+
+function applyCors(response, request, env) {
+  response.headers.delete("Access-Control-Allow-Origin");
+
+  const origin = allowedCorsOrigin(request, env);
+
+  if (origin) {
+    response.headers.set("Access-Control-Allow-Origin", origin);
+  } else {
+    response.headers.delete("Access-Control-Allow-Methods");
+    response.headers.delete("Access-Control-Allow-Headers");
+  }
+
+  const vary = response.headers.get("Vary");
+  const varyValues = vary
+    ? vary.split(",").map((value) => value.trim().toLowerCase())
+    : [];
+
+  if (!varyValues.includes("origin")) {
+    response.headers.set("Vary", vary ? `${vary}, Origin` : "Origin");
+  }
+
+  return response;
+}
+
 function jsonResponse(data, headers = {}, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
-      "Access-Control-Allow-Origin": "*",
       ...headers,
     },
   });
@@ -544,18 +584,8 @@ async function handleSteamLibrary(request, env, ctx) {
    Contact Form
 ========================= */
 
-function contactCorsHeaders(request) {
-  const origin = request.headers.get("Origin") || "";
-
-  const allowedOrigins = new Set([
-    "https://huihui.dev",
-    "https://www.huihui.dev",
-  ]);
-
+function contactCorsHeaders() {
   return {
-    "Access-Control-Allow-Origin": allowedOrigins.has(origin)
-      ? origin
-      : "https://huihui.dev",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   };
@@ -566,7 +596,7 @@ function contactJsonResponse(request, data, status = 200) {
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
-      ...contactCorsHeaders(request),
+      ...contactCorsHeaders(),
     },
   });
 }
@@ -575,7 +605,7 @@ async function handleContact(request, env) {
   if (request.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
-      headers: contactCorsHeaders(request),
+      headers: contactCorsHeaders(),
     });
   }
 
@@ -686,42 +716,37 @@ async function handleContact(request, env) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    let response;
 
     if (url.pathname === "/api/tech-news") {
-      return handleTechNews(request, env, ctx);
+      response = await handleTechNews(request, env, ctx);
+    } else if (url.pathname === "/api/apod") {
+      response = await handleApod(request, env, ctx);
+    } else if (url.pathname === "/api/github-updates") {
+      response = await handleGitHubUpdates(request, env, ctx);
+    } else if (url.pathname === "/api/steam-library") {
+      response = await handleSteamLibrary(request, env, ctx);
+    } else if (url.pathname === "/api/contact") {
+      response = await handleContact(request, env);
+    } else {
+      response = jsonResponse(
+        {
+          ok: true,
+          message: "huihui.dev API",
+          endpoints: [
+            "/api/tech-news",
+            "/api/apod",
+            "/api/github-updates",
+            "/api/steam-library",
+            "/api/contact",
+          ],
+        },
+        {
+          "Cache-Control": "no-store",
+        }
+      );
     }
 
-    if (url.pathname === "/api/apod") {
-      return handleApod(request, env, ctx);
-    }
-
-    if (url.pathname === "/api/github-updates") {
-      return handleGitHubUpdates(request, env, ctx);
-    }
-
-    if (url.pathname === "/api/steam-library") {
-      return handleSteamLibrary(request, env, ctx);
-    }
-
-    if (url.pathname === "/api/contact") {
-      return handleContact(request, env);
-    }
-
-    return jsonResponse(
-      {
-        ok: true,
-        message: "huihui.dev API",
-        endpoints: [
-          "/api/tech-news",
-          "/api/apod",
-          "/api/github-updates",
-          "/api/steam-library",
-          "/api/contact",
-        ],
-      },
-      {
-        "Cache-Control": "no-store",
-      }
-    );
+    return applyCors(response, request, env);
   },
 };

@@ -35,10 +35,7 @@ async function stubExternalDependencies(page) {
     return { ok: true };
   };
 
-  for (const pattern of [
-    "https://api.huihui.dev/**",
-    "https://huihui-api.huihuigames01.workers.dev/**",
-  ]) {
+  for (const pattern of ["https://api.huihui.dev/**"]) {
     await page.route(pattern, (route) =>
       route.fulfill({
         status: 200,

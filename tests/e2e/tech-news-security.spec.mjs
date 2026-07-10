@@ -22,7 +22,7 @@ async function stubHomeDependencies(
   );
 
   await page.route(
-    "https://huihui-api.huihuigames01.workers.dev/**",
+    "https://api.huihui.dev/**",
     async (route) => {
       const pathname = new URL(route.request().url()).pathname;
 

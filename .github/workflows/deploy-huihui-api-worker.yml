@@ -8,12 +8,27 @@ on:
       - "workers/huihui-api/**"
       - ".github/workflows/deploy-huihui-api-worker.yml"
   workflow_dispatch:
+    inputs:
+      target:
+        description: Worker environment to deploy
+        required: true
+        default: beta
+        type: choice
+        options:
+          - beta
+          - production
+
+permissions:
+  contents: read
 
 jobs:
   validate:
     uses: ./.github/workflows/validate.yml
 
-  deploy:
+  deploy-beta:
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && inputs.target == 'beta')
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -22,9 +37,32 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Deploy Cloudflare Worker
+      - name: Deploy beta Cloudflare Worker
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: workers/huihui-api
+          command: deploy --env beta
+
+  deploy-production:
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      inputs.target == 'production' &&
+      github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy production Cloudflare Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: workers/huihui-api
+          command: deploy
