@@ -9,7 +9,18 @@ function decodeHtml(text) {
 }
 
 function cleanUrl(url) {
-  return decodeHtml(url || "").split("#")[0];
+  try {
+    const parsedUrl = new URL(decodeHtml(url || "").trim());
+
+    if (parsedUrl.protocol !== "https:") {
+      return "";
+    }
+
+    parsedUrl.hash = "";
+    return parsedUrl.href;
+  } catch (error) {
+    return "";
+  }
 }
 
 function getFirstMatch(text, patterns, fallback = "") {
@@ -50,13 +61,15 @@ function getLink(entry, fallbackLink) {
     .filter((url) => !url.includes("/comments/"))
     .filter((url) => !url.includes("#comment-form"));
 
-  if (atomLinks.length > 0) {
-    return cleanUrl(atomLinks[0]);
+  const atomLink = atomLinks.map(cleanUrl).find(Boolean);
+
+  if (atomLink) {
+    return atomLink;
   }
 
   const rssLink = getFirstMatch(entry, [/<link>(.*?)<\/link>/], fallbackLink);
 
-  return cleanUrl(rssLink);
+  return cleanUrl(rssLink) || cleanUrl(fallbackLink);
 }
 
 function jsonResponse(data, headers = {}, status = 200) {
@@ -141,7 +154,7 @@ async function getTechNews() {
           tag: source.tag,
           source: source.source,
           timeAgo: pubDate ? getTimeAgo(pubDate) : "",
-          link: cleanUrl(link),
+          link,
         };
       } catch (error) {
         return {
@@ -160,7 +173,7 @@ async function getTechNews() {
 
 async function handleTechNews(request, env, ctx) {
   const cache = caches.default;
-  const cacheKey = new Request(new URL(request.url).origin + "/api/tech-news?v2");
+  const cacheKey = new Request(new URL(request.url).origin + "/api/tech-news?v3");
 
   const cachedResponse = await cache.match(cacheKey);
 

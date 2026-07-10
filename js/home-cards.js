@@ -2,6 +2,15 @@ const HUIHUI_API_BASE = "https://huihui-api.huihuigames01.workers.dev";
 
 let homeCardsReady = false;
 
+function getSafeTechNewsUrl(value) {
+  try {
+    const url = new URL(String(value || ""));
+    return url.protocol === "https:" ? url.href : "";
+  } catch (error) {
+    return "";
+  }
+}
+
 // ===== Tech Updates =====
 async function loadTechNews() {
   const container = document.getElementById("techNewsCards");
@@ -20,27 +29,41 @@ async function loadTechNews() {
       throw new Error("Invalid API response");
     }
 
-    container.innerHTML = data.techNews
-      .map((item) => `
-        <a
-          class="tech-news-card"
-          href="${item.link}"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <div class="tech-news-category">${item.category}</div>
-          <h3>${item.title}</h3>
-          <p>
-            最新來源：${item.source}${item.timeAgo ? ` · ${item.timeAgo}` : ""}
-          </p>
-          <span class="tech-news-tag">${item.tag}</span>
-        </a>
-      `)
-      .join("");
+    const fragment = document.createDocumentFragment();
+
+    data.techNews.forEach((item) => {
+      const card = document.createElement("a");
+      const link = getSafeTechNewsUrl(item.link);
+      const category = document.createElement("div");
+      const title = document.createElement("h3");
+      const source = document.createElement("p");
+      const tag = document.createElement("span");
+
+      card.className = "tech-news-card";
+      card.target = "_blank";
+      card.rel = "noopener noreferrer";
+
+      if (link) {
+        card.href = link;
+      }
+
+      category.className = "tech-news-category";
+      category.textContent = item.category;
+      title.textContent = item.title;
+      source.textContent = `最新來源：${item.source}${item.timeAgo ? ` · ${item.timeAgo}` : ""}`;
+      tag.className = "tech-news-tag";
+      tag.textContent = item.tag;
+
+      card.append(category, title, source, tag);
+      fragment.append(card);
+    });
+
+    container.replaceChildren(fragment);
   } catch (error) {
-    container.innerHTML = `
-      <p class="tech-news-error">Failed to load tech updates.</p>
-    `;
+    const message = document.createElement("p");
+    message.className = "tech-news-error";
+    message.textContent = "Failed to load tech updates.";
+    container.replaceChildren(message);
     console.error(error);
   }
 }
