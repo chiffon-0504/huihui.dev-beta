@@ -1,0 +1,14 @@
+{
+  "name": "huihui-dev-beta",
+  "private": true,
+  "scripts": {
+    "check:js": "node tests/scripts/check-js.mjs",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test",
+    "test": "npm run check:js && npm run test:unit && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "vitest": "^4.1.10"
+  }
+}
