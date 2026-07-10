@@ -273,7 +273,7 @@ async function renderSteamFavorites() {
   if (!container) return;
 
   try {
-    const res = await fetch("https://api.huihui.dev/api/steam-library");
+    const res = await fetch(`${getHuihuiApiBase()}/api/steam-library`);
 
     if (!res.ok) {
       throw new Error("Steam API failed");

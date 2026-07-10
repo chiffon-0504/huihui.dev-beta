@@ -1,4 +1,25 @@
+const HUIHUI_API_ENDPOINTS = Object.freeze({
+  production: "https://api.huihui.dev",
+  beta: "https://huihui-api-beta.huihuigames01.workers.dev",
+});
+
+function getHuihuiApiBase(hostname = window.location.hostname) {
+  return String(hostname).toLowerCase() === "beta.huihui.dev"
+    ? HUIHUI_API_ENDPOINTS.beta
+    : HUIHUI_API_ENDPOINTS.production;
+}
+
+function configureContactFormApi() {
+  const contactForm = document.getElementById("contact-form");
+
+  if (contactForm) {
+    contactForm.action = `${getHuihuiApiBase()}/api/contact`;
+  }
+}
+
 function initHuihuiSite() {
+  configureContactFormApi();
+
   if (typeof initCodeBlocks === "function") {
     initCodeBlocks();
   }

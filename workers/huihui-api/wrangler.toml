@@ -2,13 +2,23 @@ name = "huihui-api"
 main = "worker.js"
 compatibility_date = "2026-05-04"
 
+[vars]
+WORKER_ENV = "production"
+
+[env.beta]
+name = "huihui-api-beta"
+workers_dev = true
+
+[env.beta.vars]
+WORKER_ENV = "beta"
+
 # Secrets / variables should be configured in Cloudflare Dashboard or via Wrangler.
 # Do not commit real API keys to GitHub.
 # Required bindings used by worker.js:
-# NASA_API_KEY
 # GITHUB_TOKEN
-# GITHUB_REPO
 # STEAM_API_KEY
 # STEAM_ID
 # TURNSTILE_SECRET_KEY
 # FORMSPREE_ENDPOINT
+# Optional binding (the Worker falls back to DEMO_KEY):
+# NASA_API_KEY

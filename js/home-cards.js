@@ -1,5 +1,3 @@
-const HUIHUI_API_BASE = "https://huihui-api.huihuigames01.workers.dev";
-
 let homeCardsReady = false;
 
 function getSafeTechNewsUrl(value) {
@@ -17,7 +15,7 @@ async function loadTechNews() {
   if (!container) return;
 
   try {
-    const response = await fetch(`${HUIHUI_API_BASE}/api/tech-news`);
+    const response = await fetch(`${getHuihuiApiBase()}/api/tech-news`);
 
     if (!response.ok) {
       throw new Error("API request failed");
@@ -79,7 +77,7 @@ async function loadApodCard() {
   if (!image || !link || !title || !desc || !date) return;
 
   try {
-    const res = await fetch(`${HUIHUI_API_BASE}/api/apod`);
+    const res = await fetch(`${getHuihuiApiBase()}/api/apod`);
     if (!res.ok) throw new Error("APOD API failed");
 
     const data = await res.json();
@@ -114,7 +112,7 @@ async function loadProjectUpdateCard() {
   if (!link) return;
 
   try {
-    const res = await fetch(`${HUIHUI_API_BASE}/api/github-updates`);
+    const res = await fetch(`${getHuihuiApiBase()}/api/github-updates`);
 
     if (!res.ok) {
       throw new Error("GitHub updates API failed");
