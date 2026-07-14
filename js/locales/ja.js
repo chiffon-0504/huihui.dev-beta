@@ -1,6 +1,23 @@
 window.HUIHUI_I18N = window.HUIHUI_I18N || {};
 
 window.HUIHUI_I18N.ja = {
+  layout: {
+    nav: {
+      about: "自己紹介",
+      works: "作品",
+      posts: "マイルストーン",
+      contact: "連絡",
+      tools: "ツール"
+    },
+    languageSwitch: {
+      label: "言語切り替え",
+      zh: "中",
+      en: "English",
+      ja: "日本語"
+    },
+    beta: "Beta",
+    rights: "すべての権利を保有します。"
+  },
   home: {
     hero: {
       subtitle: "開発者 / 写真",
@@ -103,6 +120,9 @@ window.HUIHUI_I18N.ja = {
     toolbarLabel: "Tier Maker コントロール",
     tierName: "ランク名",
     tierColor: "ランク色",
-    deleteTier: "ランクを削除"
+    deleteTier: "ランクを削除",
+    uploadedImageAlt: "アップロード画像",
+    newTier: "新規",
+    downloadFileName: "tier-list.png"
   }
 };

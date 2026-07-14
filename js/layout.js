@@ -6,38 +6,24 @@ function getCurrentLang() {
   return "zh";
 }
 
-const layoutText = {
-  zh: {
-    home: "首頁",
-    about: "關於我",
-    works: "作品",
-    posts: "里程碑",
-    contact: "聯絡",
-    tools: "工具",
-    english: "English",
-    japanese: "日本語"
-  },
-  en: {
-    home: "Home",
-    about: "About",
-    works: "Works",
-    posts: "Milestones",
-    contact: "Contact",
-    tools: "Tools",
-    english: "English",
-    japanese: "日本語"
-  },
-  ja: {
-    home: "ホーム",
-    about: "自己紹介",
-    works: "作品",
-    posts: "マイルストーン",
-    contact: "連絡",
-    tools: "ツール",
-    english: "English",
-    japanese: "日本語"
-  }
-};
+const localizedRouteSegments = Object.freeze({
+  home: "",
+  about: "about",
+  works: "works",
+  posts: "milestones",
+  contact: "contact",
+  tools: "tools/tier-maker"
+});
+
+const routeKeysByPath = Object.freeze({
+  "": "home",
+  about: "about",
+  works: "works",
+  milestones: "posts",
+  posts: "posts",
+  contact: "contact",
+  "tools/tier-maker": "tools"
+});
 
 const navIcons = {
   about: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></svg>`,
@@ -49,16 +35,31 @@ const navIcons = {
 
 function getLocalizedPath(lang, page) {
   const prefix = lang === "zh" ? "/" : `/${lang}/`;
-  const pathSegment = page === "posts" ? "milestones" : page;
+  const pathSegment = localizedRouteSegments[page];
 
-  if (page === "home") return prefix;
+  if (!pathSegment) return prefix;
   return `${prefix}${pathSegment}/`;
 }
 
-function getToolsPath(lang) {
-  if (lang === "en") return "/en/tools/tier-maker/";
-  if (lang === "ja") return "/ja/tools/tier-maker/";
-  return "/tools/tier-maker/";
+function getRouteKey(path) {
+  const segments = path.replace(/^\/+|\/+$/g, "").split("/");
+
+  if (segments[0] === "en" || segments[0] === "ja") {
+    segments.shift();
+  }
+
+  return routeKeysByPath[segments.join("/")] || "home";
+}
+
+function getLocalizedRoute(lang, path) {
+  return getLocalizedPath(lang, getRouteKey(path));
+}
+
+function getLayoutText(lang) {
+  return (
+    window.HUIHUI_I18N?.[lang]?.layout ||
+    window.HUIHUI_I18N?.zh?.layout
+  );
 }
 
 function renderNavLink({
@@ -88,59 +89,59 @@ function getActiveNavKey(path) {
 
 function renderSidebar() {
   const lang = getCurrentLang();
-  const t = layoutText[lang] || layoutText.zh;
+  const t = getLayoutText(lang);
   const sidebar = document.querySelector("#site-sidebar");
 
-  if (!sidebar) return;
+  if (!sidebar || !t) return;
 
   sidebar.innerHTML = `
     <div class="sidebar-top">
       <h1><a href="${getLocalizedPath(lang, "home")}">huihui.dev</a></h1>
 
-      <div class="lang-switch" aria-label="Language switch">
-        <a href="/" class="${lang === "zh" ? "active" : ""}">中</a>
+      <div class="lang-switch" aria-label="${t.languageSwitch.label}">
+        <a href="${getLocalizedRoute("zh", window.location.pathname)}" class="${lang === "zh" ? "active" : ""}">${t.languageSwitch.zh}</a>
         <span>|</span>
-        <a href="/en/" class="${lang === "en" ? "active" : ""}">${t.english}</a>
+        <a href="${getLocalizedRoute("en", window.location.pathname)}" class="${lang === "en" ? "active" : ""}">${t.languageSwitch.en}</a>
         <span>|</span>
-        <a href="/ja/" class="${lang === "ja" ? "active" : ""}">${t.japanese}</a>
+        <a href="${getLocalizedRoute("ja", window.location.pathname)}" class="${lang === "ja" ? "active" : ""}">${t.languageSwitch.ja}</a>
       </div>
 
       <nav>
         ${renderNavLink({
           href: getLocalizedPath(lang, "about"),
           icon: navIcons.about,
-          label: t.about,
+          label: t.nav.about,
           navKey: "about"
         })}
         ${renderNavLink({
           href: getLocalizedPath(lang, "works"),
           icon: navIcons.works,
-          label: t.works,
+          label: t.nav.works,
           navKey: "works"
         })}
         ${renderNavLink({
           href: getLocalizedPath(lang, "posts"),
           icon: navIcons.posts,
-          label: t.posts,
+          label: t.nav.posts,
           navKey: "posts"
         })}
         ${renderNavLink({
           href: getLocalizedPath(lang, "contact"),
           icon: navIcons.contact,
-          label: t.contact,
+          label: t.nav.contact,
           navKey: "contact"
         })}
-        <a href="${getToolsPath(lang)}" class="nav-link tools-link" data-nav="tools">
+        <a href="${getLocalizedPath(lang, "tools")}" class="nav-link tools-link" data-nav="tools">
           <span class="nav-icon">${navIcons.tools}</span>
-          <span class="nav-label">${t.tools}</span>
-          <span class="beta-badge" aria-label="Beta">Beta</span>
+          <span class="nav-label">${t.nav.tools}</span>
+          <span class="beta-badge" aria-label="${t.beta}">${t.beta}</span>
         </a>
       </nav>
     </div>
 
     <div class="sidebar-bottom">
       © 2026 huihui.dev<br />
-      All rights reserved.
+      ${t.rights}
     </div>
   `;
 }
@@ -154,25 +155,25 @@ function setActiveSidebarLink() {
     if (!href) return;
 
     const normalizedHref = href.replace(/\/$/, "");
-    link.classList.remove("active");
-
-    if (
+    const isActive =
       link.dataset.nav === activeNavKey ||
       currentPath === normalizedHref ||
-      currentPath.startsWith(`${normalizedHref}/`)
-    ) {
-      link.classList.add("active");
-    }
-
-    if (
-      link.dataset.nav === "tools" &&
+      currentPath.startsWith(`${normalizedHref}/`) ||
       (
-        currentPath.includes("/tools/") ||
-        currentPath.includes("/en/tools/") ||
-        currentPath.includes("/ja/tools/")
-      )
-    ) {
-      link.classList.add("active");
+        link.dataset.nav === "tools" &&
+        (
+          currentPath.includes("/tools/") ||
+          currentPath.includes("/en/tools/") ||
+          currentPath.includes("/ja/tools/")
+        )
+      );
+
+    link.classList.toggle("active", isActive);
+
+    if (isActive) {
+      link.setAttribute("aria-current", "page");
+    } else {
+      link.removeAttribute("aria-current");
     }
   });
 }
