@@ -20,10 +20,10 @@
     </section>
   </main>
 
-  <div class="lightbox" id="lightbox">
-    <span class="lightbox-close" id="lightboxClose">&times;</span>
+  <dialog class="lightbox" id="lightbox" aria-label="画像プレビュー">
+    <button type="button" class="lightbox-close" id="lightboxClose" aria-label="プレビューを閉じる">&times;</button>
     <img class="lightbox-img no-lightbox" id="lightboxImg" src="" data-i18n-alt="about.images.preview" />
-  </div>
+  </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-python.min.js"></script>
