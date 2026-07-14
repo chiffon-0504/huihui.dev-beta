@@ -3,37 +3,126 @@ document.addEventListener("DOMContentLoaded", () => {
   const lightboxImg = document.getElementById("lightboxImg");
   const lightboxClose = document.getElementById("lightboxClose");
 
-  if (!lightbox || !lightboxImg || !lightboxClose) {
+  if (
+    !(lightbox instanceof HTMLDialogElement) ||
+    !(lightboxImg instanceof HTMLImageElement) ||
+    !(lightboxClose instanceof HTMLButtonElement)
+  ) {
     return;
   }
 
-  document.addEventListener("click", (e) => {
-    const img = e.target.closest("img:not(.no-lightbox)");
+  let activeTrigger = null;
 
-    if (!img) return;
-    if (img.closest("a")) return;
+  function isLightboxTrigger(element) {
+    return (
+      element instanceof HTMLImageElement &&
+      element.matches("img.zoomable:not(.no-lightbox)") &&
+      !element.closest("a")
+    );
+  }
 
-    lightboxImg.src = img.src;
-    lightboxImg.alt = img.alt || "";
-    lightbox.classList.add("show");
-  });
+  function prepareTrigger(image) {
+    if (!isLightboxTrigger(image)) return;
 
-  lightboxClose.addEventListener("click", () => {
+    if (!image.hasAttribute("tabindex")) {
+      image.tabIndex = 0;
+    }
+
+    if (!image.hasAttribute("role")) {
+      image.setAttribute("role", "button");
+    }
+
+    image.setAttribute("aria-haspopup", "dialog");
+  }
+
+  function prepareTriggers(root) {
+    if (root instanceof HTMLImageElement) {
+      prepareTrigger(root);
+    }
+
+    if (root instanceof Element) {
+      root
+        .querySelectorAll("img.zoomable:not(.no-lightbox)")
+        .forEach(prepareTrigger);
+    }
+  }
+
+  function openLightbox(trigger) {
+    if (!isLightboxTrigger(trigger)) return;
+
+    activeTrigger = trigger;
+    lightboxImg.src = trigger.currentSrc || trigger.src;
+    lightboxImg.alt = trigger.alt || "";
+
+    if (!lightbox.open) {
+      lightbox.showModal();
+    }
+
+    requestAnimationFrame(() => {
+      if (lightbox.open) {
+        lightbox.classList.add("show");
+      }
+    });
+
+    lightboxClose.focus();
+  }
+
+  function closeLightbox() {
+    if (!lightbox.open) return;
+
+    const trigger = activeTrigger;
+
     lightbox.classList.remove("show");
+    lightbox.close();
     lightboxImg.src = "";
+    activeTrigger = null;
+
+    if (trigger?.isConnected) {
+      trigger.focus();
+    }
+  }
+
+  prepareTriggers(document.body);
+
+  const triggerObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => prepareTriggers(node));
+    });
   });
 
-  lightbox.addEventListener("click", (e) => {
-    if (e.target === lightbox) {
-      lightbox.classList.remove("show");
-      lightboxImg.src = "";
+  triggerObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!(event.target instanceof Element)) return;
+
+    const image = event.target.closest("img.zoomable:not(.no-lightbox)");
+
+    if (isLightboxTrigger(image)) {
+      openLightbox(image);
     }
   });
 
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      lightbox.classList.remove("show");
-      lightboxImg.src = "";
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    if (!isLightboxTrigger(event.target)) return;
+
+    event.preventDefault();
+    openLightbox(event.target);
+  });
+
+  lightboxClose.addEventListener("click", closeLightbox);
+
+  lightbox.addEventListener("click", (event) => {
+    if (event.target === lightbox) {
+      closeLightbox();
     }
+  });
+
+  lightbox.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeLightbox();
   });
 });
