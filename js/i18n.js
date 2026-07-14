@@ -31,7 +31,7 @@ function getDatasetKeyForI18nAttribute(attributeName) {
 }
 
 function applyI18nAttributes(messages) {
-  const supportedAttributes = ["alt", "title", "aria-label"];
+  const supportedAttributes = ["alt", "title", "aria-label", "placeholder"];
 
   supportedAttributes.forEach((attributeName) => {
     const datasetKey = getDatasetKeyForI18nAttribute(attributeName);

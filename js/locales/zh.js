@@ -1,6 +1,23 @@
 window.HUIHUI_I18N = window.HUIHUI_I18N || {};
 
 window.HUIHUI_I18N.zh = {
+  layout: {
+    nav: {
+      about: "關於我",
+      works: "作品",
+      posts: "里程碑",
+      contact: "聯絡",
+      tools: "工具"
+    },
+    languageSwitch: {
+      label: "語言切換",
+      zh: "中",
+      en: "English",
+      ja: "日本語"
+    },
+    beta: "Beta",
+    rights: "保留所有權利。"
+  },
   home: {
     hero: {
       subtitle: "開發者 / 攝影",
@@ -103,6 +120,9 @@ window.HUIHUI_I18N.zh = {
     toolbarLabel: "分級表製作器控制項",
     tierName: "等級名稱",
     tierColor: "等級顏色",
-    deleteTier: "刪除等級"
+    deleteTier: "刪除等級",
+    uploadedImageAlt: "上傳的圖片",
+    newTier: "新等級",
+    downloadFileName: "tier-list.png"
   }
 };

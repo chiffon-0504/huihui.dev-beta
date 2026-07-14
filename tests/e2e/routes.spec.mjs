@@ -1,5 +1,15 @@
 import { expect, test } from "@playwright/test";
-import { primaryRoutes } from "../support/routes.mjs";
+import { primaryRouteGroups, primaryRoutes } from "../support/routes.mjs";
+
+const routeGroupsByKey = new Map(
+  primaryRouteGroups.map((group) => [group.routeKey, group]),
+);
+const localeOrder = ["zh", "en", "ja"];
+const contactPlaceholders = {
+  zh: { name: "你的名稱", message: "想說的內容" },
+  en: { name: "Your name", message: "Your message" },
+  ja: { name: "お名前", message: "メッセージ内容" },
+};
 
 async function stubExternalDependencies(page) {
   await page.route("https://cdn.jsdelivr.net/**", async (route) => {
@@ -84,6 +94,48 @@ for (const route of primaryRoutes) {
     await expect(page.locator("html")).toHaveAttribute("lang", route.lang);
     await expect(page.locator("main.main")).toHaveCount(1);
     await expect(page.locator("#site-sidebar .sidebar-top")).toHaveCount(1);
+
+    const routeGroup = routeGroupsByKey.get(route.routeKey);
+    const languageLinks = page.locator("#site-sidebar .lang-switch a");
+
+    await expect(languageLinks).toHaveCount(localeOrder.length);
+    for (const [index, locale] of localeOrder.entries()) {
+      await expect(languageLinks.nth(index)).toHaveAttribute(
+        "href",
+        routeGroup.paths[locale],
+      );
+    }
+
+    await expect(
+      page.locator('#site-sidebar nav a[data-nav="works"]'),
+    ).toHaveAttribute("href", routeGroupsByKey.get("works").paths[route.locale]);
+
+    const currentPrimaryLinks = page.locator(
+      '#site-sidebar nav a[aria-current="page"]',
+    );
+    const activePrimaryLinks = page.locator("#site-sidebar nav a.active");
+
+    if (route.navKey) {
+      await expect(currentPrimaryLinks).toHaveCount(1);
+      await expect(activePrimaryLinks).toHaveCount(1);
+      await expect(currentPrimaryLinks).toHaveClass(/\bactive\b/);
+      await expect(currentPrimaryLinks).toHaveAttribute("data-nav", route.navKey);
+    } else {
+      await expect(currentPrimaryLinks).toHaveCount(0);
+      await expect(activePrimaryLinks).toHaveCount(0);
+    }
+
+    if (route.routeKey === "contact") {
+      await expect(page.locator('[name="name"]')).toHaveAttribute(
+        "placeholder",
+        contactPlaceholders[route.locale].name,
+      );
+      await expect(page.locator('[name="message"]')).toHaveAttribute(
+        "placeholder",
+        contactPlaceholders[route.locale].message,
+      );
+    }
+
     expect(consoleErrors).toEqual([]);
     expect(localFailures).toEqual([]);
     expect(pageErrors).toEqual([]);

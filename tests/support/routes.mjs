@@ -1,43 +1,65 @@
-export const primaryRoutes = [
-  { url: "/", file: "index.html", lang: "zh-Hant" },
-  { url: "/about/", file: "about/index.html", lang: "zh-Hant" },
-  { url: "/works/", file: "works/index.html", lang: "zh-Hant" },
-  { url: "/milestones/", file: "milestones/index.html", lang: "zh-Hant" },
-  { url: "/contact/", file: "contact/index.html", lang: "zh-Hant" },
+const localeMetadata = {
+  zh: { lang: "zh-Hant" },
+  en: { lang: "en" },
+  ja: { lang: "ja" },
+};
+
+export const primaryRouteGroups = [
   {
-    url: "/tools/tier-maker/",
-    file: "tools/tier-maker/index.html",
-    lang: "zh-Hant",
+    routeKey: "home",
+    navKey: null,
+    paths: { zh: "/", en: "/en/", ja: "/ja/" },
   },
-  { url: "/en/", file: "en/index.html", lang: "en" },
-  { url: "/en/about/", file: "en/about/index.html", lang: "en" },
-  { url: "/en/works/", file: "en/works/index.html", lang: "en" },
   {
-    url: "/en/milestones/",
-    file: "en/milestones/index.html",
-    lang: "en",
+    routeKey: "about",
+    navKey: "about",
+    paths: { zh: "/about/", en: "/en/about/", ja: "/ja/about/" },
   },
-  { url: "/en/contact/", file: "en/contact/index.html", lang: "en" },
   {
-    url: "/en/tools/tier-maker/",
-    file: "en/tools/tier-maker/index.html",
-    lang: "en",
+    routeKey: "works",
+    navKey: "works",
+    paths: { zh: "/works/", en: "/en/works/", ja: "/ja/works/" },
   },
-  { url: "/ja/", file: "ja/index.html", lang: "ja" },
-  { url: "/ja/about/", file: "ja/about/index.html", lang: "ja" },
-  { url: "/ja/works/", file: "ja/works/index.html", lang: "ja" },
   {
-    url: "/ja/milestones/",
-    file: "ja/milestones/index.html",
-    lang: "ja",
+    routeKey: "posts",
+    navKey: "posts",
+    paths: {
+      zh: "/milestones/",
+      en: "/en/milestones/",
+      ja: "/ja/milestones/",
+    },
   },
-  { url: "/ja/contact/", file: "ja/contact/index.html", lang: "ja" },
   {
-    url: "/ja/tools/tier-maker/",
-    file: "ja/tools/tier-maker/index.html",
-    lang: "ja",
+    routeKey: "contact",
+    navKey: "contact",
+    paths: { zh: "/contact/", en: "/en/contact/", ja: "/ja/contact/" },
+  },
+  {
+    routeKey: "tools",
+    navKey: "tools",
+    paths: {
+      zh: "/tools/tier-maker/",
+      en: "/en/tools/tier-maker/",
+      ja: "/ja/tools/tier-maker/",
+    },
   },
 ];
+
+export const primaryRoutes = Object.entries(localeMetadata).flatMap(
+  ([locale, { lang }]) =>
+    primaryRouteGroups.map(({ routeKey, navKey, paths }) => {
+      const url = paths[locale];
+
+      return {
+        url,
+        file: url === "/" ? "index.html" : `${url.slice(1)}index.html`,
+        lang,
+        locale,
+        routeKey,
+        navKey,
+      };
+    }),
+);
 
 export const standaloneDocuments = [
   { url: "/114514/", file: "114514/index.html", lang: "zh-Hant" },

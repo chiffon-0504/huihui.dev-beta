@@ -1,6 +1,23 @@
 window.HUIHUI_I18N = window.HUIHUI_I18N || {};
 
 window.HUIHUI_I18N.en = {
+  layout: {
+    nav: {
+      about: "About",
+      works: "Works",
+      posts: "Milestones",
+      contact: "Contact",
+      tools: "Tools"
+    },
+    languageSwitch: {
+      label: "Language switch",
+      zh: "中",
+      en: "English",
+      ja: "日本語"
+    },
+    beta: "Beta",
+    rights: "All rights reserved."
+  },
   home: {
     hero: {
       subtitle: "Developer / Photography",
@@ -103,6 +120,9 @@ window.HUIHUI_I18N.en = {
     toolbarLabel: "Tier Maker controls",
     tierName: "Tier name",
     tierColor: "Tier color",
-    deleteTier: "Delete tier"
+    deleteTier: "Delete tier",
+    uploadedImageAlt: "Uploaded image",
+    newTier: "NEW",
+    downloadFileName: "tier-list.png"
   }
 };
