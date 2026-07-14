@@ -63,49 +63,6 @@
   <script src="../js/locales/en.js"></script>
   <script src="../js/locales/ja.js"></script>
   <script src="../js/i18n.js"></script>
-  <script>
-    const contactForm = document.getElementById("contact-form");
-    const contactStatus = document.getElementById("contact-status");
-
-    function getContactText(key) {
-      const locale = getCurrentLocale();
-      return window.HUIHUI_I18N?.[locale]?.contact?.[key] || window.HUIHUI_I18N?.zh?.contact?.[key] || "";
-    }
-
-    contactForm?.addEventListener("submit", async (event) => {
-      event.preventDefault();
-
-      const submitButton = contactForm.querySelector("button[type='submit']");
-      submitButton.disabled = true;
-      submitButton.textContent = getContactText("submitting");
-      contactStatus.textContent = "";
-
-      try {
-        const response = await fetch(contactForm.action, {
-          method: "POST",
-          body: new FormData(contactForm),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok || !data.ok) {
-          throw new Error(data.message || getContactText("error"));
-        }
-
-        contactForm.reset();
-
-        if (window.turnstile) {
-          window.turnstile.reset();
-        }
-
-        contactStatus.textContent = getContactText("success");
-      } catch (error) {
-        contactStatus.textContent = getContactText("error");
-      } finally {
-        submitButton.disabled = false;
-        submitButton.textContent = getContactText("submit");
-      }
-    });
-  </script>
+  <script src="../js/contact.js"></script>
 </body>
 </html>

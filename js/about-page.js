@@ -38,6 +38,23 @@ const STEAM_CUSTOM_IMAGES = {
   3682050: "/images/games/Sickly-Days-and-Summer-Traces.webp",
 };
 
+function attachImageFallbacks(root) {
+  root.querySelectorAll("img[data-fallback-src]").forEach((image) => {
+    const fallbackSrc = image.dataset.fallbackSrc;
+    image.removeAttribute("data-fallback-src");
+
+    if (!fallbackSrc) return;
+
+    image.addEventListener(
+      "error",
+      () => {
+        image.src = fallbackSrc;
+      },
+      { once: true },
+    );
+  });
+}
+
 function getAboutPageConfig() {
   const locale = getCurrentLocale();
   return ABOUT_PAGE_CONFIG[locale] || ABOUT_PAGE_CONFIG.zh;
@@ -84,7 +101,7 @@ function renderAboutInterestCards() {
             src="/images/1002_amf.webp"
             alt="Favorite maimai DX song"
             class="rhythm-record-img zoomable"
-            onerror="this.onerror=null; this.src='/images/1001_a.webp';"
+            data-fallback-src="/images/1001_a.webp"
           />
 
           <div class="rhythm-record-text">
@@ -108,7 +125,7 @@ function renderAboutInterestCards() {
             src="/images/1003_amb.webp"
             alt="Best maimai DX record"
             class="rhythm-record-img zoomable"
-            onerror="this.onerror=null; this.src='/images/1001_a.webp';"
+            data-fallback-src="/images/1001_a.webp"
           />
 
           <div class="rhythm-record-text">
@@ -149,7 +166,7 @@ function renderAboutInterestCards() {
           alt="Arcaea profile"
           class="zoomable"
           data-i18n-alt="about.images.arcaea"
-          onerror="this.onerror=null; this.src='/images/1032_a.webp';"
+          data-fallback-src="/images/1032_a.webp"
         />
       </div>
 
@@ -159,7 +176,7 @@ function renderAboutInterestCards() {
             src="/images/1005_aaf.webp"
             alt="Favorite Arcaea song"
             class="rhythm-record-img zoomable"
-            onerror="this.onerror=null; this.src='/images/1032_a.webp';"
+            data-fallback-src="/images/1032_a.webp"
           />
 
           <div class="rhythm-record-text">
@@ -183,7 +200,7 @@ function renderAboutInterestCards() {
             src="/images/1006_aab.webp"
             alt="Best Arcaea record"
             class="rhythm-record-img zoomable"
-            onerror="this.onerror=null; this.src='/images/1032_a.webp';"
+            data-fallback-src="/images/1032_a.webp"
           />
 
           <div class="rhythm-record-text">
@@ -261,6 +278,8 @@ function renderAboutPage() {
       </div>
     </div>
   `;
+
+  attachImageFallbacks(root);
 }
 
 async function renderSteamFavorites() {
@@ -308,7 +327,7 @@ async function renderSteamFavorites() {
               src="${image}"
               alt="${name}"
               loading="lazy"
-              onerror="this.onerror=null; this.src='${game.capsuleUrl}';"
+              data-fallback-src="${game.capsuleUrl}"
             >
             <span class="steam-game-meta">
               <span class="steam-game-name">${name}</span>
@@ -318,6 +337,7 @@ async function renderSteamFavorites() {
         `;
       })
       .join("");
+    attachImageFallbacks(container);
   } catch (error) {
     container.innerHTML = `<p class="steam-error">${getAboutText("error")}</p>`;
   }
