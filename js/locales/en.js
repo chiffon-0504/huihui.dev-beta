@@ -131,6 +131,13 @@ window.HUIHUI_I18N.en = {
     moveAnnouncement: "{item} moved to {destination}, position {position} of {count}.",
     tierRegionLabel: "{name} tier",
     deleteNamedTier: "Delete {name} tier",
+    uploadCountLimit: "The 50-image limit was reached. Extra files were not added.",
+    uploadFileTooLarge: "{file} was not added because it exceeds 10 MiB.",
+    uploadDimensionsTooLarge: "{file} was not added because its dimensions exceed 4096 × 4096 pixels.",
+    uploadInvalidImage: "{file} was not added because it is not a readable image.",
+    uploadSuccess: "Images added: {count}.",
+    exportSuccess: "PNG download started.",
+    exportFailure: "The PNG could not be created. Please try again.",
     downloadFileName: "tier-list.png"
   }
 };
