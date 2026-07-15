@@ -15,6 +15,10 @@ window.HUIHUI_I18N.zh = {
       en: "English",
       ja: "日本語"
     },
+    drawer: {
+      open: "開啟導覽選單",
+      close: "關閉導覽選單"
+    },
     beta: "Beta",
     rights: "保留所有權利。"
   },
