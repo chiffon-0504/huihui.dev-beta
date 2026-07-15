@@ -96,6 +96,31 @@ test("the closed mobile drawer is outside the keyboard tab order", async ({
   ).toBe(false);
 });
 
+test("fallback inert handles Tier Maker links injected after drawer initialization", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    delete HTMLElement.prototype.inert;
+  });
+
+  const { sidebar, toggle } = await loadMobilePage(page, "/tools/tier-maker/");
+  const drawerLinks = sidebar.locator("a");
+
+  expect(await sidebar.evaluate((element) => "inert" in element)).toBe(false);
+  expect(await drawerLinks.count()).toBeGreaterThan(0);
+  expect(
+    await drawerLinks.evaluateAll((links) =>
+      links.every((link) => link.getAttribute("tabindex") === "-1"),
+    ),
+  ).toBe(true);
+
+  await toggle.click();
+  await expect(drawerLinks.first()).not.toHaveAttribute("tabindex");
+
+  await page.keyboard.press("Escape");
+  await expect(drawerLinks.first()).toHaveAttribute("tabindex", "-1");
+});
+
 const localizedLabels = [
   {
     route: "/",

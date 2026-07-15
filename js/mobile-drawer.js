@@ -53,30 +53,57 @@ function initMobileDrawer() {
     );
   }
 
+  function disableFallbackFocusable(state, root) {
+    if (!(root instanceof Element)) return;
+
+    const focusableElements = [
+      ...(root.matches(DRAWER_FOCUSABLE_SELECTOR) ? [root] : []),
+      ...root.querySelectorAll(DRAWER_FOCUSABLE_SELECTOR),
+    ];
+
+    focusableElements.forEach((focusable) => {
+      if (state.focusableElements.some(({ element }) => element === focusable)) {
+        return;
+      }
+
+      state.focusableElements.push({
+        element: focusable,
+        tabindex: focusable.getAttribute("tabindex"),
+      });
+      focusable.setAttribute("tabindex", "-1");
+    });
+  }
+
   function setFallbackInert(element, inert) {
     if (inert) {
-      if (fallbackInertStates.has(element)) return;
+      let state = fallbackInertStates.get(element);
+      if (!state) {
+        state = {
+          ariaHidden: element.getAttribute("aria-hidden"),
+          focusableElements: [],
+          observer: null,
+        };
+        fallbackInertStates.set(element, state);
 
-      const focusableElements = Array.from(
-        element.querySelectorAll(DRAWER_FOCUSABLE_SELECTOR),
-      );
-      fallbackInertStates.set(element, {
-        ariaHidden: element.getAttribute("aria-hidden"),
-        focusableElements: focusableElements.map((focusable) => ({
-          element: focusable,
-          tabindex: focusable.getAttribute("tabindex"),
-        })),
-      });
+        state.observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            mutation.addedNodes.forEach((node) => {
+              disableFallbackFocusable(state, node);
+            });
+          });
+        });
+        state.observer.observe(element, { childList: true, subtree: true });
+      }
 
       element.setAttribute("aria-hidden", "true");
-      focusableElements.forEach((focusable) => {
-        focusable.setAttribute("tabindex", "-1");
-      });
+      disableFallbackFocusable(state, element);
       return;
     }
 
     const state = fallbackInertStates.get(element);
     if (!state) return;
+
+    state.observer.disconnect();
 
     if (state.ariaHidden === null) {
       element.removeAttribute("aria-hidden");
