@@ -131,6 +131,13 @@ window.HUIHUI_I18N.zh = {
     moveAnnouncement: "{item} 已移至 {destination}，位置 {position} / {count}。",
     tierRegionLabel: "{name} 等級",
     deleteNamedTier: "刪除 {name} 等級",
+    uploadCountLimit: "已達 50 張圖片上限，多餘的檔案未新增。",
+    uploadFileTooLarge: "{file} 未新增：檔案大小超過 10 MiB。",
+    uploadDimensionsTooLarge: "{file} 未新增：圖片尺寸超過 4096 × 4096 像素。",
+    uploadInvalidImage: "{file} 未新增：無法讀取這個圖片檔案。",
+    uploadSuccess: "已新增 {count} 張圖片。",
+    exportSuccess: "PNG 下載已開始。",
+    exportFailure: "無法建立 PNG，請再試一次。",
     downloadFileName: "tier-list.png"
   }
 };

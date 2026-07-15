@@ -1,10 +1,20 @@
 let dragged = null;
 let touchGhost = null;
+let uploadQueue = Promise.resolve();
+let exportInProgress = false;
+
+const MAX_IMAGES = 50;
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_IMAGE_DIMENSION = 4096;
+const MAX_THUMBNAIL_EDGE = 1024;
+const thumbnailUrls = new Set();
 
 const upload = document.getElementById("imageUpload");
 const uploadButton = document.getElementById("uploadBtn");
 const pool = document.getElementById("poolContent");
 const board = document.getElementById("tierBoard");
+const saveButton = document.getElementById("saveBtn");
+const tierStatus = document.getElementById("tierStatus");
 const moveStatus = document.getElementById("tierMoveStatus");
 
 function getTierMakerText(key, fallback = "") {
@@ -22,6 +32,15 @@ function formatTierMakerText(key, replacements, fallback = "") {
     (text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
     getTierMakerText(key, fallback)
   );
+}
+
+function setTierStatus(message) {
+  if (!tierStatus) return;
+
+  tierStatus.textContent = "";
+  requestAnimationFrame(() => {
+    tierStatus.textContent = message;
+  });
 }
 
 function getTierZones() {
@@ -134,14 +153,23 @@ function setupTierItem(img) {
     dragged = img;
   });
 
+  img.addEventListener("dragend", cleanupDesktopDrag);
+
   img.addEventListener(
     "touchstart",
     (e) => {
+      cleanupTouchDrag();
       dragged = img;
       img.classList.add("is-dragging");
 
       touchGhost = img.cloneNode(true);
       touchGhost.className = "tier-item touch-ghost";
+      touchGhost.draggable = false;
+      touchGhost.tabIndex = -1;
+      touchGhost.setAttribute("aria-hidden", "true");
+      touchGhost.removeAttribute("aria-describedby");
+      touchGhost.removeAttribute("aria-keyshortcuts");
+      touchGhost.removeAttribute("role");
       document.body.appendChild(touchGhost);
 
       moveGhost(e.touches[0]);
@@ -161,18 +189,25 @@ function setupTierItem(img) {
   );
 
   img.addEventListener("touchend", (e) => {
-    if (!dragged) return;
+    try {
+      if (!dragged) return;
 
-    const touch = e.changedTouches[0];
-    const target = document.elementFromPoint(touch.clientX, touch.clientY);
-    const zone = target?.closest(".tier-content,.pool-content");
+      const touch = e.changedTouches[0];
 
-    if (zone) {
-      zone.appendChild(dragged);
+      if (!touch) return;
+
+      const target = document.elementFromPoint(touch.clientX, touch.clientY);
+      const zone = target?.closest(".tier-content,.pool-content");
+
+      if (zone) {
+        zone.appendChild(dragged);
+      }
+    } finally {
+      cleanupTouchDrag();
     }
-
-    cleanupTouchDrag();
   });
+
+  img.addEventListener("touchcancel", cleanupTouchDrag);
 }
 
 board.querySelectorAll(".tier-row").forEach(syncTierRowLabels);
@@ -189,6 +224,10 @@ function moveGhost(touch) {
   touchGhost.style.transform = "translate(-50%,-50%)";
   touchGhost.style.left = `${touch.clientX}px`;
   touchGhost.style.top = `${touch.clientY}px`;
+}
+
+function cleanupDesktopDrag() {
+  dragged = null;
 }
 
 function cleanupTouchDrag() {
@@ -221,22 +260,211 @@ function cleanupExportLabels() {
   document.querySelectorAll(".tier-label-export").forEach((el) => el.remove());
 }
 
-upload.addEventListener("change", (e) => {
-  for (const file of e.target.files) {
-    const reader = new FileReader();
+function loadSourceImage(sourceUrl) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
 
-    reader.onload = (event) => {
-      const img = document.createElement("img");
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Image decoding failed"));
+    image.src = sourceUrl;
+  });
+}
 
-      img.src = event.target.result;
-      img.alt = file.name || getTierMakerText("uploadedImageAlt", "Uploaded image");
+function createPngThumbnail(image) {
+  const longestEdge = Math.max(image.naturalWidth, image.naturalHeight);
+  const scale = Math.min(1, MAX_THUMBNAIL_EDGE / longestEdge);
+  const width = Math.max(1, Math.round(image.naturalWidth * scale));
+  const height = Math.max(1, Math.round(image.naturalHeight * scale));
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
 
-      setupTierItem(img);
-      pool.appendChild(img);
-    };
-
-    reader.readAsDataURL(file);
+  if (!context) {
+    return Promise.reject(new Error("Canvas is unavailable"));
   }
+
+  canvas.width = width;
+  canvas.height = height;
+  context.drawImage(image, 0, 0, width, height);
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) {
+        resolve(blob);
+      } else {
+        reject(new Error("Thumbnail encoding failed"));
+      }
+    }, "image/png");
+  });
+}
+
+async function createThumbnail(file) {
+  let sourceUrl = "";
+
+  try {
+    sourceUrl = URL.createObjectURL(file);
+    const image = await loadSourceImage(sourceUrl);
+
+    if (
+      image.naturalWidth > MAX_IMAGE_DIMENSION ||
+      image.naturalHeight > MAX_IMAGE_DIMENSION
+    ) {
+      return { reason: "dimensions" };
+    }
+
+    if (!image.naturalWidth || !image.naturalHeight) {
+      return { reason: "invalid" };
+    }
+
+    const thumbnail = await createPngThumbnail(image);
+    return { thumbnailUrl: URL.createObjectURL(thumbnail) };
+  } catch {
+    return { reason: "invalid" };
+  } finally {
+    if (sourceUrl) {
+      URL.revokeObjectURL(sourceUrl);
+    }
+  }
+}
+
+function revokeThumbnailUrl(thumbnailUrl) {
+  if (!thumbnailUrl) return;
+
+  URL.revokeObjectURL(thumbnailUrl);
+  thumbnailUrls.delete(thumbnailUrl);
+}
+
+function releaseTierItem(img) {
+  const thumbnailUrl = img.dataset.thumbnailUrl;
+
+  revokeThumbnailUrl(thumbnailUrl);
+  delete img.dataset.thumbnailUrl;
+}
+
+function appendTierItem(file, thumbnailUrl) {
+  const img = document.createElement("img");
+
+  img.src = thumbnailUrl;
+  img.alt = file.name || getTierMakerText("uploadedImageAlt", "Uploaded image");
+  img.dataset.thumbnailUrl = thumbnailUrl;
+
+  try {
+    setupTierItem(img);
+    thumbnailUrls.add(thumbnailUrl);
+    pool.appendChild(img);
+  } catch (error) {
+    revokeThumbnailUrl(thumbnailUrl);
+    throw error;
+  }
+}
+
+function getTotalTierItemCount() {
+  return getTierZones().reduce((count, zone) => count + getTierItems(zone).length, 0);
+}
+
+async function processUploadBatch(files) {
+  let totalCount = getTotalTierItemCount();
+  let addedCount = 0;
+  let countLimitReached = false;
+  const rejectionMessages = [];
+
+  for (const file of files) {
+    if (totalCount >= MAX_IMAGES) {
+      countLimitReached = true;
+      break;
+    }
+
+    const fileName = file.name || getTierMakerText("uploadedImageAlt", "Uploaded image");
+
+    if (file.size > MAX_FILE_SIZE) {
+      rejectionMessages.push(
+        formatTierMakerText(
+          "uploadFileTooLarge",
+          { file: fileName },
+          "{file} was not added because it exceeds 10 MiB."
+        )
+      );
+      continue;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      rejectionMessages.push(
+        formatTierMakerText(
+          "uploadInvalidImage",
+          { file: fileName },
+          "{file} was not added because it is not a readable image."
+        )
+      );
+      continue;
+    }
+
+    const result = await createThumbnail(file);
+
+    if (result.reason === "dimensions") {
+      rejectionMessages.push(
+        formatTierMakerText(
+          "uploadDimensionsTooLarge",
+          { file: fileName },
+          "{file} was not added because its dimensions exceed 4096 × 4096 pixels."
+        )
+      );
+      continue;
+    }
+
+    if (!result.thumbnailUrl) {
+      rejectionMessages.push(
+        formatTierMakerText(
+          "uploadInvalidImage",
+          { file: fileName },
+          "{file} was not added because it is not a readable image."
+        )
+      );
+      continue;
+    }
+
+    try {
+      appendTierItem(file, result.thumbnailUrl);
+      totalCount += 1;
+      addedCount += 1;
+    } catch {
+      rejectionMessages.push(
+        formatTierMakerText(
+          "uploadInvalidImage",
+          { file: fileName },
+          "{file} was not added because it is not a readable image."
+        )
+      );
+    }
+  }
+
+  if (countLimitReached) {
+    rejectionMessages.push(
+      getTierMakerText(
+        "uploadCountLimit",
+        "The 50-image limit was reached. Extra files were not added."
+      )
+    );
+  }
+
+  const successMessage = formatTierMakerText(
+    "uploadSuccess",
+    { count: addedCount },
+    "Images added: {count}."
+  );
+
+  setTierStatus([successMessage, ...rejectionMessages].join(" "));
+}
+
+upload.addEventListener("change", (e) => {
+  const files = [...e.target.files];
+
+  upload.value = "";
+  uploadQueue = uploadQueue
+    .catch(() => {})
+    .then(() => processUploadBatch(files))
+    .finally(() => {
+      upload.value = "";
+    })
+    .catch(() => {});
 });
 
 document.addEventListener("dragover", (e) => {
@@ -244,11 +472,14 @@ document.addEventListener("dragover", (e) => {
 });
 
 document.addEventListener("drop", (e) => {
-  const zone = e.target.closest(".tier-content,.pool-content");
+  try {
+    const zone = e.target.closest(".tier-content,.pool-content");
 
-  if (zone && dragged) {
-    zone.appendChild(dragged);
-    dragged = null;
+    if (zone && dragged) {
+      zone.appendChild(dragged);
+    }
+  } finally {
+    cleanupDesktopDrag();
   }
 });
 
@@ -301,23 +532,69 @@ addBtn.addEventListener("click", () => {
 
 document.addEventListener("click", (e) => {
   if (e.target.classList.contains("delete-tier")) {
-    e.target.closest(".tier-row")?.remove();
+    const row = e.target.closest(".tier-row");
+
+    if (!row) return;
+
+    if (dragged && row.contains(dragged)) {
+      cleanupTouchDrag();
+    }
+
+    row.querySelectorAll(".tier-item").forEach(releaseTierItem);
+    row.remove();
   }
 });
 
-document.getElementById("saveBtn").addEventListener("click", () => {
-  prepareExportLabels();
-  board.classList.add("exporting");
+async function exportTierBoard() {
+  if (exportInProgress) return;
 
-  import("https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm").then(({ default: html2canvas }) => {
-    html2canvas(board, { backgroundColor: "#000" }).then((canvas) => {
-      board.classList.remove("exporting");
-      cleanupExportLabels();
+  exportInProgress = true;
+  const wasDisabled = saveButton.disabled;
+  const previousBusy = saveButton.getAttribute("aria-busy");
 
-      const link = document.createElement("a");
-      link.download = getTierMakerText("downloadFileName", "tier-list.png");
-      link.href = canvas.toDataURL();
-      link.click();
-    });
-  });
+  saveButton.disabled = true;
+  saveButton.setAttribute("aria-busy", "true");
+
+  try {
+    prepareExportLabels();
+    board.classList.add("exporting");
+
+    const { default: html2canvas } = await import(
+      "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm"
+    );
+    const canvas = await html2canvas(board, { backgroundColor: "#000" });
+    const link = document.createElement("a");
+
+    link.download = getTierMakerText("downloadFileName", "tier-list.png");
+    link.href = canvas.toDataURL();
+    link.click();
+    setTierStatus(getTierMakerText("exportSuccess", "PNG download started."));
+  } catch {
+    setTierStatus(
+      getTierMakerText(
+        "exportFailure",
+        "The PNG could not be created. Please try again."
+      )
+    );
+  } finally {
+    board.classList.remove("exporting");
+    cleanupExportLabels();
+    saveButton.disabled = wasDisabled;
+
+    if (previousBusy === null) {
+      saveButton.removeAttribute("aria-busy");
+    } else {
+      saveButton.setAttribute("aria-busy", previousBusy);
+    }
+
+    exportInProgress = false;
+  }
+}
+
+saveButton.addEventListener("click", exportTierBoard);
+
+window.addEventListener("pagehide", (event) => {
+  if (event.persisted) return;
+
+  [...thumbnailUrls].forEach(revokeThumbnailUrl);
 });

@@ -131,6 +131,13 @@ window.HUIHUI_I18N.ja = {
     moveAnnouncement: "{item} を {destination} に移動しました。位置 {position} / {count}。",
     tierRegionLabel: "{name} ランク",
     deleteNamedTier: "{name} ランクを削除",
+    uploadCountLimit: "画像数が上限の50枚に達したため、残りのファイルは追加されませんでした。",
+    uploadFileTooLarge: "{file} は追加されませんでした。ファイルサイズが10 MiBを超えています。",
+    uploadDimensionsTooLarge: "{file} は追加されませんでした。画像サイズが4096 × 4096ピクセルを超えています。",
+    uploadInvalidImage: "{file} は追加されませんでした。画像ファイルを読み込めません。",
+    uploadSuccess: "{count}枚の画像を追加しました。",
+    exportSuccess: "PNGのダウンロードを開始しました。",
+    exportFailure: "PNGを作成できませんでした。もう一度お試しください。",
     downloadFileName: "tier-list.png"
   }
 };
