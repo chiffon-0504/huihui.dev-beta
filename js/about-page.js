@@ -101,7 +101,7 @@ function renderAboutInterestCards() {
             src="/images/1002_amf.webp"
             alt="Favorite maimai DX song"
             class="rhythm-record-img zoomable"
-            data-fallback-src="/images/1001_a.webp"
+            data-fallback-src="/images/1001_am.webp"
           />
 
           <div class="rhythm-record-text">
@@ -125,7 +125,7 @@ function renderAboutInterestCards() {
             src="/images/1003_amb.webp"
             alt="Best maimai DX record"
             class="rhythm-record-img zoomable"
-            data-fallback-src="/images/1001_a.webp"
+            data-fallback-src="/images/1001_am.webp"
           />
 
           <div class="rhythm-record-text">

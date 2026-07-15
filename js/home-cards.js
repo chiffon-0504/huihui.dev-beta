@@ -87,7 +87,7 @@ async function loadApodCard() {
     if (data.imageUrl) {
       image.src = data.imageUrl;
     } else {
-      image.src = "images/0001_hp.webp";
+      image.src = "/images/0001_hp.webp";
     }
 
     title.textContent = data.title || "Daily Space Inspiration";

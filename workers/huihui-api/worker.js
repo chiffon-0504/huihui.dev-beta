@@ -318,7 +318,7 @@ function getFallbackApod() {
     date: "",
     explanation: "NASA APOD is temporarily unavailable.",
     mediaType: "image",
-    imageUrl: "/images/fallback/apod-fallback.webp",
+    imageUrl: "/images/0001_hp.webp",
     originalUrl: "https://apod.nasa.gov/apod/",
     copyright: "",
     fallback: true,
