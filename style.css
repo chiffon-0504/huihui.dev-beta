@@ -262,10 +262,6 @@ img {
 }
 
 /* 不要圖片下面文字 */
-.work-info {
-  display: none;
-}
-
 /* Lightbox */
 .lightbox {
   position: fixed;
@@ -619,23 +615,8 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   text-decoration: underline;
 }
 
-.past {
-  color: #5CBAD3;
-  font-weight: 600;
-}
-
-.present {
-  color: #B5C76F;
-  font-weight: 600;
-}
-
 .future {
   color: #913A79;
-  font-weight: 600;
-}
-
-.eternal {
-  color: #8A7AA5;
   font-weight: 600;
 }
 
@@ -1364,8 +1345,7 @@ textarea {
 
 .project-update-label,
 .apod-label,
-.tech-news-category,
-.contact-eyebrow {
+.tech-news-category {
   color: var(--accent-cyan);
 }
 
@@ -1955,7 +1935,6 @@ body {
 .project-update-label,
 .apod-label,
 .tech-news-category,
-.contact-eyebrow,
 .project-update-meta,
 .hashtag {
   color: var(--accent-blue) !important;
@@ -2754,7 +2733,6 @@ code[class*="language-"] {
 .sidebar nav a,
 .sidebar-top nav a,
 .lang-switch a,
-.sidebar-footer,
 .sidebar-bottom {
   color: rgba(10, 15, 25, 0.82) !important;
 }
@@ -2771,14 +2749,12 @@ code[class*="language-"] {
 }
 
 .posts-header h1,
-.main > h1,
-.page-title {
+.main > h1 {
   color: rgba(10, 15, 25, 0.94) !important;
   -webkit-text-fill-color: currentColor;
 }
 
-.posts-header p,
-.page-subtitle {
+.posts-header p {
   color: rgba(45, 58, 78, 0.76) !important;
 }
 
@@ -3914,7 +3890,6 @@ img,
 .post-image,
 .tier-board,
 .image-pool,
-.waiting-area,
 .works-gallery,
 .works-showcase-grid {
   max-width: 100% !important;

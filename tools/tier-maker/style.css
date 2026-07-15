@@ -387,8 +387,6 @@
 /* Button readability recovery */
 button,
 .upload-button,
-.download-button,
-.add-tier-button,
 .tier-toolbar button,
 .tier-maker-page button {
   background: rgba(255,255,255,.68);
@@ -399,8 +397,6 @@ button,
 
 button:hover,
 .upload-button:hover,
-.download-button:hover,
-.add-tier-button:hover,
 .tier-toolbar button:hover,
 .tier-maker-page button:hover {
   background: rgba(255,255,255,.76);

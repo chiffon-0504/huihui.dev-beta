@@ -17,15 +17,6 @@
   width: 100%;
 }
 
-.contact-eyebrow {
-  margin: 0 0 12px;
-  color: rgba(255, 255, 255, 0.42);
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
 .contact-intro {
   max-width: 620px;
   margin: 0 0 32px;
