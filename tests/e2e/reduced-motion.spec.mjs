@@ -46,6 +46,61 @@ async function loadHomepage(page, reducedMotion) {
   await expect(page.locator("#techNewsCards > .tech-news-card")).toHaveCount(1);
 }
 
+async function stubAboutDependencies(page) {
+  await page.route("https://cdn.jsdelivr.net/**", (route) => {
+    const isStyle = route.request().resourceType() === "stylesheet";
+    return route.fulfill({
+      status: 200,
+      contentType: isStyle ? "text/css" : "application/javascript",
+      body: isStyle
+        ? ""
+        : `
+          window.Prism = window.Prism || {};
+          window.Prism.highlightElement = window.Prism.highlightElement || function (code) {
+            const language = Array.from(code.classList).find((name) =>
+              name.startsWith("language-"),
+            );
+            if (language) code.parentElement?.classList.add(language);
+          };
+        `,
+    });
+  });
+  await page.route("https://api.huihui.dev/api/steam-library", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, games: [] }),
+    }),
+  );
+  await page.route("https://challenges.cloudflare.com/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/javascript",
+      body: "",
+    }),
+  );
+}
+
+async function loadPageWithMotion(page, route, reducedMotion) {
+  await page.emulateMedia({ reducedMotion });
+  const response = await page.goto(route, { waitUntil: "load" });
+
+  expect(response?.status()).toBe(200);
+}
+
+async function addTierItemFixture(page) {
+  await page.locator("#poolContent").evaluate((pool) => {
+    const item = document.createElement("img");
+    item.className = "tier-item";
+    item.alt = "Motion fixture";
+    item.src =
+      "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
+    pool.append(item);
+  });
+
+  return page.locator('.tier-item[alt="Motion fixture"]');
+}
+
 async function getMotionStyle(locator) {
   return locator.evaluate((element) => {
     const style = getComputedStyle(element);
@@ -183,4 +238,119 @@ test("normal motion keeps homepage hover and mobile drawer transitions", async (
 
   expect(Number.parseFloat(sidebarDuration)).toBeGreaterThan(0);
   expect(Number.parseFloat(overlayDuration)).toBeGreaterThan(0);
+});
+
+test("reduced motion disables the remaining About code and image movement", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await stubAboutDependencies(page);
+  await loadPageWithMotion(page, "/en/about/", "reduce");
+
+  const code = page.locator("#profileCode");
+  const gutter = page.locator(".custom-line-numbers");
+  const copyButton = page.locator(".copy-btn");
+  const banner = page.locator(".galgame-banner");
+
+  expectZeroDuration((await getMotionStyle(code)).transitionDuration);
+  expectZeroDuration((await getMotionStyle(gutter)).transitionDuration);
+  expectZeroDuration((await getMotionStyle(copyButton)).transitionDuration);
+  expectZeroDuration((await getMotionStyle(banner)).transitionDuration);
+
+  await banner.hover();
+  expect((await getMotionStyle(banner)).transform).toBe("none");
+  expect(await banner.evaluate((element) => getComputedStyle(element).filter)).not.toBe(
+    "none",
+  );
+});
+
+test("reduced motion keeps contact feedback while disabling its transition", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.route("https://challenges.cloudflare.com/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/javascript",
+      body: "",
+    }),
+  );
+  await loadPageWithMotion(page, "/en/contact/", "reduce");
+
+  const button = page.locator(".contact-form button");
+  const restingBackground = await button.evaluate(
+    (element) => getComputedStyle(element).backgroundColor,
+  );
+
+  expectZeroDuration((await getMotionStyle(button)).transitionDuration);
+  await button.hover();
+  expect((await getMotionStyle(button)).transform).toBe("none");
+  expect(await button.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(
+    restingBackground,
+  );
+});
+
+test("reduced motion disables Tier Maker control and item translation only", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await loadPageWithMotion(page, "/en/tools/tier-maker/", "reduce");
+
+  const saveButton = page.locator("#saveBtn");
+  const item = await addTierItemFixture(page);
+  const restingBackground = await saveButton.evaluate(
+    (element) => getComputedStyle(element).backgroundColor,
+  );
+
+  for (const element of [saveButton, item]) {
+    expectZeroDuration((await getMotionStyle(element)).transitionDuration);
+    await element.hover();
+    expect((await getMotionStyle(element)).transform).toBe("none");
+  }
+
+  await saveButton.hover();
+  expect(
+    await saveButton.evaluate((element) => getComputedStyle(element).backgroundColor),
+  ).not.toBe(restingBackground);
+});
+
+test("normal motion keeps the existing About, contact, and Tier Maker interactions", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await stubAboutDependencies(page);
+  await loadPageWithMotion(page, "/en/about/", "no-preference");
+
+  const code = page.locator("#profileCode");
+  const banner = page.locator(".galgame-banner");
+  expect(Number.parseFloat((await getMotionStyle(code)).transitionDuration)).toBeGreaterThan(
+    0,
+  );
+  expect(Number.parseFloat((await getMotionStyle(banner)).transitionDuration)).toBeGreaterThan(
+    0,
+  );
+  await banner.hover();
+  await page.waitForTimeout(250);
+  expect((await getMotionStyle(banner)).transform).not.toBe("none");
+
+  await loadPageWithMotion(page, "/en/contact/", "no-preference");
+  expect(
+    Number.parseFloat(
+      (await getMotionStyle(page.locator(".contact-form button"))).transitionDuration,
+    ),
+  ).toBeGreaterThan(0);
+
+  await loadPageWithMotion(page, "/en/tools/tier-maker/", "no-preference");
+  const saveButton = page.locator("#saveBtn");
+  const item = await addTierItemFixture(page);
+  for (const element of [saveButton, item]) {
+    expect(Number.parseFloat((await getMotionStyle(element)).transitionDuration)).toBeGreaterThan(
+      0,
+    );
+    await element.hover();
+    await page.waitForTimeout(250);
+    expect((await getMotionStyle(element)).transform).not.toBe("none");
+  }
 });

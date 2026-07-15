@@ -4688,3 +4688,17 @@ body:has(#aboutPage) .steam-game-hours {
     transition: none;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  body:has(#aboutPage) .galgame-banner,
+  body:has(#aboutPage) .steam-game-card,
+  body:has(#aboutPage) .steam-game-card img {
+    transition: none;
+  }
+
+  body:has(#aboutPage) .galgame-banner-link:hover .galgame-banner,
+  body:has(#aboutPage) .steam-game-card:hover,
+  body:has(#aboutPage) .steam-game-card:hover img {
+    transform: none;
+  }
+}

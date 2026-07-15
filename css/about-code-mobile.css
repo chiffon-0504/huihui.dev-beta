@@ -8,36 +8,6 @@
   text-size-adjust: 100% !important;
 }
 
-.about-page .code-block-with-gutter {
-  position: relative;
-}
-
-.about-page .code-block-with-gutter pre[class*="language-"] {
-  padding-left: 4.4rem !important;
-}
-
-.about-page .custom-line-numbers {
-  position: absolute;
-  top: 6.25rem;
-  left: 1.35rem;
-  width: 2.5rem;
-  padding-right: 0.85rem;
-  border-right: 1px solid rgba(19, 26, 38, 0.14);
-  color: rgba(19, 26, 38, 0.45);
-  font-family: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Monaco,
-    Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 0.98rem;
-  line-height: 1.7;
-  text-align: right;
-  pointer-events: none;
-  user-select: none;
-  z-index: 4;
-}
-
-.about-page .custom-line-numbers span {
-  display: block;
-}
-
 @media (max-width: 900px) {
   .about-page .code-block {
     padding: 14px 14px 12px !important;
@@ -62,10 +32,6 @@
     font-size: 0.86rem !important;
   }
 
-  .about-page .code-block-with-gutter pre[class*="language-"] {
-    padding-left: 3.4rem !important;
-  }
-
   .about-page .code-block pre[class*="language-"] {
     padding-top: 0.8rem !important;
     padding-right: 0.75rem !important;
@@ -81,14 +47,6 @@
     letter-spacing: -0.02em !important;
   }
 
-  .about-page .custom-line-numbers {
-    top: 5.35rem;
-    left: 0.95rem;
-    width: 1.9rem;
-    padding-right: 0.55rem;
-    font-size: 0.68rem;
-    line-height: 1.5;
-  }
 }
 
 @media (max-width: 430px) {
@@ -96,21 +54,9 @@
     padding: 12px !important;
   }
 
-  .about-page .code-block-with-gutter pre[class*="language-"] {
-    padding-left: 3.15rem !important;
-  }
-
   .about-page .code-block code[class*="language-"] {
     font-size: 0.62rem !important;
     line-height: 1.48 !important;
   }
 
-  .about-page .custom-line-numbers {
-    top: 5.05rem;
-    left: 0.8rem;
-    width: 1.75rem;
-    padding-right: 0.5rem;
-    font-size: 0.62rem;
-    line-height: 1.48;
-  }
 }
