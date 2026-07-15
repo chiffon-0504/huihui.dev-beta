@@ -15,6 +15,10 @@ window.HUIHUI_I18N.ja = {
       en: "English",
       ja: "日本語"
     },
+    drawer: {
+      open: "ナビゲーションを開く",
+      close: "ナビゲーションを閉じる"
+    },
     beta: "Beta",
     rights: "すべての権利を保有します。"
   },
