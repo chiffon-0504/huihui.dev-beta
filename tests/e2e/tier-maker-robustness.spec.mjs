@@ -40,6 +40,17 @@ function invalidImage(name = "broken.png") {
   };
 }
 
+function pngFileWithoutMimeType(name = "mime-less.png") {
+  return {
+    name,
+    mimeType: "",
+    buffer: Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+Avz3AAAAAElFTkSuQmCC",
+      "base64",
+    ),
+  };
+}
+
 async function loadTierMaker(page, route = "/en/tools/tier-maker/") {
   const response = await page.goto(route, { waitUntil: "load" });
 
@@ -178,6 +189,20 @@ test("resetting the file input allows the same file in a later batch", async ({
   await uploadBatch(page, [repeatedFile], "Images added: 1.");
 
   await expect(page.locator('.tier-item[alt="repeat.svg"]')).toHaveCount(2);
+});
+
+test("readable images with an empty MIME type use decode validation", async ({
+  page,
+}) => {
+  await loadTierMaker(page);
+
+  await uploadBatch(
+    page,
+    [pngFileWithoutMimeType()],
+    "Images added: 1.",
+  );
+
+  await expect(page.locator('.tier-item[alt="mime-less.png"]')).toHaveCount(1);
 });
 
 test("object URLs and PNG thumbnails follow the managed lifecycle", async ({ page }) => {

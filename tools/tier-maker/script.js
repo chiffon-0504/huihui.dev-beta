@@ -386,7 +386,7 @@ async function processUploadBatch(files) {
       continue;
     }
 
-    if (!file.type.startsWith("image/")) {
+    if (file.type && !file.type.startsWith("image/")) {
       rejectionMessages.push(
         formatTierMakerText(
           "uploadInvalidImage",
