@@ -4674,3 +4674,17 @@ body:has(#aboutPage) .steam-game-hours {
       18px 0 68px rgba(10, 100, 205, 0.19);
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero .hero-actions .hero-btn:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 900px) and (prefers-reduced-motion: reduce) {
+  .sidebar,
+  body .sidebar,
+  .sidebar-overlay {
+    transition: none;
+  }
+}
