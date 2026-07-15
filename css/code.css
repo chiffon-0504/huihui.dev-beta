@@ -223,14 +223,34 @@
   }
 }
 
-.about-page .code-block.code-block-with-gutter pre[class*="language-"] {
-  padding-left: 3.6rem !important;
+.about-page .code-block.code-block-with-gutter {
+  position: relative;
 }
 
-.about-page .code-block.code-block-with-gutter .custom-line-numbers {
-  left: 1.2rem;
-  width: 2.15rem;
-  padding-right: 0.25rem;
+.about-page .code-block.code-block-with-gutter pre[class*="language-"] {
+  padding-left: 4.4rem !important;
+}
+
+.about-page .code-block.code-block-with-gutter > .custom-line-numbers {
+  position: absolute;
+  top: 6.25rem;
+  left: 1.35rem;
+  width: 2.5rem;
+  padding-right: 0.85rem;
+  border-right: 1px solid rgba(19, 26, 38, 0.14);
+  color: rgba(19, 26, 38, 0.45);
+  font-family: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Monaco,
+    Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.98rem;
+  line-height: 1.7;
+  text-align: right;
+  pointer-events: none;
+  user-select: none;
+  z-index: 4;
+}
+
+.about-page .code-block.code-block-with-gutter > .custom-line-numbers span {
+  display: block;
 }
 
 @media (min-width: 901px) {
@@ -243,24 +263,42 @@
 
 @media (max-width: 900px) {
   .about-page .code-block.code-block-with-gutter pre[class*="language-"] {
-    padding-left: 3.15rem !important;
+    padding-left: 3.4rem !important;
   }
 
-  .about-page .code-block.code-block-with-gutter .custom-line-numbers {
-    left: 0.85rem;
-    width: 1.7rem;
-    padding-right: 0.45rem;
+  .about-page .code-block.code-block-with-gutter > .custom-line-numbers {
+    top: 5.35rem;
+    left: 0.95rem;
+    width: 1.9rem;
+    padding-right: 0.55rem;
+    font-size: 0.68rem;
+    line-height: 1.5;
   }
 }
 
 @media (max-width: 430px) {
   .about-page .code-block.code-block-with-gutter pre[class*="language-"] {
-    padding-left: 2.95rem !important;
+    padding-left: 3.15rem !important;
   }
 
-  .about-page .code-block.code-block-with-gutter .custom-line-numbers {
-    left: 0.7rem;
-    width: 1.55rem;
-    padding-right: 0.4rem;
+  .about-page .code-block.code-block-with-gutter > .custom-line-numbers {
+    top: 5.05rem;
+    left: 0.8rem;
+    width: 1.75rem;
+    padding-right: 0.5rem;
+    font-size: 0.62rem;
+    line-height: 1.48;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-page .copy-btn,
+  .about-page .code-block.code-block-with-gutter code[class*="language-"],
+  .about-page .code-block.code-block-with-gutter > .custom-line-numbers {
+    transition: none !important;
+  }
+
+  .about-page .copy-btn:active {
+    transform: none;
   }
 }

@@ -466,3 +466,19 @@ button:hover,
   outline: 3px solid #005fcc;
   outline-offset: 3px;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .tier-maker-page .save-button,
+  .tier-maker-page .tier-toolbar button,
+  .tier-maker-page .upload-button,
+  .tier-maker-page .tier-item {
+    transition: none;
+  }
+
+  .tier-maker-page .save-button:hover,
+  .tier-maker-page .tier-toolbar button:hover,
+  .tier-maker-page .upload-button:hover,
+  .tier-maker-page .tier-item:hover {
+    transform: none;
+  }
+}

@@ -1,4 +1,9 @@
+function shouldReduceCodeRevealMotion() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 function setCodeRevealProgress(wrapper, progress) {
+  const reduceMotion = shouldReduceCodeRevealMotion();
   const hiddenPercent = `${(1 - progress) * 100}%`;
   const clipPath = `inset(0 0 ${hiddenPercent} 0)`;
   const pre = wrapper.querySelector("pre");
@@ -15,8 +20,8 @@ function setCodeRevealProgress(wrapper, progress) {
   [code, lineNumbers, customLineNumbers].forEach((element) => {
     if (!element) return;
     element.style.clipPath = clipPath;
-    element.style.transition = "clip-path 0.08s linear";
-    element.style.willChange = "clip-path";
+    element.style.transition = reduceMotion ? "none" : "clip-path 0.08s linear";
+    element.style.willChange = reduceMotion ? "auto" : "clip-path";
   });
 }
 
