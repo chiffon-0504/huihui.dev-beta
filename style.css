@@ -899,8 +899,7 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
     margin: 40px auto 56px;
   }
 
-  .apod-card,
-  .tech-news-grid {
+  .apod-card {
     grid-template-columns: 1fr;
   }
 
@@ -2967,11 +2966,6 @@ body {
     transform: translateX(-100%);
   }
 
-  .sidebar.open,
-  body .sidebar.open {
-    transform: translateX(0);
-  }
-
   .sidebar-top nav,
   body .sidebar-top nav {
     flex-direction: column;
@@ -2987,11 +2981,6 @@ body {
 ========================= */
 
 /* Fix galgame banner hours color */
-
-#galgameBannerHours {
-  color: rgba(45, 58, 78, 0.72) !important;
-  font-weight: 500;
-}
 
 #galgameBannerName {
   color: rgba(18, 24, 35, 0.92) !important;
@@ -3016,18 +3005,6 @@ body {
 ========================= */
 
 /* sidebar item 基礎 */
-.sidebar-top nav a {
-  display: block;
-  padding: 10px 14px;
-  border-radius: 12px;
-  transition: all 0.2s ease;
-}
-
-/* hover */
-.sidebar-top nav a:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
 /* active 重點 */
 .sidebar-top nav a {
   display: block;
