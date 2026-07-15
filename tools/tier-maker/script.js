@@ -2,8 +2,10 @@ let dragged = null;
 let touchGhost = null;
 
 const upload = document.getElementById("imageUpload");
+const uploadButton = document.getElementById("uploadBtn");
 const pool = document.getElementById("poolContent");
 const board = document.getElementById("tierBoard");
+const moveStatus = document.getElementById("tierMoveStatus");
 
 function getTierMakerText(key, fallback = "") {
   const locale = typeof getCurrentLocale === "function" ? getCurrentLocale() : "zh";
@@ -15,13 +17,118 @@ function getTierMakerText(key, fallback = "") {
   );
 }
 
+function formatTierMakerText(key, replacements, fallback = "") {
+  return Object.entries(replacements).reduce(
+    (text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
+    getTierMakerText(key, fallback)
+  );
+}
+
+function getTierZones() {
+  return [...board.querySelectorAll(".tier-content"), pool];
+}
+
+function getTierItems(zone) {
+  return [...zone.children].filter((child) => child.classList.contains("tier-item"));
+}
+
+function announceTierMove(img, zone) {
+  if (!moveStatus) return;
+
+  const items = getTierItems(zone);
+  const position = items.indexOf(img) + 1;
+  const destination = zone.getAttribute("aria-label") || getTierMakerText("pool", "Unsorted");
+  const announcement = formatTierMakerText(
+    "moveAnnouncement",
+    {
+      item: img.alt || getTierMakerText("uploadedImageAlt", "Uploaded image"),
+      destination,
+      position,
+      count: items.length,
+    },
+    "{item} moved to {destination}, position {position} of {count}."
+  );
+
+  moveStatus.textContent = "";
+  requestAnimationFrame(() => {
+    moveStatus.textContent = announcement;
+  });
+}
+
+function moveTierItemWithKeyboard(event) {
+  const supportedKeys = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"];
+
+  if (!supportedKeys.includes(event.key)) return;
+
+  event.preventDefault();
+
+  const img = event.currentTarget;
+  const currentZone = img.parentElement;
+  let moved = false;
+
+  if (event.key === "ArrowLeft") {
+    const previous = img.previousElementSibling;
+
+    if (previous?.classList.contains("tier-item")) {
+      currentZone.insertBefore(img, previous);
+      moved = true;
+    }
+  } else if (event.key === "ArrowRight") {
+    const next = img.nextElementSibling;
+
+    if (next?.classList.contains("tier-item")) {
+      currentZone.insertBefore(img, next.nextElementSibling);
+      moved = true;
+    }
+  } else {
+    const zones = getTierZones();
+    const direction = event.key === "ArrowUp" ? -1 : 1;
+    const destination = zones[zones.indexOf(currentZone) + direction];
+
+    if (destination) {
+      destination.appendChild(img);
+      moved = true;
+    }
+  }
+
+  if (moved) {
+    img.focus();
+    announceTierMove(img, img.parentElement);
+  }
+}
+
+function syncTierRowLabels(row) {
+  const input = row.querySelector(".tier-label");
+  const zone = row.querySelector(".tier-content");
+  const deleteButton = row.querySelector(".delete-tier");
+
+  if (!input || !zone || !deleteButton) return;
+
+  const name = input.value.trim() || getTierMakerText("newTier", "NEW");
+
+  zone.setAttribute(
+    "aria-label",
+    formatTierMakerText("tierRegionLabel", { name }, "{name} tier")
+  );
+  deleteButton.setAttribute(
+    "aria-label",
+    formatTierMakerText("deleteNamedTier", { name }, "Delete {name} tier")
+  );
+}
+
 function setupTierItem(img) {
   img.className = "tier-item";
   img.draggable = true;
+  img.tabIndex = 0;
+  img.setAttribute("role", "listitem");
+  img.setAttribute("aria-describedby", "tierKeyboardInstructions");
+  img.setAttribute("aria-keyshortcuts", "ArrowLeft ArrowRight ArrowUp ArrowDown");
 
   if (!img.alt) {
     img.alt = getTierMakerText("uploadedImageAlt", "Uploaded image");
   }
+
+  img.addEventListener("keydown", moveTierItemWithKeyboard);
 
   img.addEventListener("dragstart", () => {
     dragged = img;
@@ -67,6 +174,12 @@ function setupTierItem(img) {
     cleanupTouchDrag();
   });
 }
+
+board.querySelectorAll(".tier-row").forEach(syncTierRowLabels);
+
+uploadButton.addEventListener("click", () => {
+  upload.click();
+});
 
 function moveGhost(touch) {
   if (!touchGhost) return;
@@ -154,6 +267,12 @@ document.addEventListener("input", (e) => {
     if (wrap) {
       wrap.style.background = e.target.value;
     }
+  } else if (e.target.classList.contains("tier-label")) {
+    const row = e.target.closest(".tier-row");
+
+    if (row) {
+      syncTierRowLabels(row);
+    }
   }
 });
 
@@ -163,7 +282,6 @@ addBtn.addEventListener("click", () => {
   const tierName = getTierMakerText("newTier", "NEW");
   const tierNameLabel = getTierMakerText("tierName", "Tier name");
   const tierColorLabel = getTierMakerText("tierColor", "Tier color");
-  const deleteTierLabel = getTierMakerText("deleteTier", "Delete tier");
 
   const row = document.createElement("div");
   row.className = "tier-row";
@@ -173,11 +291,12 @@ addBtn.addEventListener("click", () => {
       <input class="tier-label" value="${tierName}" aria-label="${tierNameLabel}" data-i18n-aria-label="tierMaker.tierName">
       <input class="tier-color" type="color" value="#cccccc" aria-label="${tierColorLabel}" data-i18n-aria-label="tierMaker.tierColor">
     </div>
-    <div class="tier-content" aria-label="${tierName} tier"></div>
-    <button type="button" class="delete-tier" aria-label="${deleteTierLabel}" data-i18n-aria-label="tierMaker.deleteTier">×</button>
+    <div class="tier-content" role="list"></div>
+    <button type="button" class="delete-tier">×</button>
   `;
 
   board.appendChild(row);
+  syncTierRowLabels(row);
 });
 
 document.addEventListener("click", (e) => {

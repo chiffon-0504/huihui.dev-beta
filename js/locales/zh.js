@@ -127,6 +127,10 @@ window.HUIHUI_I18N.zh = {
     deleteTier: "刪除等級",
     uploadedImageAlt: "上傳的圖片",
     newTier: "新等級",
+    keyboardInstructions: "使用左右方向鍵調整圖片在目前區域中的順序，使用上下方向鍵在各等級與待排序區之間移動。",
+    moveAnnouncement: "{item} 已移至 {destination}，位置 {position} / {count}。",
+    tierRegionLabel: "{name} 等級",
+    deleteNamedTier: "刪除 {name} 等級",
     downloadFileName: "tier-list.png"
   }
 };

@@ -127,6 +127,10 @@ window.HUIHUI_I18N.ja = {
     deleteTier: "ランクを削除",
     uploadedImageAlt: "アップロード画像",
     newTier: "新規",
+    keyboardInstructions: "左右の矢印キーで現在の領域内の順序を変更し、上下の矢印キーで各ランクと未分類の間を移動します。",
+    moveAnnouncement: "{item} を {destination} に移動しました。位置 {position} / {count}。",
+    tierRegionLabel: "{name} ランク",
+    deleteNamedTier: "{name} ランクを削除",
     downloadFileName: "tier-list.png"
   }
 };

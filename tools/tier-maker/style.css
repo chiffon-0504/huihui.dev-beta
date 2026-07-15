@@ -435,3 +435,34 @@ button:hover,
 .tier-maker-page .pool-content {
   overflow: hidden;
 }
+
+.tier-maker-page .visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.tier-maker-page .tier-status:empty {
+  display: none;
+}
+
+.tier-maker-page .save-button:focus-visible,
+.tier-maker-page .tier-toolbar button:focus-visible,
+.tier-maker-page .size-control input:focus-visible,
+.tier-maker-page .tier-label:focus-visible,
+.tier-maker-page .delete-tier:focus-visible,
+.tier-maker-page .tier-item:focus-visible {
+  outline: 3px solid #005fcc;
+  outline-offset: 3px;
+}
+
+.tier-maker-page .tier-label-wrap:has(.tier-color:focus-visible) {
+  outline: 3px solid #005fcc;
+  outline-offset: 3px;
+}

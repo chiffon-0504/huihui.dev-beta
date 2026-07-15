@@ -22,50 +22,52 @@
       </header>
 
       <div class="page-body">
-        <section class="tier-toolbar">
+        <section class="tier-toolbar" data-i18n-aria-label="tierMaker.toolbarLabel">
           <button type="button" id="addTierBtn" data-i18n="tierMaker.addTier"></button>
-          <label class="upload-button">
-            <span data-i18n="tierMaker.upload"></span>
-            <input type="file" id="imageUpload" accept="image/*" multiple hidden>
-          </label>
+          <button type="button" id="uploadBtn" class="upload-button" data-i18n="tierMaker.upload"></button>
+          <input type="file" id="imageUpload" accept="image/*" multiple hidden>
           <label class="size-control">
             <span data-i18n="tierMaker.imageSize"></span>
-            <input type="range" id="sizeSlider" min="80" max="220" value="150">
+            <input type="range" id="sizeSlider" min="80" max="220" value="150" data-i18n-aria-label="tierMaker.imageSize">
           </label>
         </section>
+
+        <p id="tierStatus" class="tier-status" role="status" aria-live="polite" aria-atomic="true"></p>
+        <p id="tierKeyboardInstructions" class="visually-hidden" data-i18n="tierMaker.keyboardInstructions"></p>
+        <p id="tierMoveStatus" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></p>
 
         <section class="tier-board" id="tierBoard">
           <div class="tier-row">
             <div class="tier-label-wrap" style="background:#ff7f7f">
-              <input class="tier-label" value="S">
-              <input class="tier-color" type="color" value="#ff7f7f">
+              <input class="tier-label" value="S" data-i18n-aria-label="tierMaker.tierName">
+              <input class="tier-color" type="color" value="#ff7f7f" data-i18n-aria-label="tierMaker.tierColor">
             </div>
-            <div class="tier-content"></div>
+            <div class="tier-content" role="list"></div>
             <button type="button" class="delete-tier">×</button>
           </div>
 
           <div class="tier-row">
             <div class="tier-label-wrap" style="background:#ffc07f">
-              <input class="tier-label" value="A">
-              <input class="tier-color" type="color" value="#ffc07f">
+              <input class="tier-label" value="A" data-i18n-aria-label="tierMaker.tierName">
+              <input class="tier-color" type="color" value="#ffc07f" data-i18n-aria-label="tierMaker.tierColor">
             </div>
-            <div class="tier-content"></div>
+            <div class="tier-content" role="list"></div>
             <button type="button" class="delete-tier">×</button>
           </div>
 
           <div class="tier-row">
             <div class="tier-label-wrap" style="background:#ffff7f">
-              <input class="tier-label" value="B">
-              <input class="tier-color" type="color" value="#ffff7f">
+              <input class="tier-label" value="B" data-i18n-aria-label="tierMaker.tierName">
+              <input class="tier-color" type="color" value="#ffff7f" data-i18n-aria-label="tierMaker.tierColor">
             </div>
-            <div class="tier-content"></div>
+            <div class="tier-content" role="list"></div>
             <button type="button" class="delete-tier">×</button>
           </div>
         </section>
 
         <section class="image-pool">
           <h2 data-i18n="tierMaker.pool"></h2>
-          <div class="pool-content" id="poolContent"></div>
+          <div class="pool-content" id="poolContent" role="list" data-i18n-aria-label="tierMaker.pool"></div>
         </section>
 
         <p class="tier-note" data-i18n="tierMaker.note"></p>
