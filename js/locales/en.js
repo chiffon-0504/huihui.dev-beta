@@ -127,6 +127,10 @@ window.HUIHUI_I18N.en = {
     deleteTier: "Delete tier",
     uploadedImageAlt: "Uploaded image",
     newTier: "NEW",
+    keyboardInstructions: "Use Left and Right Arrow to reorder this image. Use Up and Down Arrow to move it between tiers and Unsorted.",
+    moveAnnouncement: "{item} moved to {destination}, position {position} of {count}.",
+    tierRegionLabel: "{name} tier",
+    deleteNamedTier: "Delete {name} tier",
     downloadFileName: "tier-list.png"
   }
 };
