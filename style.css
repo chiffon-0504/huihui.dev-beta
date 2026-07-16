@@ -444,7 +444,6 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  overflow: hidden;
 }
 
 .apod-media-link {
@@ -497,10 +496,6 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 }
 
 @media (min-width: 901px) and (max-width: 1200px) {
-  .apod-card {
-    grid-template-columns: 1fr;
-  }
-
   .apod-media-link {
     aspect-ratio: 16 / 9;
   }
@@ -879,7 +874,6 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
     flex-direction: column;
     align-items: stretch;
     gap: 24px;
-    min-height: auto;
   }
 
   .home-image {
@@ -895,10 +889,6 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   .daily-inspiration-section,
   .tech-news-section {
     margin: 40px auto 56px;
-  }
-
-  .apod-card {
-    grid-template-columns: 1fr;
   }
 
   .apod-media-link {
@@ -1557,7 +1547,6 @@ textarea {
   }
 
   .home-hero {
-    min-height: auto;
     padding: 28px 22px;
     border-radius: 28px;
   }
@@ -1714,14 +1703,6 @@ textarea {
 
 .apod-image {
   filter: brightness(1.08) contrast(1.05);
-}
-
-.tech-news-card {
-  transition:
-    transform 0.24s ease,
-    border-color 0.24s ease,
-    background 0.24s ease,
-    box-shadow 0.24s ease;
 }
 
 .tech-news-card:hover {
