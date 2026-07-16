@@ -12,10 +12,8 @@
   padding:12px 28px;
   font-size:1rem;
   font-weight:600;
-  border-radius:999px;
   border:1px solid #0b3d91;
   background:#0b3d91;
-  color:#fff;
   cursor:pointer
 }
 
@@ -23,7 +21,7 @@
 
 .tier-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:14px;margin:18px 0 22px}
 
-.tier-toolbar button,.upload-button{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 18px;border:1px solid rgba(255,255,255,.22);border-radius:999px;background:rgba(255,255,255,.08);color:#fff;font-size:.95rem;font-weight:600;cursor:pointer}
+.tier-toolbar button,.upload-button{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 18px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);font-size:.95rem;font-weight:600;cursor:pointer}
 
 .upload-button{border-color:#2f8cff;background:rgba(47,140,255,.16);color:#7db8ff}
 
@@ -148,7 +146,6 @@
 }
 
 .tier-board{
-  overflow:hidden;
   border:1px solid var(--glass-border,rgba(255,255,255,.18));
   border-radius:var(--glass-radius-md,24px);
   background:
@@ -357,7 +354,6 @@
 .tier-content,
 .pool-content {
   border-color: rgba(255,255,255,.46);
-  background: rgba(255,255,255,.55);
 }
 
 .tier-header p,
