@@ -42,8 +42,8 @@ async function stubContactDependencies(
   };
 }
 
-async function openContactPage(page) {
-  await page.goto("/en/contact/", { waitUntil: "load" });
+async function openContactPage(page, route = "/en/contact/") {
+  await page.goto(route, { waitUntil: "load" });
 }
 
 async function fillRequiredFields(page) {
@@ -59,6 +59,43 @@ async function addTurnstileToken(page) {
     token.name = "cf-turnstile-response";
     token.value = "test-turnstile-token";
     form.append(token);
+  });
+}
+
+const contactLayoutCases = [
+  { locale: "zh", route: "/contact/", viewport: { width: 1440, height: 900 } },
+  { locale: "en", route: "/en/contact/", viewport: { width: 390, height: 844 } },
+  { locale: "ja", route: "/ja/contact/", viewport: { width: 768, height: 1024 } },
+];
+
+for (const { locale, route, viewport } of contactLayoutCases) {
+  test(`${locale} Contact content keeps shared width and stacking ownership`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await stubContactDependencies(page);
+    await openContactPage(page, route);
+
+    const layout = await page.locator(".contact-content").evaluate((content) => {
+      const parent = content.closest(".contact-page");
+      const style = getComputedStyle(content);
+
+      return {
+        contentWidth: content.getBoundingClientRect().width,
+        parentWidth: parent?.getBoundingClientRect().width ?? 0,
+        maxWidth: style.maxWidth,
+        position: style.position,
+        zIndex: style.zIndex,
+      };
+    });
+
+    expect(layout.contentWidth).toBeGreaterThan(0);
+    expect(Math.abs(layout.contentWidth - layout.parentWidth)).toBeLessThan(0.1);
+    expect(layout).toMatchObject({
+      maxWidth: "100%",
+      position: "relative",
+      zIndex: "1",
+    });
   });
 }
 
