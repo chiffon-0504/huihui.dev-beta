@@ -1830,7 +1830,6 @@ body {
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.34)),
     var(--glass-bg);
-  border: 1px solid var(--glass-border);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.88),
     inset 0 -1px 0 rgba(255, 255, 255, 0.28),
@@ -2175,7 +2174,6 @@ body::before {
 }
 
 .sidebar {
-  border-color: transparent;
   box-shadow:
     inset 1px 0 0 rgba(255, 255, 255, 0.24),
     inset -1px 0 0 rgba(255, 255, 255, 0.08),
@@ -2267,7 +2265,6 @@ body::before {
       rgba(34, 62, 98, 0.10)
     );
   border-color: transparent;
-  color: var(--text-main-light);
   box-shadow:
     inset 1px 0 0 rgba(255, 255, 255, 0.2),
     inset -1px 0 0 rgba(255, 255, 255, 0.07),
@@ -2289,7 +2286,6 @@ body::before {
 .sidebar-top nav a,
 .lang-switch a,
 .sidebar-bottom {
-  color: var(--text-muted-light);
 }
 
 .sidebar-top nav a:hover,
@@ -3202,7 +3198,6 @@ body {
 .sidebar-top nav a.nav-link.active,
 .sidebar-top nav a.nav-link.active .nav-label,
 .sidebar-top nav a.nav-link.active .nav-icon {
-  color: #009AFF !important;
 }
 
 .sidebar-top nav a.nav-link.active {
