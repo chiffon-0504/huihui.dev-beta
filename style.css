@@ -4597,6 +4597,46 @@ body:has(#aboutPage) .steam-game-hours {
   }
 }
 
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .sidebar {
+    background-color: #d9edf7;
+  }
+
+  .sidebar-bottom {
+    background-color: #edf7fb;
+  }
+
+  .home-hero {
+    background-color: #dfeff8;
+  }
+
+  .home-hero .project-update-card,
+  .website-version-section .apod-card,
+  .tech-news-section .tech-news-card {
+    background-color: #edf7fc;
+  }
+
+  .home-hero .project-update-card:hover,
+  .website-version-section .apod-card:hover,
+  .tech-news-section .tech-news-card:hover {
+    background-color: #f4fbfe;
+  }
+
+  .home-hero .hero-actions .hero-btn {
+    background-color: #e5f4fb;
+  }
+
+  .home-hero .hero-actions .hero-btn:hover {
+    background-color: #eefaff;
+  }
+
+  @media (max-width: 900px) {
+    .sidebar-overlay {
+      background-color: rgba(4, 18, 38, 0.72);
+    }
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .home-hero .hero-actions .hero-btn:hover {
     transform: none;
