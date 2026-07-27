@@ -117,6 +117,7 @@ class HuiHui:
             "One step at a time · Morfonica",
             "顏 · Ave Mujica",
             "雑踏、僕らの街 · TOGENASHI TOGEARI",
+            "誰にもなれない私だから · TOGENASHI TOGEARI",
         ]
 
         self.favorite_illustrators: List[str] = [
@@ -183,6 +184,7 @@ class HuiHui:
             "One step at a time · Morfonica",
             "顏 · Ave Mujica",
             "雑踏、僕らの街 · TOGENASHI TOGEARI",
+            "誰にもなれない私だから · TOGENASHI TOGEARI",
         ]
 
         self.favorite_illustrators: List[str] = [
