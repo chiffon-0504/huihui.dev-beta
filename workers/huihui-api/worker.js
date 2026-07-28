@@ -477,6 +477,7 @@ async function handleGitHubUpdates(request, env, ctx) {
 ========================= */
 
 const STEAM_LIBRARY_CACHE_TTL_SECONDS = 60 * 60;
+const STEAM_PUBLIC_APPIDS = [3418570, 2458530, 1829980, 1044620, 3682050];
 
 function getSteamCoverUrl(appid) {
   return `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/library_600x900.jpg`;
@@ -513,27 +514,23 @@ async function getSteamLibrary(env) {
   const data = await res.json();
   const games = data.response?.games || [];
 
-  return games
+  return STEAM_PUBLIC_APPIDS
+    .map((appid) => games.find((game) => game.appid === appid))
+    .filter(Boolean)
     .map((game) => ({
       appid: game.appid,
       name: game.name,
-      playtimeMinutes: game.playtime_forever || 0,
       playtimeHours: Math.round(((game.playtime_forever || 0) / 60) * 10) / 10,
       coverUrl: getSteamCoverUrl(game.appid),
       capsuleUrl: `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/header.jpg`,
       storeUrl: `https://store.steampowered.com/app/${game.appid}/`,
-    }))
-    .filter(game =>
-      game.name !== "Wallpaper Engine"
-    )
-    .sort((a, b) => b.playtimeMinutes - a.playtimeMinutes)
-    .slice(0, 30);
+    }));
 }
 
 async function handleSteamLibrary(request, env, ctx) {
   const cache = caches.default;
   const cacheKey = new Request(
-    new URL(request.url).origin + "/api/steam-library-v5"
+    new URL(request.url).origin + "/api/steam-library-v6"
   );
 
   const cachedResponse = await cache.match(cacheKey);
