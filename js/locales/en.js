@@ -107,7 +107,10 @@ window.HUIHUI_I18N.en = {
     },
     steam: {
       loading: "Loading Steam library...",
-      error: "Steam games are temporarily unavailable.",
+      bannerUnavailable: "The featured game is currently unavailable.",
+      gamesUnavailable: "No favorite Steam games are currently available.",
+      loadError: "Steam games are temporarily unavailable.",
+      timeout: "Steam games took too long to load. Please try again.",
       hours: "hrs"
     },
     copyright: "Images © respective owners (SEGA, lowiro, VISUAL ARTS/Key, YUZUSOFT, sprite, NekoNyan Ltd., Sister Position, etc.)"

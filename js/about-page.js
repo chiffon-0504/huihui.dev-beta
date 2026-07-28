@@ -31,12 +31,20 @@ const ABOUT_PAGE_CONFIG = {
   },
 };
 
+const STEAM_BANNER_APPID = 3418570;
 const STEAM_FAVORITE_APPIDS = [2458530, 1829980, 1044620, 3682050];
+const STEAM_REQUEST_TIMEOUT_MS = 8000;
+const STEAM_BANNER_DEFAULT_NAME = "Summer Pockets REFLECTION BLUE";
+const STEAM_BANNER_DEFAULT_URL =
+  "https://store.steampowered.com/app/3418570/";
 const STEAM_CUSTOM_IMAGES = {
   3418570: "/images/games/summer-pockets-rb.webp",
   1829980: "/images/games/Cafe-Stella-and-the-Reapers-Butterflies.webp",
   3682050: "/images/games/Sickly-Days-and-Summer-Traces.webp",
 };
+
+let steamRequestSequence = 0;
+let activeSteamRequestController;
 
 function attachImageFallbacks(root) {
   root.querySelectorAll("img[data-fallback-src]").forEach((image) => {
@@ -68,6 +76,137 @@ function getAboutText(key) {
     window.HUIHUI_I18N?.zh?.about?.steam?.[key] ||
     ""
   );
+}
+
+function getSafeHttpsUrl(value) {
+  try {
+    const url = new URL(String(value || ""));
+    return url.protocol === "https:" ? url.href : "";
+  } catch (error) {
+    return "";
+  }
+}
+
+function isValidSteamGame(game) {
+  return Boolean(
+    game &&
+      typeof game === "object" &&
+      Number.isInteger(game.appid) &&
+      typeof game.name === "string" &&
+      game.name.trim() &&
+      Number.isFinite(game.playtimeHours) &&
+      game.playtimeHours >= 0 &&
+      getSafeHttpsUrl(game.coverUrl) &&
+      getSafeHttpsUrl(game.capsuleUrl) &&
+      getSafeHttpsUrl(game.storeUrl),
+  );
+}
+
+function getSteamGames(data) {
+  if (Array.isArray(data)) {
+    if (data.length === 0) return data;
+
+    throw new Error("Invalid Steam response");
+  }
+
+  if (
+    !data ||
+    typeof data !== "object" ||
+    data.ok !== true ||
+    !Array.isArray(data.games) ||
+    !data.games.every(isValidSteamGame)
+  ) {
+    throw new Error("Invalid Steam response");
+  }
+
+  return data.games;
+}
+
+function createSteamStatus(className, key) {
+  const message = document.createElement("p");
+  message.className = className;
+  message.textContent = getAboutText(key);
+  return message;
+}
+
+function setSteamBannerStatus(elements, key) {
+  if (elements.bannerLink) elements.bannerLink.href = STEAM_BANNER_DEFAULT_URL;
+  if (elements.bannerName) {
+    elements.bannerName.textContent = STEAM_BANNER_DEFAULT_NAME;
+  }
+  if (elements.bannerHours) {
+    elements.bannerHours.textContent = getAboutText(key);
+  }
+}
+
+function setSteamLoadingState(elements) {
+  setSteamBannerStatus(elements, "loading");
+  elements.container.replaceChildren(createSteamStatus("steam-loading", "loading"));
+}
+
+function setSteamFailureState(elements, key) {
+  setSteamBannerStatus(elements, key);
+  elements.container.replaceChildren(createSteamStatus("steam-error", key));
+}
+
+function renderSteamBanner(elements, game, config) {
+  if (!game) {
+    setSteamBannerStatus(elements, "bannerUnavailable");
+    return;
+  }
+
+  if (elements.bannerLink) {
+    elements.bannerLink.href = getSafeHttpsUrl(game.storeUrl);
+  }
+  if (elements.bannerName) {
+    elements.bannerName.textContent = config.steamNames[game.appid] || game.name;
+  }
+  if (elements.bannerHours) {
+    elements.bannerHours.textContent = `${game.playtimeHours} ${getAboutText("hours")}`;
+  }
+}
+
+function createSteamGameCard(game, config) {
+  const card = document.createElement("a");
+  const image = document.createElement("img");
+  const meta = document.createElement("span");
+  const name = document.createElement("span");
+  const hours = document.createElement("span");
+  const localizedName = config.steamNames[game.appid] || game.name;
+
+  card.className = "steam-game-card";
+  card.href = getSafeHttpsUrl(game.storeUrl);
+  card.target = "_blank";
+  card.rel = "noopener";
+
+  image.src = STEAM_CUSTOM_IMAGES[game.appid] || getSafeHttpsUrl(game.coverUrl);
+  image.alt = localizedName;
+  image.loading = "lazy";
+  image.dataset.fallbackSrc = getSafeHttpsUrl(game.capsuleUrl);
+
+  meta.className = "steam-game-meta";
+  name.className = "steam-game-name";
+  name.textContent = localizedName;
+  hours.className = "steam-game-hours";
+  hours.textContent = `${game.playtimeHours} ${getAboutText("hours")}`;
+
+  meta.append(name, hours);
+  card.append(image, meta);
+  return card;
+}
+
+function renderSteamGameList(container, games, config) {
+  if (games.length === 0) {
+    container.replaceChildren(
+      createSteamStatus("steam-error", "gamesUnavailable"),
+    );
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+  games.forEach((game) => fragment.append(createSteamGameCard(game, config)));
+  container.replaceChildren(fragment);
+  attachImageFallbacks(container);
 }
 
 function renderAboutInterestCards() {
@@ -237,13 +376,13 @@ function renderAboutInterestCards() {
             data-i18n-alt="about.images.galgame"
           />
           <span class="galgame-banner-meta">
-            <span class="steam-game-name" id="galgameBannerName">Summer Pockets REFLECTION BLUE</span>
-            <span class="steam-game-hours" id="galgameBannerHours">Loading...</span>
+            <span class="steam-game-name" id="galgameBannerName">${STEAM_BANNER_DEFAULT_NAME}</span>
+            <span class="steam-game-hours" id="galgameBannerHours" data-i18n="about.steam.loading">${getAboutText("loading")}</span>
           </span>
         </a>
 
         <div class="steam-favorites" id="steamFavorites" aria-live="polite">
-          <p class="steam-loading" data-i18n="about.steam.loading"></p>
+          <p class="steam-loading" data-i18n="about.steam.loading">${getAboutText("loading")}</p>
         </div>
       </div>
     </article>
@@ -284,62 +423,58 @@ function renderAboutPage() {
 
 async function renderSteamFavorites() {
   const config = getAboutPageConfig();
-  const container = document.getElementById("steamFavorites");
-  const bannerLink = document.getElementById("galgameBannerLink");
-  const bannerName = document.getElementById("galgameBannerName");
-  const bannerHours = document.getElementById("galgameBannerHours");
+  const elements = {
+    container: document.getElementById("steamFavorites"),
+    bannerLink: document.getElementById("galgameBannerLink"),
+    bannerName: document.getElementById("galgameBannerName"),
+    bannerHours: document.getElementById("galgameBannerHours"),
+  };
 
-  if (!container) return;
+  if (!elements.container) return;
+
+  const requestSequence = ++steamRequestSequence;
+  activeSteamRequestController?.abort();
+
+  const controller = new AbortController();
+  let didTimeout = false;
+  const timeoutId = setTimeout(() => {
+    didTimeout = true;
+    controller.abort();
+  }, STEAM_REQUEST_TIMEOUT_MS);
+
+  activeSteamRequestController = controller;
+  setSteamLoadingState(elements);
 
   try {
-    const res = await fetch(`${getHuihuiApiBase()}/api/steam-library`);
+    const res = await fetch(`${getHuihuiApiBase()}/api/steam-library`, {
+      signal: controller.signal,
+    });
 
     if (!res.ok) {
       throw new Error("Steam API failed");
     }
 
     const data = await res.json();
-    const games = Array.isArray(data.games) ? data.games : [];
+    const games = getSteamGames(data);
     const selectedGames = STEAM_FAVORITE_APPIDS
       .map((appid) => games.find((game) => game.appid === appid))
       .filter(Boolean);
-    const bannerGame = games.find((game) => game.appid === 3418570);
+    const bannerGame = games.find((game) => game.appid === STEAM_BANNER_APPID);
 
-    if (bannerGame) {
-      if (bannerLink) bannerLink.href = bannerGame.storeUrl;
-      if (bannerName) bannerName.textContent = config.steamNames[bannerGame.appid] || bannerGame.name;
-      if (bannerHours) bannerHours.textContent = `${bannerGame.playtimeHours} ${getAboutText("hours")}`;
-    }
+    if (requestSequence !== steamRequestSequence) return;
 
-    if (selectedGames.length === 0) {
-      container.innerHTML = `<p class="steam-error">${getAboutText("error")}</p>`;
-      return;
-    }
-
-    container.innerHTML = selectedGames
-      .map((game) => {
-        const name = config.steamNames[game.appid] || game.name;
-        const image = STEAM_CUSTOM_IMAGES[game.appid] || game.coverUrl;
-
-        return `
-          <a class="steam-game-card" href="${game.storeUrl}" target="_blank" rel="noopener">
-            <img
-              src="${image}"
-              alt="${name}"
-              loading="lazy"
-              data-fallback-src="${game.capsuleUrl}"
-            >
-            <span class="steam-game-meta">
-              <span class="steam-game-name">${name}</span>
-              <span class="steam-game-hours">${game.playtimeHours} ${getAboutText("hours")}</span>
-            </span>
-          </a>
-        `;
-      })
-      .join("");
-    attachImageFallbacks(container);
+    renderSteamBanner(elements, bannerGame, config);
+    renderSteamGameList(elements.container, selectedGames, config);
   } catch (error) {
-    container.innerHTML = `<p class="steam-error">${getAboutText("error")}</p>`;
+    if (requestSequence !== steamRequestSequence) return;
+
+    setSteamFailureState(elements, didTimeout ? "timeout" : "loadError");
+  } finally {
+    clearTimeout(timeoutId);
+
+    if (activeSteamRequestController === controller) {
+      activeSteamRequestController = undefined;
+    }
   }
 }
 

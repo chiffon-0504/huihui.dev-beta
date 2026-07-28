@@ -107,7 +107,10 @@ window.HUIHUI_I18N.zh = {
     },
     steam: {
       loading: "正在載入 Steam 遊戲庫...",
-      error: "Steam 遊戲暫時無法載入。",
+      bannerUnavailable: "精選遊戲目前沒有資料。",
+      gamesUnavailable: "目前沒有可顯示的 Steam 收藏遊戲。",
+      loadError: "Steam 遊戲暫時無法載入。",
+      timeout: "Steam 遊戲載入逾時，請稍後再試。",
       hours: "小時"
     },
     copyright: "Images © respective owners (SEGA, lowiro, VISUAL ARTS/Key, YUZUSOFT, sprite, NekoNyan Ltd., Sister Position, etc.)"
