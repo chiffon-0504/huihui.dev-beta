@@ -107,7 +107,10 @@ window.HUIHUI_I18N.ja = {
     },
     steam: {
       loading: "Steamライブラリを読み込み中...",
-      error: "Steamゲームを読み込めません。",
+      bannerUnavailable: "注目のゲームは現在表示できません。",
+      gamesUnavailable: "現在表示できるSteamのお気に入りゲームはありません。",
+      loadError: "Steamゲームを一時的に読み込めません。",
+      timeout: "Steamゲームの読み込みがタイムアウトしました。もう一度お試しください。",
       hours: "時間"
     },
     copyright: "Images © respective owners (SEGA, lowiro, VISUAL ARTS/Key, YUZUSOFT, sprite, NekoNyan Ltd., Sister Position, etc.)"
