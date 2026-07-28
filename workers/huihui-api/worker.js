@@ -584,6 +584,77 @@ async function handleSteamLibrary(request, env, ctx) {
    Contact Form
 ========================= */
 
+const CONTACT_FORM_CONTENT_TYPE_PATTERN =
+  /^(?:multipart\/form-data|application\/x-www-form-urlencoded)(?:\s*;|$)/i;
+const CONTACT_FIELD_LIMITS = Object.freeze({
+  name: 100,
+  email: 254,
+  message: 5000,
+  turnstileToken: 2048,
+});
+const CONTACT_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const TURNSTILE_TIMEOUT_MS = 5000;
+const FORMSPREE_TIMEOUT_MS = 10000;
+const TURNSTILE_ERROR_CODES = new Set([
+  "missing-input-secret",
+  "invalid-input-secret",
+  "missing-input-response",
+  "invalid-input-response",
+  "bad-request",
+  "timeout-or-duplicate",
+  "internal-error",
+]);
+
+class ContactUpstreamTimeoutError extends Error {}
+
+async function withContactUpstreamTimeout(timeoutMs, operation) {
+  const controller = new AbortController();
+  let didTimeout = false;
+  let timeoutId;
+
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      didTimeout = true;
+      controller.abort();
+      reject(new ContactUpstreamTimeoutError());
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([
+      operation(controller.signal),
+      timeoutPromise,
+    ]);
+  } catch (error) {
+    if (didTimeout && !(error instanceof ContactUpstreamTimeoutError)) {
+      throw new ContactUpstreamTimeoutError();
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function getTrimmedContactField(formData, name) {
+  const value = formData.get(name);
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function sanitizeTurnstileErrorCodes(errorCodes) {
+  if (!Array.isArray(errorCodes)) {
+    return [];
+  }
+
+  return errorCodes
+    .filter(
+      (code) =>
+        typeof code === "string" &&
+        TURNSTILE_ERROR_CODES.has(code)
+    )
+    .slice(0, 10);
+}
+
 function contactCorsHeaders() {
   return {
     "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -617,28 +688,32 @@ async function handleContact(request, env) {
     );
   }
 
-  if (!env.TURNSTILE_SECRET_KEY) {
+  const contentType = request.headers.get("Content-Type") || "";
+
+  if (!CONTACT_FORM_CONTENT_TYPE_PATTERN.test(contentType)) {
     return contactJsonResponse(
       request,
-      { ok: false, message: "Missing TURNSTILE_SECRET_KEY" },
-      500
+      { ok: false, message: "Invalid request body" },
+      400
     );
   }
 
-  if (!env.FORMSPREE_ENDPOINT) {
+  let formData;
+
+  try {
+    formData = await request.formData();
+  } catch (error) {
     return contactJsonResponse(
       request,
-      { ok: false, message: "Missing FORMSPREE_ENDPOINT" },
-      500
+      { ok: false, message: "Invalid request body" },
+      400
     );
   }
 
-  const formData = await request.formData();
-
-  const token = formData.get("cf-turnstile-response");
-  const name = String(formData.get("name") || "").trim();
-  const email = String(formData.get("email") || "").trim();
-  const message = String(formData.get("message") || "").trim();
+  const token = getTrimmedContactField(formData, "cf-turnstile-response");
+  const name = getTrimmedContactField(formData, "name");
+  const email = getTrimmedContactField(formData, "email");
+  const message = getTrimmedContactField(formData, "message");
 
   if (!name || !email || !message) {
     return contactJsonResponse(
@@ -656,18 +731,92 @@ async function handleContact(request, env) {
     );
   }
 
-  const verifyRes = await fetch(
-    "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-    {
-      method: "POST",
-      body: new URLSearchParams({
-        secret: env.TURNSTILE_SECRET_KEY,
-        response: token,
-      }),
-    }
-  );
+  if (
+    name.length > CONTACT_FIELD_LIMITS.name ||
+    email.length > CONTACT_FIELD_LIMITS.email ||
+    message.length > CONTACT_FIELD_LIMITS.message
+  ) {
+    return contactJsonResponse(
+      request,
+      { ok: false, message: "Contact field is too long" },
+      400
+    );
+  }
 
-  const verifyData = await verifyRes.json();
+  if (!CONTACT_EMAIL_PATTERN.test(email)) {
+    return contactJsonResponse(
+      request,
+      { ok: false, message: "Invalid email address" },
+      400
+    );
+  }
+
+  if (token.length > CONTACT_FIELD_LIMITS.turnstileToken) {
+    return contactJsonResponse(
+      request,
+      { ok: false, message: "Invalid Turnstile token" },
+      400
+    );
+  }
+
+  if (!env.TURNSTILE_SECRET_KEY || !env.FORMSPREE_ENDPOINT) {
+    return contactJsonResponse(
+      request,
+      { ok: false, message: "Contact service unavailable" },
+      500
+    );
+  }
+
+  let verifyData;
+
+  try {
+    verifyData = await withContactUpstreamTimeout(
+      TURNSTILE_TIMEOUT_MS,
+      async (signal) => {
+        const verifyRes = await fetch(
+          "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+          {
+            method: "POST",
+            body: new URLSearchParams({
+              secret: env.TURNSTILE_SECRET_KEY,
+              response: token,
+            }),
+            signal,
+          }
+        );
+
+        if (!verifyRes.ok) {
+          throw new Error("Turnstile upstream response failed");
+        }
+
+        return verifyRes.json();
+      }
+    );
+  } catch (error) {
+    return contactJsonResponse(
+      request,
+      {
+        ok: false,
+        message:
+          error instanceof ContactUpstreamTimeoutError
+            ? "Turnstile verification timed out"
+            : "Turnstile verification unavailable",
+      },
+      error instanceof ContactUpstreamTimeoutError ? 504 : 502
+    );
+  }
+
+  if (
+    !verifyData ||
+    typeof verifyData !== "object" ||
+    typeof verifyData.success !== "boolean"
+  ) {
+    return contactJsonResponse(
+      request,
+      { ok: false, message: "Turnstile verification unavailable" },
+      502
+    );
+  }
 
   if (!verifyData.success) {
     return contactJsonResponse(
@@ -675,7 +824,7 @@ async function handleContact(request, env) {
       {
         ok: false,
         message: "Turnstile verification failed",
-        errorCodes: verifyData["error-codes"] || [],
+        errorCodes: sanitizeTurnstileErrorCodes(verifyData["error-codes"]),
       },
       403
     );
@@ -686,13 +835,34 @@ async function handleContact(request, env) {
   forwardData.set("email", email);
   forwardData.set("message", message);
 
-  const forwardRes = await fetch(env.FORMSPREE_ENDPOINT, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-    },
-    body: forwardData,
-  });
+  let forwardRes;
+
+  try {
+    forwardRes = await withContactUpstreamTimeout(
+      FORMSPREE_TIMEOUT_MS,
+      (signal) =>
+        fetch(env.FORMSPREE_ENDPOINT, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+          },
+          body: forwardData,
+          signal,
+        })
+    );
+  } catch (error) {
+    return contactJsonResponse(
+      request,
+      {
+        ok: false,
+        message:
+          error instanceof ContactUpstreamTimeoutError
+            ? "Contact form submission timed out"
+            : "Failed to forward contact form",
+      },
+      error instanceof ContactUpstreamTimeoutError ? 504 : 502
+    );
+  }
 
   if (!forwardRes.ok) {
     return contactJsonResponse(
@@ -727,7 +897,15 @@ export default {
     } else if (url.pathname === "/api/steam-library") {
       response = await handleSteamLibrary(request, env, ctx);
     } else if (url.pathname === "/api/contact") {
-      response = await handleContact(request, env);
+      try {
+        response = await handleContact(request, env);
+      } catch (error) {
+        response = contactJsonResponse(
+          request,
+          { ok: false, message: "Internal server error" },
+          500
+        );
+      }
     } else {
       response = jsonResponse(
         {
