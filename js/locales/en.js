@@ -35,7 +35,12 @@ window.HUIHUI_I18N.en = {
     },
     tech: {
       title: "Tech Updates",
-      desc: "Daily signals from AI, iOS and Android."
+      desc: "Daily signals from AI, iOS and Android.",
+      loading: "Loading tech updates…",
+      empty: "No tech updates are available.",
+      loadError: "Failed to load tech updates.",
+      timeout: "Tech updates timed out.",
+      sourceLabel: "Source:"
     }
   },
   contact: {
