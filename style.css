@@ -353,7 +353,7 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 .home-text h1,
 .home-text h2,
 .home-text h3,
-.home-text h4,
+.home-text .home-subtitle,
 .home-text h5,
 .home-text h6 {
   margin: 0;
@@ -381,9 +381,10 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   color: rgba(255, 255, 255, 0.88);
 }
 
-.home-text h4 {
+.home-text .home-subtitle {
   margin: 0 0 14px;
   font-size: clamp(1.2rem, 1.8vw, 1.6rem);
+  line-height: normal;
   color: rgba(255, 255, 255, 0.82);
 }
 
@@ -1281,7 +1282,6 @@ textarea {
 
 .home-text p,
 .home-text h3,
-.home-text h4,
 .home-text h5,
 .home-text h6,
 .project-update-desc,
@@ -1873,7 +1873,7 @@ body {
 }
 
 .home-text h3,
-.home-text h4,
+.home-text .home-subtitle,
 .home-text h5,
 .home-text h6,
 .project-update-desc,
@@ -2498,7 +2498,7 @@ body::before {
 }
 
 .home-text h3,
-.home-text h4,
+.home-text .home-subtitle,
 .home-text h5,
 .home-text h6,
 .project-update-desc,
