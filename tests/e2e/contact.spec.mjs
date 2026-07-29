@@ -4,7 +4,15 @@ const contactApiUrl = "https://api.huihui.dev/api/contact";
 
 async function stubContactDependencies(
   page,
-  { status = 200, body = { ok: true }, gate } = {},
+  {
+    status = 200,
+    body = { ok: true },
+    gate,
+    rawBody,
+    networkError = false,
+    outcomes,
+    turnstileAvailable = true,
+  } = {},
 ) {
   let requestCount = 0;
   const requestBodies = [];
@@ -16,23 +24,38 @@ async function stubContactDependencies(
     route.fulfill({
       status: 200,
       contentType: "application/javascript",
-      body: `
-        window.turnstile = {
-          reset() {
-            window.__turnstileResetCount += 1;
-          }
-        };
-      `,
+      body: turnstileAvailable
+        ? `
+          window.turnstile = {
+            reset() {
+              window.__turnstileResetCount += 1;
+            }
+          };
+        `
+        : "",
     }),
   );
   await page.route(contactApiUrl, async (route) => {
+    const outcome = outcomes?.[requestCount] ?? {
+      status,
+      body,
+      gate,
+      rawBody,
+      networkError,
+    };
     requestCount += 1;
     requestBodies.push(route.request().postData() || "");
-    await gate;
+    await outcome.gate;
+
+    if (outcome.networkError) {
+      await route.abort("failed");
+      return;
+    }
+
     await route.fulfill({
-      status,
+      status: outcome.status ?? status,
       contentType: "application/json",
-      body: JSON.stringify(body),
+      body: outcome.rawBody ?? JSON.stringify(outcome.body ?? body),
     });
   });
 
@@ -52,14 +75,30 @@ async function fillRequiredFields(page) {
   await page.locator("textarea[name='message']").fill("Test message");
 }
 
-async function addTurnstileToken(page) {
-  await page.locator("#contact-form").evaluate((form) => {
-    const token = document.createElement("input");
-    token.type = "hidden";
-    token.name = "cf-turnstile-response";
-    token.value = "test-turnstile-token";
-    form.append(token);
-  });
+async function setTurnstileToken(page, value = "test-turnstile-token") {
+  await page.locator("#contact-form").evaluate((form, tokenValue) => {
+    let token = form.querySelector("[name='cf-turnstile-response']");
+
+    if (!token) {
+      token = document.createElement("input");
+      token.type = "hidden";
+      token.name = "cf-turnstile-response";
+      form.append(token);
+    }
+
+    token.value = tokenValue;
+  }, value);
+}
+
+async function getTurnstileState(page) {
+  return page.locator("#contact-form").evaluate((form) => ({
+    resetCount: window.__turnstileResetCount,
+    responseValues: Array.from(
+      form.querySelectorAll("[name='cf-turnstile-response']"),
+      (field) => field.value,
+    ),
+    widgetCount: form.querySelectorAll(".cf-turnstile").length,
+  }));
 }
 
 const contactLayoutCases = [
@@ -110,7 +149,7 @@ test("submits successfully and preserves loading and Turnstile behavior", async 
 
   await openContactPage(page);
   await fillRequiredFields(page);
-  await addTurnstileToken(page);
+  await setTurnstileToken(page);
 
   const button = page.locator("button[type='submit']");
   await button.click();
@@ -125,7 +164,13 @@ test("submits successfully and preserves loading and Turnstile behavior", async 
   await expect(button).toBeEnabled();
   await expect(button).toHaveText("Send Message");
   await expect(page.locator("input[name='name']")).toHaveValue("");
-  expect(await page.evaluate(() => window.__turnstileResetCount)).toBe(1);
+  await expect(page.locator("input[name='email']")).toHaveValue("");
+  await expect(page.locator("textarea[name='message']")).toHaveValue("");
+  expect(await getTurnstileState(page)).toEqual({
+    resetCount: 1,
+    responseValues: [""],
+    widgetCount: 1,
+  });
 });
 
 test("keeps native validation from submitting incomplete forms", async ({
@@ -135,7 +180,6 @@ test("keeps native validation from submitting incomplete forms", async ({
 
   await openContactPage(page);
   await page.locator("button[type='submit']").click();
-  await page.waitForTimeout(50);
 
   expect(api.count()).toBe(0);
   await expect(page.locator("input[name='name']")).toBeFocused();
@@ -145,15 +189,18 @@ test("keeps native validation from submitting incomplete forms", async ({
     ),
   ).not.toBe("");
   await expect(page.locator("#contact-status")).toHaveText("");
+  await expect(page.locator("button[type='submit']")).toBeEnabled();
+  expect(await getTurnstileState(page)).toEqual({
+    resetCount: 0,
+    responseValues: [],
+    widgetCount: 1,
+  });
 });
 
 test("shows the existing error state when the Turnstile token is missing", async ({
   page,
 }) => {
-  const api = await stubContactDependencies(page, {
-    status: 400,
-    body: { ok: false, message: "Missing Turnstile token" },
-  });
+  const api = await stubContactDependencies(page);
 
   await openContactPage(page);
   await fillRequiredFields(page);
@@ -162,32 +209,58 @@ test("shows the existing error state when the Turnstile token is missing", async
   await expect(page.locator("#contact-status")).toHaveText(
     "Failed to send. Please try again later.",
   );
-  expect(api.count()).toBe(1);
-  expect(api.bodies[0]).not.toContain("cf-turnstile-response");
-  expect(await page.evaluate(() => window.__turnstileResetCount)).toBe(0);
-});
-
-test("restores the form controls after an API error", async ({ page }) => {
-  const api = await stubContactDependencies(page, {
-    status: 500,
-    body: { ok: false, message: "Contact API failed" },
-  });
-
-  await openContactPage(page);
-  await fillRequiredFields(page);
-  await addTurnstileToken(page);
-  await page.locator("button[type='submit']").click();
-
-  await expect(page.locator("#contact-status")).toHaveText(
-    "Failed to send. Please try again later.",
-  );
+  expect(api.count()).toBe(0);
+  expect(api.bodies).toEqual([]);
   await expect(page.locator("button[type='submit']")).toBeEnabled();
-  await expect(page.locator("button[type='submit']")).toHaveText(
-    "Send Message",
-  );
+  await expect(page.locator("button[type='submit']")).toHaveText("Send Message");
   await expect(page.locator("input[name='name']")).toHaveValue("Test User");
-  expect(api.count()).toBe(1);
+  await expect(page.locator("input[name='email']")).toHaveValue("test@example.com");
+  await expect(page.locator("textarea[name='message']")).toHaveValue("Test message");
+  expect(await getTurnstileState(page)).toEqual({
+    resetCount: 0,
+    responseValues: [],
+    widgetCount: 1,
+  });
 });
+
+const httpFailureCases = [
+  { status: 400, message: "Missing required fields" },
+  { status: 403, message: "Turnstile verification failed" },
+  { status: 500, message: "Contact service unavailable" },
+  { status: 502, message: "Failed to forward contact form" },
+  { status: 504, message: "Contact form submission timed out" },
+];
+
+for (const { status, message } of httpFailureCases) {
+  test(`HTTP ${status} failure resets Turnstile exactly once`, async ({ page }) => {
+    const api = await stubContactDependencies(page, {
+      status,
+      body: { ok: false, message },
+    });
+
+    await openContactPage(page);
+    await fillRequiredFields(page);
+    await setTurnstileToken(page);
+    await page.locator("button[type='submit']").click();
+
+    await expect(page.locator("#contact-status")).toHaveText(
+      "Failed to send. Please try again later.",
+    );
+    await expect(page.locator("button[type='submit']")).toBeEnabled();
+    await expect(page.locator("button[type='submit']")).toHaveText(
+      "Send Message",
+    );
+    await expect(page.locator("input[name='name']")).toHaveValue("Test User");
+    await expect(page.locator("input[name='email']")).toHaveValue("test@example.com");
+    await expect(page.locator("textarea[name='message']")).toHaveValue("Test message");
+    expect(api.count()).toBe(1);
+    expect(await getTurnstileState(page)).toEqual({
+      resetCount: 1,
+      responseValues: [""],
+      widgetCount: 1,
+    });
+  });
+}
 
 test("prevents duplicate submissions while a request is pending", async ({
   page,
@@ -200,7 +273,7 @@ test("prevents duplicate submissions while a request is pending", async ({
 
   await openContactPage(page);
   await fillRequiredFields(page);
-  await addTurnstileToken(page);
+  await setTurnstileToken(page);
   await page.locator("#contact-form").evaluate((form) => {
     form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
@@ -208,9 +281,240 @@ test("prevents duplicate submissions while a request is pending", async ({
 
   await expect.poll(api.count).toBe(1);
   await expect(page.locator("button[type='submit']")).toBeDisabled();
+  expect(await getTurnstileState(page)).toEqual({
+    resetCount: 0,
+    responseValues: ["test-turnstile-token"],
+    widgetCount: 1,
+  });
 
   releaseRequest();
 
   await expect(page.locator("#contact-status")).toHaveText("Message sent.");
   expect(api.count()).toBe(1);
+  await expect(page.locator("button[type='submit']")).toBeEnabled();
+  await expect(page.locator("button[type='submit']")).toHaveText("Send Message");
+  expect(await getTurnstileState(page)).toEqual({
+    resetCount: 1,
+    responseValues: [""],
+    widgetCount: 1,
+  });
 });
+
+test("network rejection resets Turnstile exactly once", async ({ page }) => {
+  const api = await stubContactDependencies(page, { networkError: true });
+
+  await openContactPage(page);
+  await fillRequiredFields(page);
+  await setTurnstileToken(page);
+  const button = page.locator("button[type='submit']");
+  await button.click();
+
+  await expect(page.locator("#contact-status")).toHaveText(
+    "Failed to send. Please try again later.",
+  );
+  await expect(button).toBeEnabled();
+  await expect(button).toHaveText("Send Message");
+  await expect(page.locator("input[name='name']")).toHaveValue("Test User");
+  await expect(page.locator("input[name='email']")).toHaveValue("test@example.com");
+  await expect(page.locator("textarea[name='message']")).toHaveValue("Test message");
+  expect(api.count()).toBe(1);
+  expect(await getTurnstileState(page)).toEqual({
+    resetCount: 1,
+    responseValues: [""],
+    widgetCount: 1,
+  });
+});
+
+test("malformed JSON response resets Turnstile exactly once", async ({ page }) => {
+  const api = await stubContactDependencies(page, {
+    rawBody: "{not-valid-json",
+  });
+
+  await openContactPage(page);
+  await fillRequiredFields(page);
+  await setTurnstileToken(page);
+  const button = page.locator("button[type='submit']");
+  await button.click();
+
+  await expect(page.locator("#contact-status")).toHaveText(
+    "Failed to send. Please try again later.",
+  );
+  await expect(button).toBeEnabled();
+  await expect(button).toHaveText("Send Message");
+  await expect(page.locator("input[name='name']")).toHaveValue("Test User");
+  expect(api.count()).toBe(1);
+  expect(await getTurnstileState(page)).toEqual({
+    resetCount: 1,
+    responseValues: [""],
+    widgetCount: 1,
+  });
+});
+
+test("missing window.turnstile does not throw or block restoration", async ({ page }) => {
+  const api = await stubContactDependencies(page, {
+    turnstileAvailable: false,
+  });
+
+  await openContactPage(page);
+  await fillRequiredFields(page);
+  await setTurnstileToken(page);
+  const button = page.locator("button[type='submit']");
+  await button.click();
+
+  await expect(page.locator("#contact-status")).toHaveText("Message sent.");
+  await expect(button).toBeEnabled();
+  await expect(button).toHaveText("Send Message");
+  await expect(page.locator("input[name='name']")).toHaveValue("");
+  expect(api.count()).toBe(1);
+  expect(await getTurnstileState(page)).toEqual({
+    resetCount: 0,
+    responseValues: [""],
+    widgetCount: 1,
+  });
+});
+
+function createGate() {
+  let release;
+  const promise = new Promise((resolve) => {
+    release = resolve;
+  });
+
+  return { promise, release };
+}
+
+const contactLocaleCases = [
+  {
+    locale: "zh",
+    route: "/contact/",
+    submit: "\u9001\u51fa\u8a0a\u606f",
+    submitting: "\u9001\u51fa\u4e2d...",
+    success: "\u8a0a\u606f\u5df2\u9001\u51fa\u3002",
+    error: "\u9001\u51fa\u5931\u6557\uff0c\u8acb\u7a0d\u5f8c\u518d\u8a66\u3002",
+  },
+  {
+    locale: "en",
+    route: "/en/contact/",
+    submit: "Send Message",
+    submitting: "Sending...",
+    success: "Message sent.",
+    error: "Failed to send. Please try again later.",
+  },
+  {
+    locale: "ja",
+    route: "/ja/contact/",
+    submit: "\u9001\u4fe1\u3059\u308b",
+    submitting: "\u9001\u4fe1\u4e2d...",
+    success: "\u9001\u4fe1\u3055\u308c\u307e\u3057\u305f\u3002",
+    error: "\u9001\u4fe1\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002\u5f8c\u3067\u3082\u3046\u4e00\u5ea6\u304a\u8a66\u3057\u304f\u3060\u3055\u3044\u3002",
+  },
+];
+
+const contactViewports = [
+  { width: 1440, height: 900 },
+  { width: 390, height: 844 },
+];
+
+for (const localeCase of contactLocaleCases) {
+  for (const viewport of contactViewports) {
+    test(`${localeCase.locale} Contact lifecycle at ${viewport.width}x${viewport.height}`, async ({
+      page,
+    }) => {
+      const httpGate = createGate();
+      const networkGate = createGate();
+      const successGate = createGate();
+      const api = await stubContactDependencies(page, {
+        outcomes: [
+          {
+            status: 500,
+            body: { ok: false, message: "Contact service unavailable" },
+            gate: httpGate.promise,
+          },
+          { networkError: true, gate: networkGate.promise },
+          { status: 200, body: { ok: true }, gate: successGate.promise },
+        ],
+      });
+
+      await page.setViewportSize(viewport);
+      await openContactPage(page, localeCase.route);
+      await fillRequiredFields(page);
+      await setTurnstileToken(page, "http-failure-token");
+
+      const button = page.locator("button[type='submit']");
+      const name = page.locator("input[name='name']");
+      const email = page.locator("input[name='email']");
+      const message = page.locator("textarea[name='message']");
+      const status = page.locator("#contact-status");
+
+      await button.click();
+      await expect.poll(api.count).toBe(1);
+      await expect(button).toBeDisabled();
+      await expect(button).toHaveText(localeCase.submitting);
+
+      httpGate.release();
+
+      await expect(status).toHaveText(localeCase.error);
+      await expect(button).toBeEnabled();
+      await expect(button).toHaveText(localeCase.submit);
+      await expect(name).toHaveValue("Test User");
+      await expect(email).toHaveValue("test@example.com");
+      await expect(message).toHaveValue("Test message");
+      expect(await getTurnstileState(page)).toEqual({
+        resetCount: 1,
+        responseValues: [""],
+        widgetCount: 1,
+      });
+
+      await button.click();
+
+      await expect(status).toHaveText(localeCase.error);
+      expect(api.count()).toBe(1);
+      expect(await getTurnstileState(page)).toEqual({
+        resetCount: 1,
+        responseValues: [""],
+        widgetCount: 1,
+      });
+
+      await setTurnstileToken(page, "network-failure-token");
+      await button.click();
+      await expect.poll(api.count).toBe(2);
+      await expect(button).toBeDisabled();
+      await expect(button).toHaveText(localeCase.submitting);
+
+      networkGate.release();
+
+      await expect.poll(async () => (await getTurnstileState(page)).resetCount).toBe(2);
+      await expect(status).toHaveText(localeCase.error);
+      await expect(button).toBeEnabled();
+      await expect(button).toHaveText(localeCase.submit);
+      await expect(name).toHaveValue("Test User");
+      await expect(email).toHaveValue("test@example.com");
+      await expect(message).toHaveValue("Test message");
+      expect(await getTurnstileState(page)).toEqual({
+        resetCount: 2,
+        responseValues: [""],
+        widgetCount: 1,
+      });
+
+      await setTurnstileToken(page, "success-token");
+      await button.click();
+      await expect.poll(api.count).toBe(3);
+      await expect(button).toBeDisabled();
+      await expect(button).toHaveText(localeCase.submitting);
+
+      successGate.release();
+
+      await expect(status).toHaveText(localeCase.success);
+      await expect(button).toBeEnabled();
+      await expect(button).toHaveText(localeCase.submit);
+      await expect(name).toHaveValue("");
+      await expect(email).toHaveValue("");
+      await expect(message).toHaveValue("");
+      expect(api.count()).toBe(3);
+      expect(await getTurnstileState(page)).toEqual({
+        resetCount: 3,
+        responseValues: [""],
+        widgetCount: 1,
+      });
+    });
+  }
+}

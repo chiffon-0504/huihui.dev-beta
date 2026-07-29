@@ -8,6 +8,22 @@ function getContactText(key) {
   );
 }
 
+function resetContactTurnstile(contactForm) {
+  try {
+    if (typeof window.turnstile?.reset === "function") {
+      window.turnstile.reset();
+    }
+  } catch (error) {
+    // Keep the form usable if the external Turnstile API fails unexpectedly.
+  }
+
+  contactForm
+    .querySelectorAll("[name='cf-turnstile-response']")
+    .forEach((field) => {
+      field.value = "";
+    });
+}
+
 function initContactForm() {
   const contactForm = document.getElementById("contact-form");
   const contactStatus = document.getElementById("contact-status");
@@ -27,6 +43,17 @@ function initContactForm() {
 
     if (isSubmitting) return;
 
+    const formData = new FormData(contactForm);
+    const turnstileToken = formData.get("cf-turnstile-response");
+
+    if (
+      typeof turnstileToken !== "string" ||
+      turnstileToken.trim() === ""
+    ) {
+      contactStatus.textContent = getContactText("error");
+      return;
+    }
+
     isSubmitting = true;
     submitButton.disabled = true;
     submitButton.textContent = getContactText("submitting");
@@ -35,7 +62,7 @@ function initContactForm() {
     try {
       const response = await fetch(contactForm.action, {
         method: "POST",
-        body: new FormData(contactForm),
+        body: formData,
       });
       const data = await response.json();
 
@@ -45,14 +72,11 @@ function initContactForm() {
 
       contactForm.reset();
 
-      if (window.turnstile) {
-        window.turnstile.reset();
-      }
-
       contactStatus.textContent = getContactText("success");
     } catch (error) {
       contactStatus.textContent = getContactText("error");
     } finally {
+      resetContactTurnstile(contactForm);
       isSubmitting = false;
       submitButton.disabled = false;
       submitButton.textContent = getContactText("submit");
