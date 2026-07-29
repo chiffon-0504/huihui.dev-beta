@@ -10,6 +10,15 @@ const contactPlaceholders = {
   en: { name: "Your name", message: "Your message" },
   ja: { name: "お名前", message: "メッセージ内容" },
 };
+const worksProjectRoutes = [
+  { worksRoute: "/works/", homeRoute: "/", lang: "zh-Hant" },
+  { worksRoute: "/en/works/", homeRoute: "/en/", lang: "en" },
+  { worksRoute: "/ja/works/", homeRoute: "/ja/", lang: "ja" },
+];
+const worksVerificationViewports = [
+  { width: 1440, height: 900 },
+  { width: 390, height: 844 },
+];
 
 async function stubExternalDependencies(page) {
   await page.route("https://cdn.jsdelivr.net/**", async (route) => {
@@ -141,6 +150,67 @@ for (const route of primaryRoutes) {
     expect(pageErrors).toEqual([]);
   });
 }
+
+test("localized Works project cards preserve locale with keyboard navigation", async ({
+  browser,
+}) => {
+  for (const worksProjectRoute of worksProjectRoutes) {
+    for (const viewport of worksVerificationViewports) {
+      const context = await browser.newContext({ viewport });
+      const page = await context.newPage();
+
+      await stubExternalDependencies(page);
+      const response = await page.goto(worksProjectRoute.worksRoute, {
+        waitUntil: "load",
+      });
+      const firstProjectCard = page
+        .locator(".works-showcase-grid > a.showcase-project-card")
+        .first();
+      expect(response?.status()).toBe(200);
+      await expect(page.locator("html")).toHaveAttribute(
+        "lang",
+        worksProjectRoute.lang,
+      );
+      await expect(firstProjectCard).toHaveAttribute(
+        "href",
+        worksProjectRoute.homeRoute,
+      );
+      expect(await firstProjectCard.getAttribute("target")).toBeNull();
+      expect(await firstProjectCard.getAttribute("rel")).toBeNull();
+      expect(await firstProjectCard.evaluate((element) => element.tabIndex)).toBe(
+        0,
+      );
+
+      await firstProjectCard.focus();
+      await expect(firstProjectCard).toBeFocused();
+      await Promise.all([
+        page.waitForURL(
+          (url) => url.pathname === worksProjectRoute.homeRoute,
+        ),
+        page.keyboard.press("Enter"),
+      ]);
+
+      expect(new URL(page.url()).pathname).toBe(worksProjectRoute.homeRoute);
+      await expect(page.locator("html")).toHaveAttribute(
+        "lang",
+        worksProjectRoute.lang,
+      );
+
+      await page.goBack({ waitUntil: "load" });
+
+      expect(new URL(page.url()).pathname).toBe(worksProjectRoute.worksRoute);
+      await expect(page.locator("html")).toHaveAttribute(
+        "lang",
+        worksProjectRoute.lang,
+      );
+      await expect(firstProjectCard).toHaveAttribute(
+        "href",
+        worksProjectRoute.homeRoute,
+      );
+      await context.close();
+    }
+  }
+});
 
 test("the standalone 114514 route loads", async ({ page }) => {
   const response = await page.goto("/114514/");
