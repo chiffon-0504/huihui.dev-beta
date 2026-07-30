@@ -35,7 +35,7 @@ The project keeps the frontend deployable as static files while using Cloudflare
 - Liquid Glass UI system
 - shared multilingual layout components
 - selected Cloudflare Workers API endpoints
-- GitHub Actions-based deployment into Cloudflare
+- Cloudflare Pages Git integration for static publishing and GitHub Actions for validation and Worker deployment
 
 This repository, `huihui.dev-beta`, is the development repository for the beta environment. Stable production is maintained separately in `huihui.dev-stable`.
 
@@ -95,25 +95,39 @@ The beta repository is used for active development and validation. Stable produc
 
 ## Deployment Flow
 
-Deployment now runs through GitHub Actions before publishing to Cloudflare.
+Static-site and Worker deployments use separate paths.
 
 ```text
-Local changes
-  -> GitHub
+Static site:
+huihui.dev-beta/main
+  -> Cloudflare Pages Git integration
+  -> beta.huihui.dev
+
+huihui.dev-stable/main
+  -> Cloudflare Pages Git integration
+  -> huihui.dev
+
+Workers:
+relevant Worker changes merged to beta main
   -> GitHub Actions
-  -> Cloudflare Pages / Cloudflare Workers
-  -> beta.huihui.dev or huihui.dev
+  -> beta Worker
+
+manual workflow_dispatch with target=production
+  -> GitHub Actions
+  -> production Worker
 ```
 
-Expected flow:
+Expected release flow:
 
-1. Changes are committed and pushed to GitHub.
-2. GitHub Actions runs the configured deployment workflow.
-3. Static assets are deployed to Cloudflare Pages.
-4. Worker-side API updates are deployed to Cloudflare Workers when relevant.
-5. The beta or stable domain receives the deployed version based on repository/environment.
+1. Changes are developed and validated in `huihui.dev-beta`.
+2. Cloudflare Pages publishes the beta static site through Git integration.
+3. Relevant Worker changes deploy automatically to the isolated beta Worker.
+4. The production Worker is deployed manually through `workflow_dispatch` with `target=production`.
+5. Verified beta `main` is synchronized to `huihui.dev-stable/main`.
+6. Cloudflare Pages publishes the stable static site from the production repository.
+7. The stable tag and GitHub Release are created after production verification.
 
-This keeps GitHub as the source of truth, GitHub Actions as the deployment coordinator, and Cloudflare as the hosting/runtime platform.
+GitHub remains the source of truth. Cloudflare Pages Git integration publishes static content. GitHub Actions validates the repository and deploys Workers. The beta and production Workers remain separate.
 
 ---
 
@@ -121,7 +135,8 @@ This keeps GitHub as the source of truth, GitHub Actions as the deployment coord
 
 ### Stable Release
 
-- `v1.0.0` is the latest stable release.
+- `v1.2.0` is the current stable release.
+- `v1.2.1` is the prepared release candidate.
 - The repository model is now split between development and production:
   - `huihui.dev-beta` for development
   - `huihui.dev-stable` for production
@@ -226,8 +241,9 @@ Key directories:
 | Production repository | `chiffon-0504/huihui.dev-stable` |
 | Beta environment | <https://beta.huihui.dev> |
 | Stable production | <https://huihui.dev> |
-| Latest stable release | `v1.0.0` |
-| Deployment | GitHub -> GitHub Actions -> Cloudflare |
+| Current stable release | `v1.2.0` |
+| Release candidate | `v1.2.1` |
+| Deployment | Cloudflare Pages Git integration (static site) / GitHub Actions (Workers) |
 | Current direction | Static-first site with Liquid Glass UI, multilingual shared layout, and Workers-backed APIs |
 
 Actively maintained.
