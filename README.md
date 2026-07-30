@@ -121,7 +121,7 @@ This keeps GitHub as the source of truth, GitHub Actions as the deployment coord
 
 ### Stable Release
 
-- `v1.0.0` is the latest stable release.
+- `v1.2.1` is the latest stable release.
 - The repository model is now split between development and production:
   - `huihui.dev-beta` for development
   - `huihui.dev-stable` for production
@@ -226,8 +226,8 @@ Key directories:
 | Production repository | `chiffon-0504/huihui.dev-stable` |
 | Beta environment | <https://beta.huihui.dev> |
 | Stable production | <https://huihui.dev> |
-| Latest stable release | `v1.0.0` |
-| Deployment | GitHub -> GitHub Actions -> Cloudflare |
+| Latest stable release | `v1.2.1` |
+| Deployment | Cloudflare Pages Git integration (static site) / GitHub Actions (Workers) |
 | Current direction | Static-first site with Liquid Glass UI, multilingual shared layout, and Workers-backed APIs |
 
 Actively maintained.
