@@ -3,8 +3,18 @@ const HUIHUI_API_ENDPOINTS = Object.freeze({
   beta: "https://huihui-api-beta.huihuigames01.workers.dev",
 });
 
+function isBetaSiteHostname(hostname) {
+  const normalizedHostname = String(hostname).toLowerCase();
+
+  return (
+    normalizedHostname === "beta.huihui.dev" ||
+    normalizedHostname === "huihuidev-beta.pages.dev" ||
+    normalizedHostname.endsWith(".huihuidev-beta.pages.dev")
+  );
+}
+
 function getHuihuiApiBase(hostname = window.location.hostname) {
-  return String(hostname).toLowerCase() === "beta.huihui.dev"
+  return isBetaSiteHostname(hostname)
     ? HUIHUI_API_ENDPOINTS.beta
     : HUIHUI_API_ENDPOINTS.production;
 }

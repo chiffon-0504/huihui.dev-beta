@@ -10,7 +10,27 @@ const productionOrigins = [
   "https://huihui.dev",
   "https://www.huihui.dev",
 ];
-const betaOrigin = "https://beta.huihui.dev";
+const betaOrigins = [
+  "https://beta.huihui.dev",
+  "https://huihuidev-beta.pages.dev",
+  "https://5a827187.huihuidev-beta.pages.dev",
+];
+const rejectedBetaOrigins = [
+  ...productionOrigins,
+  "https://attacker.pages.dev",
+  "https://evil-huihuidev-beta.pages.dev",
+  "https://huihuidev-beta.pages.dev.evil.example",
+  "http://beta.huihui.dev",
+  "http://huihuidev-beta.pages.dev",
+  "http://5a827187.huihuidev-beta.pages.dev",
+  "https://beta.huihui.dev:8443",
+  "https://5a827187.huihuidev-beta.pages.dev:8443",
+  "https://user@beta.huihui.dev",
+  "https://user:password@beta.huihui.dev",
+  "https://beta.huihui.dev/path",
+  "https://beta.huihui.dev?preview=1",
+  "https://beta.huihui.dev#preview",
+];
 
 function request(path, origin, method = "GET") {
   return worker.fetch(
@@ -37,12 +57,14 @@ function requestForEnvironment(path, origin, workerEnvironment, method = "GET") 
 function expectAllowed(response, origin) {
   expect(response.headers.get("Access-Control-Allow-Origin")).toBe(origin);
   expect(response.headers.get("Access-Control-Allow-Origin")).not.toBe("*");
+  expect(response.headers.get("Vary")?.toLowerCase()).toContain("origin");
 }
 
 function expectRejected(response) {
   expect(response.headers.has("Access-Control-Allow-Origin")).toBe(false);
   expect(response.headers.has("Access-Control-Allow-Methods")).toBe(false);
   expect(response.headers.has("Access-Control-Allow-Headers")).toBe(false);
+  expect(response.headers.get("Vary")?.toLowerCase()).toContain("origin");
 }
 
 afterEach(() => {
@@ -76,32 +98,32 @@ describe("Worker environment CORS", () => {
     },
   );
 
-  test("rejects the beta origin in production", async () => {
-    const response = await requestForEnvironment("/", betaOrigin, "production");
+  test.each(betaOrigins)("rejects %s in production", async (origin) => {
+    const response = await requestForEnvironment("/", origin, "production");
 
     expectRejected(response);
   });
 
-  test("allows only the beta origin in beta", async () => {
-    const allowedResponse = await requestForEnvironment("/", betaOrigin, "beta");
-    const rejectedResponses = await Promise.all(
-      productionOrigins.map((origin) =>
-        requestForEnvironment("/", origin, "beta"),
-      ),
-    );
+  test.each(betaOrigins)("allows %s in beta", async (origin) => {
+    const response = await requestForEnvironment("/", origin, "beta");
 
-    expectAllowed(allowedResponse, betaOrigin);
-    rejectedResponses.forEach(expectRejected);
+    expectAllowed(response, origin);
   });
 
-  test("rejects unlisted origins in every environment", async () => {
-    const unlistedOrigin = "https://attacker.example";
-    const responses = await Promise.all([
-      requestForEnvironment("/", unlistedOrigin, "production"),
-      requestForEnvironment("/", unlistedOrigin, "beta"),
-    ]);
+  test.each(rejectedBetaOrigins)("rejects %s in beta", async (origin) => {
+    const response = await requestForEnvironment("/", origin, "beta");
 
-    responses.forEach(expectRejected);
+    expectRejected(response);
+  });
+
+  test("rejects an unlisted origin in production", async () => {
+    const response = await requestForEnvironment(
+      "/",
+      "https://attacker.example",
+      "production",
+    );
+
+    expectRejected(response);
   });
 
   test("unknown and missing environments fail safely as production", async () => {
@@ -110,9 +132,13 @@ describe("Worker environment CORS", () => {
       productionOrigins[0],
       "preview",
     );
-    const unknownBeta = await requestForEnvironment("/", betaOrigin, "preview");
+    const unknownBeta = await requestForEnvironment(
+      "/",
+      betaOrigins[0],
+      "preview",
+    );
     const missingProduction = await request("/", productionOrigins[0]);
-    const missingBeta = await request("/", betaOrigin);
+    const missingBeta = await request("/", betaOrigins[0]);
 
     expectAllowed(unknownProduction, productionOrigins[0]);
     expectRejected(unknownBeta);
@@ -120,62 +146,96 @@ describe("Worker environment CORS", () => {
     expectRejected(missingBeta);
   });
 
-  test("applies the same origin isolation to contact preflight", async () => {
-    const productionAllowed = await requestForEnvironment(
-      "/api/contact",
-      productionOrigins[0],
-      "production",
-      "OPTIONS",
-    );
-    const productionRejected = await requestForEnvironment(
-      "/api/contact",
-      betaOrigin,
-      "production",
-      "OPTIONS",
-    );
-    const betaAllowed = await requestForEnvironment(
-      "/api/contact",
-      betaOrigin,
-      "beta",
-      "OPTIONS",
-    );
-    const betaRejected = await requestForEnvironment(
-      "/api/contact",
-      productionOrigins[0],
-      "beta",
-      "OPTIONS",
-    );
+  test.each(productionOrigins)(
+    "allows %s for production contact preflight",
+    async (origin) => {
+      const response = await requestForEnvironment(
+        "/api/contact",
+        origin,
+        "production",
+        "OPTIONS",
+      );
 
-    expect(productionAllowed.status).toBe(204);
-    expectAllowed(productionAllowed, productionOrigins[0]);
-    expectRejected(productionRejected);
-    expectAllowed(betaAllowed, betaOrigin);
-    expectRejected(betaRejected);
-    expect(betaAllowed.headers.get("Access-Control-Allow-Methods")).toBe(
-      "POST, OPTIONS",
-    );
-    expect(betaAllowed.headers.get("Access-Control-Allow-Headers")).toBe(
-      "Content-Type",
-    );
-  });
+      expect(response.status).toBe(204);
+      expectAllowed(response, origin);
+      expect(response.headers.get("Access-Control-Allow-Methods")).toBe(
+        "POST, OPTIONS",
+      );
+      expect(response.headers.get("Access-Control-Allow-Headers")).toBe(
+        "Content-Type",
+      );
+    },
+  );
 
-  test("replaces a legacy cached wildcard with the environment origin", async () => {
-    vi.stubGlobal("caches", {
-      default: {
-        match: vi.fn(async () =>
-          new Response(JSON.stringify({ ok: true, techNews: [] }), {
-            headers: { "Access-Control-Allow-Origin": "*" },
-          }),
-        ),
-      },
-    });
+  test.each(betaOrigins)(
+    "rejects %s for production contact preflight",
+    async (origin) => {
+      const response = await requestForEnvironment(
+        "/api/contact",
+        origin,
+        "production",
+        "OPTIONS",
+      );
 
-    const response = await requestForEnvironment(
-      "/api/tech-news",
-      betaOrigin,
-      "beta",
-    );
+      expectRejected(response);
+    },
+  );
 
-    expectAllowed(response, betaOrigin);
-  });
+  test.each(betaOrigins)(
+    "allows %s for beta contact preflight",
+    async (origin) => {
+      const response = await requestForEnvironment(
+        "/api/contact",
+        origin,
+        "beta",
+        "OPTIONS",
+      );
+
+      expect(response.status).toBe(204);
+      expectAllowed(response, origin);
+      expect(response.headers.get("Access-Control-Allow-Methods")).toBe(
+        "POST, OPTIONS",
+      );
+      expect(response.headers.get("Access-Control-Allow-Headers")).toBe(
+        "Content-Type",
+      );
+    },
+  );
+
+  test.each(rejectedBetaOrigins)(
+    "rejects %s for beta contact preflight",
+    async (origin) => {
+      const response = await requestForEnvironment(
+        "/api/contact",
+        origin,
+        "beta",
+        "OPTIONS",
+      );
+
+      expectRejected(response);
+    },
+  );
+
+  test.each([betaOrigins[0], betaOrigins[2]])(
+    "replaces a legacy cached wildcard with %s",
+    async (origin) => {
+      vi.stubGlobal("caches", {
+        default: {
+          match: vi.fn(async () =>
+            new Response(JSON.stringify({ ok: true, techNews: [] }), {
+              headers: { "Access-Control-Allow-Origin": "*" },
+            }),
+          ),
+        },
+      });
+
+      const response = await requestForEnvironment(
+        "/api/tech-news",
+        origin,
+        "beta",
+      );
+
+      expectAllowed(response, origin);
+    },
+  );
 });

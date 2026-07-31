@@ -39,27 +39,42 @@ async function loadMain(hostname) {
 }
 
 describe("frontend API environment configuration", () => {
-  test("uses the beta API only for the exact beta hostname", async () => {
+  test("uses the beta API for approved beta hostnames", async () => {
     const site = await loadMain("beta.huihui.dev");
 
-    expect(site.resolve("beta.huihui.dev")).toBe(betaApiBase);
-    expect(site.resolve("BETA.HUIHUI.DEV")).toBe(betaApiBase);
-    expect(site.resolve("beta.huihui.dev.evil.example")).toBe(
-      productionApiBase,
-    );
-    expect(site.resolve("preview.beta.huihui.dev")).toBe(productionApiBase);
+    for (const hostname of [
+      "beta.huihui.dev",
+      "BETA.HUIHUI.DEV",
+      "huihuidev-beta.pages.dev",
+      "5a827187.huihuidev-beta.pages.dev",
+      "RELEASE-TEST.HUIHUIDEV-BETA.PAGES.DEV",
+    ]) {
+      expect(site.resolve(hostname)).toBe(betaApiBase);
+    }
   });
 
   test("uses the canonical production API for non-beta hosts", async () => {
     const site = await loadMain("huihui.dev");
 
-    expect(site.resolve("huihui.dev")).toBe(productionApiBase);
-    expect(site.resolve("www.huihui.dev")).toBe(productionApiBase);
-    expect(site.resolve("127.0.0.1")).toBe(productionApiBase);
+    for (const hostname of [
+      "huihui.dev",
+      "www.huihui.dev",
+      "127.0.0.1",
+      "another-project.pages.dev",
+      "attacker.pages.dev",
+      "evil-huihuidev-beta.pages.dev",
+      "huihuidev-beta.pages.dev.evil.example",
+      "preview.beta.huihui.dev",
+      "beta.huihui.dev.evil.example",
+    ]) {
+      expect(site.resolve(hostname)).toBe(productionApiBase);
+    }
   });
 
   test("configures the contact form action for the current environment", async () => {
-    const betaSite = await loadMain("beta.huihui.dev");
+    const betaSite = await loadMain(
+      "5a827187.huihuidev-beta.pages.dev",
+    );
     const productionSite = await loadMain("huihui.dev");
 
     betaSite.init();
