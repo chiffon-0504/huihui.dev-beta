@@ -136,6 +136,7 @@ GitHub remains the source of truth. Cloudflare Pages Git integration publishes s
 ### Stable Release
 
 - `v1.2.1` is the current stable release.
+- `v1.2.2` is the current release candidate.
 - The repository model is now split between development and production:
   - `huihui.dev-beta` for development
   - `huihui.dev-stable` for production
@@ -241,6 +242,7 @@ Key directories:
 | Beta environment | <https://beta.huihui.dev> |
 | Stable production | <https://huihui.dev> |
 | Current stable release | `v1.2.1` |
+| Current release candidate | `v1.2.2` |
 | Deployment | Cloudflare Pages Git integration (static site) / GitHub Actions (Workers) |
 | Current direction | Static-first site with Liquid Glass UI, multilingual shared layout, and Workers-backed APIs |
 
