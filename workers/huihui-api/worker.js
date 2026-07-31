@@ -181,9 +181,15 @@ const SOURCES = [
 ];
 
 function getTimeAgo(dateString) {
-  const now = new Date();
-  const past = new Date(dateString);
-  const diff = Math.floor((now.getTime() - past.getTime()) / 1000);
+  const pastTime = new Date(dateString).getTime();
+
+  if (!Number.isFinite(pastTime)) return "";
+
+  const diffMs = Date.now() - pastTime;
+
+  if (diffMs <= 0) return "just now";
+
+  const diff = Math.floor(diffMs / 1000);
 
   const minutes = Math.floor(diff / 60);
   const hours = Math.floor(diff / 3600);
