@@ -40,7 +40,7 @@ describe("milestone localization", () => {
     const posts = readJsonExpression(context, "HUIHUI_POSTS");
     const ids = posts.map((post) => post.id);
 
-    expect(posts).toHaveLength(5);
+    expect(posts).toHaveLength(6);
     expect(new Set(ids).size).toBe(ids.length);
 
     for (const post of posts) {
@@ -67,6 +67,60 @@ describe("milestone localization", () => {
         expect(Object.keys(post.caption).sort()).toEqual([...locales].sort());
       }
     }
+  });
+
+  test("keeps the Course Mode Phase 10 milestone first with localized media", async () => {
+    const { context } = await createMilestoneContext();
+    const [phase10Post] = readJsonExpression(context, "HUIHUI_POSTS");
+
+    expect(phase10Post.id).toBe(
+      "arcaea-course-mode-phase-10-clear-2026-07-31",
+    );
+    expect(phase10Post.date).toBe("2026-07-31");
+    expect(phase10Post.content).toEqual({
+      zh: "Course Mode Phase 10 完成！！",
+      en: "Course Mode Phase 10 CLEAR!!",
+      ja: "Course Mode Phase 10 完走！！",
+    });
+    expect(phase10Post.images).toEqual([
+      {
+        id: "course-mode-phase-10-score",
+        src: "/images/3011_p.webp",
+        alt: {
+          zh: "Arcaea Course Mode Phase 10 成績截圖",
+          en: "Arcaea Course Mode Phase 10 score screenshot",
+          ja: "Arcaea Course Mode Phase 10 スコア画面",
+        },
+      },
+      {
+        id: "course-mode-phase-10-banner-select",
+        src: "/images/3012_p.webp",
+        alt: {
+          zh: "Arcaea Course Mode Phase 10 名牌選擇畫面",
+          en: "Arcaea Course Mode Phase 10 banner selection screen",
+          ja: "Arcaea Course Mode Phase 10 バナー選択画面",
+        },
+      },
+    ]);
+
+    for (const image of phase10Post.images) {
+      for (const locale of locales) {
+        expect(image.alt[locale].trim()).not.toBe("");
+      }
+    }
+
+    expect(
+      vm.runInContext(
+        "HUIHUI_POSTS[0].links[0] === ARCAEA_HASHTAG_LINK",
+        context,
+      ),
+    ).toBe(true);
+    expect(
+      vm.runInContext("HUIHUI_POSTS[0].caption === ARCAEA_CAPTION", context),
+    ).toBe(true);
+    expect(Object.values(phase10Post.content).join("\n")).not.toContain(
+      "#arcaea",
+    );
   });
 
   test("English and Japanese views use their own bodies without Chinese fallback", async () => {

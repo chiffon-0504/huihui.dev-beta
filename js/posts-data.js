@@ -15,6 +15,39 @@ const ARCAEA_CAPTION = Object.freeze({
 
 const HUIHUI_POSTS = [
   {
+    id: "arcaea-course-mode-phase-10-clear-2026-07-31",
+    authorName: "huihui",
+    authorHandle: "@huihui",
+    date: "2026-07-31",
+    content: {
+      zh: "Course Mode Phase 10 完成！！",
+      en: "Course Mode Phase 10 CLEAR!!",
+      ja: "Course Mode Phase 10 完走！！"
+    },
+    images: [
+      {
+        id: "course-mode-phase-10-score",
+        src: "/images/3011_p.webp",
+        alt: {
+          zh: "Arcaea Course Mode Phase 10 成績截圖",
+          en: "Arcaea Course Mode Phase 10 score screenshot",
+          ja: "Arcaea Course Mode Phase 10 スコア画面"
+        }
+      },
+      {
+        id: "course-mode-phase-10-banner-select",
+        src: "/images/3012_p.webp",
+        alt: {
+          zh: "Arcaea Course Mode Phase 10 名牌選擇畫面",
+          en: "Arcaea Course Mode Phase 10 banner selection screen",
+          ja: "Arcaea Course Mode Phase 10 バナー選択画面"
+        }
+      }
+    ],
+    links: [ARCAEA_HASHTAG_LINK],
+    caption: ARCAEA_CAPTION
+  },
+  {
     id: "arcaea-boss-song-ex-scores-2026-06-28",
     authorName: "huihui",
     authorHandle: "@huihui",

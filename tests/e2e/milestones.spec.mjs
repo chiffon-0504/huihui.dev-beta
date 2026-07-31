@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const milestoneIds = [
+  "arcaea-course-mode-phase-10-clear-2026-07-31",
   "arcaea-boss-song-ex-scores-2026-06-28",
   "arcaea-potential-12-2026-06-27",
   "arcaea-potential-11-90-2026-05-03",
@@ -8,9 +9,8 @@ const milestoneIds = [
   "hello-world-2026-04-14",
 ];
 const firstMilestoneImages = [
-  "/images/3008_p.webp",
-  "/images/3009_p.webp",
-  "/images/3010_p.webp",
+  "/images/3011_p.webp",
+  "/images/3012_p.webp",
 ];
 const arcaeaHashtagUrl = "https://x.com/hashtag/arcaea?src=hashtag_click";
 
@@ -18,40 +18,43 @@ const localeCases = [
   {
     locale: "zh",
     route: "/milestones/",
-    date: "2026年6月28日",
+    date: "2026年7月31日",
     requiredText: [
+      "Course Mode Phase 10 完成！！",
       "初代魔王 Grievous Lady",
       "12.00 摘星達成!!!!!!",
       "11.90 到達!!!",
     ],
     forbiddenText: [],
-    firstImageAlt: "Arcaea Grievous Lady EX 成績截圖",
+    firstImageAlt: "Arcaea Course Mode Phase 10 成績截圖",
     caption: "Arcaea 圖像與相關內容之權利屬於 © lowiro。",
   },
   {
     locale: "en",
     route: "/en/milestones/",
-    date: "June 28, 2026",
+    date: "July 31, 2026",
     requiredText: [
+      "Course Mode Phase 10 CLEAR!!",
       "The original boss song, Grievous Lady",
       "Reached Potential 12.00 at last!!!!!!",
       "Reached Potential 11.90!!!",
     ],
     forbiddenText: ["初代魔王", "3.0 魔王", "摘星", "從 2021 年開始玩"],
-    firstImageAlt: "Arcaea Grievous Lady EX score screenshot",
+    firstImageAlt: "Arcaea Course Mode Phase 10 score screenshot",
     caption: "Arcaea images and properties belong to © lowiro.",
   },
   {
     locale: "ja",
     route: "/ja/milestones/",
-    date: "2026年6月28日",
+    date: "2026年7月31日",
     requiredText: [
+      "Course Mode Phase 10 完走！！",
       "初代ボス曲 Grievous Lady",
       "ついにPotential 12.00到達!!!!!!",
       "Potential 11.90到達!!!",
     ],
     forbiddenText: ["初代魔王", "3.0 魔王", "摘星", "從 2021 年開始玩"],
-    firstImageAlt: "Arcaea Grievous Lady EX スコア画面",
+    firstImageAlt: "Arcaea Course Mode Phase 10 スコア画面",
     caption: "Arcaeaの画像および関連コンテンツの権利は© lowiroに帰属します。",
   },
 ];
@@ -74,7 +77,7 @@ for (const localeCase of localeCases) {
     const firstCard = cards.first();
     await expect(firstCard.locator("time.post-date")).toHaveAttribute(
       "datetime",
-      "2026-06-28",
+      "2026-07-31",
     );
     await expect(firstCard.locator("time.post-date")).toHaveText(localeCase.date);
 
@@ -103,7 +106,7 @@ for (const localeCase of localeCases) {
     const hashtagLinks = page.locator(
       '.post-content a.hashtag[href*="x.com/hashtag/arcaea"]',
     );
-    await expect(hashtagLinks).toHaveCount(4);
+    await expect(hashtagLinks).toHaveCount(5);
     for (const link of await hashtagLinks.all()) {
       await expect(link).toHaveAttribute("href", arcaeaHashtagUrl);
       await expect(link).toHaveText("#arcaea");
@@ -115,5 +118,7 @@ for (const localeCase of localeCases) {
       "alt",
       localeCase.firstImageAlt,
     );
+    await page.locator("#lightboxClose").click();
+    await expect(page.locator("#lightbox")).not.toHaveAttribute("open", "");
   });
 }
