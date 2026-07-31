@@ -301,7 +301,7 @@ function renderAboutInterestCards() {
 
       <div class="rhythm-profile">
         <img
-          src="/images/1004_aa.webp"
+          src="/images/1014_aa.webp"
           alt="Arcaea profile"
           class="zoomable"
           data-i18n-alt="about.images.arcaea"

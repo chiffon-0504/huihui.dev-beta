@@ -20,9 +20,9 @@ const HUIHUI_POSTS = [
     authorHandle: "@huihui",
     date: "2026-07-31",
     content: {
-      zh: "Course Mode Phase 10 完成！！",
-      en: "Course Mode Phase 10 CLEAR!!",
-      ja: "Course Mode Phase 10 完走！！"
+      zh: `Course Mode <span class="beyond">Phase 10</span>  完成！！`,
+      en: `Course Mode <span class="beyond">Phase 10</span> CLEAR!!`,
+      ja: `Course Mode <span class="beyond">Phase 10</span> 完走！！`
     },
     images: [
       {
