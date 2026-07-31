@@ -6,8 +6,14 @@ const fallbackLinks = [
   "https://developer.apple.com/news/",
   "https://android-developers.googleblog.com/",
 ];
+const fixedNow = new Date("2026-07-31T12:00:00.000Z");
 
-function rssFeed({ title, link, cdataTitle = false }) {
+function rssFeed({
+  title,
+  link,
+  cdataTitle = false,
+  pubDate = "Thu, 09 Jul 2026 12:00:00 GMT",
+}) {
   const titleElement = cdataTitle
     ? `<title><![CDATA[${title}]]></title>`
     : `<title>${title}</title>`;
@@ -18,7 +24,7 @@ function rssFeed({ title, link, cdataTitle = false }) {
         <item>
           ${titleElement}
           <link>${link}</link>
-          <pubDate>Thu, 09 Jul 2026 12:00:00 GMT</pubDate>
+          <pubDate>${pubDate}</pubDate>
         </item>
       </channel>
     </rss>
@@ -59,7 +65,89 @@ async function requestTechNews(rss) {
 }
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
+
+describe("tech-news Worker timestamps", () => {
+  test("clamps future RSS publication times to just now", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(fixedNow);
+
+    const data = await requestTechNews(
+      rssFeed({
+        title: "Future article",
+        link: "https://example.test/future",
+        pubDate: "Fri, 31 Jul 2026 16:19:00 GMT",
+      }),
+    );
+
+    expect(data.techNews.map((item) => item.timeAgo)).toEqual([
+      "just now",
+      "just now",
+      "just now",
+    ]);
+    expect(JSON.stringify(data.techNews)).not.toContain("-");
+  });
+
+  test("formats an RSS publication time equal to now as just now", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(fixedNow);
+
+    const data = await requestTechNews(
+      rssFeed({
+        title: "Current article",
+        link: "https://example.test/current",
+        pubDate: "Fri, 31 Jul 2026 12:00:00 GMT",
+      }),
+    );
+
+    expect(data.techNews.map((item) => item.timeAgo)).toEqual([
+      "just now",
+      "just now",
+      "just now",
+    ]);
+  });
+
+  test("returns an empty timeAgo for an invalid RSS publication time", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(fixedNow);
+
+    const data = await requestTechNews(
+      rssFeed({
+        title: "Invalid date article",
+        link: "https://example.test/invalid-date",
+        pubDate: "not-a-date",
+      }),
+    );
+
+    expect(data.techNews.map((item) => item.timeAgo)).toEqual(["", "", ""]);
+    expect(JSON.stringify(data.techNews)).not.toContain("NaN");
+  });
+
+  test.each([
+    ["minutes", "Fri, 31 Jul 2026 11:30:00 GMT", "30 mins ago"],
+    ["hours", "Fri, 31 Jul 2026 06:00:00 GMT", "6 hours ago"],
+    ["days", "Tue, 28 Jul 2026 12:00:00 GMT", "3 days ago"],
+  ])("keeps the existing past-time %s format", async (_unit, pubDate, expected) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(fixedNow);
+
+    const data = await requestTechNews(
+      rssFeed({
+        title: "Past article",
+        link: "https://example.test/past",
+        pubDate,
+      }),
+    );
+
+    expect(data.techNews.map((item) => item.timeAgo)).toEqual([
+      expected,
+      expected,
+      expected,
+    ]);
+  });
 });
 
 describe("tech-news Worker sanitization", () => {
