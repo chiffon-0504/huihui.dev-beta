@@ -3839,12 +3839,6 @@ img,
    generated About/Galgame/Steam markup.
 ========================= */
 
-/* About page desktop overflow safety */
-body:has(#aboutPage) .main {
-  width: calc(100vw - var(--main-offset));
-  max-width: calc(100vw - var(--main-offset));
-}
-
 body:has(#aboutPage) .page-shell,
 body:has(#aboutPage) .about-page,
 body:has(#aboutPage) .about-content,
