@@ -76,17 +76,46 @@ const PRODUCTION_ALLOWED_ORIGINS = new Set([
   "https://huihui.dev",
   "https://www.huihui.dev",
 ]);
-const BETA_ALLOWED_ORIGINS = new Set(["https://beta.huihui.dev"]);
 
-function allowedOrigins(env) {
-  return env?.WORKER_ENV === "beta"
-    ? BETA_ALLOWED_ORIGINS
-    : PRODUCTION_ALLOWED_ORIGINS;
+function isBetaSiteHostname(hostname) {
+  const normalizedHostname = String(hostname).toLowerCase();
+
+  return (
+    normalizedHostname === "beta.huihui.dev" ||
+    normalizedHostname === "huihuidev-beta.pages.dev" ||
+    normalizedHostname.endsWith(".huihuidev-beta.pages.dev")
+  );
 }
 
 function allowedCorsOrigin(request, env) {
   const origin = request.headers.get("Origin") || "";
-  return allowedOrigins(env).has(origin) ? origin : "";
+
+  if (env?.WORKER_ENV !== "beta") {
+    return PRODUCTION_ALLOWED_ORIGINS.has(origin) ? origin : "";
+  }
+
+  let originUrl;
+
+  try {
+    originUrl = new URL(origin);
+  } catch (error) {
+    return "";
+  }
+
+  if (
+    originUrl.protocol !== "https:" ||
+    originUrl.username ||
+    originUrl.password ||
+    originUrl.port ||
+    originUrl.pathname !== "/" ||
+    originUrl.search ||
+    originUrl.hash ||
+    originUrl.origin.toLowerCase() !== origin.toLowerCase()
+  ) {
+    return "";
+  }
+
+  return isBetaSiteHostname(originUrl.hostname) ? origin : "";
 }
 
 function applyCors(response, request, env) {
