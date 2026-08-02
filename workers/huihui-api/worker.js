@@ -625,6 +625,7 @@ const CONTACT_FIELD_LIMITS = Object.freeze({
   turnstileToken: 2048,
 });
 const CONTACT_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const CONTACT_TURNSTILE_ACTION = "contact";
 const TURNSTILE_TIMEOUT_MS = 5000;
 const FORMSPREE_TIMEOUT_MS = 10000;
 const TURNSTILE_ERROR_CODES = new Set([
@@ -719,6 +720,18 @@ async function handleContact(request, env) {
       405
     );
   }
+
+  const requestOrigin = allowedCorsOrigin(request, env);
+
+  if (!requestOrigin) {
+    return contactJsonResponse(
+      request,
+      { ok: false, message: "Forbidden" },
+      403
+    );
+  }
+
+  const expectedTurnstileHostname = new URL(requestOrigin).hostname;
 
   const contentType = request.headers.get("Content-Type") || "";
 
@@ -850,7 +863,12 @@ async function handleContact(request, env) {
     );
   }
 
-  if (!verifyData.success) {
+  if (
+    !verifyData.success ||
+    verifyData.action !== CONTACT_TURNSTILE_ACTION ||
+    typeof verifyData.hostname !== "string" ||
+    verifyData.hostname.toLowerCase() !== expectedTurnstileHostname
+  ) {
     return contactJsonResponse(
       request,
       {

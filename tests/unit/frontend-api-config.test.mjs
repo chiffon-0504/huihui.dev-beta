@@ -6,6 +6,11 @@ import { describe, expect, test } from "vitest";
 const root = path.resolve(import.meta.dirname, "../..");
 const productionApiBase = "https://api.huihui.dev";
 const betaApiBase = "https://huihui-api-beta.huihuigames01.workers.dev";
+const contactPages = [
+  "contact/index.html",
+  "en/contact/index.html",
+  "ja/contact/index.html",
+];
 
 async function loadMain(hostname) {
   const source = await readFile(path.join(root, "js/main.js"), "utf8");
@@ -77,6 +82,10 @@ describe("frontend API environment configuration", () => {
     );
     const productionSite = await loadMain("huihui.dev");
 
+    expect(betaSite.contactForm.action).toBe(
+      `${productionApiBase}/api/contact`,
+    );
+
     betaSite.init();
     productionSite.init();
 
@@ -84,6 +93,20 @@ describe("frontend API environment configuration", () => {
     expect(productionSite.contactForm.action).toBe(
       `${productionApiBase}/api/contact`,
     );
+  });
+
+  test("keeps the production Contact fallback and Turnstile action without JavaScript", async () => {
+    for (const relativePath of contactPages) {
+      const html = await readFile(path.join(root, relativePath), "utf8");
+
+      expect(html, relativePath).toContain(
+        `action="${productionApiBase}/api/contact"`,
+      );
+      expect(html, relativePath).not.toContain(
+        `action="${betaApiBase}/api/contact"`,
+      );
+      expect(html, relativePath).toContain('data-action="contact"');
+    }
   });
 
   test("removes direct production workers.dev usage from frontend modules", async () => {

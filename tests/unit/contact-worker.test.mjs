@@ -7,6 +7,7 @@ const turnstileUrl =
 const formspreeEndpoint = "https://formspree.example.test/contact";
 const productionOrigin = "https://huihui.dev";
 const betaOrigin = "https://beta.huihui.dev";
+const contactAction = "contact";
 const turnstileSecret = "test-turnstile-secret";
 const turnstileToken = "test-turnstile-token";
 const rawUpstreamBody = "raw-upstream-body-marker";
@@ -46,18 +47,33 @@ function contactFormData(overrides = {}) {
   return formData;
 }
 
+function successfulTurnstileValidation(
+  origin = productionOrigin,
+  overrides = {},
+) {
+  return {
+    success: true,
+    hostname: new URL(origin).hostname,
+    action: contactAction,
+    ...overrides,
+  };
+}
+
 function contactRequest({
   body = contactFormData(),
   origin = productionOrigin,
   headers = {},
   method = "POST",
 } = {}) {
+  const requestHeaders = new Headers(headers);
+
+  if (origin !== null) {
+    requestHeaders.set("Origin", origin);
+  }
+
   return new Request(contactUrl, {
     method,
-    headers: {
-      Origin: origin,
-      ...headers,
-    },
+    headers: requestHeaders,
     body: method === "POST" ? body : undefined,
   });
 }
@@ -129,7 +145,9 @@ describe("Contact Worker request and upstream error handling", () => {
   test("keeps the successful path and trims values before upstream requests", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(jsonResponse({ success: true }))
+      .mockResolvedValueOnce(
+        jsonResponse(successfulTurnstileValidation()),
+      )
       .mockResolvedValueOnce(
         new Response(rawUpstreamBody, {
           status: 200,
@@ -168,10 +186,12 @@ describe("Contact Worker request and upstream error handling", () => {
     );
   });
 
-  test("accepts native URL-encoded Contact submissions", async () => {
+  test("accepts a production native fallback submission", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(jsonResponse({ success: true }))
+      .mockResolvedValueOnce(
+        jsonResponse(successfulTurnstileValidation()),
+      )
       .mockResolvedValueOnce(new Response(rawUpstreamBody, { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
@@ -193,6 +213,30 @@ describe("Contact Worker request and upstream error handling", () => {
     expect(fetchMock.mock.calls[1][1].body.get("email")).toBe(
       "native@example.com",
     );
+  });
+
+  test("accepts an allowed beta preview and binds Turnstile to its hostname", async () => {
+    const origin = "https://5a827187.huihuidev-beta.pages.dev";
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse(successfulTurnstileValidation(origin)),
+      )
+      .mockResolvedValueOnce(new Response(rawUpstreamBody, { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await callContact(
+      { origin },
+      { ...baseEnv, WORKER_ENV: "beta" },
+    );
+
+    await expectContactResponse(
+      response,
+      200,
+      { ok: true, message: "Message sent" },
+      { origin },
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   test("rejects unsupported request content types with a structured 400", async () => {
@@ -375,6 +419,28 @@ describe("Contact Worker request and upstream error handling", () => {
     });
   });
 
+  test.each([
+    ["hostname mismatch", { hostname: "attacker.example" }],
+    ["different allowed hostname", { hostname: "www.huihui.dev" }],
+    ["missing hostname", { hostname: undefined }],
+    ["action mismatch", { action: "newsletter" }],
+    ["missing action", { action: undefined }],
+  ])("rejects a successful Turnstile response with %s", async (_label, overrides) => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse(successfulTurnstileValidation(productionOrigin, overrides)),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await callContact();
+
+    await expectContactResponse(response, 403, {
+      ok: false,
+      message: "Turnstile verification failed",
+      errorCodes: [],
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   test("aborts and maps a Turnstile timeout to a structured 504", async () => {
     vi.useFakeTimers();
     let signal;
@@ -410,7 +476,9 @@ describe("Contact Worker request and upstream error handling", () => {
       "fetch",
       vi
         .fn()
-        .mockResolvedValueOnce(jsonResponse({ success: true }))
+        .mockResolvedValueOnce(
+          jsonResponse(successfulTurnstileValidation()),
+        )
         .mockRejectedValueOnce(new Error(networkErrorMarker)),
     );
 
@@ -427,7 +495,9 @@ describe("Contact Worker request and upstream error handling", () => {
       "fetch",
       vi
         .fn()
-        .mockResolvedValueOnce(jsonResponse({ success: true }))
+        .mockResolvedValueOnce(
+          jsonResponse(successfulTurnstileValidation()),
+        )
         .mockResolvedValueOnce(
           new Response(rawUpstreamBody, { status: 503 }),
         ),
@@ -452,7 +522,9 @@ describe("Contact Worker request and upstream error handling", () => {
       "fetch",
       vi
         .fn()
-        .mockResolvedValueOnce(jsonResponse({ success: true }))
+        .mockResolvedValueOnce(
+          jsonResponse(successfulTurnstileValidation()),
+        )
         .mockImplementationOnce((_url, init) => {
           signal = init.signal;
           markStarted();
@@ -509,34 +581,45 @@ describe("Contact Worker request and upstream error handling", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  test("keeps beta and production Contact origin isolation unchanged", async () => {
+  test("rejects a beta Origin at the production Worker before upstream requests", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
-    const requestOptions = {
-      body: JSON.stringify({ name: "Test User" }),
-      headers: { "Content-Type": "application/json" },
-    };
-    const cases = [
-      ["production", productionOrigin, true],
-      ["production", betaOrigin, false],
-      ["beta", betaOrigin, true],
-      ["beta", productionOrigin, false],
-    ];
 
-    for (const [workerEnvironment, origin, corsAllowed] of cases) {
+    const response = await callContact({ origin: betaOrigin });
+
+    await expectContactResponse(
+      response,
+      403,
+      { ok: false, message: "Forbidden" },
+      { corsAllowed: false },
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    ["production", "https://attacker.example"],
+    ["production", null],
+    ["beta", productionOrigin],
+    ["beta", "https://attacker.pages.dev"],
+    ["beta", null],
+  ])(
+    "rejects a disallowed %s Contact POST from %s before upstream requests",
+    async (workerEnvironment, origin) => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal("fetch", fetchMock);
+
       const response = await callContact(
-        { ...requestOptions, origin },
+        { origin },
         { ...baseEnv, WORKER_ENV: workerEnvironment },
       );
 
       await expectContactResponse(
         response,
-        400,
-        { ok: false, message: "Invalid request body" },
-        { origin, corsAllowed },
+        403,
+        { ok: false, message: "Forbidden" },
+        { corsAllowed: false },
       );
-    }
-
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
+      expect(fetchMock).not.toHaveBeenCalled();
+    },
+  );
 });

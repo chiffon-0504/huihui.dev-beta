@@ -50,6 +50,12 @@ function resolveLocalReference(htmlFile, reference) {
   return target;
 }
 
+function getHtmlReferences(html) {
+  return [
+    ...html.matchAll(/(?:^|\s)(?:action|href|src)="([^"]+)"/g),
+  ].map((match) => match[1]);
+}
+
 describe("static site contracts", () => {
   test("all primary locale routes exist", async () => {
     for (const route of primaryRoutes) {
@@ -71,9 +77,7 @@ describe("static site contracts", () => {
   test("all local HTML references resolve", async () => {
     for (const document of htmlDocuments) {
       const html = await readFile(path.join(root, document.file), "utf8");
-      const references = [
-        ...html.matchAll(/\b(?:action|href|src)="([^"]+)"/g),
-      ].map((match) => match[1]);
+      const references = getHtmlReferences(html);
 
       for (const reference of references) {
         const target = resolveLocalReference(document.file, reference);
@@ -85,6 +89,20 @@ describe("static site contracts", () => {
         ).toBe(true);
       }
     }
+  });
+
+  test("reference scanning includes form actions and excludes data-action", () => {
+    const html = [
+      '<form action="/contact/" method="POST">',
+      '<div data-action="contact"></div>',
+      '<script src="/js/contact.js"></script>',
+      "</form>",
+    ].join("");
+
+    expect(getHtmlReferences(html)).toEqual([
+      "/contact/",
+      "/js/contact.js",
+    ]);
   });
 
   test("all redirect destinations resolve", async () => {
