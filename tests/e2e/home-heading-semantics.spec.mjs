@@ -27,17 +27,6 @@ const homeRoutes = [
 const localizedHomePaths = { zh: "/", en: "/en/", ja: "/ja/" };
 
 async function stubExternalDependencies(page) {
-  await page.route("https://cdn.jsdelivr.net/**", (route) =>
-    route.fulfill({
-      status: 200,
-      contentType:
-        route.request().resourceType() === "stylesheet"
-          ? "text/css"
-          : "application/javascript",
-      body: "",
-    }),
-  );
-
   await page.route("https://api.huihui.dev/**", (route) => {
     const pathname = new URL(route.request().url()).pathname;
     const body = pathname === "/api/tech-news"

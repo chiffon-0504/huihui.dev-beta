@@ -73,25 +73,6 @@ function steamResponse(games) {
 }
 
 async function stubAboutDependencies(page) {
-  await page.route("https://cdn.jsdelivr.net/**", (route) => {
-    const isStyle = route.request().resourceType() === "stylesheet";
-    return route.fulfill({
-      status: 200,
-      contentType: isStyle ? "text/css" : "application/javascript",
-      body: isStyle
-        ? ""
-        : `
-          window.Prism = window.Prism || {};
-          window.Prism.highlightElement = window.Prism.highlightElement || function (code) {
-            const language = Array.from(code.classList).find((name) =>
-              name.startsWith("language-"),
-            );
-            if (language) code.parentElement?.classList.add(language);
-          };
-        `,
-    });
-  });
-
   await page.route("https://cdn.cloudflare.steamstatic.com/**", (route) =>
     route.fulfill({
       status: 200,

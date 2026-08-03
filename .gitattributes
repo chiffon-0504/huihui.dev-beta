@@ -1,0 +1,9 @@
+# Preserve vendored upstream files byte-for-byte.
+vendor/prism/components/prism-core.min.js binary
+vendor/prism/components/prism-python.min.js binary
+vendor/prism/plugins/line-numbers/prism-line-numbers.min.js binary
+vendor/prism/plugins/line-numbers/prism-line-numbers.min.css binary
+vendor/prism/themes/prism-tomorrow.min.css binary
+vendor/prism/LICENSE -text
+vendor/html2canvas/html2canvas.esm.js binary
+vendor/html2canvas/LICENSE -text

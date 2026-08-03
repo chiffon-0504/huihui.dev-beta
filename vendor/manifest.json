@@ -1,0 +1,72 @@
+{
+  "dependencies": [
+    {
+      "package": "prismjs",
+      "version": "1.30.0",
+      "license": "MIT",
+      "source": "https://registry.npmjs.org/prismjs/-/prismjs-1.30.0.tgz",
+      "sourceSha256": "ac16a9106a28c53b6a6313993c816a3a02525fdfefd7614fc1703df915a9fc11",
+      "repository": "https://github.com/PrismJS/prism/tree/v1.30.0",
+      "files": [
+        {
+          "path": "vendor/prism/components/prism-core.min.js",
+          "upstream": "components/prism-core.min.js",
+          "role": "runtime",
+          "sha256": "6caad316dd991f24f8004e0b9c19c055cb5829ff65e973fbee406f96d81b8e7e"
+        },
+        {
+          "path": "vendor/prism/components/prism-python.min.js",
+          "upstream": "components/prism-python.min.js",
+          "role": "runtime",
+          "sha256": "ed4385685bcf2d4935c8dbbab4bde16603da1329e092d2bf36c3dadd67e9a85c"
+        },
+        {
+          "path": "vendor/prism/plugins/line-numbers/prism-line-numbers.min.js",
+          "upstream": "plugins/line-numbers/prism-line-numbers.min.js",
+          "role": "runtime",
+          "sha256": "f5c99feed70b757a4ab0f8bfd80584f773db6694e9e0ce2dab3164fa55a89a35"
+        },
+        {
+          "path": "vendor/prism/themes/prism-tomorrow.min.css",
+          "upstream": "themes/prism-tomorrow.min.css",
+          "role": "runtime",
+          "sha256": "1b15fe2971998a048aebb60f26f6eed76122071db9ef3b995abd003224f52a98"
+        },
+        {
+          "path": "vendor/prism/plugins/line-numbers/prism-line-numbers.min.css",
+          "upstream": "plugins/line-numbers/prism-line-numbers.min.css",
+          "role": "runtime",
+          "sha256": "e0244e08ecf5ea74636a7bb1320864cd9cc239d9b02d7c45a823025bb5c6fe50"
+        },
+        {
+          "path": "vendor/prism/LICENSE",
+          "upstream": "LICENSE",
+          "role": "license",
+          "sha256": "2b947f0901a7ffcf08a89957da9783c0e9c6e72cb6ce8e959f501ab5409e4d2b"
+        }
+      ]
+    },
+    {
+      "package": "html2canvas",
+      "version": "1.4.1",
+      "license": "MIT",
+      "source": "https://registry.npmjs.org/html2canvas/-/html2canvas-1.4.1.tgz",
+      "sourceSha256": "542536a762933dadf7605b275ae096a31734ab3cf488069b7d75523c309f5b12",
+      "repository": "https://github.com/niklasvh/html2canvas/tree/v1.4.1",
+      "files": [
+        {
+          "path": "vendor/html2canvas/html2canvas.esm.js",
+          "upstream": "dist/html2canvas.esm.js",
+          "role": "runtime",
+          "sha256": "c3b0b8b257996d79b5e362d2aee2411ff74fd23e984e9900f5ba005ea4753d64"
+        },
+        {
+          "path": "vendor/html2canvas/LICENSE",
+          "upstream": "LICENSE",
+          "role": "license",
+          "sha256": "86200ce4e92d9a22c41c8647a55f7a5fddff304ff89b4d36ecc699ed8c123d2c"
+        }
+      ]
+    }
+  ]
+}

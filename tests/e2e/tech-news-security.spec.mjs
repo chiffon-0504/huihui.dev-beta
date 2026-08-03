@@ -49,15 +49,6 @@ async function stubHomeDependencies(
 ) {
   let techNewsRequestCount = 0;
 
-  await page.route("https://cdn.jsdelivr.net/**", async (route) => {
-    const isStyle = route.request().resourceType() === "stylesheet";
-    await route.fulfill({
-      status: 200,
-      contentType: isStyle ? "text/css" : "application/javascript",
-      body: "",
-    });
-  });
-
   await page.route("https://challenges.cloudflare.com/**", (route) =>
     route.fulfill({
       status: 200,
