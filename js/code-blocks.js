@@ -1,21 +1,44 @@
-function copyCode(button) {
-  const code = button.closest(".code-block").querySelector("code").innerText;
-  const original = button.innerHTML;
+const copyButtonContents = new WeakMap();
+const copyResetTimers = new WeakMap();
+const copyOperationSequences = new WeakMap();
 
-  navigator.clipboard.writeText(code).then(() => {
+async function copyCode(button) {
+  const code = button.closest(".code-block").querySelector("code").innerText;
+  const status = button
+    .closest(".code-header")
+    .querySelector(".code-copy-status");
+  const original = copyButtonContents.get(button) || button.innerHTML;
+  const operationSequence = (copyOperationSequences.get(button) || 0) + 1;
+  const previousResetTimer = copyResetTimers.get(button);
+
+  copyOperationSequences.set(button, operationSequence);
+  if (previousResetTimer) clearTimeout(previousResetTimer);
+  button.innerHTML = original;
+  status.textContent = "";
+
+  try {
+    await navigator.clipboard.writeText(code);
+
+    if (copyOperationSequences.get(button) !== operationSequence) return;
+
     button.innerHTML = `
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M20 6L9 17l-5-5"></path>
       </svg>
     `;
+    status.textContent = getI18nText("about.copy.success");
 
-    setTimeout(() => {
+    const resetTimer = setTimeout(() => {
       button.innerHTML = original;
+      copyResetTimers.delete(button);
     }, 1200);
-  }).catch(() => {
+    copyResetTimers.set(button, resetTimer);
+  } catch (error) {
+    if (copyOperationSequences.get(button) !== operationSequence) return;
+
     button.innerHTML = original;
-    alert("複製失敗");
-  });
+    status.textContent = getI18nText("about.copy.failure");
+  }
 }
 
 function formatLangLabel(lang) {
@@ -308,7 +331,8 @@ function initCodeBlocks() {
     const button = document.createElement("button");
     button.className = "copy-btn";
     button.type = "button";
-    button.setAttribute("aria-label", "複製程式碼");
+    button.dataset.i18nAriaLabel = "about.copy.label";
+    button.setAttribute("aria-label", getI18nText("about.copy.label"));
     button.innerHTML = `
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <rect width="14" height="14" x="2" y="8" rx="2" ry="2"></rect>
@@ -316,10 +340,21 @@ function initCodeBlocks() {
       </svg>
     `;
 
-    button.addEventListener("click", () => copyCode(button));
+    const status = document.createElement("span");
+    status.className = "code-copy-status";
+    status.setAttribute("role", "status");
+    status.setAttribute("aria-live", "polite");
+    status.setAttribute("aria-atomic", "true");
+
+    copyButtonContents.set(button, button.innerHTML);
+
+    button.addEventListener("click", () => {
+      void copyCode(button);
+    });
 
     header.appendChild(left);
     header.appendChild(button);
+    header.appendChild(status);
 
     pre.classList.add("line-numbers");
 

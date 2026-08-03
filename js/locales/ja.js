@@ -104,6 +104,11 @@ window.HUIHUI_I18N.ja = {
   about: {
     title: "私について",
     interests: "趣味",
+    copy: {
+      label: "コードをコピー",
+      success: "コードをコピーしました",
+      failure: "コードをコピーできませんでした。手動で選択してコピーしてください。"
+    },
     images: {
       maimai: "maimai DX",
       arcaea: "Arcaea",

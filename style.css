@@ -669,11 +669,12 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   padding: 8px 0;
 }
 
-.interest-card h4 {
+.about-page .interest-card > h3 {
   margin: 0 0 18px;
   font-size: clamp(2rem, 3vw, 3rem);
   font-weight: 700;
   line-height: 1.08;
+  letter-spacing: inherit;
 }
 
 .interest-gallery {
@@ -3957,7 +3958,7 @@ body:has(#aboutPage) .rhythm-record-text {
   gap: 0.35rem;
 }
 
-body:has(#aboutPage) .rhythm-record-text h5 {
+body:has(#aboutPage) .rhythm-record-text h4 {
   margin: 0;
   font-size: 1rem;
   font-weight: 700;

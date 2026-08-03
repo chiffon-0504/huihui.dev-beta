@@ -13,6 +13,19 @@ function getLocaleValue(source, keyPath) {
     .reduce((current, key) => (current ? current[key] : undefined), source);
 }
 
+function getI18nText(keyPath) {
+  const locale = getCurrentLocale();
+  const localizedValue = getLocaleValue(
+    window.HUIHUI_I18N?.[locale],
+    keyPath,
+  );
+
+  if (typeof localizedValue === "string") return localizedValue;
+
+  const fallbackValue = getLocaleValue(window.HUIHUI_I18N?.zh, keyPath);
+  return typeof fallbackValue === "string" ? fallbackValue : "";
+}
+
 function applyI18nText(messages) {
   document.querySelectorAll("[data-i18n]").forEach((element) => {
     const value = getLocaleValue(messages, element.dataset.i18n);

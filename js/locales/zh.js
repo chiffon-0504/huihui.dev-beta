@@ -104,6 +104,11 @@ window.HUIHUI_I18N.zh = {
   about: {
     title: "關於我",
     interests: "興趣",
+    copy: {
+      label: "複製程式碼",
+      success: "已複製程式碼",
+      failure: "複製失敗，請手動選取並複製"
+    },
     images: {
       maimai: "maimai DX",
       arcaea: "Arcaea",
