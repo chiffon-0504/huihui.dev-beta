@@ -57,13 +57,28 @@ function getCspSources(headers, directive) {
   return value?.trim().split(/\s+/) || [];
 }
 
+function sha256Bytes(bytes) {
+  if (!Buffer.isBuffer(bytes)) {
+    throw new TypeError("SHA-256 input must be raw Buffer bytes");
+  }
+
+  return createHash("sha256").update(bytes).digest("hex");
+}
+
 async function sha256(filePath) {
-  return createHash("sha256")
-    .update(await readFile(filePath))
-    .digest("hex");
+  return sha256Bytes(await readFile(filePath));
 }
 
 describe("vendored browser dependencies", () => {
+  test("raw-byte checksums reject LF and CRLF variants", () => {
+    const lfFixture = Buffer.from("first line\nsecond line\n", "utf8");
+    const crlfFixture = Buffer.from("first line\r\nsecond line\r\n", "utf8");
+    const expectedSha256 = sha256Bytes(lfFixture);
+
+    expect(sha256Bytes(lfFixture)).toBe(expectedSha256);
+    expect(sha256Bytes(crlfFixture)).not.toBe(expectedSha256);
+  });
+
   test("manifest files exist and match their recorded SHA-256 checksums", async () => {
     const manifest = JSON.parse(
       await readFile(path.join(root, "vendor/manifest.json"), "utf8"),
