@@ -31,6 +31,58 @@ const ABOUT_PAGE_CONFIG = {
   },
 };
 
+const ABOUT_LOCAL_IMAGE_METADATA = Object.freeze({
+  "/images/1001_am.webp": Object.freeze({ width: 1624, height: 689 }),
+  "/images/1002_amf.webp": Object.freeze({ width: 800, height: 800 }),
+  "/images/1003_amb.webp": Object.freeze({ width: 400, height: 400 }),
+  "/images/1005_aaf.webp": Object.freeze({ width: 747, height: 747 }),
+  "/images/1006_aab.webp": Object.freeze({ width: 800, height: 677 }),
+  "/images/1014_aa.webp": Object.freeze({ width: 837, height: 337 }),
+  "/images/1032_a.webp": Object.freeze({ width: 850, height: 347 }),
+  "/images/games/Cafe-Stella-and-the-Reapers-Butterflies.webp": Object.freeze({
+    width: 600,
+    height: 900,
+  }),
+  "/images/games/Sickly-Days-and-Summer-Traces.webp": Object.freeze({
+    width: 300,
+    height: 450,
+  }),
+  "/images/games/summer-pockets-rb-wide.webp": Object.freeze({
+    width: 1232,
+    height: 706,
+  }),
+  "/images/games/summer-pockets-rb.webp": Object.freeze({
+    width: 600,
+    height: 900,
+  }),
+});
+const ABOUT_IMAGE_LOADING = Object.freeze({
+  loading: "lazy",
+  decoding: "async",
+});
+
+function createLocalAboutImage(src) {
+  const dimensions = ABOUT_LOCAL_IMAGE_METADATA[src];
+
+  if (!dimensions) {
+    throw new Error(`Missing About image metadata: ${src}`);
+  }
+
+  return Object.freeze({ src, ...dimensions, ...ABOUT_IMAGE_LOADING });
+}
+
+const ABOUT_INTEREST_IMAGES = Object.freeze({
+  maimaiProfile: createLocalAboutImage("/images/1001_am.webp"),
+  maimaiFavorite: createLocalAboutImage("/images/1002_amf.webp"),
+  maimaiBest: createLocalAboutImage("/images/1003_amb.webp"),
+  arcaeaProfile: createLocalAboutImage("/images/1014_aa.webp"),
+  arcaeaFavorite: createLocalAboutImage("/images/1005_aaf.webp"),
+  arcaeaBest: createLocalAboutImage("/images/1006_aab.webp"),
+  galgameBanner: createLocalAboutImage(
+    "/images/games/summer-pockets-rb-wide.webp",
+  ),
+});
+
 const STEAM_BANNER_APPID = 3418570;
 const STEAM_FAVORITE_APPIDS = [2458530, 1829980, 1044620, 3682050];
 const STEAM_REQUEST_TIMEOUT_MS = 8000;
@@ -38,9 +90,13 @@ const STEAM_BANNER_DEFAULT_NAME = "Summer Pockets REFLECTION BLUE";
 const STEAM_BANNER_DEFAULT_URL =
   "https://store.steampowered.com/app/3418570/";
 const STEAM_CUSTOM_IMAGES = {
-  3418570: "/images/games/summer-pockets-rb.webp",
-  1829980: "/images/games/Cafe-Stella-and-the-Reapers-Butterflies.webp",
-  3682050: "/images/games/Sickly-Days-and-Summer-Traces.webp",
+  3418570: createLocalAboutImage("/images/games/summer-pockets-rb.webp"),
+  1829980: createLocalAboutImage(
+    "/images/games/Cafe-Stella-and-the-Reapers-Butterflies.webp",
+  ),
+  3682050: createLocalAboutImage(
+    "/images/games/Sickly-Days-and-Summer-Traces.webp",
+  ),
 };
 
 let steamRequestSequence = 0;
@@ -56,6 +112,16 @@ function attachImageFallbacks(root) {
     image.addEventListener(
       "error",
       () => {
+        const fallbackDimensions = ABOUT_LOCAL_IMAGE_METADATA[fallbackSrc];
+
+        if (fallbackDimensions) {
+          image.width = fallbackDimensions.width;
+          image.height = fallbackDimensions.height;
+        } else {
+          image.removeAttribute("width");
+          image.removeAttribute("height");
+        }
+
         image.src = fallbackSrc;
       },
       { once: true },
@@ -173,16 +239,23 @@ function createSteamGameCard(game, config) {
   const name = document.createElement("span");
   const hours = document.createElement("span");
   const localizedName = config.steamNames[game.appid] || game.name;
+  const customImage = STEAM_CUSTOM_IMAGES[game.appid];
 
   card.className = "steam-game-card";
   card.href = getSafeHttpsUrl(game.storeUrl);
   card.target = "_blank";
   card.rel = "noopener";
 
-  image.src = STEAM_CUSTOM_IMAGES[game.appid] || getSafeHttpsUrl(game.coverUrl);
+  image.src = customImage?.src || getSafeHttpsUrl(game.coverUrl);
   image.alt = localizedName;
   image.loading = "lazy";
+  image.decoding = "async";
   image.dataset.fallbackSrc = getSafeHttpsUrl(game.capsuleUrl);
+
+  if (customImage) {
+    image.width = customImage.width;
+    image.height = customImage.height;
+  }
 
   meta.className = "steam-game-meta";
   name.className = "steam-game-name";
@@ -209,6 +282,16 @@ function renderSteamGameList(container, games, config) {
   attachImageFallbacks(container);
 }
 
+function renderLocalAboutImageAttributes(image) {
+  return [
+    `src="${image.src}"`,
+    `width="${image.width}"`,
+    `height="${image.height}"`,
+    `loading="${image.loading}"`,
+    `decoding="${image.decoding}"`,
+  ].join(" ");
+}
+
 function renderAboutInterestCards() {
   const config = getAboutPageConfig();
 
@@ -227,7 +310,7 @@ function renderAboutInterestCards() {
 
       <div class="rhythm-profile">
         <img
-          src="/images/1001_am.webp"
+          ${renderLocalAboutImageAttributes(ABOUT_INTEREST_IMAGES.maimaiProfile)}
           alt="maimai DX profile"
           class="zoomable"
           data-i18n-alt="about.images.maimai"
@@ -237,7 +320,7 @@ function renderAboutInterestCards() {
       <div class="rhythm-records">
         <div class="rhythm-record">
           <img
-            src="/images/1002_amf.webp"
+            ${renderLocalAboutImageAttributes(ABOUT_INTEREST_IMAGES.maimaiFavorite)}
             alt="Favorite maimai DX song"
             class="rhythm-record-img zoomable"
             data-fallback-src="/images/1001_am.webp"
@@ -261,7 +344,7 @@ function renderAboutInterestCards() {
 
         <div class="rhythm-record">
           <img
-            src="/images/1003_amb.webp"
+            ${renderLocalAboutImageAttributes(ABOUT_INTEREST_IMAGES.maimaiBest)}
             alt="Best maimai DX record"
             class="rhythm-record-img zoomable"
             data-fallback-src="/images/1001_am.webp"
@@ -301,7 +384,7 @@ function renderAboutInterestCards() {
 
       <div class="rhythm-profile">
         <img
-          src="/images/1014_aa.webp"
+          ${renderLocalAboutImageAttributes(ABOUT_INTEREST_IMAGES.arcaeaProfile)}
           alt="Arcaea profile"
           class="zoomable"
           data-i18n-alt="about.images.arcaea"
@@ -312,7 +395,7 @@ function renderAboutInterestCards() {
       <div class="rhythm-records">
         <div class="rhythm-record">
           <img
-            src="/images/1005_aaf.webp"
+            ${renderLocalAboutImageAttributes(ABOUT_INTEREST_IMAGES.arcaeaFavorite)}
             alt="Favorite Arcaea song"
             class="rhythm-record-img zoomable"
             data-fallback-src="/images/1032_a.webp"
@@ -336,7 +419,7 @@ function renderAboutInterestCards() {
 
         <div class="rhythm-record">
           <img
-            src="/images/1006_aab.webp"
+            ${renderLocalAboutImageAttributes(ABOUT_INTEREST_IMAGES.arcaeaBest)}
             alt="Best Arcaea record"
             class="rhythm-record-img zoomable"
             data-fallback-src="/images/1032_a.webp"
@@ -372,7 +455,7 @@ function renderAboutInterestCards() {
         >
           <img
             class="galgame-banner"
-            src="/images/games/summer-pockets-rb-wide.webp"
+            ${renderLocalAboutImageAttributes(ABOUT_INTEREST_IMAGES.galgameBanner)}
             data-i18n-alt="about.images.galgame"
           />
           <span class="galgame-banner-meta">
