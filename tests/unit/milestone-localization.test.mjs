@@ -34,6 +34,69 @@ function readJsonExpression(context, expression) {
   return JSON.parse(vm.runInContext(`JSON.stringify(${expression})`, context));
 }
 
+function readWebpDimensions(buffer) {
+  if (
+    buffer.length < 20 ||
+    buffer.toString("ascii", 0, 4) !== "RIFF" ||
+    buffer.toString("ascii", 8, 12) !== "WEBP"
+  ) {
+    throw new Error("Invalid WebP file");
+  }
+
+  let chunkOffset = 12;
+
+  while (chunkOffset + 8 <= buffer.length) {
+    const chunkType = buffer.toString("ascii", chunkOffset, chunkOffset + 4);
+    const chunkLength = buffer.readUInt32LE(chunkOffset + 4);
+    const dataOffset = chunkOffset + 8;
+
+    if (dataOffset + chunkLength > buffer.length) {
+      throw new Error("Invalid WebP chunk length");
+    }
+
+    if (chunkType === "VP8X" && chunkLength >= 10) {
+      return {
+        width: buffer.readUIntLE(dataOffset + 4, 3) + 1,
+        height: buffer.readUIntLE(dataOffset + 7, 3) + 1,
+      };
+    }
+
+    if (
+      chunkType === "VP8 " &&
+      chunkLength >= 10 &&
+      buffer[dataOffset + 3] === 0x9d &&
+      buffer[dataOffset + 4] === 0x01 &&
+      buffer[dataOffset + 5] === 0x2a
+    ) {
+      return {
+        width: buffer.readUInt16LE(dataOffset + 6) & 0x3fff,
+        height: buffer.readUInt16LE(dataOffset + 8) & 0x3fff,
+      };
+    }
+
+    if (
+      chunkType === "VP8L" &&
+      chunkLength >= 5 &&
+      buffer[dataOffset] === 0x2f
+    ) {
+      const bits = buffer.readUInt32LE(dataOffset + 1);
+
+      return {
+        width: (bits & 0x3fff) + 1,
+        height: ((bits >>> 14) & 0x3fff) + 1,
+      };
+    }
+
+    chunkOffset = dataOffset + chunkLength + (chunkLength % 2);
+  }
+
+  throw new Error("WebP dimensions not found");
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 describe("milestone localization", () => {
   test("every milestone defines complete zh, en, and ja content", async () => {
     const { context } = await createMilestoneContext();
@@ -57,6 +120,10 @@ describe("milestone localization", () => {
 
       for (const image of post.images) {
         expect(image.id).toMatch(/^[a-z0-9-]+$/);
+        expect(Number.isInteger(image.width), `${image.id}:width`).toBe(true);
+        expect(Number.isInteger(image.height), `${image.id}:height`).toBe(true);
+        expect(image.width, `${image.id}:width`).toBeGreaterThan(0);
+        expect(image.height, `${image.id}:height`).toBeGreaterThan(0);
         expect(Object.keys(image.alt).sort()).toEqual([...locales].sort());
         for (const locale of locales) {
           expect(image.alt[locale].trim(), `${image.id}:${locale}`).not.toBe("");
@@ -86,6 +153,8 @@ describe("milestone localization", () => {
       {
         id: "course-mode-phase-10-score",
         src: "/images/3011_p.webp",
+        width: 2560,
+        height: 1600,
         alt: {
           zh: "Arcaea Course Mode Phase 10 成績截圖",
           en: "Arcaea Course Mode Phase 10 score screenshot",
@@ -95,6 +164,8 @@ describe("milestone localization", () => {
       {
         id: "course-mode-phase-10-banner-select",
         src: "/images/3012_p.webp",
+        width: 2560,
+        height: 1600,
         alt: {
           zh: "Arcaea Course Mode Phase 10 名牌選擇畫面",
           en: "Arcaea Course Mode Phase 10 banner selection screen",
@@ -151,6 +222,72 @@ describe("milestone localization", () => {
     }
   });
 
+  test("milestone image metadata matches the actual local WebP files", async () => {
+    const { context } = await createMilestoneContext();
+    const posts = readJsonExpression(context, "HUIHUI_POSTS");
+    const images = posts.flatMap((post) => post.images);
+
+    expect(images).toHaveLength(8);
+
+    for (const image of images) {
+      expect(image.src).toMatch(/^\/images\/[a-z0-9_-]+\.webp$/);
+
+      const imageBuffer = await readFile(
+        path.join(root, image.src.replace(/^\//, "")),
+      );
+
+      expect(readWebpDimensions(imageBuffer), image.src).toEqual({
+        width: image.width,
+        height: image.height,
+      });
+    }
+  });
+
+  test("renderer preserves localized image, lazy-loading, and Lightbox contracts", async () => {
+    const { context } = await createMilestoneContext();
+    const sourcePosts = readJsonExpression(context, "HUIHUI_POSTS");
+
+    for (const locale of locales) {
+      const localizedPosts = readJsonExpression(
+        context,
+        `getLocalizedPosts(${JSON.stringify(locale)})`,
+      );
+
+      for (const [postIndex, sourcePost] of sourcePosts.entries()) {
+        const markup = vm.runInContext(
+          `renderPostImages(getLocalizedPosts(${JSON.stringify(locale)})[${postIndex}])`,
+          context,
+        );
+
+        if (sourcePost.images.length === 0) {
+          expect(markup).toBe("");
+          continue;
+        }
+
+        expect(markup).toContain(
+          `<figcaption class="post-caption">${sourcePost.caption[locale]}</figcaption>`,
+        );
+
+        for (const image of sourcePost.images) {
+          const imageContract = new RegExp(
+            [
+              `<img\\s+src="${escapeRegExp(image.src)}"`,
+              `alt="${escapeRegExp(image.alt[locale])}"`,
+              `width="${image.width}"`,
+              `height="${image.height}"`,
+              'class="zoomable"',
+              'loading="lazy"',
+              `data-image-id="${escapeRegExp(image.id)}"\\s*/>`,
+            ].join("\\s+"),
+            "s",
+          );
+
+          expect(markup, `${locale}:${image.id}`).toMatch(imageContract);
+        }
+      }
+    }
+  });
+
   test("formats ISO milestone dates for zh-Hant, en, and ja", async () => {
     const { context } = await createMilestoneContext();
     const expected = {
@@ -182,7 +319,12 @@ describe("milestone localization", () => {
     const sharedShape = (post) => ({
       id: post.id,
       date: post.date,
-      images: post.images.map(({ id, src }) => ({ id, src })),
+      images: post.images.map(({ id, src, width, height }) => ({
+        id,
+        src,
+        width,
+        height,
+      })),
       links: post.links,
     });
     const expectedShape = localizedPosts.zh.map(sharedShape);

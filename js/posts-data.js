@@ -28,6 +28,8 @@ const HUIHUI_POSTS = [
       {
         id: "course-mode-phase-10-score",
         src: "/images/3011_p.webp",
+        width: 2560,
+        height: 1600,
         alt: {
           zh: "Arcaea Course Mode Phase 10 成績截圖",
           en: "Arcaea Course Mode Phase 10 score screenshot",
@@ -37,6 +39,8 @@ const HUIHUI_POSTS = [
       {
         id: "course-mode-phase-10-banner-select",
         src: "/images/3012_p.webp",
+        width: 2560,
+        height: 1600,
         alt: {
           zh: "Arcaea Course Mode Phase 10 名牌選擇畫面",
           en: "Arcaea Course Mode Phase 10 banner selection screen",
@@ -67,6 +71,8 @@ The 3.0 boss song, Tempestissimo <span class="future">FUTURE 10+</span> <span cl
       {
         id: "grievous-lady-score",
         src: "/images/3008_p.webp",
+        width: 2560,
+        height: 1600,
         alt: {
           zh: "Arcaea Grievous Lady EX 成績截圖",
           en: "Arcaea Grievous Lady EX score screenshot",
@@ -76,6 +82,8 @@ The 3.0 boss song, Tempestissimo <span class="future">FUTURE 10+</span> <span cl
       {
         id: "tempestissimo-score",
         src: "/images/3009_p.webp",
+        width: 2560,
+        height: 1600,
         alt: {
           zh: "Arcaea Tempestissimo EX 成績截圖",
           en: "Arcaea Tempestissimo EX score screenshot",
@@ -85,6 +93,8 @@ The 3.0 boss song, Tempestissimo <span class="future">FUTURE 10+</span> <span cl
       {
         id: "lament-rain-score",
         src: "/images/3010_p.webp",
+        width: 2560,
+        height: 1600,
         alt: {
           zh: "Arcaea Lament Rain EX 成績截圖",
           en: "Arcaea Lament Rain EX score screenshot",
@@ -130,6 +140,8 @@ Fracture Ray <span class="future">FUTURE 11</span> <span class="ex">EX</span>
       {
         id: "fracture-ray-score",
         src: "/images/3007_p.webp",
+        width: 2560,
+        height: 1600,
         alt: {
           zh: "Potential 12.00 達成時的 Arcaea Fracture Ray EX 成績截圖",
           en: "Arcaea Fracture Ray EX score screenshot reaching Potential 12.00",
@@ -160,6 +172,8 @@ Aether Crest: Astral <span class="future">FUTURE 10</span> <span class="ex">EX</
       {
         id: "aether-crest-astral-score",
         src: "/images/3006_p.webp",
+        width: 2560,
+        height: 1600,
         alt: {
           zh: "Arcaea 成績截圖",
           en: "Arcaea score screenshot",
@@ -184,6 +198,8 @@ Aether Crest: Astral <span class="future">FUTURE 10</span> <span class="ex">EX</
       {
         id: "cyaegha-score",
         src: "/images/3002_p.webp",
+        width: 2560,
+        height: 1600,
         alt: {
           zh: "Arcaea 成績截圖",
           en: "Arcaea score screenshot",

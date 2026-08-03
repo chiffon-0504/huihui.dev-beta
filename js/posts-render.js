@@ -25,6 +25,8 @@ function getLocalizedPosts(locale) {
     images: post.images.map((image) => ({
       id: image.id,
       src: image.src,
+      width: image.width,
+      height: image.height,
       alt: getLocalizedPostValue(image.alt, locale)
     })),
     links: post.links.map((link) => ({ ...link })),
@@ -74,6 +76,8 @@ function renderPostImages(post) {
               <img
                 src="${image.src}"
                 alt="${image.alt}"
+                width="${image.width}"
+                height="${image.height}"
                 class="zoomable"
                 loading="lazy"
                 data-image-id="${image.id}"
