@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const html2canvasUrl =
-  "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm";
+  "http://127.0.0.1:4173/vendor/html2canvas/html2canvas.esm.js";
 const maxFileSize = 10 * 1024 * 1024;
 
 const localizedSummaries = [
@@ -88,19 +88,24 @@ async function installObjectUrlTracking(page) {
 }
 
 async function mockHtml2canvas(page, moduleBody) {
+  let requestCount = 0;
+
   await page.route(html2canvasUrl, async (route) => {
+    requestCount += 1;
     await route.fulfill({
       status: 200,
       contentType: "application/javascript",
-      headers: { "access-control-allow-origin": "*" },
       body: moduleBody,
     });
   });
+
+  return () => requestCount;
 }
 
 async function installDownloadSpy(page) {
   await page.addInitScript(() => {
     HTMLAnchorElement.prototype.click = function click() {
+      window.__tierDownloadCount = (window.__tierDownloadCount || 0) + 1;
       window.__tierDownload = {
         download: this.download,
         href: this.href,
@@ -376,11 +381,47 @@ test("drag and touch endings always clear transient state", async ({ page }) => 
   await expect(ghost).toHaveCount(0);
 });
 
+test("export lazily loads the local html2canvas build once", async ({ page }) => {
+  let requestCount = 0;
+  page.on("request", (request) => {
+    if (request.url() === html2canvasUrl) requestCount += 1;
+  });
+  await installDownloadSpy(page);
+  await loadTierMaker(page);
+
+  const saveButton = page.locator("#saveBtn");
+  const status = page.locator("#tierStatus");
+
+  expect(requestCount).toBe(0);
+
+  await saveButton.click();
+  await expect
+    .poll(() => page.evaluate(() => window.__tierDownloadCount || 0))
+    .toBe(1);
+  await expect(status).toHaveText("PNG download started.");
+  await expect(saveButton).toBeEnabled();
+  expect(requestCount).toBe(1);
+  expect(await page.evaluate(() => window.__tierDownload?.download)).toBe(
+    "tier-list.png",
+  );
+  expect(await page.evaluate(() => window.__tierDownload?.href)).toMatch(
+    /^data:image\/png;base64,/,
+  );
+
+  await saveButton.click();
+  await expect
+    .poll(() => page.evaluate(() => window.__tierDownloadCount || 0))
+    .toBe(2);
+  await expect(status).toHaveText("PNG download started.");
+  await expect(saveButton).toBeEnabled();
+  expect(requestCount).toBe(1);
+});
+
 test("export is guarded and restores all temporary state after success", async ({
   page,
 }) => {
   await installDownloadSpy(page);
-  await mockHtml2canvas(
+  const getHtml2canvasRequestCount = await mockHtml2canvas(
     page,
     `export default async function html2canvas(element, options) {
       window.__exportCalls = (window.__exportCalls || 0) + 1;
@@ -441,6 +482,7 @@ test("export is guarded and restores all temporary state after success", async (
     download: "tier-list.png",
     href: "data:image/png;base64,iVBORw0KGgo=",
   });
+  expect(getHtml2canvasRequestCount()).toBe(1);
 });
 
 const exportFailures = [

@@ -255,16 +255,6 @@ function createTechNewsController() {
 }
 
 async function stubGlassDependencies(page, controller) {
-  await page.route("https://cdn.jsdelivr.net/**", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType:
-        route.request().resourceType() === "stylesheet"
-          ? "text/css"
-          : "application/javascript",
-      body: "",
-    });
-  });
   await page.route("https://challenges.cloudflare.com/**", (route) =>
     route.fulfill({
       status: 200,

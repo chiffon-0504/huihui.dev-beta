@@ -2,6 +2,7 @@ let dragged = null;
 let touchGhost = null;
 let uploadQueue = Promise.resolve();
 let exportInProgress = false;
+let html2canvasModulePromise;
 
 const MAX_IMAGES = 50;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -545,6 +546,16 @@ document.addEventListener("click", (e) => {
   }
 });
 
+function loadHtml2canvas() {
+  if (!html2canvasModulePromise) {
+    html2canvasModulePromise = import(
+      "/vendor/html2canvas/html2canvas.esm.js"
+    );
+  }
+
+  return html2canvasModulePromise;
+}
+
 async function exportTierBoard() {
   if (exportInProgress) return;
 
@@ -559,9 +570,7 @@ async function exportTierBoard() {
     prepareExportLabels();
     board.classList.add("exporting");
 
-    const { default: html2canvas } = await import(
-      "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm"
-    );
+    const { default: html2canvas } = await loadHtml2canvas();
     const canvas = await html2canvas(board, { backgroundColor: "#000" });
     const link = document.createElement("a");
 

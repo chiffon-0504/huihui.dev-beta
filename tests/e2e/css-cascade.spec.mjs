@@ -4,15 +4,6 @@ const desktopViewport = { width: 1440, height: 900 };
 const mobileViewport = { width: 390, height: 844 };
 
 async function stubExternalDependencies(page, handleTechNews = null) {
-  await page.route("https://cdn.jsdelivr.net/**", (route) => {
-    const isStyle = route.request().resourceType() === "stylesheet";
-    return route.fulfill({
-      status: 200,
-      contentType: isStyle ? "text/css" : "application/javascript",
-      body: "",
-    });
-  });
-
   await page.route("https://challenges.cloudflare.com/**", (route) =>
     route.fulfill({
       status: 200,
