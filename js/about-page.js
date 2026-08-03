@@ -297,7 +297,7 @@ function renderAboutInterestCards() {
 
   return `
     <article class="interest-card rhythm-card maimai-card">
-      <h4>
+      <h3>
         <a
           href="https://maimai.sega.com/"
           target="_blank"
@@ -306,7 +306,7 @@ function renderAboutInterestCards() {
         >
           ${config.maimaiTitle}
         </a>
-      </h4>
+      </h3>
 
       <div class="rhythm-profile">
         <img
@@ -327,7 +327,7 @@ function renderAboutInterestCards() {
           />
 
           <div class="rhythm-record-text">
-            <h5>Favorite</h5>
+            <h4>Favorite</h4>
             <p>
               <a
                 href="https://www.youtube.com/watch?v=zqH9qgVNzHI"
@@ -351,7 +351,7 @@ function renderAboutInterestCards() {
           />
 
           <div class="rhythm-record-text">
-            <h5>Best</h5>
+            <h4>Best</h4>
             <p>
               <a
                 href="https://www.youtube.com/watch?v=-3wzWwhHW3g"
@@ -371,7 +371,7 @@ function renderAboutInterestCards() {
     </article>
 
     <article class="interest-card rhythm-card arcaea-card">
-      <h4>
+      <h3>
         <a
           href="https://arcaea.lowiro.com/zh-hant"
           target="_blank"
@@ -380,7 +380,7 @@ function renderAboutInterestCards() {
         >
           Arcaea
         </a>
-      </h4>
+      </h3>
 
       <div class="rhythm-profile">
         <img
@@ -402,7 +402,7 @@ function renderAboutInterestCards() {
           />
 
           <div class="rhythm-record-text">
-            <h5>Favorite</h5>
+            <h4>Favorite</h4>
             <p>
               <a
                 href="https://soundcloud.com/7ijhvp0echx6/ak-q-x-onoken-lzllel"
@@ -426,7 +426,7 @@ function renderAboutInterestCards() {
           />
 
           <div class="rhythm-record-text">
-            <h5>Best</h5>
+            <h4>Best</h4>
             <p>
               <a
                 href="https://soundcloud.com/kss01/usao-cyaegha"
@@ -444,7 +444,7 @@ function renderAboutInterestCards() {
     </article>
 
     <article class="interest-card steam-favorites-card">
-      <h4>${config.galgameTitle}</h4>
+      <h3>${config.galgameTitle}</h3>
       <div class="galgame-showcase">
         <a
           class="galgame-banner-link"

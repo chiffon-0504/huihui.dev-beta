@@ -22,11 +22,24 @@ async function stubSteam(page) {
 
 for (const route of aboutRoutes) {
   test(`${route} renders with local Prism highlighting, line numbers, and copy control`, async ({
-    context,
     page,
   }) => {
-    await context.grantPermissions(["clipboard-read", "clipboard-write"], {
-      origin: siteOrigin,
+    await page.addInitScript(() => {
+      const writes = [];
+
+      Object.defineProperty(window, "__vendorCopyWrites", {
+        configurable: true,
+        value: writes,
+      });
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: {
+          writeText(text) {
+            writes.push(text);
+            return Promise.resolve();
+          },
+        },
+      });
     });
     await stubSteam(page);
 
@@ -78,8 +91,8 @@ for (const route of aboutRoutes) {
     await page.locator(".copy-btn").click();
     await expect
       .poll(() =>
-        page.evaluate(async () =>
-          (await navigator.clipboard.readText()).replace(/\r\n/g, "\n"),
+        page.evaluate(() =>
+          window.__vendorCopyWrites.at(-1)?.replace(/\r\n/g, "\n"),
         ),
       )
       .toBe(renderedCode.text.replace(/\r\n/g, "\n"));

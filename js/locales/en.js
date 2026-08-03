@@ -104,6 +104,11 @@ window.HUIHUI_I18N.en = {
   about: {
     title: "About Me",
     interests: "Interests",
+    copy: {
+      label: "Copy code",
+      success: "Code copied",
+      failure: "Could not copy code. Select and copy it manually."
+    },
     images: {
       maimai: "maimai DX",
       arcaea: "Arcaea",
