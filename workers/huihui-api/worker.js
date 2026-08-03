@@ -152,6 +152,48 @@ function jsonResponse(data, headers = {}, status = 200) {
   });
 }
 
+export const TECH_NEWS_SOURCE_DEADLINE_MS = 5000;
+export const APOD_ATTEMPT_DEADLINE_MS = 3000;
+export const APOD_TOTAL_BUDGET_MS = 6000;
+export const GITHUB_UPSTREAM_DEADLINE_MS = 5000;
+export const STEAM_UPSTREAM_DEADLINE_MS = 5000;
+
+export class UpstreamDeadlineError extends Error {
+  constructor() {
+    super("Upstream request timed out");
+    this.name = "UpstreamDeadlineError";
+  }
+}
+
+export async function withUpstreamDeadline(timeoutMs, operation) {
+  const controller = new AbortController();
+  let didTimeout = false;
+  let timeoutId;
+
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      didTimeout = true;
+      controller.abort();
+      reject(new UpstreamDeadlineError());
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([
+      operation(controller.signal),
+      timeoutPromise,
+    ]);
+  } catch (error) {
+    if (didTimeout && !(error instanceof UpstreamDeadlineError)) {
+      throw new UpstreamDeadlineError();
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 /* =========================
    Tech News
 ========================= */
@@ -204,17 +246,23 @@ async function getTechNews() {
   return Promise.all(
     SOURCES.map(async (source) => {
       try {
-        const res = await fetch(source.url, {
-          headers: {
-            "User-Agent": "huihui.dev tech-news worker",
-          },
-        });
+        const xml = await withUpstreamDeadline(
+          TECH_NEWS_SOURCE_DEADLINE_MS,
+          async (signal) => {
+            const res = await fetch(source.url, {
+              headers: {
+                "User-Agent": "huihui.dev tech-news worker",
+              },
+              signal,
+            });
 
-        if (!res.ok) {
-          throw new Error(`Failed to fetch ${source.source}`);
-        }
+            if (!res.ok) {
+              throw new Error(`Failed to fetch ${source.source}`);
+            }
 
-        const xml = await res.text();
+            return res.text();
+          }
+        );
         const entry = getEntryBlock(xml);
         const link = getLink(entry, source.fallbackLink);
         const pubDate = getFirstMatch(entry, [
@@ -292,32 +340,47 @@ function formatUtcDate(daysBack = 0) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-async function fetchApodByDate(apiKey, dateString) {
-  const res = await fetch(
-    `${NASA_APOD_URL}?api_key=${apiKey}&date=${dateString}&thumbs=true`,
-    {
-      headers: {
-        Accept: "application/json",
-        "User-Agent": "huihui.dev apod worker",
-      },
+async function fetchApodByDate(apiKey, dateString, deadlineMs) {
+  return withUpstreamDeadline(deadlineMs, async (signal) => {
+    const res = await fetch(
+      `${NASA_APOD_URL}?api_key=${apiKey}&date=${dateString}&thumbs=true`,
+      {
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "huihui.dev apod worker",
+        },
+        signal,
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error(`NASA APOD failed: ${res.status}`);
     }
-  );
 
-  if (!res.ok) {
-    throw new Error(`NASA APOD failed: ${res.status}`);
-  }
-
-  return res.json();
+    return res.json();
+  });
 }
 
 async function getApod(env) {
   const apiKey = env.NASA_API_KEY || "DEMO_KEY";
+  const budgetStartedAt = Date.now();
 
   for (let daysBack = 0; daysBack <= APOD_LOOKBACK_DAYS; daysBack++) {
+    const elapsedMs = Date.now() - budgetStartedAt;
+    const remainingBudgetMs = APOD_TOTAL_BUDGET_MS - elapsedMs;
+
+    if (remainingBudgetMs < APOD_ATTEMPT_DEADLINE_MS) {
+      break;
+    }
+
     const dateString = formatUtcDate(daysBack);
 
     try {
-      const data = await fetchApodByDate(apiKey, dateString);
+      const data = await fetchApodByDate(
+        apiKey,
+        dateString,
+        APOD_ATTEMPT_DEADLINE_MS
+      );
 
       if (data.media_type !== "image" || !data.url) {
         continue;
@@ -426,19 +489,25 @@ async function getGitHubProjectUpdate(env) {
     throw new Error("Missing GITHUB_TOKEN");
   }
 
-  const res = await fetch(GITHUB_REPO_API_URL, {
-    headers: {
-      Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${env.GITHUB_TOKEN}`,
-      "User-Agent": "huihui.dev github updates worker",
-    },
-  });
+  const commits = await withUpstreamDeadline(
+    GITHUB_UPSTREAM_DEADLINE_MS,
+    async (signal) => {
+      const res = await fetch(GITHUB_REPO_API_URL, {
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+          "User-Agent": "huihui.dev github updates worker",
+        },
+        signal,
+      });
 
-  if (!res.ok) {
-    throw new Error(`GitHub API failed: ${res.status}`);
-  }
+      if (!res.ok) {
+        throw new Error(`GitHub API failed: ${res.status}`);
+      }
 
-  const commits = await res.json();
+      return res.json();
+    }
+  );
   const latest = commits?.[0];
 
   if (!latest) {
@@ -535,18 +604,24 @@ async function getSteamLibrary(env) {
     `&include_played_free_games=true` +
     `&format=json`;
 
-  const res = await fetch(apiUrl, {
-    headers: {
-      Accept: "application/json",
-      "User-Agent": "huihui.dev steam library worker",
-    },
-  });
+  const data = await withUpstreamDeadline(
+    STEAM_UPSTREAM_DEADLINE_MS,
+    async (signal) => {
+      const res = await fetch(apiUrl, {
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "huihui.dev steam library worker",
+        },
+        signal,
+      });
 
-  if (!res.ok) {
-    throw new Error(`Steam API failed: ${res.status}`);
-  }
+      if (!res.ok) {
+        throw new Error(`Steam API failed: ${res.status}`);
+      }
 
-  const data = await res.json();
+      return res.json();
+    }
+  );
   const games = data.response?.games || [];
 
   return STEAM_PUBLIC_APPIDS
