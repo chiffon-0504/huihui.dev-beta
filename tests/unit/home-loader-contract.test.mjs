@@ -1,0 +1,124 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import vm from "node:vm";
+import { beforeAll, describe, expect, test, vi } from "vitest";
+
+const root = path.resolve(import.meta.dirname, "../..");
+const homeDocuments = ["index.html", "en/index.html", "ja/index.html"];
+const obsoleteElementIds = [
+  "apod-image",
+  "apod-link",
+  "apodTitle",
+  "apod-desc",
+  "apod-date",
+  "projectUpdateLink",
+];
+const liveHomeFunctionNames = [
+  "getSafeTechNewsUrl",
+  "getHomeTechNewsText",
+  "setTechNewsStatus",
+  "getValidTechNewsItem",
+  "renderTechNewsCards",
+  "loadTechNews",
+  "initHomeCards",
+];
+
+let homeCardsSource;
+let workerSource;
+let homeSources;
+
+beforeAll(async () => {
+  [homeCardsSource, workerSource, homeSources] = await Promise.all([
+    readFile(path.join(root, "js/home-cards.js"), "utf8"),
+    readFile(path.join(root, "workers/huihui-api/worker.js"), "utf8"),
+    Promise.all(
+      homeDocuments.map((document) =>
+        readFile(path.join(root, document), "utf8"),
+      ),
+    ),
+  ]);
+});
+
+describe("Home loader contract", () => {
+  test("localized Home documents keep live cards without obsolete loader DOM", () => {
+    for (const [index, html] of homeSources.entries()) {
+      const document = homeDocuments[index];
+
+      for (const id of obsoleteElementIds) {
+        expect(html, `${document}: ${id}`).not.toMatch(
+          new RegExp(`\\bid=["']${id}["']`, "i"),
+        );
+      }
+
+      expect(html, document).toContain('id="projectUpdateTitle"');
+      expect(html, document).toContain('id="websiteVersionTitle"');
+      expect(html, document).toContain('id="techNewsCards"');
+    }
+  });
+
+  test("initialization retains only the live Tech News loader lifecycle", () => {
+    const elementLookups = [];
+    const fetchMock = vi.fn();
+    const setIntervalMock = vi.fn();
+    const context = {
+      document: {
+        getElementById(id) {
+          elementLookups.push(id);
+          return null;
+        },
+      },
+      fetch: fetchMock,
+      setInterval: setIntervalMock,
+      window: {},
+    };
+
+    vm.createContext(context);
+    vm.runInContext(homeCardsSource, context, { filename: "js/home-cards.js" });
+    vm.runInContext("initHomeCards(); initHomeCards();", context);
+
+    expect(elementLookups).toEqual(["techNewsCards"]);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(setIntervalMock).not.toHaveBeenCalled();
+    expect(vm.runInContext("typeof loadTechNews", context)).toBe("function");
+    expect(vm.runInContext("typeof initHomeCards", context)).toBe("function");
+
+    for (const obsoleteFunction of [
+      "loadApodCard",
+      "loadProjectUpdateCard",
+      "shortenText",
+    ]) {
+      expect(vm.runInContext(`typeof ${obsoleteFunction}`, context)).toBe(
+        "undefined",
+      );
+    }
+  });
+
+  test("the frontend script has no orphan loader, selector, endpoint, or interval", () => {
+    const declaredFunctions = [
+      ...homeCardsSource.matchAll(/^(?:async\s+)?function\s+(\w+)\s*\(/gm),
+    ].map((match) => match[1]);
+
+    expect(declaredFunctions).toEqual(liveHomeFunctionNames);
+    expect(homeCardsSource).not.toMatch(/\b(?:import|export)\b/);
+    expect(homeCardsSource).not.toContain("/api/apod");
+    expect(homeCardsSource).not.toContain("/api/github-updates");
+    expect(homeCardsSource).not.toMatch(/\bsetInterval\s*\(/);
+    expect(homeCardsSource).not.toMatch(/\bclearInterval\s*\(/);
+    expect(homeCardsSource).not.toMatch(/\b300000\b|5\s*\*\s*60/);
+
+    for (const id of obsoleteElementIds) {
+      expect(homeCardsSource).not.toContain(id);
+    }
+  });
+
+  test("the Worker preserves both API route contracts", () => {
+    expect(workerSource).toMatch(
+      /url\.pathname === "\/api\/apod"[\s\S]*?handleApod\(request, env, ctx\)/,
+    );
+    expect(workerSource).toMatch(
+      /url\.pathname === "\/api\/github-updates"[\s\S]*?handleGitHubUpdates\(request, env, ctx\)/,
+    );
+    expect(workerSource).toMatch(/async function handleApod\(/);
+    expect(workerSource).toMatch(/async function handleGitHubUpdates\(/);
+  });
+});
