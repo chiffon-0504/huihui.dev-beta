@@ -56,6 +56,30 @@ function getHtmlReferences(html) {
   ].map((match) => match[1]);
 }
 
+function getMarkdownSection(markdown, heading) {
+  const lines = markdown.split(/\r?\n/);
+  const start = lines.findIndex((line) => line === `## ${heading}`);
+  const end = lines.findIndex(
+    (line, index) => index > start && line.startsWith("## "),
+  );
+
+  expect(start, `README section: ${heading}`).toBeGreaterThanOrEqual(0);
+  return lines.slice(start, end === -1 ? undefined : end).join("\n");
+}
+
+function parseRedirects(source) {
+  return new Map(
+    source
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith("#"))
+      .map((line) => {
+        const [from, to] = line.split(/\s+/);
+        return [from, to];
+      }),
+  );
+}
+
 describe("static site contracts", () => {
   test("all primary locale routes exist", async () => {
     for (const route of primaryRoutes) {
@@ -118,6 +142,71 @@ describe("static site contracts", () => {
       expect(statusCode, line).toMatch(/^30[1278]$/);
       expect(target, line).not.toBeNull();
       expect(await exists(target), line).toBe(true);
+    }
+  });
+
+  test("README documents current milestone routes and legacy redirects", async () => {
+    const readme = await readFile(path.join(root, "README.md"), "utf8");
+    const redirects = parseRedirects(
+      await readFile(path.join(root, "_redirects"), "utf8"),
+    );
+    const features = getMarkdownSection(readme, "Features");
+    const projectStructure = getMarkdownSection(readme, "Project Structure");
+    const structureTree = projectStructure.match(
+      /```text\r?\n([\s\S]*?)```/,
+    )?.[1];
+    const currentRoutes = [
+      "/milestones/",
+      "/en/milestones/",
+      "/ja/milestones/",
+    ];
+    const legacyRoutes = ["/posts/", "/en/posts/", "/ja/posts/"];
+
+    expect(structureTree, "README Project Structure tree").toBeDefined();
+    for (const route of currentRoutes) {
+      expect(features, route).toContain(`\`${route}\``);
+    }
+    for (const route of legacyRoutes) {
+      expect(features, route).not.toContain(`\`${route}\``);
+    }
+    expect(structureTree).toMatch(/^\|-- milestones\/$/m);
+    expect(structureTree).not.toMatch(/^\|-- posts\/$/m);
+    expect(projectStructure).toContain(
+      "| `milestones/` | Milestones listing and article-facing UI structure |",
+    );
+    expect(projectStructure).not.toMatch(/^\| `posts\/` \|/m);
+
+    const documentedLegacyLine = readme
+      .split(/\r?\n/)
+      .find((line) => legacyRoutes.every((route) => line.includes(route)));
+    expect(documentedLegacyLine).toMatch(
+      /legacy redirects?.*backward compatibility/i,
+    );
+
+    let currentSection = "";
+    for (const line of readme.split(/\r?\n/)) {
+      const heading = line.match(/^## (.+)$/)?.[1];
+      if (heading) currentSection = heading;
+
+      if (
+        legacyRoutes.some((route) => line.includes(route)) &&
+        currentSection !== "Recent Improvements"
+      ) {
+        expect(line).toMatch(
+          /\b(?:legacy|redirect|backward compatibility|deprecated)\b/i,
+        );
+      }
+    }
+
+    const expectedLegacyRedirects = new Map([
+      ["/posts/", "/milestones/"],
+      ["/en/posts/", "/en/milestones/"],
+      ["/ja/posts/", "/ja/milestones/"],
+    ]);
+    for (const [from, to] of expectedLegacyRedirects) {
+      expect(documentedLegacyLine, from).toContain(`\`${from}\``);
+      expect(documentedLegacyLine, to).toContain(`\`${to}\``);
+      expect(redirects.get(from), from).toBe(to);
     }
   });
 
