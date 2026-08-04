@@ -51,7 +51,7 @@ This repository, `huihui.dev-beta`, is the development repository for the beta e
 | Multilingual i18n | ZH / EN / JA content is organized through locale files under `js/locales/` with path-based routing |
 | Workers APIs | Cloudflare Workers normalize RSS, GitHub, NASA APOD, Steam, and contact-form flows |
 | API-powered homepage | Dynamic homepage cards are loaded from Worker-backed endpoints |
-| Posts UI | Posts pages use refined card, layout, and responsive presentation patterns |
+| Milestones | Milestones pages use refined card, layout, and responsive presentation patterns at `/milestones/`, `/en/milestones/`, and `/ja/milestones/` |
 | Tier Maker | Client-side ranking tool with custom tiers, image upload, drag-and-drop sorting, and PNG export |
 | Contact protection | Cloudflare Turnstile validation is handled through a Worker before message forwarding |
 | Code block UI | Prism.js-based renderer with filename display, line numbers, copy action, and typing effects |
@@ -182,7 +182,7 @@ GitHub remains the source of truth. Cloudflare Pages Git integration publishes s
 |-- index.html
 |-- about/
 |-- works/
-|-- posts/
+|-- milestones/
 |-- contact/
 |-- en/
 |-- ja/
@@ -212,9 +212,11 @@ Key directories:
 | `/` | Static entry pages and top-level routes |
 | `js/` | Shared frontend behavior, layout injection, i18n, page renderers, and UI helpers |
 | `js/locales/` | Multilingual content modules for ZH / EN / JA |
-| `posts/` | Posts listing and article-facing UI structure |
+| `milestones/` | Milestones listing and article-facing UI structure |
 | `tools/tier-maker/` | Client-side Tier Maker tool |
 | `.github/workflows/` | GitHub Actions deployment workflows |
+
+Legacy redirects preserve backward compatibility from `/posts/`, `/en/posts/`, and `/ja/posts/` to `/milestones/`, `/en/milestones/`, and `/ja/milestones/`, respectively.
 
 ---
 
