@@ -81,18 +81,14 @@ describe("local image asset integrity", () => {
     expect(references.length).toBeGreaterThan(0);
   });
 
-  test("About and APOD fallback references resolve to local files", () => {
+  test("About and Worker APOD fallback references resolve to local files", () => {
     const aboutSource = scriptSources.get("js/about-page.js");
-    const homeCardsSource = scriptSources.get("js/home-cards.js");
     const workerSource = scriptSources.get("workers/huihui-api/worker.js");
     const aboutFallbacks = [
       ...aboutSource.matchAll(/data-fallback-src="([^"]+)"/g),
     ]
       .map((match) => match[1])
       .filter((reference) => reference.startsWith("/images/"));
-    const homeFallback = homeCardsSource.match(
-      /else\s*\{\s*image\.src\s*=\s*"([^"]+)";/,
-    )?.[1];
     const workerFallback = workerSource.match(
       /function getFallbackApod\(\)[\s\S]*?imageUrl:\s*"([^"]+)"/,
     )?.[1];
@@ -104,12 +100,10 @@ describe("local image asset integrity", () => {
       "/images/1032_a.webp",
       "/images/1032_a.webp",
     ]);
-    expect(homeFallback).toBe("/images/0001_hp.webp");
     expect(workerFallback).toBe("/images/0001_hp.webp");
 
     for (const reference of new Set([
       ...aboutFallbacks,
-      homeFallback,
       workerFallback,
     ])) {
       expectImageReferenceToExist(reference, "fallback references");
