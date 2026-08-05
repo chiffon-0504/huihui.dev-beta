@@ -137,7 +137,7 @@ for (const route of homeRoutes) {
       route.status,
     );
     await expect(main.locator(".website-version-section h2")).toHaveText(
-      "v1.2.2",
+      "v1.3.0",
     );
     await expect(techCard).toHaveCount(1);
     await expect(techCard).toHaveAttribute(
