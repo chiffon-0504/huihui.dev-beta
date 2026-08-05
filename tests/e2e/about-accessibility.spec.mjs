@@ -1,4 +1,8 @@
 import { expect, test } from "@playwright/test";
+import {
+  focusWithTab,
+  installClipboardStub,
+} from "../support/clipboard-stub.mjs";
 
 const localOrigin = "http://127.0.0.1:4173";
 const steamApiUrl = "https://api.huihui.dev/api/steam-library";
@@ -115,41 +119,6 @@ const expectedHeadingStyles = {
   },
 };
 
-async function installClipboardStub(page, mode) {
-  await page.addInitScript((initialMode) => {
-    const state = {
-      mode: initialMode,
-      pending: [],
-      writes: [],
-    };
-
-    Object.defineProperty(window, "__copyClipboard", {
-      configurable: true,
-      value: state,
-    });
-    Object.defineProperty(navigator, "clipboard", {
-      configurable: true,
-      value: {
-        writeText(text) {
-          state.writes.push(text);
-
-          if (state.mode === "reject") {
-            return Promise.reject(new DOMException("Fixture rejection", "NotAllowedError"));
-          }
-
-          if (state.mode === "pending") {
-            return new Promise((resolve, reject) => {
-              state.pending.push({ reject, resolve });
-            });
-          }
-
-          return Promise.resolve();
-        },
-      },
-    });
-  }, mode);
-}
-
 function watchPage(page) {
   const diagnostics = {
     consoleErrors: [],
@@ -203,25 +172,6 @@ async function loadAbout(page, locale, clipboardMode = "resolve") {
   await expect(page.locator("#steamFavorites > .steam-error")).toHaveCount(1);
 
   return diagnostics;
-}
-
-async function focusWithTab(page, button) {
-  await page.evaluate(() => {
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
-    window.scrollTo(0, 0);
-  });
-
-  for (let index = 0; index < 30; index += 1) {
-    await page.keyboard.press("Tab");
-
-    if (await button.evaluate((element) => document.activeElement === element)) {
-      return;
-    }
-  }
-
-  throw new Error("Copy button was not reached with keyboard Tab navigation");
 }
 
 function getStatus(button) {
