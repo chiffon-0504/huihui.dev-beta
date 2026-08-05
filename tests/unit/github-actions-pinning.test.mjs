@@ -226,6 +226,7 @@ describe("Playwright cross-browser validation contract", () => {
     expect(defaultConfig.projects.map(({ name }) => name)).toEqual([
       "chromium",
     ]);
+    expect(defaultConfig.retries).toBe(process.env.CI ? 1 : 0);
     expect(packageJson.scripts["test:e2e"]).toBe("playwright test");
 
     expect(crossBrowserConfig.testDir).toBe("./tests/e2e");
@@ -244,7 +245,7 @@ describe("Playwright cross-browser validation contract", () => {
       "webkit",
     ]);
     expect(crossBrowserConfig.workers).toBe(1);
-    expect(crossBrowserConfig.retries).toBe(process.env.CI ? 1 : 0);
+    expect(crossBrowserConfig.retries).toBe(0);
     expect(crossBrowserConfig).not.toHaveProperty("timeout");
     expect(crossBrowserConfig.expect).toBeUndefined();
     expect(crossBrowserConfig.webServer).toBeUndefined();

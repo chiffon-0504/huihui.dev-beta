@@ -5,7 +5,7 @@ export default defineConfig({
   testMatch: "cross-browser-critical.spec.mjs",
   globalSetup: "./tests/support/global-setup.mjs",
   fullyParallel: false,
-  retries: process.env.CI ? 1 : 0,
+  retries: 0,
   workers: 1,
   reporter: process.env.CI
     ? [["line"], ["html", { open: "never" }]]
