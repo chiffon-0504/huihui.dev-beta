@@ -42,6 +42,30 @@ test("keyboard opening moves focus into the drawer and blocks the background", a
   );
 });
 
+test("opening retries initial focus once when the browser rejects the first attempt", async ({
+  page,
+}) => {
+  const { sidebar, toggle } = await loadMobilePage(page);
+  const firstDrawerControl = sidebar.locator(drawerFocusableSelector).first();
+
+  await firstDrawerControl.evaluate((element) => {
+    const nativeFocus = element.focus.bind(element);
+    let focusAttempts = 0;
+
+    element.focus = (...args) => {
+      focusAttempts += 1;
+      if (focusAttempts > 1) nativeFocus(...args);
+    };
+    window.__drawerFocusAttempts = () => focusAttempts;
+  });
+
+  await toggle.focus();
+  await page.keyboard.press("Enter");
+
+  await expect(firstDrawerControl).toBeFocused();
+  expect(await page.evaluate(() => window.__drawerFocusAttempts())).toBe(2);
+});
+
 test("Escape closes the drawer and restores focus to the menu button", async ({
   page,
 }) => {

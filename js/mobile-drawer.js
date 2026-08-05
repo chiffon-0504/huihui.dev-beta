@@ -180,8 +180,11 @@ function initMobileDrawer() {
     setBackgroundInert(isOpen);
 
     if (isOpen) {
+      focusFirstDrawerItem();
       requestAnimationFrame(() => {
-        if (isOpen) focusFirstDrawerItem();
+        if (isOpen && !sidebar.contains(document.activeElement)) {
+          focusFirstDrawerItem();
+        }
       });
     } else if (wasOpen && restoreFocus && mobileMedia.matches) {
       toggle.focus();
