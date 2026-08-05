@@ -37,8 +37,11 @@ jobs:
       - name: Run static contract tests
         run: npm run test:unit
 
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
 
-      - name: Run route smoke tests
+      - name: Run Chromium full E2E suite
         run: npm run test:e2e
+
+      - name: Run Firefox and WebKit critical smoke tests
+        run: npx playwright test --config=playwright.cross-browser.config.mjs
