@@ -84,9 +84,16 @@
   gap:18px;
 }
 
-.tier-title-row h1,
-.image-pool h2{
+.tier-title-row h1{
   margin:0;
+}
+
+.image-pool{
+  margin-top:22px;
+}
+
+.image-pool h2{
+  margin:0 0 14px;
 }
 
 .tier-header p,
@@ -271,7 +278,6 @@
 
 .tier-toolbar,
 .tier-board,
-.image-pool,
 .pool-content {
   border-color: rgba(255,255,255,.34);
   background:
@@ -328,7 +334,6 @@
 /* Production light surface recovery */
 .tier-toolbar,
 .tier-board,
-.image-pool,
 .tier-content,
 .pool-content {
   background: rgba(255,255,255,.55);
