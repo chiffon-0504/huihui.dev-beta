@@ -32,6 +32,18 @@ async function listFiles(directory, extension) {
 }
 
 describe("contact module and CSP contracts", () => {
+  test("all localized contact pages open Gmail Compose in a new tab", async () => {
+    const expectedLink =
+      '<a href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=contact%40huihui.dev" target="_blank" rel="noopener noreferrer">contact@huihui.dev</a>';
+
+    for (const relativePath of contactPages) {
+      const html = await readFile(path.join(root, relativePath), "utf8");
+
+      expect(html, relativePath).toContain(expectedLink);
+      expect(html, relativePath).not.toContain("mailto:contact@huihui.dev");
+    }
+  });
+
   test("all localized contact pages load the shared external module", async () => {
     for (const relativePath of contactPages) {
       const html = await readFile(path.join(root, relativePath), "utf8");

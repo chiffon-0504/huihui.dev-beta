@@ -138,6 +138,42 @@ for (const { locale, route, viewport } of contactLayoutCases) {
   });
 }
 
+test("localized email links open Gmail Compose in a new tab", async ({
+  context,
+  page,
+}) => {
+  await context.route("https://mail.google.com/mail/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "text/html",
+      body: "<!doctype html><title>Gmail Compose</title>",
+    }),
+  );
+  await stubContactDependencies(page);
+
+  for (const { route } of contactLayoutCases) {
+    await openContactPage(page, route);
+
+    const emailLink = page.getByRole("link", { name: "contact@huihui.dev" });
+    await expect(emailLink).toHaveAttribute("target", "_blank");
+    await expect(emailLink).toHaveAttribute("rel", "noopener noreferrer");
+
+    const popupPromise = page.waitForEvent("popup");
+    await emailLink.click();
+    const popup = await popupPromise;
+    await popup.waitForLoadState("domcontentloaded");
+
+    const composeUrl = new URL(popup.url());
+    expect(composeUrl.origin).toBe("https://mail.google.com");
+    expect(composeUrl.pathname).toBe("/mail/");
+    expect(composeUrl.searchParams.get("view")).toBe("cm");
+    expect(composeUrl.searchParams.get("fs")).toBe("1");
+    expect(composeUrl.searchParams.get("to")).toBe("contact@huihui.dev");
+
+    await popup.close();
+  }
+});
+
 test("submits successfully and preserves loading and Turnstile behavior", async ({
   page,
 }) => {
