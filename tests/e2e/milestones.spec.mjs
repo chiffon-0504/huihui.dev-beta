@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const milestoneIds = [
+  "ave-mujica-exitus-taipei-day2-2026-08-09",
   "arcaea-course-mode-phase-10-clear-2026-07-31",
   "arcaea-boss-song-ex-scores-2026-06-28",
   "arcaea-potential-12-2026-06-27",
@@ -8,54 +9,73 @@ const milestoneIds = [
   "arcaea-cyaegha-ex-plus-2026-04-19",
   "hello-world-2026-04-14",
 ];
-const firstMilestoneImages = [
+const phase10MilestoneImages = [
   "/images/3011_p.webp",
   "/images/3012_p.webp",
 ];
 const arcaeaHashtagUrl = "https://x.com/hashtag/arcaea?src=hashtag_click";
+const exitusHashtags = [
+  {
+    label: "#Exitus_TAIPEI",
+    href: "https://x.com/hashtag/Exitus_TAIPEI?src=hashtag_click",
+  },
+  {
+    label: "#AveMujica",
+    href: "https://x.com/hashtag/AveMujica?src=hashtag_click",
+  },
+];
 
 const localeCases = [
   {
     locale: "zh",
     route: "/milestones/",
-    date: "2026年7月31日",
+    date: "2026年8月9日",
     requiredText: [
+      "謝謝！",
+      "這是最棒的演唱會！",
       "Course Mode Phase 10 完成！！",
       "初代魔王 Grievous Lady",
       "12.00 摘星達成!!!!!!",
       "11.90 到達!!!",
     ],
     forbiddenText: [],
-    firstImageAlt: "Arcaea Course Mode Phase 10 成績截圖",
-    caption: "Arcaea 圖像與相關內容之權利屬於 © lowiro。",
+    imageAlt: "Ave Mujica LIVE TOUR 2026「Exitus」台北公演 DAY2 演唱會現場",
+    phase10ImageAlt: "Arcaea Course Mode Phase 10 成績截圖",
+    phase10Caption: "Arcaea 圖像與相關內容之權利屬於 © lowiro。",
   },
   {
     locale: "en",
     route: "/en/milestones/",
-    date: "July 31, 2026",
+    date: "August 9, 2026",
     requiredText: [
+      "Thank you!",
+      "This was the best concert ever!",
       "Course Mode Phase 10 CLEAR!!",
       "The original boss song, Grievous Lady",
       "Reached Potential 12.00 at last!!!!!!",
       "Reached Potential 11.90!!!",
     ],
     forbiddenText: ["初代魔王", "3.0 魔王", "摘星", "從 2021 年開始玩"],
-    firstImageAlt: "Arcaea Course Mode Phase 10 score screenshot",
-    caption: "Arcaea images and properties belong to © lowiro.",
+    imageAlt: 'Ave Mujica LIVE TOUR 2026 "Exitus" Taipei DAY2 concert venue',
+    phase10ImageAlt: "Arcaea Course Mode Phase 10 score screenshot",
+    phase10Caption: "Arcaea images and properties belong to © lowiro.",
   },
   {
     locale: "ja",
     route: "/ja/milestones/",
-    date: "2026年7月31日",
+    date: "2026年8月9日",
     requiredText: [
+      "ありがとう！",
+      "最高のライブでした！",
       "Course Mode Phase 10 完走！！",
       "初代ボス曲 Grievous Lady",
       "ついにPotential 12.00到達!!!!!!",
       "Potential 11.90到達!!!",
     ],
     forbiddenText: ["初代魔王", "3.0 魔王", "摘星", "從 2021 年開始玩"],
-    firstImageAlt: "Arcaea Course Mode Phase 10 スコア画面",
-    caption: "Arcaeaの画像および関連コンテンツの権利は© lowiroに帰属します。",
+    imageAlt: "Ave Mujica LIVE TOUR 2026「Exitus」台北公演 DAY2 ライブ会場",
+    phase10ImageAlt: "Arcaea Course Mode Phase 10 スコア画面",
+    phase10Caption: "Arcaeaの画像および関連コンテンツの権利は© lowiroに帰属します。",
   },
 ];
 
@@ -77,7 +97,7 @@ for (const localeCase of localeCases) {
     const firstCard = cards.first();
     await expect(firstCard.locator("time.post-date")).toHaveAttribute(
       "datetime",
-      "2026-07-31",
+      "2026-08-09",
     );
     await expect(firstCard.locator("time.post-date")).toHaveText(localeCase.date);
 
@@ -90,17 +110,45 @@ for (const localeCase of localeCases) {
     }
 
     const firstImages = firstCard.locator("img.zoomable");
+    await expect(firstImages).toHaveCount(1);
+    await expect(firstImages.first()).toHaveAttribute(
+      "src",
+      "/images/3013_p.webp",
+    );
+    await expect(firstImages.first()).toHaveAttribute("alt", localeCase.imageAlt);
+    await expect(firstImages.first()).toHaveAttribute("width", "8064");
+    await expect(firstImages.first()).toHaveAttribute("height", "6048");
+    await expect(firstImages.first()).toHaveAttribute(
+      "data-image-id",
+      "ave-mujica-exitus-taipei-day2-venue",
+    );
+
+    for (const hashtag of exitusHashtags) {
+      const link = firstCard.getByRole("link", {
+        name: hashtag.label,
+        exact: true,
+      });
+
+      await expect(link).toHaveCount(1);
+      await expect(link).toHaveAttribute("href", hashtag.href);
+      await expect(link).toHaveAttribute("target", "_blank");
+      await expect(link).toHaveAttribute("rel", "noopener noreferrer");
+      await expect(link).toHaveClass(/\bhashtag\b/);
+    }
+
+    const phase10Card = cards.nth(1);
+    const phase10Images = phase10Card.locator("img.zoomable");
     expect(
-      await firstImages.evaluateAll((images) =>
+      await phase10Images.evaluateAll((images) =>
         images.map((image) => image.getAttribute("src")),
       ),
-    ).toEqual(firstMilestoneImages);
-    await expect(firstImages.first()).toHaveAttribute(
+    ).toEqual(phase10MilestoneImages);
+    await expect(phase10Images.first()).toHaveAttribute(
       "alt",
-      localeCase.firstImageAlt,
+      localeCase.phase10ImageAlt,
     );
-    await expect(firstCard.locator("figcaption.post-caption")).toHaveText(
-      localeCase.caption,
+    await expect(phase10Card.locator("figcaption.post-caption")).toHaveText(
+      localeCase.phase10Caption,
     );
 
     const hashtagLinks = page.locator(
@@ -111,12 +159,13 @@ for (const localeCase of localeCases) {
       await expect(link).toHaveAttribute("href", arcaeaHashtagUrl);
       await expect(link).toHaveText("#arcaea");
     }
+    await expect(page.locator(".post-content a.hashtag")).toHaveCount(7);
 
     await firstImages.first().click();
     await expect(page.locator("#lightbox")).toHaveClass(/\bshow\b/);
     await expect(page.locator("#lightboxImg")).toHaveAttribute(
       "alt",
-      localeCase.firstImageAlt,
+      localeCase.imageAlt,
     );
     await page.locator("#lightboxClose").click();
     await expect(page.locator("#lightbox")).not.toHaveAttribute("open", "");

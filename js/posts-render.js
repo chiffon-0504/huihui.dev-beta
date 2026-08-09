@@ -34,6 +34,14 @@ function getLocalizedPosts(locale) {
   }));
 }
 
+function escapeHtmlAttribute(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 function formatPostDate(dateValue, locale) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateValue);
   if (!match) return "";
@@ -75,7 +83,7 @@ function renderPostImages(post) {
             (image) => `
               <img
                 src="${image.src}"
-                alt="${image.alt}"
+                alt="${escapeHtmlAttribute(image.alt)}"
                 width="${image.width}"
                 height="${image.height}"
                 class="zoomable"
