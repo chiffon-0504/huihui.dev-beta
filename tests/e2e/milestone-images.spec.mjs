@@ -3,6 +3,12 @@ import { expect, test } from "@playwright/test";
 const localOrigin = "http://127.0.0.1:4173";
 const milestoneImages = [
   {
+    id: "ave-mujica-exitus-taipei-day2-venue",
+    path: "/images/3013_p.webp",
+    width: 8064,
+    height: 6048,
+  },
+  {
     id: "course-mode-phase-10-score",
     path: "/images/3011_p.webp",
     width: 2560,

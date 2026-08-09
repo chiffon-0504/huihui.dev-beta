@@ -1,3 +1,21 @@
+const EXITUS_TAIPEI_HASHTAG_LINK = Object.freeze({
+  id: "exitus-taipei-hashtag",
+  href: "https://x.com/hashtag/Exitus_TAIPEI?src=hashtag_click",
+  label: "#Exitus_TAIPEI",
+  className: "hashtag",
+  target: "_blank",
+  rel: "noopener noreferrer"
+});
+
+const AVE_MUJICA_HASHTAG_LINK = Object.freeze({
+  id: "ave-mujica-hashtag",
+  href: "https://x.com/hashtag/AveMujica?src=hashtag_click",
+  label: "#AveMujica",
+  className: "hashtag",
+  target: "_blank",
+  rel: "noopener noreferrer"
+});
+
 const ARCAEA_HASHTAG_LINK = Object.freeze({
   id: "arcaea-hashtag",
   href: "https://x.com/hashtag/arcaea?src=hashtag_click",
@@ -14,6 +32,34 @@ const ARCAEA_CAPTION = Object.freeze({
 });
 
 const HUIHUI_POSTS = [
+  {
+    id: "ave-mujica-exitus-taipei-day2-2026-08-09",
+    authorName: "huihui",
+    authorHandle: "@huihui",
+    date: "2026-08-09",
+    content: {
+      zh: `謝謝！
+這是最棒的演唱會！`,
+      en: `Thank you!
+This was the best concert ever!`,
+      ja: `ありがとう！
+最高のライブでした！`
+    },
+    images: [
+      {
+        id: "ave-mujica-exitus-taipei-day2-venue",
+        src: "/images/3013_p.webp",
+        width: 8064,
+        height: 6048,
+        alt: {
+          zh: "Ave Mujica LIVE TOUR 2026「Exitus」台北公演 DAY2 演唱會現場",
+          en: 'Ave Mujica LIVE TOUR 2026 "Exitus" Taipei DAY2 concert venue',
+          ja: "Ave Mujica LIVE TOUR 2026「Exitus」台北公演 DAY2 ライブ会場"
+        }
+      }
+    ],
+    links: [EXITUS_TAIPEI_HASHTAG_LINK, AVE_MUJICA_HASHTAG_LINK]
+  },
   {
     id: "arcaea-course-mode-phase-10-clear-2026-07-31",
     authorName: "huihui",

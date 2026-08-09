@@ -69,7 +69,7 @@ test("dynamically rendered milestone images remain keyboard accessible", async (
   await expect(lightbox).toHaveAttribute("open", "");
   await expect(page.locator("#lightboxImg")).toHaveAttribute(
     "src",
-    /\/images\/3011_p\.webp$/,
+    /\/images\/3013_p\.webp$/,
   );
 
   await page.keyboard.press("Escape");

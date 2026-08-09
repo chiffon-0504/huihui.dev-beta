@@ -103,7 +103,7 @@ describe("milestone localization", () => {
     const posts = readJsonExpression(context, "HUIHUI_POSTS");
     const ids = posts.map((post) => post.id);
 
-    expect(posts).toHaveLength(6);
+    expect(posts).toHaveLength(7);
     expect(new Set(ids).size).toBe(ids.length);
 
     for (const post of posts) {
@@ -136,9 +136,72 @@ describe("milestone localization", () => {
     }
   });
 
-  test("keeps the Course Mode Phase 10 milestone first with localized media", async () => {
+  test("keeps the Ave Mujica Exitus Taipei DAY2 milestone first with localized hashtags", async () => {
     const { context } = await createMilestoneContext();
-    const [phase10Post] = readJsonExpression(context, "HUIHUI_POSTS");
+    const [exitusPost] = readJsonExpression(context, "HUIHUI_POSTS");
+
+    expect(exitusPost).toEqual({
+      id: "ave-mujica-exitus-taipei-day2-2026-08-09",
+      authorName: "huihui",
+      authorHandle: "@huihui",
+      date: "2026-08-09",
+      content: {
+        zh: "謝謝！\n這是最棒的演唱會！",
+        en: "Thank you!\nThis was the best concert ever!",
+        ja: "ありがとう！\n最高のライブでした！",
+      },
+      images: [
+        {
+          id: "ave-mujica-exitus-taipei-day2-venue",
+          src: "/images/3013_p.webp",
+          width: 8064,
+          height: 6048,
+          alt: {
+            zh: "Ave Mujica LIVE TOUR 2026「Exitus」台北公演 DAY2 演唱會現場",
+            en: 'Ave Mujica LIVE TOUR 2026 "Exitus" Taipei DAY2 concert venue',
+            ja: "Ave Mujica LIVE TOUR 2026「Exitus」台北公演 DAY2 ライブ会場",
+          },
+        },
+      ],
+      links: [
+        {
+          id: "exitus-taipei-hashtag",
+          href: "https://x.com/hashtag/Exitus_TAIPEI?src=hashtag_click",
+          label: "#Exitus_TAIPEI",
+          className: "hashtag",
+          target: "_blank",
+          rel: "noopener noreferrer",
+        },
+        {
+          id: "ave-mujica-hashtag",
+          href: "https://x.com/hashtag/AveMujica?src=hashtag_click",
+          label: "#AveMujica",
+          className: "hashtag",
+          target: "_blank",
+          rel: "noopener noreferrer",
+        },
+      ],
+    });
+    expect(
+      vm.runInContext(
+        "HUIHUI_POSTS[0].links[0] === EXITUS_TAIPEI_HASHTAG_LINK",
+        context,
+      ),
+    ).toBe(true);
+    expect(
+      vm.runInContext(
+        "HUIHUI_POSTS[0].links[1] === AVE_MUJICA_HASHTAG_LINK",
+        context,
+      ),
+    ).toBe(true);
+    expect(Object.values(exitusPost.content).join("\n")).not.toMatch(
+      /#(?:Exitus_TAIPEI|AveMujica)/,
+    );
+  });
+
+  test("preserves the Course Mode Phase 10 milestone with localized media", async () => {
+    const { context } = await createMilestoneContext();
+    const [, phase10Post] = readJsonExpression(context, "HUIHUI_POSTS");
 
     expect(phase10Post.id).toBe(
       "arcaea-course-mode-phase-10-clear-2026-07-31",
@@ -182,12 +245,12 @@ describe("milestone localization", () => {
 
     expect(
       vm.runInContext(
-        "HUIHUI_POSTS[0].links[0] === ARCAEA_HASHTAG_LINK",
+        "HUIHUI_POSTS[1].links[0] === ARCAEA_HASHTAG_LINK",
         context,
       ),
     ).toBe(true);
     expect(
-      vm.runInContext("HUIHUI_POSTS[0].caption === ARCAEA_CAPTION", context),
+      vm.runInContext("HUIHUI_POSTS[1].caption === ARCAEA_CAPTION", context),
     ).toBe(true);
     expect(Object.values(phase10Post.content).join("\n")).not.toContain(
       "#arcaea",
@@ -227,7 +290,7 @@ describe("milestone localization", () => {
     const posts = readJsonExpression(context, "HUIHUI_POSTS");
     const images = posts.flatMap((post) => post.images);
 
-    expect(images).toHaveLength(8);
+    expect(images).toHaveLength(9);
 
     for (const image of images) {
       expect(image.src).toMatch(/^\/images\/[a-z0-9_-]+\.webp$/);
@@ -264,15 +327,23 @@ describe("milestone localization", () => {
           continue;
         }
 
-        expect(markup).toContain(
-          `<figcaption class="post-caption">${sourcePost.caption[locale]}</figcaption>`,
-        );
+        if (sourcePost.caption) {
+          expect(markup).toContain(
+            `<figcaption class="post-caption">${sourcePost.caption[locale]}</figcaption>`,
+          );
+        } else {
+          expect(markup).not.toContain('<figcaption class="post-caption">');
+        }
 
         for (const image of sourcePost.images) {
+          const escapedAlt = vm.runInContext(
+            `escapeHtmlAttribute(${JSON.stringify(image.alt[locale])})`,
+            context,
+          );
           const imageContract = new RegExp(
             [
               `<img\\s+src="${escapeRegExp(image.src)}"`,
-              `alt="${escapeRegExp(image.alt[locale])}"`,
+              `alt="${escapeRegExp(escapedAlt)}"`,
               `width="${image.width}"`,
               `height="${image.height}"`,
               'class="zoomable"',
