@@ -157,10 +157,10 @@ for (const route of homeRoutes) {
     );
     await expect(releaseCard.locator("h2")).toHaveText("v1.3.1");
     await expect(releaseCard.locator(".version-badge")).toHaveText(
-      "Release candidate",
+      "Stable release",
     );
     await expect(releaseCard.locator(".version-badge")).not.toHaveText(
-      "Stable release",
+      "Release candidate",
     );
     await expect(releaseCard.locator(".release-notes li")).toHaveText(
       route.releaseNotes,
