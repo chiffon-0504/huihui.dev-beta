@@ -112,7 +112,8 @@ relevant Worker changes merged to beta main
   -> GitHub Actions
   -> beta Worker
 
-manual workflow_dispatch with target=production
+manual workflow_dispatch from refs/heads/main with target=production
+  -> validation
   -> GitHub Actions
   -> production Worker
 ```
@@ -122,12 +123,14 @@ Expected release flow:
 1. Changes are developed and validated in `huihui.dev-beta`.
 2. Cloudflare Pages publishes the beta static site through Git integration.
 3. Relevant Worker changes deploy automatically to the isolated beta Worker.
-4. The production Worker is deployed manually through `workflow_dispatch` with `target=production`.
+4. The production Worker is deployed manually from `refs/heads/main` through `workflow_dispatch` with `target=production`, after the validation job passes.
 5. Verified beta `main` is synchronized to `huihui.dev-stable/main`.
 6. Cloudflare Pages publishes the stable static site from the production repository.
 7. The stable tag and GitHub Release are created after production verification.
 
-GitHub remains the source of truth. Cloudflare Pages Git integration publishes static content. GitHub Actions validates the repository and deploys Workers. The beta and production Workers remain separate.
+GitHub remains the source of truth. Cloudflare Pages Git integration publishes static content. GitHub Actions validates the repository and deploys Workers. The beta Worker uses the named Wrangler `beta` environment, while the production Worker uses the default production Wrangler environment, keeping the deployment targets separate.
+
+The production deployment job is assigned to the GitHub `production` Environment, but that Environment currently has no required reviewers, deployment branch policy, or other protection rules. Those controls are therefore not current deployment gates. Required reviewers and Environment protection rules can be added as optional hardening if approval-based production releases are needed.
 
 ---
 
