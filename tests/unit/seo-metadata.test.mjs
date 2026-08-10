@@ -54,6 +54,14 @@ const expectedTitles = {
   "/en/tools/tier-maker/": "Tier Maker | huihui.dev",
   "/ja/tools/tier-maker/": "ティアメーカー | huihui.dev",
 };
+const expectedHomeDescriptions = {
+  "/":
+    "huihui.dev 是一個介紹開發專案、里程碑與個人興趣的個人網站與作品集。",
+  "/en/":
+    "huihui.dev is a personal website and portfolio featuring development projects, milestones, and personal interests.",
+  "/ja/":
+    "huihui.devは、開発プロジェクト、マイルストーン、個人の興味・関心を紹介する個人サイト兼ポートフォリオです。",
+};
 
 function getTags(source, tagName) {
   const pattern = new RegExp(`<${tagName}\\b[^>]*>`, "gi");
@@ -140,7 +148,7 @@ describe("canonical and hreflang static contracts", () => {
     ]);
   });
 
-  test("preserves each primary document title, description, and language", async () => {
+  test("preserves each primary document title, localized Home description, and language", async () => {
     for (const route of primaryRoutes) {
       const html = await readRouteHtml(route);
       const titles = [...html.matchAll(/<title\b[^>]*>([\s\S]*?)<\/title>/gi)].map(
@@ -149,10 +157,21 @@ describe("canonical and hreflang static contracts", () => {
       const descriptions = getTags(html, "meta")
         .map(getAttributes)
         .filter((attributes) => attributes.name?.toLowerCase() === "description");
+      const headDescriptions = getTags(getHead(html), "meta")
+        .map(getAttributes)
+        .filter((attributes) => attributes.name?.toLowerCase() === "description");
       const lang = html.match(/<html[^>]*\blang="([^"]+)"/i)?.[1];
+      const expectedDescription = expectedHomeDescriptions[route.url];
 
       expect(titles, route.file).toEqual([expectedTitles[route.url]]);
-      expect(descriptions, route.file).toEqual([]);
+      expect(descriptions, route.file).toEqual(
+        expectedDescription
+          ? [{ name: "description", content: expectedDescription }]
+          : [],
+      );
+      expect(headDescriptions, `${route.file}: description must be in head`).toEqual(
+        descriptions,
+      );
       expect(lang, route.file).toBe(route.lang);
     }
   });
