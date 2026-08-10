@@ -60,6 +60,11 @@ window.HUIHUI_I18N.en = {
   works: {
     title: "Works",
     lead: "Projects, interface experiments, and selected photography from huihui.dev.",
+    accessibility: {
+      showcase: "Works showcase",
+      websiteProject: "huihui.dev project",
+      tierMakerTool: "Tier Maker tool"
+    },
     cards: {
       website: {
         type: "Website",
@@ -111,9 +116,19 @@ window.HUIHUI_I18N.en = {
     },
     images: {
       maimai: "maimai DX",
+      maimaiFavorite: "Favorite maimai DX song",
+      maimaiBest: "Best maimai DX record",
       arcaea: "Arcaea",
+      arcaeaFavorite: "Favorite Arcaea song",
+      arcaeaBest: "Best Arcaea record",
       galgame: "Summer Pockets REFLECTION BLUE",
       preview: "Preview"
+    },
+    rhythm: {
+      favorite: "Favorite",
+      best: "Best",
+      level: "Level",
+      bestScore: "Best Score"
     },
     steam: {
       loading: "Loading Steam library...",

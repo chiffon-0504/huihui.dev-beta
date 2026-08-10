@@ -321,13 +321,13 @@ function renderAboutInterestCards() {
         <div class="rhythm-record">
           <img
             ${renderLocalAboutImageAttributes(ABOUT_INTEREST_IMAGES.maimaiFavorite)}
-            alt="Favorite maimai DX song"
+            data-i18n-alt="about.images.maimaiFavorite"
             class="rhythm-record-img zoomable"
             data-fallback-src="/images/1001_am.webp"
           />
 
           <div class="rhythm-record-text">
-            <h4>Favorite</h4>
+            <h4 data-i18n="about.rhythm.favorite"></h4>
             <p>
               <a
                 href="https://www.youtube.com/watch?v=zqH9qgVNzHI"
@@ -345,13 +345,13 @@ function renderAboutInterestCards() {
         <div class="rhythm-record">
           <img
             ${renderLocalAboutImageAttributes(ABOUT_INTEREST_IMAGES.maimaiBest)}
-            alt="Best maimai DX record"
+            data-i18n-alt="about.images.maimaiBest"
             class="rhythm-record-img zoomable"
             data-fallback-src="/images/1001_am.webp"
           />
 
           <div class="rhythm-record-text">
-            <h4>Best</h4>
+            <h4 data-i18n="about.rhythm.best"></h4>
             <p>
               <a
                 href="https://www.youtube.com/watch?v=-3wzWwhHW3g"
@@ -363,8 +363,8 @@ function renderAboutInterestCards() {
               </a>
             </p>
             <p>カモメサノエレクトリックオーケストラ include Limonène</p>
-            <p>Level: MASTER 14</p>
-            <p>Best Score: 100.0943%</p>
+            <p><span data-i18n="about.rhythm.level"></span>: MASTER 14</p>
+            <p><span data-i18n="about.rhythm.bestScore"></span>: 100.0943%</p>
           </div>
         </div>
       </div>
@@ -396,13 +396,13 @@ function renderAboutInterestCards() {
         <div class="rhythm-record">
           <img
             ${renderLocalAboutImageAttributes(ABOUT_INTEREST_IMAGES.arcaeaFavorite)}
-            alt="Favorite Arcaea song"
+            data-i18n-alt="about.images.arcaeaFavorite"
             class="rhythm-record-img zoomable"
             data-fallback-src="/images/1032_a.webp"
           />
 
           <div class="rhythm-record-text">
-            <h4>Favorite</h4>
+            <h4 data-i18n="about.rhythm.favorite"></h4>
             <p>
               <a
                 href="https://soundcloud.com/7ijhvp0echx6/ak-q-x-onoken-lzllel"
@@ -420,13 +420,13 @@ function renderAboutInterestCards() {
         <div class="rhythm-record">
           <img
             ${renderLocalAboutImageAttributes(ABOUT_INTEREST_IMAGES.arcaeaBest)}
-            alt="Best Arcaea record"
+            data-i18n-alt="about.images.arcaeaBest"
             class="rhythm-record-img zoomable"
             data-fallback-src="/images/1032_a.webp"
           />
 
           <div class="rhythm-record-text">
-            <h4>Best</h4>
+            <h4 data-i18n="about.rhythm.best"></h4>
             <p>
               <a
                 href="https://soundcloud.com/kss01/usao-cyaegha"

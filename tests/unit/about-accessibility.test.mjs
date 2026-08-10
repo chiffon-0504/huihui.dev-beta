@@ -24,15 +24,15 @@ const expectedCopy = {
   },
 };
 const expectedCardHeadings = {
-  zh: ["maimai DX", "Favorite", "Best", "Arcaea", "Favorite", "Best", "Galgame"],
+  zh: ["maimai DX", "最愛", "最佳成績", "Arcaea", "最愛", "最佳成績", "Galgame"],
   en: ["maimai DX", "Favorite", "Best", "Arcaea", "Favorite", "Best", "Galgame"],
   ja: [
     "maimai でらっくす",
-    "Favorite",
-    "Best",
+    "お気に入り",
+    "ベスト",
     "Arcaea",
-    "Favorite",
-    "Best",
+    "お気に入り",
+    "ベスト",
     "美少女ゲーム",
   ],
 };
@@ -95,11 +95,23 @@ async function createContext(pathname = "/about/") {
   return { context, rootElement };
 }
 
-function getHeadings(markup) {
-  return [...markup.matchAll(/<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1>/gi)].map(
+function getLocaleValue(messages, keyPath) {
+  return keyPath
+    .split(".")
+    .reduce((value, key) => (value ? value[key] : undefined), messages);
+}
+
+function getHeadings(markup, messages) {
+  return [...markup.matchAll(/<h([1-6])\b([^>]*)>([\s\S]*?)<\/h\1>/gi)].map(
     (match) => ({
       level: Number(match[1]),
-      text: match[2].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
+      text:
+        match[3].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim() ||
+        getLocaleValue(
+          messages,
+          match[2].match(/\bdata-i18n="([^"]+)"/)?.[1] || "",
+        ) ||
+        "",
     }),
   );
 }
@@ -218,7 +230,8 @@ describe("About heading hierarchy", () => {
       const pathnames = { zh: "/about/", en: "/en/about/", ja: "/ja/about/" };
       const { context, rootElement } = await createContext(pathnames[locale]);
       const cardMarkup = vm.runInContext("renderAboutInterestCards()", context);
-      const cardHeadings = getHeadings(cardMarkup);
+      const messages = context.window.HUIHUI_I18N[locale];
+      const cardHeadings = getHeadings(cardMarkup, messages);
 
       expect(cardHeadings.map(({ level }) => level)).toEqual([3, 4, 4, 3, 4, 4, 3]);
       expect(cardHeadings.map(({ text }) => text)).toEqual(
@@ -232,7 +245,7 @@ describe("About heading hierarchy", () => {
       );
 
       vm.runInContext("renderAboutPage()", context);
-      const mainHeadings = getHeadings(rootElement.innerHTML);
+      const mainHeadings = getHeadings(rootElement.innerHTML, messages);
       expect(mainHeadings.map(({ level }) => level)).toEqual([
         1, 2, 3, 4, 4, 3, 4, 4, 3,
       ]);
