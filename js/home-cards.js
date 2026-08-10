@@ -33,14 +33,19 @@ function setTechNewsStatus(container, state) {
     error: "loadError",
     timeout: "timeout",
   };
-  const message = document.createElement("p");
+  const existingStatus = container.querySelector(":scope > .tech-news-status");
+  const message = existingStatus || document.createElement("p");
 
   // Reuse the existing full-grid status styles without changing Home CSS.
   message.className = state === "loading" ? "tech-news-loading" : "tech-news-error";
   message.classList.add("tech-news-status");
+  message.setAttribute("role", "status");
+  message.setAttribute("aria-live", "polite");
+  message.setAttribute("aria-atomic", "true");
   message.dataset.techNewsState = state;
   message.textContent = getHomeTechNewsText(messageKeys[state]);
-  container.replaceChildren(message);
+
+  if (!existingStatus) container.replaceChildren(message);
 }
 
 function getValidTechNewsItem(item) {

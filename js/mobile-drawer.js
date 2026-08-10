@@ -44,6 +44,9 @@ function initMobileDrawer() {
   document.body.prepend(overlay);
   document.body.prepend(toggle);
 
+  const skipLink = document.querySelector(".skip-link");
+  if (skipLink) document.body.prepend(skipLink);
+
   function getFocusableElements(root) {
     return Array.from(root.querySelectorAll(DRAWER_FOCUSABLE_SELECTOR)).filter(
       (element) =>

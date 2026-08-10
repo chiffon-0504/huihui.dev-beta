@@ -120,6 +120,27 @@ test("the closed mobile drawer is outside the keyboard tab order", async ({
   ).toBe(false);
 });
 
+test("the localized skip link remains the first mobile keyboard shortcut", async ({
+  page,
+}) => {
+  const { sidebar, toggle } = await loadMobilePage(page, "/ja/");
+  const skipLink = page.locator(".skip-link");
+  const main = page.locator("#main-content");
+
+  await page.keyboard.press("Tab");
+  await expect(skipLink).toBeFocused();
+  await expect(skipLink).toHaveText("メインコンテンツへ移動");
+
+  await page.keyboard.press("Enter");
+  await expect(main).toBeFocused();
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  expect(await sidebar.evaluate((element) => element.inert)).toBe(true);
+
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await expect(sidebar.locator(drawerFocusableSelector).first()).toBeFocused();
+});
+
 test("fallback inert handles Tier Maker links injected after drawer initialization", async ({
   page,
 }) => {

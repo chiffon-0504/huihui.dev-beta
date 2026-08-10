@@ -2,6 +2,7 @@ window.HUIHUI_I18N = window.HUIHUI_I18N || {};
 
 window.HUIHUI_I18N.ja = {
   layout: {
+    skipLink: "メインコンテンツへ移動",
     nav: {
       about: "自己紹介",
       works: "作品",

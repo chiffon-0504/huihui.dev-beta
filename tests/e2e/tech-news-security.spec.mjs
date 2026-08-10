@@ -100,8 +100,12 @@ async function expectTechNewsStatus(page, state, text) {
   );
 
   await expect(status).toHaveText(text);
+  await expect(status).toHaveAttribute("role", "status");
+  await expect(status).toHaveAttribute("aria-live", "polite");
+  await expect(status).toHaveAttribute("aria-atomic", "true");
   await expect(page.locator("#techNewsCards > *")).toHaveCount(1);
   await expect(page.locator("#techNewsCards > .tech-news-card")).toHaveCount(0);
+  await expect(page.locator("#techNewsCards [role='status']")).toHaveCount(1);
 }
 
 async function installControllableTechNewsFetch(page) {
@@ -326,6 +330,7 @@ for (const locale of locales) {
     await expect(cards.first()).toHaveAttribute("target", "_blank");
     await expect(cards.first()).toHaveAttribute("rel", "noopener noreferrer");
     await expect(page.locator("#techNewsCards > .tech-news-status")).toHaveCount(0);
+    await expect(page.locator("#techNewsCards [role='status']")).toHaveCount(0);
     expect(getRequestCount()).toBe(1);
   });
 }

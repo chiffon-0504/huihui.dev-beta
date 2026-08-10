@@ -93,6 +93,31 @@ describe("Home loader contract", () => {
     }
   });
 
+  test("dynamic Tech News status uses one polite atomic live region", () => {
+    for (const [index, html] of homeSources.entries()) {
+      const document = homeDocuments[index];
+      const statusMatches = html.match(
+        /<p class="tech-news-loading tech-news-status" role="status" aria-live="polite" aria-atomic="true" data-tech-news-state="loading">/g,
+      );
+
+      expect(statusMatches, document).toHaveLength(1);
+    }
+
+    expect(homeCardsSource).toContain(
+      'container.querySelector(":scope > .tech-news-status")',
+    );
+    expect(homeCardsSource).toContain('message.setAttribute("role", "status")');
+    expect(homeCardsSource).toContain(
+      'message.setAttribute("aria-live", "polite")',
+    );
+    expect(homeCardsSource).toContain(
+      'message.setAttribute("aria-atomic", "true")',
+    );
+    expect(homeCardsSource).not.toMatch(
+      /container\.setAttribute\("(?:role|aria-live|aria-atomic)"/,
+    );
+  });
+
   test("the frontend script has no orphan loader, selector, endpoint, or interval", () => {
     const declaredFunctions = [
       ...homeCardsSource.matchAll(/^(?:async\s+)?function\s+(\w+)\s*\(/gm),
