@@ -2,6 +2,7 @@ window.HUIHUI_I18N = window.HUIHUI_I18N || {};
 
 window.HUIHUI_I18N.en = {
   layout: {
+    skipLink: "Skip to main content",
     nav: {
       about: "About",
       works: "Works",

@@ -62,6 +62,26 @@ function getLayoutText(lang) {
   );
 }
 
+function renderSkipLink() {
+  const lang = getCurrentLang();
+  const t = getLayoutText(lang);
+  const main = document.querySelector("main.main");
+
+  if (!main || !t?.skipLink || document.querySelector(".skip-link")) return;
+
+  const existingTarget = document.getElementById("main-content");
+  if (existingTarget && existingTarget !== main) return;
+
+  main.id = "main-content";
+  main.tabIndex = -1;
+
+  const skipLink = document.createElement("a");
+  skipLink.className = "skip-link";
+  skipLink.href = "#main-content";
+  skipLink.textContent = t.skipLink;
+  document.body.prepend(skipLink);
+}
+
 function renderNavLink({
   href,
   icon,
@@ -99,11 +119,11 @@ function renderSidebar() {
       <h1><a href="${getLocalizedPath(lang, "home")}">huihui.dev</a></h1>
 
       <div class="lang-switch" aria-label="${t.languageSwitch.label}">
-        <a href="${getLocalizedRoute("zh", window.location.pathname)}" class="${lang === "zh" ? "active" : ""}">${t.languageSwitch.zh}</a>
+        <a href="${getLocalizedRoute("zh", window.location.pathname)}" lang="zh-Hant" class="${lang === "zh" ? "active" : ""}">${t.languageSwitch.zh}</a>
         <span>|</span>
-        <a href="${getLocalizedRoute("en", window.location.pathname)}" class="${lang === "en" ? "active" : ""}">${t.languageSwitch.en}</a>
+        <a href="${getLocalizedRoute("en", window.location.pathname)}" lang="en" class="${lang === "en" ? "active" : ""}">${t.languageSwitch.en}</a>
         <span>|</span>
-        <a href="${getLocalizedRoute("ja", window.location.pathname)}" class="${lang === "ja" ? "active" : ""}">${t.languageSwitch.ja}</a>
+        <a href="${getLocalizedRoute("ja", window.location.pathname)}" lang="ja" class="${lang === "ja" ? "active" : ""}">${t.languageSwitch.ja}</a>
       </div>
 
       <nav>
@@ -179,6 +199,7 @@ function setActiveSidebarLink() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  renderSkipLink();
   renderSidebar();
   setActiveSidebarLink();
 });

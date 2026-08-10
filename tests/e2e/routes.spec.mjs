@@ -5,6 +5,12 @@ const routeGroupsByKey = new Map(
   primaryRouteGroups.map((group) => [group.routeKey, group]),
 );
 const localeOrder = ["zh", "en", "ja"];
+const languageLinkLanguages = ["zh-Hant", "en", "ja"];
+const skipLinkText = {
+  zh: "跳至主要內容",
+  en: "Skip to main content",
+  ja: "メインコンテンツへ移動",
+};
 const contactPlaceholders = {
   zh: { name: "你的名稱", message: "想說的內容" },
   en: { name: "Your name", message: "Your message" },
@@ -92,8 +98,39 @@ for (const route of primaryRoutes) {
 
     expect(response?.status()).toBe(200);
     await expect(page.locator("html")).toHaveAttribute("lang", route.lang);
-    await expect(page.locator("main.main")).toHaveCount(1);
+    const main = page.locator("main.main");
+    const skipLink = page.locator("a.skip-link");
+
+    await expect(main).toHaveCount(1);
+    await expect(main).toHaveAttribute("id", "main-content");
+    await expect(main).toHaveAttribute("tabindex", "-1");
+    await expect(page.locator("#main-content")).toHaveCount(1);
+    await expect(skipLink).toHaveCount(1);
+    await expect(skipLink).toHaveAttribute("href", "#main-content");
+    await expect(skipLink).toHaveText(skipLinkText[route.locale]);
     await expect(page.locator("#site-sidebar .sidebar-top")).toHaveCount(1);
+
+    await page.keyboard.press("Tab");
+    await expect(skipLink).toBeFocused();
+    const skipLinkFocus = await skipLink.evaluate((link) => {
+      const style = getComputedStyle(link);
+      const rect = link.getBoundingClientRect();
+
+      return {
+        bottom: rect.bottom,
+        outlineStyle: style.outlineStyle,
+        outlineWidth: style.outlineWidth,
+        top: rect.top,
+      };
+    });
+    expect(skipLinkFocus.top).toBeGreaterThanOrEqual(0);
+    expect(skipLinkFocus.bottom).toBeGreaterThan(skipLinkFocus.top);
+    expect(skipLinkFocus.outlineStyle).not.toBe("none");
+    expect(skipLinkFocus.outlineWidth).not.toBe("0px");
+
+    await page.keyboard.press("Enter");
+    await expect(main).toBeFocused();
+    expect(new URL(page.url()).hash).toBe("#main-content");
 
     const routeGroup = routeGroupsByKey.get(route.routeKey);
     const languageLinks = page.locator("#site-sidebar .lang-switch a");
@@ -104,7 +141,17 @@ for (const route of primaryRoutes) {
         "href",
         routeGroup.paths[locale],
       );
+      await expect(languageLinks.nth(index)).toHaveAttribute(
+        "lang",
+        languageLinkLanguages[index],
+      );
     }
+
+    const duplicateIds = await page.locator("[id]").evaluateAll((elements) => {
+      const ids = elements.map((element) => element.id);
+      return [...new Set(ids.filter((id, index) => ids.indexOf(id) !== index))];
+    });
+    expect(duplicateIds).toEqual([]);
 
     await expect(
       page.locator('#site-sidebar nav a[data-nav="works"]'),
@@ -208,6 +255,7 @@ test("the standalone 114514 route loads", async ({ page }) => {
 
   expect(response?.status()).toBe(200);
   await expect(page.locator(".error-card h1")).toHaveText("114514");
+  await expect(page.locator(".skip-link, #main-content")).toHaveCount(0);
 });
 
 test("missing routes return the standalone 404 page", async ({ page }) => {
@@ -215,4 +263,5 @@ test("missing routes return the standalone 404 page", async ({ page }) => {
 
   expect(response?.status()).toBe(404);
   await expect(page.locator(".error-card h1")).toHaveText("404");
+  await expect(page.locator(".skip-link, #main-content")).toHaveCount(0);
 });
