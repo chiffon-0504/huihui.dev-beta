@@ -3,3 +3,9 @@ coverage/
 debug.log
 playwright-report/
 test-results/
+
+# Local environment and Cloudflare secrets
+.env
+.env.*
+.dev.vars
+.dev.vars.*
