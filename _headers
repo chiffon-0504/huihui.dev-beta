@@ -1,4 +1,4 @@
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; connect-src 'self' https://api.huihui.dev https://huihui-api.huihuigames01.workers.dev https://huihui-api-beta.huihuigames01.workers.dev; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self' https://api.huihui.dev;
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; connect-src 'self' https://api.huihui.dev https://huihui-api.huihuigames01.workers.dev https://huihui-api-beta.huihuigames01.workers.dev; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self' https://api.huihui.dev;
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin

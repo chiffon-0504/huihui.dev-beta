@@ -209,19 +209,31 @@ describe("vendored browser dependencies", () => {
     );
   });
 
-  test("CSP no longer permits removed runtime CDN script or style sources", async () => {
+  test("CSP permits only the required browser runtime sources", async () => {
     const headers = await readFile(path.join(root, "_headers"), "utf8");
     const scriptSources = getCspSources(headers, "script-src");
     const styleSources = getCspSources(headers, "style-src");
+    const connectSources = getCspSources(headers, "connect-src");
 
     expect(getCspSources(headers, "default-src")).toEqual(["'self'"]);
     expect(scriptSources).toEqual([
       "'self'",
       "https://challenges.cloudflare.com",
+      "https://static.cloudflareinsights.com",
     ]);
     expect(styleSources).toEqual(["'self'", "'unsafe-inline'"]);
+    expect(connectSources).toEqual([
+      "'self'",
+      "https://api.huihui.dev",
+      "https://huihui-api.huihuigames01.workers.dev",
+      "https://huihui-api-beta.huihuigames01.workers.dev",
+    ]);
     expect(headers).not.toContain(removedRuntimeCdn);
     expect(headers).not.toContain("'unsafe-eval'");
-    expect([...scriptSources, ...styleSources]).not.toContain("*");
+    expect([
+      ...scriptSources,
+      ...styleSources,
+      ...connectSources,
+    ]).not.toContain("*");
   });
 });
