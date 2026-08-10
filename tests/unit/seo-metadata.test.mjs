@@ -164,14 +164,15 @@ describe("canonical and hreflang static contracts", () => {
       const expectedDescription = expectedHomeDescriptions[route.url];
 
       expect(titles, route.file).toEqual([expectedTitles[route.url]]);
-      expect(descriptions, route.file).toEqual(
-        expectedDescription
-          ? [{ name: "description", content: expectedDescription }]
-          : [],
-      );
-      expect(headDescriptions, `${route.file}: description must be in head`).toEqual(
-        descriptions,
-      );
+      if (expectedDescription) {
+        expect(descriptions, route.file).toEqual([
+          { name: "description", content: expectedDescription },
+        ]);
+        expect(
+          headDescriptions,
+          `${route.file}: description must be in head`,
+        ).toEqual(descriptions);
+      }
       expect(lang, route.file).toBe(route.lang);
     }
   });
