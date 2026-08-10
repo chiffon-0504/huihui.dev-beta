@@ -60,6 +60,11 @@ window.HUIHUI_I18N.ja = {
   works: {
     title: "作品",
     lead: "プロジェクト、UI実験、そしてhuihui.devの写真作品。",
+    accessibility: {
+      showcase: "作品紹介",
+      websiteProject: "huihui.dev プロジェクト",
+      tierMakerTool: "Tier Maker ツール"
+    },
     cards: {
       website: {
         type: "Webサイト",
@@ -111,9 +116,19 @@ window.HUIHUI_I18N.ja = {
     },
     images: {
       maimai: "maimai DX",
+      maimaiFavorite: "お気に入りのmaimai DX楽曲",
+      maimaiBest: "maimai DXのベスト記録",
       arcaea: "Arcaea",
+      arcaeaFavorite: "お気に入りのArcaea楽曲",
+      arcaeaBest: "Arcaeaのベスト記録",
       galgame: "Summer Pockets REFLECTION BLUE",
       preview: "プレビュー"
+    },
+    rhythm: {
+      favorite: "お気に入り",
+      best: "ベスト",
+      level: "レベル",
+      bestScore: "ベストスコア"
     },
     steam: {
       loading: "Steamライブラリを読み込み中...",
@@ -123,7 +138,7 @@ window.HUIHUI_I18N.ja = {
       timeout: "Steamゲームの読み込みがタイムアウトしました。もう一度お試しください。",
       hours: "時間"
     },
-    copyright: "Images © respective owners (SEGA, lowiro, VISUAL ARTS/Key, YUZUSOFT, sprite, NekoNyan Ltd., Sister Position, etc.)"
+    copyright: "画像 © 各権利者（SEGA、lowiro、VISUAL ARTS/Key、YUZUSOFT、sprite、NekoNyan Ltd.、Sister Position など）"
   },
   tierMaker: {
     title: "Tier Maker",

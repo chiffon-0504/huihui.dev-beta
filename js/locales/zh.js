@@ -60,6 +60,11 @@ window.HUIHUI_I18N.zh = {
   works: {
     title: "作品",
     lead: "專案、介面實驗，以及我拍攝的精選照片。",
+    accessibility: {
+      showcase: "作品展示",
+      websiteProject: "huihui.dev 專案",
+      tierMakerTool: "分級表製作器工具"
+    },
     cards: {
       website: {
         type: "網站",
@@ -111,9 +116,19 @@ window.HUIHUI_I18N.zh = {
     },
     images: {
       maimai: "maimai DX",
+      maimaiFavorite: "maimai DX 最愛歌曲",
+      maimaiBest: "maimai DX 最佳成績",
       arcaea: "Arcaea",
+      arcaeaFavorite: "Arcaea 最愛歌曲",
+      arcaeaBest: "Arcaea 最佳成績",
       galgame: "Summer Pockets REFLECTION BLUE",
       preview: "放大預覽"
+    },
+    rhythm: {
+      favorite: "最愛",
+      best: "最佳成績",
+      level: "等級",
+      bestScore: "最佳分數"
     },
     steam: {
       loading: "正在載入 Steam 遊戲庫...",
@@ -123,7 +138,7 @@ window.HUIHUI_I18N.zh = {
       timeout: "Steam 遊戲載入逾時，請稍後再試。",
       hours: "小時"
     },
-    copyright: "Images © respective owners (SEGA, lowiro, VISUAL ARTS/Key, YUZUSOFT, sprite, NekoNyan Ltd., Sister Position, etc.)"
+    copyright: "圖片 © 各自權利人所有（SEGA、lowiro、VISUAL ARTS/Key、YUZUSOFT、sprite、NekoNyan Ltd.、Sister Position 等）。"
   },
   tierMaker: {
     title: "分級表製作器",

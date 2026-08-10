@@ -15,6 +15,35 @@ const aboutPages = [
   "ja/about/index.html",
 ];
 const locales = ["zh", "en", "ja"];
+const expectedRenderedAlts = {
+  zh: [
+    "maimai DX",
+    "maimai DX 最愛歌曲",
+    "maimai DX 最佳成績",
+    "Arcaea",
+    "Arcaea 最愛歌曲",
+    "Arcaea 最佳成績",
+    "Summer Pockets REFLECTION BLUE",
+  ],
+  en: [
+    "maimai DX",
+    "Favorite maimai DX song",
+    "Best maimai DX record",
+    "Arcaea",
+    "Favorite Arcaea song",
+    "Best Arcaea record",
+    "Summer Pockets REFLECTION BLUE",
+  ],
+  ja: [
+    "maimai DX",
+    "お気に入りのmaimai DX楽曲",
+    "maimai DXのベスト記録",
+    "Arcaea",
+    "お気に入りのArcaea楽曲",
+    "Arcaeaのベスト記録",
+    "Summer Pockets REFLECTION BLUE",
+  ],
+};
 const expectedLocalSources = [
   "/images/1001_am.webp",
   "/images/1002_amf.webp",
@@ -212,8 +241,11 @@ describe("About media metadata", () => {
       renderedByLocale[locale] = images;
     }
 
-    expect(renderedByLocale.en).toEqual(renderedByLocale.zh);
-    expect(renderedByLocale.ja).toEqual(renderedByLocale.zh);
+    for (const locale of locales) {
+      expect(renderedByLocale[locale].map((image) => image.alt)).toEqual(
+        expectedRenderedAlts[locale],
+      );
+    }
   });
 
   test("the on-demand Lightbox preview keeps default loading behavior", async () => {
