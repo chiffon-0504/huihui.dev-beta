@@ -100,6 +100,24 @@ function steamResponse(games) {
   );
 }
 
+function pendingJsonResponse(signal) {
+  return new Response(
+    new ReadableStream({
+      start(controller) {
+        signal.addEventListener(
+          "abort",
+          () => controller.error(new Error("upstream body aborted")),
+          { once: true },
+        );
+      },
+      pull() {
+        return new Promise(() => {});
+      },
+    }),
+    { status: 200, headers: { "Content-Type": "application/json" } },
+  );
+}
+
 function expectFallbackHeaders(response, cacheControl) {
   expect(response.headers.get("Cache-Control")).toBe(cacheControl);
   expect(response.headers.get("X-Cache")).toBe("FALLBACK");
@@ -524,10 +542,7 @@ describe("GitHub upstream deadlines", () => {
       "fetch",
       vi.fn((_url, options) => {
         signal = options.signal;
-        return Promise.resolve({
-          ok: true,
-          json: vi.fn(() => new Promise(() => {})),
-        });
+        return Promise.resolve(pendingJsonResponse(signal));
       }),
     );
 
@@ -594,10 +609,7 @@ describe("Steam upstream deadlines", () => {
       "fetch",
       vi.fn((_url, options) => {
         signal = options.signal;
-        return Promise.resolve({
-          ok: true,
-          json: vi.fn(() => new Promise(() => {})),
-        });
+        return Promise.resolve(pendingJsonResponse(signal));
       }),
     );
 
