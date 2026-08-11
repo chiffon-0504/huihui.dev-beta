@@ -22,14 +22,24 @@ permissions:
   contents: read
 
 jobs:
-  validate:
+  validate-beta:
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && inputs.target == 'beta')
     uses: ./.github/workflows/validate.yml
+
+  validate-production:
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      inputs.target == 'production' &&
+      github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/main-regression.yml
 
   deploy-beta:
     if: >-
       github.event_name == 'push' ||
       (github.event_name == 'workflow_dispatch' && inputs.target == 'beta')
-    needs: validate
+    needs: validate-beta
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -50,7 +60,7 @@ jobs:
       github.event_name == 'workflow_dispatch' &&
       inputs.target == 'production' &&
       github.ref == 'refs/heads/main'
-    needs: validate
+    needs: validate-production
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: production

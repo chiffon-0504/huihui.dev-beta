@@ -7,7 +7,6 @@ import {
 
 export default defineConfig({
   ...baseConfig,
-  testMatch: "cross-browser-critical.spec.mjs",
   retries: 0,
   workers: 1,
   projects: [firefoxProject, webkitProject],

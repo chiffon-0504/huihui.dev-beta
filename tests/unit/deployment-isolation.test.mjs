@@ -1,63 +1,101 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { beforeAll, describe, expect, test } from "vitest";
+import { parseDocument } from "yaml";
 
 const root = path.resolve(import.meta.dirname, "../..");
 let workflow;
 
-function jobBody(name, nextJobName) {
-  const start = workflow.indexOf(`  ${name}:`);
-  const end = nextJobName
-    ? workflow.indexOf(`  ${nextJobName}:`, start)
-    : workflow.length;
+function parseWorkflow(source) {
+  const document = parseDocument(source);
+  if (document.errors.length > 0) {
+    const details = document.errors.map((error) => error.message).join("; ");
+    throw new Error(`deploy-huihui-api-worker.yml is not valid YAML: ${details}`);
+  }
 
-  expect(start, `${name} job`).toBeGreaterThan(-1);
-  expect(end, `${name} job boundary`).toBeGreaterThan(start);
-  return workflow.slice(start, end);
+  return document.toJS();
+}
+
+function jobAction(job, action) {
+  return job.steps.find(
+    ({ uses }) => typeof uses === "string" && uses.startsWith(`${action}@`),
+  );
 }
 
 beforeAll(async () => {
-  workflow = await readFile(
+  const source = await readFile(
     path.join(root, ".github/workflows/deploy-huihui-api-worker.yml"),
     "utf8",
   );
+  workflow = parseWorkflow(source);
 });
 
 describe("Worker deployment isolation", () => {
   test("does not deploy Workers from pull requests", () => {
-    expect(workflow).not.toMatch(/^\s*pull_request:/m);
+    expect(Object.hasOwn(workflow.on, "pull_request")).toBe(false);
+    expect(workflow.on.push.branches).toEqual(["main"]);
+    expect(workflow.on.push.paths).toEqual([
+      "workers/huihui-api/**",
+      ".github/workflows/deploy-huihui-api-worker.yml",
+    ]);
   });
 
-  test("deploys only beta automatically on relevant main pushes", () => {
-    const betaJob = jobBody("deploy-beta", "deploy-production");
-    const productionJob = jobBody("deploy-production");
+  test("gates beta deployment on lightweight validation", () => {
+    const validation = workflow.jobs["validate-beta"];
+    const deployment = workflow.jobs["deploy-beta"];
 
-    expect(workflow).toMatch(/push:\s*\n\s+branches:\s*\n\s+- main/);
-    expect(betaJob).toContain("github.event_name == 'push'");
-    expect(betaJob).toContain("command: deploy --env beta");
-    expect(productionJob).not.toContain("github.event_name == 'push'");
+    expect(validation.uses).toBe("./.github/workflows/validate.yml");
+    expect(validation.if).toContain("github.event_name == 'push'");
+    expect(validation.if).toContain("inputs.target == 'beta'");
+    expect(deployment.needs).toBe("validate-beta");
+    expect(deployment.if).toContain("github.event_name == 'push'");
+    expect(deployment.if).toContain("inputs.target == 'beta'");
+
+    const wrangler = jobAction(deployment, "cloudflare/wrangler-action");
+    expect(wrangler.with.workingDirectory).toBe("workers/huihui-api");
+    expect(wrangler.with.command).toBe("deploy --env beta");
   });
 
-  test("requires an explicit main-branch production dispatch", () => {
-    const productionJob = jobBody("deploy-production");
+  test("requires strong validation before an explicit main production dispatch", () => {
+    const validation = workflow.jobs["validate-production"];
+    const deployment = workflow.jobs["deploy-production"];
 
-    expect(productionJob).toContain("github.event_name == 'workflow_dispatch'");
-    expect(productionJob).toContain("inputs.target == 'production'");
-    expect(productionJob).toContain("github.ref == 'refs/heads/main'");
-    expect(productionJob).toContain("environment: production");
-    expect(productionJob).toMatch(/\n\s+command: deploy\s*$/m);
-    expect(productionJob).not.toContain("deploy --env beta");
+    expect(workflow.on.workflow_dispatch.inputs.target.options).toEqual([
+      "beta",
+      "production",
+    ]);
+    expect(validation.uses).toBe(
+      "./.github/workflows/main-regression.yml",
+    );
+    expect(validation.if).toContain("github.event_name == 'workflow_dispatch'");
+    expect(validation.if).toContain("inputs.target == 'production'");
+    expect(validation.if).toContain("github.ref == 'refs/heads/main'");
+
+    expect(deployment.needs).toBe("validate-production");
+    expect(deployment.if).toContain("github.event_name == 'workflow_dispatch'");
+    expect(deployment.if).toContain("inputs.target == 'production'");
+    expect(deployment.if).toContain("github.ref == 'refs/heads/main'");
+    expect(deployment.if).not.toContain("github.event_name == 'push'");
+    expect(deployment.environment).toBe("production");
+
+    const wrangler = jobAction(deployment, "cloudflare/wrangler-action");
+    expect(wrangler.with.workingDirectory).toBe("workers/huihui-api");
+    expect(wrangler.with.command).toBe("deploy");
   });
 
   test("keeps beta and production credentials under the existing secret names", () => {
     for (const name of ["deploy-beta", "deploy-production"]) {
-      const body = jobBody(
-        name,
-        name === "deploy-beta" ? "deploy-production" : undefined,
+      const wrangler = jobAction(
+        workflow.jobs[name],
+        "cloudflare/wrangler-action",
       );
 
-      expect(body).toContain("secrets.CLOUDFLARE_API_TOKEN");
-      expect(body).toContain("secrets.CLOUDFLARE_ACCOUNT_ID");
+      expect(wrangler.with.apiToken).toBe(
+        "${{ secrets.CLOUDFLARE_API_TOKEN }}",
+      );
+      expect(wrangler.with.accountId).toBe(
+        "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}",
+      );
     }
   });
 });

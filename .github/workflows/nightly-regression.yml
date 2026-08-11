@@ -1,0 +1,80 @@
+name: Nightly regression
+
+on:
+  schedule:
+    # 03:00 Asia/Taipei (UTC+8) is 19:00 UTC on the previous calendar day.
+    - cron: "0 19 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-full:
+    name: ${{ matrix.browser }} full
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - browser: chromium
+            config: playwright.config.mjs
+            artifact: playwright-nightly-chromium
+          - browser: firefox
+            config: playwright.full-cross-browser.config.mjs
+            artifact: playwright-nightly-firefox
+          - browser: webkit
+            config: playwright.full-cross-browser.config.mjs
+            artifact: playwright-nightly-webkit
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install selected browser
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Run selected browser full E2E suite
+        run: npx playwright test --config=${{ matrix.config }} --project=${{ matrix.browser }} --workers=1 --retries=0
+
+      - name: Upload Playwright failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  dependency-audit:
+    name: Dependency and security audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Audit all dependencies
+        run: npm audit
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev
