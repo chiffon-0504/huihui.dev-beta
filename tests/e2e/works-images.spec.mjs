@@ -2,11 +2,13 @@ import { expect, test } from "@playwright/test";
 
 const localOrigin = "http://127.0.0.1:4173";
 const worksImageRoutePattern =
-  /^http:\/\/127\.0\.0\.1:4173\/images\/(?:200[1-6]_w|200[1-4]_w-(?:900|1600))\.webp(?:\?.*)?$/;
+  /^http:\/\/127\.0\.0\.1:4173\/images\/(?:200[1-6]_w|200[1-4]_w-(?:900|1600)|2003_w-2400)\.webp(?:\?.*)?$/;
 const wideImageSizes =
   "(max-width: 900px) calc(100vw - 42px), (max-width: 1200px) calc(66.667vw - 245px), min(660px, calc(66.667vw - 299px))";
 const narrowImageSizes =
   "(max-width: 900px) calc(100vw - 42px), (max-width: 1200px) calc(33.333vw - 133px), min(320px, calc(33.333vw - 159px))";
+const tallImageSizes =
+  "(max-width: 526px) 484px, (max-width: 900px) calc(100vw - 42px), 1146px";
 const worksPages = [
   {
     name: "zh-Hant",
@@ -71,11 +73,12 @@ const worksImages = [
     height: 2660,
     lazy: true,
     srcset:
-      "/images/2003_w-900.webp 900w, /images/2003_w-1600.webp 1600w",
-    sizes: narrowImageSizes,
+      "/images/2003_w-900.webp 900w, /images/2003_w-1600.webp 1600w, /images/2003_w-2400.webp 2400w",
+    sizes: tallImageSizes,
     displaySources: [
       { path: "/images/2003_w-900.webp", width: 900, height: 519 },
       { path: "/images/2003_w-1600.webp", width: 1600, height: 922 },
+      { path: "/images/2003_w-2400.webp", width: 2400, height: 1383 },
     ],
   },
   {
