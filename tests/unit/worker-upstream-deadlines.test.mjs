@@ -75,7 +75,7 @@ function githubResponse() {
   return new Response(
     JSON.stringify([
       {
-        html_url: "https://github.com/chiffon-0504/huihui_project-v1/commit/abc",
+        html_url: "https://github.com/chiffon-0504/huihui.dev-stable/commit/abc",
         commit: {
           committer: { date: "2026-08-03T11:30:00.000Z" },
         },
@@ -491,11 +491,14 @@ describe("GitHub upstream deadlines", () => {
     expect(data).toMatchObject({
       ok: true,
       source: "GitHub",
-      repo: "huihui_project-v1",
+      repo: "huihui.dev-stable",
       updatedAt: "2026-08-03T11:30:00.000Z",
       updatedText: "30 mins ago",
-      link: "https://github.com/chiffon-0504/huihui_project-v1/commit/abc",
+      link: "https://github.com/chiffon-0504/huihui.dev-stable/commit/abc",
     });
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      "https://api.github.com/repos/chiffon-0504/huihui.dev-stable/commits?per_page=1",
+    );
     expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
   });
 
@@ -519,9 +522,10 @@ describe("GitHub upstream deadlines", () => {
     expect(data).toMatchObject({
       ok: false,
       source: "GitHub",
-      repo: "huihui_project-v1",
+      repo: "huihui.dev-stable",
       updatedAt: "",
       updatedText: "",
+      link: "https://github.com/chiffon-0504/huihui.dev-stable",
     });
     expect(Object.keys(data)).toEqual([
       "ok",

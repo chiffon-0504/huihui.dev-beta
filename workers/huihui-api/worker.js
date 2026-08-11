@@ -618,7 +618,7 @@ async function handleApod(request, env, ctx) {
 ========================= */
 
 const GITHUB_REPO_OWNER = "chiffon-0504";
-const GITHUB_REPO_NAME = "huihui_project-v1";
+const GITHUB_REPO_NAME = "huihui.dev-stable";
 const GITHUB_REPO_API_URL =
   `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/commits?per_page=1`;
 
