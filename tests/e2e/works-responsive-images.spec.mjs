@@ -10,6 +10,7 @@ const worksImages = [
     sources: [
       { path: "/images/2001_w-900.webp", width: 900, height: 553 },
       { path: "/images/2001_w-1600.webp", width: 1600, height: 984 },
+      { path: "/images/2001_w-2400.webp", width: 2400, height: 1475 },
     ],
   },
   {
@@ -20,6 +21,7 @@ const worksImages = [
     sources: [
       { path: "/images/2002_w-900.webp", width: 900, height: 916 },
       { path: "/images/2002_w-1600.webp", width: 1600, height: 1629 },
+      { path: "/images/2002_w-1800.webp", width: 1800, height: 1832 },
     ],
   },
   {
@@ -41,6 +43,7 @@ const worksImages = [
     sources: [
       { path: "/images/2004_w-900.webp", width: 900, height: 631 },
       { path: "/images/2004_w-1600.webp", width: 1600, height: 1123 },
+      { path: "/images/2004_w-1800.webp", width: 1800, height: 1263 },
     ],
   },
 ];
@@ -50,56 +53,60 @@ const viewportCases = [
     width: 390,
     height: 844,
     deviceScaleFactor: 1,
-    expectedWidths: [900, 900, null, 900],
   },
   {
     name: "mobile-2x",
     width: 390,
     height: 844,
     deviceScaleFactor: 2,
-    expectedWidths: [900, 900, null, 900],
+  },
+  {
+    name: "breakpoint-900-1x",
+    width: 900,
+    height: 900,
+    deviceScaleFactor: 1,
+  },
+  {
+    name: "breakpoint-900-2x",
+    width: 900,
+    height: 900,
+    deviceScaleFactor: 2,
   },
   {
     name: "breakpoint-901-1x",
     width: 901,
     height: 900,
     deviceScaleFactor: 1,
-    expectedWidths: [900, 900, null, 900],
   },
   {
     name: "breakpoint-901-2x",
     width: 901,
     height: 900,
     deviceScaleFactor: 2,
-    expectedWidths: [900, 900, null, 900],
   },
   {
     name: "desktop-1200-1x",
     width: 1200,
     height: 900,
     deviceScaleFactor: 1,
-    expectedWidths: [900, 900, null, 900],
   },
   {
     name: "desktop-1200-2x",
     width: 1200,
     height: 900,
     deviceScaleFactor: 2,
-    expectedWidths: [1600, 1600, null, 900],
   },
   {
     name: "desktop-1280-1x",
     width: 1280,
     height: 800,
     deviceScaleFactor: 1,
-    expectedWidths: [900, 900, null, 900],
   },
   {
     name: "desktop-1280-2x",
     width: 1280,
     height: 800,
     deviceScaleFactor: 2,
-    expectedWidths: [1600, 1600, null, 900],
   },
 ];
 
@@ -140,10 +147,6 @@ for (const viewport of viewportCases) {
 
       for (const [index, locator] of imageLocators.entries()) {
         const image = worksImages[index];
-        const selectedWidth = viewport.expectedWidths[index];
-        const expectedPath = selectedWidth
-          ? `/images/${image.id}_w-${selectedWidth}.webp`
-          : null;
 
         await locator.scrollIntoViewIfNeeded();
         await expect
@@ -164,7 +167,6 @@ for (const viewport of viewportCases) {
         expect(image.sources.map((source) => source.path)).toContain(
           currentPath,
         );
-        if (expectedPath) expect(currentPath).toBe(expectedPath);
         expect(requestedPaths.has(currentPath), currentPath).toBe(true);
       }
 
@@ -182,6 +184,7 @@ for (const viewport of viewportCases) {
               displayedHeight: rect.height,
               cardWidth: cardRect.width,
               cardHeight: cardRect.height,
+              objectFit: getComputedStyle(element).objectFit,
               sizes: element.sizes,
               fullSrc: element.dataset.fullSrc,
             };
@@ -196,45 +199,75 @@ for (const viewport of viewportCases) {
         expect(requestedPaths.has(image.original), image.original).toBe(false);
       }
 
-      const tallImage = worksImages.find((image) => image.id === "2003");
-      const tallState = normalState[worksImages.indexOf(tallImage)];
-      const selectedTallSource = tallImage.sources.find(
-        (source) => source.path === tallState.currentPath,
-      );
-      const tallAspectRatio = tallImage.width / tallImage.height;
-      const coverCssWidth = Math.max(
-        tallState.displayedWidth,
-        tallState.displayedHeight * tallAspectRatio,
-      );
-      const coverCssHeight = Math.max(
-        tallState.displayedWidth / tallAspectRatio,
-        tallState.displayedHeight,
-      );
-      const coverRequirement = {
-        width: Math.ceil(coverCssWidth * viewport.deviceScaleFactor),
-        height: Math.ceil(coverCssHeight * viewport.deviceScaleFactor),
-      };
-      const smallestAdequateSource = tallImage.sources.find(
-        (source) =>
-          source.width >= coverRequirement.width &&
-          source.height >= coverRequirement.height,
+      const coverAudits = worksImages.map((image, index) => {
+        const state = normalState[index];
+        const selectedSource = image.sources.find(
+          (source) => source.path === state.currentPath,
+        );
+        const aspectRatio = image.width / image.height;
+        const coverCssWidth = Math.max(
+          state.displayedWidth,
+          state.displayedHeight * aspectRatio,
+        );
+        const coverCssHeight = Math.max(
+          state.displayedHeight,
+          state.displayedWidth / aspectRatio,
+        );
+        const requirement = {
+          width: Math.ceil(coverCssWidth * viewport.deviceScaleFactor),
+          height: Math.ceil(coverCssHeight * viewport.deviceScaleFactor),
+        };
+        const smallestAdequateSource = image.sources.find(
+          (source) =>
+            source.width >= requirement.width &&
+            source.height >= requirement.height,
+        );
+
+        return {
+          id: image.id,
+          intrinsic: { width: image.width, height: image.height },
+          aspectRatio,
+          objectFit: state.objectFit,
+          renderedBox: {
+            width: state.displayedWidth,
+            height: state.displayedHeight,
+          },
+          cardBox: { width: state.cardWidth, height: state.cardHeight },
+          coverCss: { width: coverCssWidth, height: coverCssHeight },
+          requirement,
+          selectedSource,
+          smallestAdequateSource,
+          sufficient:
+            Boolean(selectedSource) &&
+            selectedSource.width >= requirement.width &&
+            selectedSource.height >= requirement.height,
+        };
+      });
+
+      console.log(
+        `[works-responsive-audit:${viewport.name}] ${JSON.stringify({
+          viewport: {
+            width: viewport.width,
+            height: viewport.height,
+            deviceScaleFactor: viewport.deviceScaleFactor,
+          },
+          images: coverAudits,
+        })}`,
       );
 
-      expect(selectedTallSource).toEqual(smallestAdequateSource);
-      expect(selectedTallSource.width).toBeGreaterThanOrEqual(
-        coverRequirement.width,
-      );
-      expect(selectedTallSource.height).toBeGreaterThanOrEqual(
-        coverRequirement.height,
-      );
-      expect(tallState.cardHeight).toBeCloseTo(
-        viewport.width <= 900 ? 280 : 662,
-        1,
-      );
-      expect(tallState.displayedHeight).toBeCloseTo(
-        tallState.cardHeight - 2,
-        1,
-      );
+      for (const [index, audit] of coverAudits.entries()) {
+        expect(audit.objectFit).toBe("cover");
+        expect(audit.selectedSource, worksImages[index].original).toBeTruthy();
+        expect(audit.selectedSource).toEqual(audit.smallestAdequateSource);
+        expect(audit.selectedSource.width).toBeGreaterThanOrEqual(
+          audit.requirement.width,
+        );
+        expect(audit.selectedSource.height).toBeGreaterThanOrEqual(
+          audit.requirement.height,
+        );
+        expect(audit.cardBox.width - audit.renderedBox.width).toBeCloseTo(2, 1);
+        expect(audit.cardBox.height - audit.renderedBox.height).toBeCloseTo(2, 1);
+      }
       expect(
         await page.evaluate(
           () =>
@@ -284,10 +317,7 @@ for (const viewport of viewportCases) {
             deviceScaleFactor: viewport.deviceScaleFactor,
           },
           images: normalState,
-          tallImageCover: {
-            selectedSource: selectedTallSource,
-            requirement: coverRequirement,
-          },
+          coverAudits,
           originalRequestedBeforeLightbox: false,
           originalRequestedAfterLightbox: true,
           horizontalOverflow: false,

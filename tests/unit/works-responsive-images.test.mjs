@@ -9,28 +9,30 @@ const worksPages = [
   "en/works/index.html",
   "ja/works/index.html",
 ];
-const wideImageSizes =
-  "(max-width: 900px) calc(100vw - 42px), (max-width: 1200px) calc(66.667vw - 245px), min(660px, calc(66.667vw - 299px))";
-const narrowImageSizes =
-  "(max-width: 900px) calc(100vw - 42px), (max-width: 1200px) calc(33.333vw - 133px), min(320px, calc(33.333vw - 159px))";
+const largeImageSizes =
+  "(max-width: 722px) 680px, (max-width: 900px) calc(100vw - 42px), 1074px";
+const portraitImageSizes =
+  "(max-width: 900px) calc(100vw - 42px), (max-width: 942px) 383px, (max-width: 1200px) calc(66.667vw - 245px), 555px";
 const tallImageSizes =
   "(max-width: 526px) 484px, (max-width: 900px) calc(100vw - 42px), 1146px";
+const standardImageSizes =
+  "(max-width: 439px) 397px, (max-width: 900px) calc(100vw - 42px), 554px";
 const worksImages = [
   {
     id: "2001",
     width: 3024,
     height: 1859,
     lazy: false,
-    sizes: wideImageSizes,
-    sourceWidths: [900, 1600],
+    sizes: largeImageSizes,
+    sourceWidths: [900, 1600, 2400],
   },
   {
     id: "2002",
     width: 3024,
     height: 3078,
     lazy: true,
-    sizes: wideImageSizes,
-    sourceWidths: [900, 1600],
+    sizes: portraitImageSizes,
+    sourceWidths: [900, 1600, 1800],
   },
   {
     id: "2003",
@@ -45,13 +47,13 @@ const worksImages = [
     width: 5043,
     height: 3538,
     lazy: true,
-    sizes: narrowImageSizes,
-    sourceWidths: [900, 1600],
+    sizes: standardImageSizes,
+    sourceWidths: [900, 1600, 1800],
   },
 ];
 const derivativeDimensions = new Map([
-  ["2001", [[900, 553], [1600, 984]]],
-  ["2002", [[900, 916], [1600, 1629]]],
+  ["2001", [[900, 553], [1600, 984], [2400, 1475]]],
+  ["2002", [[900, 916], [1600, 1629], [1800, 1832]]],
   [
     "2003",
     [
@@ -60,7 +62,7 @@ const derivativeDimensions = new Map([
       [2400, 1383],
     ],
   ],
-  ["2004", [[900, 631], [1600, 1123]]],
+  ["2004", [[900, 631], [1600, 1123], [1800, 1263]]],
 ]);
 
 function readAttributes(tag) {

@@ -2,13 +2,15 @@ import { expect, test } from "@playwright/test";
 
 const localOrigin = "http://127.0.0.1:4173";
 const worksImageRoutePattern =
-  /^http:\/\/127\.0\.0\.1:4173\/images\/(?:200[1-6]_w|200[1-4]_w-(?:900|1600)|2003_w-2400)\.webp(?:\?.*)?$/;
-const wideImageSizes =
-  "(max-width: 900px) calc(100vw - 42px), (max-width: 1200px) calc(66.667vw - 245px), min(660px, calc(66.667vw - 299px))";
-const narrowImageSizes =
-  "(max-width: 900px) calc(100vw - 42px), (max-width: 1200px) calc(33.333vw - 133px), min(320px, calc(33.333vw - 159px))";
+  /^http:\/\/127\.0\.0\.1:4173\/images\/(?:200[1-6]_w|200[1-4]_w-(?:900|1600)|200[13]_w-2400|200[24]_w-1800)\.webp(?:\?.*)?$/;
+const largeImageSizes =
+  "(max-width: 722px) 680px, (max-width: 900px) calc(100vw - 42px), 1074px";
+const portraitImageSizes =
+  "(max-width: 900px) calc(100vw - 42px), (max-width: 942px) 383px, (max-width: 1200px) calc(66.667vw - 245px), 555px";
 const tallImageSizes =
   "(max-width: 526px) 484px, (max-width: 900px) calc(100vw - 42px), 1146px";
+const standardImageSizes =
+  "(max-width: 439px) 397px, (max-width: 900px) calc(100vw - 42px), 554px";
 const worksPages = [
   {
     name: "zh-Hant",
@@ -47,11 +49,12 @@ const worksImages = [
     height: 1859,
     lazy: false,
     srcset:
-      "/images/2001_w-900.webp 900w, /images/2001_w-1600.webp 1600w",
-    sizes: wideImageSizes,
+      "/images/2001_w-900.webp 900w, /images/2001_w-1600.webp 1600w, /images/2001_w-2400.webp 2400w",
+    sizes: largeImageSizes,
     displaySources: [
       { path: "/images/2001_w-900.webp", width: 900, height: 553 },
       { path: "/images/2001_w-1600.webp", width: 1600, height: 984 },
+      { path: "/images/2001_w-2400.webp", width: 2400, height: 1475 },
     ],
   },
   {
@@ -60,11 +63,12 @@ const worksImages = [
     height: 3078,
     lazy: true,
     srcset:
-      "/images/2002_w-900.webp 900w, /images/2002_w-1600.webp 1600w",
-    sizes: wideImageSizes,
+      "/images/2002_w-900.webp 900w, /images/2002_w-1600.webp 1600w, /images/2002_w-1800.webp 1800w",
+    sizes: portraitImageSizes,
     displaySources: [
       { path: "/images/2002_w-900.webp", width: 900, height: 916 },
       { path: "/images/2002_w-1600.webp", width: 1600, height: 1629 },
+      { path: "/images/2002_w-1800.webp", width: 1800, height: 1832 },
     ],
   },
   {
@@ -87,11 +91,12 @@ const worksImages = [
     height: 3538,
     lazy: true,
     srcset:
-      "/images/2004_w-900.webp 900w, /images/2004_w-1600.webp 1600w",
-    sizes: narrowImageSizes,
+      "/images/2004_w-900.webp 900w, /images/2004_w-1600.webp 1600w, /images/2004_w-1800.webp 1800w",
+    sizes: standardImageSizes,
     displaySources: [
       { path: "/images/2004_w-900.webp", width: 900, height: 631 },
       { path: "/images/2004_w-1600.webp", width: 1600, height: 1123 },
+      { path: "/images/2004_w-1800.webp", width: 1800, height: 1263 },
     ],
   },
   {
