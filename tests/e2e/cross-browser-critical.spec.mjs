@@ -260,8 +260,11 @@ test("native Lightbox blocks background interaction and restores focus", async (
   await expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
   const triggerState = await trigger.evaluate((image) => ({
     alt: image.alt,
-    path: new URL(image.currentSrc || image.src).pathname,
+    displayPath: new URL(image.currentSrc || image.src).pathname,
+    fullPath: new URL(image.dataset.fullSrc, window.location.href).pathname,
   }));
+
+  expect(triggerState.displayPath).not.toBe(triggerState.fullPath);
 
   await trigger.focus();
   await expect(trigger).toBeFocused();
@@ -274,7 +277,7 @@ test("native Lightbox blocks background interaction and restores focus", async (
     await lightboxImage.evaluate(
       (image) => new URL(image.currentSrc || image.src).pathname,
     ),
-  ).toBe(triggerState.path);
+  ).toBe(triggerState.fullPath);
   expect(await dialog.evaluate((element) => element.contains(document.activeElement))).toBe(
     true,
   );

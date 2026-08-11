@@ -2,7 +2,15 @@ import { expect, test } from "@playwright/test";
 
 const localOrigin = "http://127.0.0.1:4173";
 const worksImageRoutePattern =
-  /^http:\/\/127\.0\.0\.1:4173\/images\/200[1-6]_w\.webp(?:\?.*)?$/;
+  /^http:\/\/127\.0\.0\.1:4173\/images\/(?:200[1-6]_w|200[1-4]_w-(?:900|1600)|200[13]_w-2400|200[24]_w-1800)\.webp(?:\?.*)?$/;
+const largeImageSizes =
+  "(max-width: 722px) 680px, (max-width: 900px) calc(100vw - 42px), 1074px";
+const portraitImageSizes =
+  "(max-width: 900px) calc(100vw - 42px), (max-width: 942px) 383px, (max-width: 1200px) calc(66.667vw - 245px), min(660px, calc(66.667vw - 298px))";
+const tallImageSizes =
+  "(max-width: 526px) 484px, (max-width: 900px) calc(100vw - 42px), 1146px";
+const standardImageSizes =
+  "(max-width: 439px) 397px, (max-width: 900px) calc(100vw - 42px), 554px";
 const worksPages = [
   {
     name: "zh-Hant",
@@ -35,19 +43,91 @@ const worksPages = [
 ];
 
 const worksImages = [
-  { path: "/images/2001_w.webp", width: 3024, height: 1859, lazy: false },
-  { path: "/images/2002_w.webp", width: 3024, height: 3078, lazy: true },
-  { path: "/images/2003_w.webp", width: 4615, height: 2660, lazy: true },
-  { path: "/images/2004_w.webp", width: 5043, height: 3538, lazy: true },
-  { path: "/images/2005_w.webp", width: 745, height: 487, lazy: true },
-  { path: "/images/2006_w.webp", width: 1105, height: 1767, lazy: true },
+  {
+    path: "/images/2001_w.webp",
+    width: 3024,
+    height: 1859,
+    lazy: false,
+    srcset:
+      "/images/2001_w-900.webp 900w, /images/2001_w-1600.webp 1600w, /images/2001_w-2400.webp 2400w",
+    sizes: largeImageSizes,
+    displaySources: [
+      { path: "/images/2001_w-900.webp", width: 900, height: 553 },
+      { path: "/images/2001_w-1600.webp", width: 1600, height: 984 },
+      { path: "/images/2001_w-2400.webp", width: 2400, height: 1475 },
+    ],
+  },
+  {
+    path: "/images/2002_w.webp",
+    width: 3024,
+    height: 3078,
+    lazy: true,
+    srcset:
+      "/images/2002_w-900.webp 900w, /images/2002_w-1600.webp 1600w, /images/2002_w-1800.webp 1800w",
+    sizes: portraitImageSizes,
+    displaySources: [
+      { path: "/images/2002_w-900.webp", width: 900, height: 916 },
+      { path: "/images/2002_w-1600.webp", width: 1600, height: 1629 },
+      { path: "/images/2002_w-1800.webp", width: 1800, height: 1832 },
+    ],
+  },
+  {
+    path: "/images/2003_w.webp",
+    width: 4615,
+    height: 2660,
+    lazy: true,
+    srcset:
+      "/images/2003_w-900.webp 900w, /images/2003_w-1600.webp 1600w, /images/2003_w-2400.webp 2400w",
+    sizes: tallImageSizes,
+    displaySources: [
+      { path: "/images/2003_w-900.webp", width: 900, height: 519 },
+      { path: "/images/2003_w-1600.webp", width: 1600, height: 922 },
+      { path: "/images/2003_w-2400.webp", width: 2400, height: 1383 },
+    ],
+  },
+  {
+    path: "/images/2004_w.webp",
+    width: 5043,
+    height: 3538,
+    lazy: true,
+    srcset:
+      "/images/2004_w-900.webp 900w, /images/2004_w-1600.webp 1600w, /images/2004_w-1800.webp 1800w",
+    sizes: standardImageSizes,
+    displaySources: [
+      { path: "/images/2004_w-900.webp", width: 900, height: 631 },
+      { path: "/images/2004_w-1600.webp", width: 1600, height: 1123 },
+      { path: "/images/2004_w-1800.webp", width: 1800, height: 1263 },
+    ],
+  },
+  {
+    path: "/images/2005_w.webp",
+    width: 745,
+    height: 487,
+    lazy: true,
+  },
+  {
+    path: "/images/2006_w.webp",
+    width: 1105,
+    height: 1767,
+    lazy: true,
+  },
 ];
 const targetImage = worksImages.at(-1);
+const worksImagePaths = new Set(
+  worksImages.flatMap((image) => [
+    image.path,
+    ...(image.displaySources || []).map((source) => source.path),
+  ]),
+);
+
+function normalDisplaySource(image) {
+  return image.displaySources?.[0] || image;
+}
 
 function localImagePath(url) {
   const parsedUrl = new URL(url);
   return parsedUrl.origin === localOrigin &&
-    /^\/images\/200[1-6]_w\.webp$/.test(parsedUrl.pathname)
+    worksImagePaths.has(parsedUrl.pathname)
     ? parsedUrl.pathname
     : null;
 }
@@ -155,20 +235,28 @@ test.describe("localized Works image reliability", () => {
       };
       const waitForLoadedImage = async (image) => {
         const locator = page.locator(`img.zoomable[src$="${image.path}"]`);
+        const displaySource = normalDisplaySource(image);
 
         await expect
           .poll(() =>
             locator.evaluate((element) => ({
               complete: element.complete,
+              currentPath: element.currentSrc
+                ? new URL(element.currentSrc).pathname
+                : "",
               naturalWidth: element.naturalWidth,
               naturalHeight: element.naturalHeight,
             })),
           )
-          .toEqual({
-            complete: true,
-            naturalWidth: image.width,
-            naturalHeight: image.height,
-          });
+          .toMatchObject({ complete: true, currentPath: displaySource.path });
+
+        const naturalDimensions = await locator.evaluate((element) => ({
+          width: element.naturalWidth,
+          height: element.naturalHeight,
+        }));
+
+        expect(naturalDimensions.width).toBeGreaterThan(0);
+        expect(naturalDimensions.height).toBeGreaterThan(0);
       };
 
       page.on("request", observeRequest);
@@ -186,9 +274,7 @@ test.describe("localized Works image reliability", () => {
         const grid = page.locator(".works-showcase-grid");
         const imageLocator = grid.locator("img.zoomable");
         const cardLocator = grid.locator(":scope > .showcase-card");
-        const firstLightboxTrigger = page
-          .locator(".showcase-photo-card img.zoomable")
-          .first();
+        const firstLightboxTrigger = imageLocator.first();
 
         expect(response?.status()).toBe(200);
         await expect(page.locator("html")).toHaveAttribute(
@@ -216,13 +302,13 @@ test.describe("localized Works image reliability", () => {
           "aria-haspopup",
           "dialog",
         );
-        await expect.poll(() => requestedImages.has(worksImages[0].path)).toBe(
-          true,
-        );
+        const firstDisplayPath = normalDisplaySource(worksImages[0]).path;
+
+        await expect.poll(() => requestedImages.has(firstDisplayPath)).toBe(true);
         await expect
           .poll(
             () =>
-              (pendingReleases.get(worksImages[0].path)?.size || 0) > 0,
+              (pendingReleases.get(firstDisplayPath)?.size || 0) > 0,
           )
           .toBe(true);
         await settleLazyLoading(page);
@@ -244,6 +330,9 @@ test.describe("localized Works image reliability", () => {
               alt: image.alt,
               loading: image.getAttribute("loading"),
               decoding: image.getAttribute("decoding"),
+              srcset: image.getAttribute("srcset"),
+              sizes: image.getAttribute("sizes"),
+              fullSrc: image.dataset.fullSrc || null,
               width: image.getAttribute("width"),
               height: image.getAttribute("height"),
               naturalWidth: image.naturalWidth,
@@ -272,7 +361,10 @@ test.describe("localized Works image reliability", () => {
             path: image.path,
             alt: worksPage.alts[index],
             loading: image.lazy ? "lazy" : null,
-            decoding: image.lazy ? "async" : null,
+            decoding: "async",
+            srcset: image.srcset || null,
+            sizes: image.sizes || null,
+            fullSrc: image.displaySources ? image.path : null,
             width: String(image.width),
             height: String(image.height),
             naturalWidth: 0,
@@ -344,15 +436,16 @@ test.describe("localized Works image reliability", () => {
           (candidate) => candidate !== targetImage,
         )) {
           const locator = page.locator(`img.zoomable[src$="${image.path}"]`);
+          const displayPath = normalDisplaySource(image).path;
 
           await locator.scrollIntoViewIfNeeded();
-          await expect.poll(() => requestedImages.has(image.path)).toBe(true);
-          await releaseImage(image.path);
+          await expect.poll(() => requestedImages.has(displayPath)).toBe(true);
+          await releaseImage(displayPath);
           await waitForLoadedImage(image);
         }
 
         expect([...requestedImages].sort()).toEqual(
-          worksImages.map((image) => image.path).sort(),
+          worksImages.map((image) => normalDisplaySource(image).path).sort(),
         );
 
         const loadedState = await imageLocator.evaluateAll((images) =>
@@ -376,36 +469,58 @@ test.describe("localized Works image reliability", () => {
 
         expect(
           loadedState.map(
-            ({ renderedWidth, renderedHeight, renderedRatio, ...imageState }) =>
-              imageState,
+            ({
+              naturalWidth,
+              naturalHeight,
+              renderedWidth,
+              renderedHeight,
+              renderedRatio,
+              ...imageState
+            }) => imageState,
           ),
         ).toEqual(
           worksImages.map((image, index) => ({
-            path: image.path,
+            path: normalDisplaySource(image).path,
             alt: worksPage.alts[index],
             complete: true,
-            naturalWidth: image.width,
-            naturalHeight: image.height,
             width: image.width,
             height: image.height,
           })),
         );
-        expect(
-          loadedState.map((image) => ({
-            width: image.renderedWidth,
-            height: image.renderedHeight,
-            ratio: image.renderedRatio,
-          })),
-        ).toEqual(blockedImageGeometry);
-        expect(
-          await cardLocator.evaluateAll((cards) =>
-            cards.map((card) => {
-              const rect = card.getBoundingClientRect();
+        for (const [index, imageState] of loadedState.entries()) {
+          expect(imageState.naturalWidth).toBeGreaterThan(0);
+          expect(imageState.naturalHeight).toBeGreaterThan(0);
 
-              return { width: rect.width, height: rect.height };
-            }),
-          ),
-        ).toEqual(blockedCardGeometry);
+          if (!worksImages[index].displaySources) {
+            expect(imageState.naturalWidth).toBe(worksImages[index].width);
+            expect(imageState.naturalHeight).toBe(worksImages[index].height);
+          }
+        }
+        for (const [index, image] of loadedState.entries()) {
+          const blockedGeometry = blockedImageGeometry[index];
+
+          expect(image.renderedWidth).toBe(blockedGeometry.width);
+          expect(
+            Math.abs(image.renderedHeight - blockedGeometry.height),
+          ).toBeLessThanOrEqual(1 / 16);
+          expect(
+            Math.abs(image.renderedRatio - blockedGeometry.ratio),
+          ).toBeLessThanOrEqual(1 / 1000);
+        }
+        const loadedCardGeometry = await cardLocator.evaluateAll((cards) =>
+          cards.map((card) => {
+            const rect = card.getBoundingClientRect();
+
+            return { width: rect.width, height: rect.height };
+          }),
+        );
+
+        for (const [index, geometry] of loadedCardGeometry.entries()) {
+          expect(geometry.width).toBe(blockedCardGeometry[index].width);
+          expect(
+            Math.abs(geometry.height - blockedCardGeometry[index].height),
+          ).toBeLessThanOrEqual(1 / 16);
+        }
         expect(
           await page.evaluate(
             () =>
@@ -414,17 +529,41 @@ test.describe("localized Works image reliability", () => {
           ),
         ).toBe(true);
 
-        for (const image of worksImages.slice(1)) {
+        for (const image of worksImages) {
           const trigger = page.locator(`img.zoomable[src$="${image.path}"]`);
           const lightbox = page.locator("#lightbox");
+          const lightboxImage = page.locator("#lightboxImg");
+
+          if (image.displaySources) {
+            expect(requestedImages.has(image.path)).toBe(false);
+          }
 
           await trigger.click();
           await expect(lightbox).toHaveAttribute("open", "");
           await expect(lightbox).toHaveClass(/\bshow\b/);
-          await expect(page.locator("#lightboxImg")).toHaveAttribute(
+          await expect(lightboxImage).toHaveAttribute(
             "src",
             new RegExp(`${image.path}$`),
           );
+
+          if (image.displaySources) {
+            await expect.poll(() => requestedImages.has(image.path)).toBe(true);
+            await releaseImage(image.path);
+            await expect
+              .poll(() =>
+                lightboxImage.evaluate((element) => ({
+                  complete: element.complete,
+                  naturalWidth: element.naturalWidth,
+                  naturalHeight: element.naturalHeight,
+                })),
+              )
+              .toEqual({
+                complete: true,
+                naturalWidth: image.width,
+                naturalHeight: image.height,
+              });
+          }
+
           await expect(page.locator("#lightboxClose")).toBeFocused();
 
           if (image === worksImages[1]) {
