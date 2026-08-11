@@ -13,6 +13,10 @@ const phase10MilestoneImages = [
   "/images/3011_p.webp",
   "/images/3012_p.webp",
 ];
+const exitusImageSrcset =
+  "/images/3013_p-800.webp 800w, /images/3013_p-1600.webp 1600w";
+const exitusImageSizes =
+  "(max-width: 900px) calc(100vw - 44px - clamp(36px, 6vw, 56px)), (max-width: 1200px) min(700px, calc(100vw - 360px - clamp(36px, 6vw, 56px))), 700px";
 const arcaeaHashtagUrl = "https://x.com/hashtag/arcaea?src=hashtag_click";
 const exitusHashtags = [
   {
@@ -119,6 +123,16 @@ for (const localeCase of localeCases) {
     await expect(firstImages.first()).toHaveAttribute("width", "8064");
     await expect(firstImages.first()).toHaveAttribute("height", "6048");
     await expect(firstImages.first()).toHaveAttribute(
+      "srcset",
+      exitusImageSrcset,
+    );
+    await expect(firstImages.first()).toHaveAttribute("sizes", exitusImageSizes);
+    await expect(firstImages.first()).toHaveAttribute("decoding", "async");
+    await expect(firstImages.first()).toHaveAttribute(
+      "data-full-src",
+      "/images/3013_p.webp",
+    );
+    await expect(firstImages.first()).toHaveAttribute(
       "data-image-id",
       "ave-mujica-exitus-taipei-day2-venue",
     );
@@ -166,6 +180,10 @@ for (const localeCase of localeCases) {
     await expect(page.locator("#lightboxImg")).toHaveAttribute(
       "alt",
       localeCase.imageAlt,
+    );
+    await expect(page.locator("#lightboxImg")).toHaveAttribute(
+      "src",
+      /\/images\/3013_p\.webp$/,
     );
     await page.locator("#lightboxClose").click();
     await expect(page.locator("#lightbox")).not.toHaveAttribute("open", "");

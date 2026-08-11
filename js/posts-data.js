@@ -49,8 +49,14 @@ This was the best concert ever!`,
       {
         id: "ave-mujica-exitus-taipei-day2-venue",
         src: "/images/3013_p.webp",
+        srcset:
+          "/images/3013_p-800.webp 800w, /images/3013_p-1600.webp 1600w",
+        sizes:
+          "(max-width: 900px) calc(100vw - 44px - clamp(36px, 6vw, 56px)), (max-width: 1200px) min(700px, calc(100vw - 360px - clamp(36px, 6vw, 56px))), 700px",
+        fullSrc: "/images/3013_p.webp",
         width: 8064,
         height: 6048,
+        decoding: "async",
         alt: {
           zh: "Ave Mujica LIVE TOUR 2026「Exitus」台北公演 DAY2 演唱會現場",
           en: 'Ave Mujica LIVE TOUR 2026 "Exitus" Taipei DAY2 concert venue',

@@ -5,6 +5,10 @@ import { describe, expect, test } from "vitest";
 
 const root = path.resolve(import.meta.dirname, "../..");
 const locales = ["zh", "en", "ja"];
+const exitusImageSrcset =
+  "/images/3013_p-800.webp 800w, /images/3013_p-1600.webp 1600w";
+const exitusImageSizes =
+  "(max-width: 900px) calc(100vw - 44px - clamp(36px, 6vw, 56px)), (max-width: 1200px) min(700px, calc(100vw - 360px - clamp(36px, 6vw, 56px))), 700px";
 
 async function createMilestoneContext(pathname = "/milestones/") {
   const container = { innerHTML: "" };
@@ -154,8 +158,12 @@ describe("milestone localization", () => {
         {
           id: "ave-mujica-exitus-taipei-day2-venue",
           src: "/images/3013_p.webp",
+          srcset: exitusImageSrcset,
+          sizes: exitusImageSizes,
+          fullSrc: "/images/3013_p.webp",
           width: 8064,
           height: 6048,
+          decoding: "async",
           alt: {
             zh: "Ave Mujica LIVE TOUR 2026「Exitus」台北公演 DAY2 演唱會現場",
             en: 'Ave Mujica LIVE TOUR 2026 "Exitus" Taipei DAY2 concert venue',
@@ -306,6 +314,46 @@ describe("milestone localization", () => {
     }
   });
 
+  test("keeps the original 3013 image for the Lightbox and two useful display derivatives", async () => {
+    const { context } = await createMilestoneContext();
+    const [exitusPost] = readJsonExpression(context, "HUIHUI_POSTS");
+    const [image] = exitusPost.images;
+    const candidates = image.srcset.split(", ").map((candidate) => {
+      const [src, descriptor] = candidate.split(" ");
+
+      return { src, width: Number.parseInt(descriptor, 10) };
+    });
+
+    expect(image).toMatchObject({
+      src: "/images/3013_p.webp",
+      srcset: exitusImageSrcset,
+      sizes: exitusImageSizes,
+      fullSrc: "/images/3013_p.webp",
+      width: 8064,
+      height: 6048,
+      decoding: "async",
+    });
+    expect(candidates).toEqual([
+      { src: "/images/3013_p-800.webp", width: 800 },
+      { src: "/images/3013_p-1600.webp", width: 1600 },
+    ]);
+
+    for (const candidate of candidates) {
+      const imageBuffer = await readFile(
+        path.join(root, candidate.src.replace(/^\//, "")),
+      );
+      const dimensions = readWebpDimensions(imageBuffer);
+
+      expect(dimensions).toEqual({
+        width: candidate.width,
+        height: candidate.width * 0.75,
+      });
+      expect(dimensions.width * dimensions.height).toBeLessThan(
+        image.width * image.height,
+      );
+    }
+  });
+
   test("renderer preserves localized image, lazy-loading, and Lightbox contracts", async () => {
     const { context } = await createMilestoneContext();
     const sourcePosts = readJsonExpression(context, "HUIHUI_POSTS");
@@ -340,15 +388,31 @@ describe("milestone localization", () => {
             `escapeHtmlAttribute(${JSON.stringify(image.alt[locale])})`,
             context,
           );
+          const responsiveAttributes = image.srcset
+            ? [
+                `srcset="${escapeRegExp(image.srcset)}"`,
+                `sizes="${escapeRegExp(image.sizes)}"`,
+              ]
+            : [];
+          const decodingAttribute = image.decoding
+            ? [`decoding="${image.decoding}"`]
+            : [];
+          const fullSourceAttribute = image.fullSrc
+            ? [`data-full-src="${escapeRegExp(image.fullSrc)}"`]
+            : [];
           const imageContract = new RegExp(
             [
               `<img\\s+src="${escapeRegExp(image.src)}"`,
+              ...responsiveAttributes,
               `alt="${escapeRegExp(escapedAlt)}"`,
               `width="${image.width}"`,
               `height="${image.height}"`,
               'class="zoomable"',
               'loading="lazy"',
-              `data-image-id="${escapeRegExp(image.id)}"\\s*/>`,
+              ...decodingAttribute,
+              `data-image-id="${escapeRegExp(image.id)}"`,
+              ...fullSourceAttribute,
+              "\\s*/>",
             ].join("\\s+"),
             "s",
           );

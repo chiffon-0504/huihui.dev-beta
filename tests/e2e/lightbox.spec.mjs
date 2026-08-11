@@ -63,6 +63,10 @@ test("dynamically rendered milestone images remain keyboard accessible", async (
   expect(response?.status()).toBe(200);
   await expect(trigger).toHaveAttribute("tabindex", "0");
   await expect(trigger).toHaveAttribute("role", "button");
+  await expect(trigger).toHaveAttribute(
+    "data-full-src",
+    "/images/3013_p.webp",
+  );
   await trigger.focus();
   await page.keyboard.press("Enter");
 

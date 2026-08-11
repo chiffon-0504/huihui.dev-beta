@@ -25,8 +25,12 @@ function getLocalizedPosts(locale) {
     images: post.images.map((image) => ({
       id: image.id,
       src: image.src,
+      srcset: image.srcset,
+      sizes: image.sizes,
+      fullSrc: image.fullSrc,
       width: image.width,
       height: image.height,
+      decoding: image.decoding,
       alt: getLocalizedPostValue(image.alt, locale)
     })),
     links: post.links.map((link) => ({ ...link })),
@@ -69,6 +73,28 @@ function renderPostLinks(links) {
     .join("\n");
 }
 
+function renderPostImageAttributes(image) {
+  return [
+    `src="${escapeHtmlAttribute(image.src)}"`,
+    image.srcset
+      ? `srcset="${escapeHtmlAttribute(image.srcset)}"`
+      : "",
+    image.sizes ? `sizes="${escapeHtmlAttribute(image.sizes)}"` : "",
+    `alt="${escapeHtmlAttribute(image.alt)}"`,
+    `width="${image.width}"`,
+    `height="${image.height}"`,
+    'class="zoomable"',
+    'loading="lazy"',
+    image.decoding ? `decoding="${image.decoding}"` : "",
+    `data-image-id="${image.id}"`,
+    image.fullSrc
+      ? `data-full-src="${escapeHtmlAttribute(image.fullSrc)}"`
+      : ""
+  ]
+    .filter(Boolean)
+    .join("\n                ");
+}
+
 function renderPostImages(post) {
   if (post.images.length === 0) return "";
 
@@ -82,13 +108,7 @@ function renderPostImages(post) {
           .map(
             (image) => `
               <img
-                src="${image.src}"
-                alt="${escapeHtmlAttribute(image.alt)}"
-                width="${image.width}"
-                height="${image.height}"
-                class="zoomable"
-                loading="lazy"
-                data-image-id="${image.id}"
+                ${renderPostImageAttributes(image)}
               />
             `
           )
