@@ -202,7 +202,7 @@ test("localized Works project cards preserve locale with keyboard navigation", a
         waitUntil: "load",
       });
       const firstProjectCard = page
-        .locator(".works-showcase-grid > a.showcase-project-card")
+        .locator(".showcase-card-large .showcase-card-info")
         .first();
       expect(response?.status()).toBe(200);
       await expect(page.locator("html")).toHaveAttribute(
