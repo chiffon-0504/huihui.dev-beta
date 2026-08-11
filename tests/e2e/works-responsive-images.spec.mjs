@@ -47,67 +47,36 @@ const worksImages = [
     ],
   },
 ];
+const viewportWidths = [
+  { name: "mobile-390", width: 390, height: 844 },
+  { name: "breakpoint-900", width: 900, height: 900 },
+  { name: "breakpoint-901", width: 901, height: 900 },
+  { name: "desktop-1200", width: 1200, height: 900 },
+  { name: "desktop-1280", width: 1280, height: 900 },
+  { name: "desktop-1440", width: 1440, height: 900 },
+  { name: "desktop-1728", width: 1728, height: 900 },
+];
+const deviceScaleFactors = [1, 1.25, 1.5, 1.75, 2];
+const boundaryViewportWidths = [
+  { name: "portrait-floor-942", width: 942, height: 900 },
+  { name: "portrait-fluid-943", width: 943, height: 900 },
+  { name: "desktop-offset-1201", width: 1201, height: 900 },
+  { name: "shell-unsaturated-1435", width: 1435, height: 900 },
+  { name: "shell-saturated-1436", width: 1436, height: 900 },
+];
 const viewportCases = [
-  {
-    name: "mobile-1x",
-    width: 390,
-    height: 844,
-    deviceScaleFactor: 1,
-  },
-  {
-    name: "mobile-2x",
-    width: 390,
-    height: 844,
-    deviceScaleFactor: 2,
-  },
-  {
-    name: "breakpoint-900-1x",
-    width: 900,
-    height: 900,
-    deviceScaleFactor: 1,
-  },
-  {
-    name: "breakpoint-900-2x",
-    width: 900,
-    height: 900,
-    deviceScaleFactor: 2,
-  },
-  {
-    name: "breakpoint-901-1x",
-    width: 901,
-    height: 900,
-    deviceScaleFactor: 1,
-  },
-  {
-    name: "breakpoint-901-2x",
-    width: 901,
-    height: 900,
-    deviceScaleFactor: 2,
-  },
-  {
-    name: "desktop-1200-1x",
-    width: 1200,
-    height: 900,
-    deviceScaleFactor: 1,
-  },
-  {
-    name: "desktop-1200-2x",
-    width: 1200,
-    height: 900,
-    deviceScaleFactor: 2,
-  },
-  {
-    name: "desktop-1280-1x",
-    width: 1280,
-    height: 800,
-    deviceScaleFactor: 1,
-  },
-  {
-    name: "desktop-1280-2x",
-    width: 1280,
-    height: 800,
-    deviceScaleFactor: 2,
-  },
+  ...viewportWidths.flatMap((viewport) =>
+    deviceScaleFactors.map((deviceScaleFactor) => ({
+      ...viewport,
+      name: `${viewport.name}-${deviceScaleFactor}x`,
+      deviceScaleFactor,
+    })),
+  ),
+  ...boundaryViewportWidths.map((viewport) => ({
+    ...viewport,
+    name: `${viewport.name}-1.5x`,
+    deviceScaleFactor: 1.5,
+  })),
 ];
 
 for (const viewport of viewportCases) {

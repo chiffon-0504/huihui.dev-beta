@@ -12,7 +12,7 @@ const worksPages = [
 const largeImageSizes =
   "(max-width: 722px) 680px, (max-width: 900px) calc(100vw - 42px), 1074px";
 const portraitImageSizes =
-  "(max-width: 900px) calc(100vw - 42px), (max-width: 942px) 383px, (max-width: 1200px) calc(66.667vw - 245px), 555px";
+  "(max-width: 900px) calc(100vw - 42px), (max-width: 942px) 383px, (max-width: 1200px) calc(66.667vw - 245px), min(660px, calc(66.667vw - 298px))";
 const tallImageSizes =
   "(max-width: 526px) 484px, (max-width: 900px) calc(100vw - 42px), 1146px";
 const standardImageSizes =
@@ -63,6 +63,24 @@ const derivativeDimensions = new Map([
     ],
   ],
   ["2004", [[900, 631], [1600, 1123], [1800, 1263]]],
+]);
+const saturatedDesktopContracts = new Map([
+  [
+    "2001",
+    { slotWidth: 1074, coverWidth: 1073.6094674556214, coverHeight: 660 },
+  ],
+  [
+    "2002",
+    { slotWidth: 660, coverWidth: 658.65625, coverHeight: 670.41796875 },
+  ],
+  [
+    "2003",
+    { slotWidth: 1146, coverWidth: 1145.0751879699246, coverHeight: 660 },
+  ],
+  [
+    "2004",
+    { slotWidth: 554, coverWidth: 553.048049745619, coverHeight: 388 },
+  ],
 ]);
 
 function readAttributes(tag) {
@@ -136,6 +154,33 @@ function readWebp(buffer) {
   return { chunks, dimensions };
 }
 
+function candidateThresholdDprs(contract, sources) {
+  const breakpoints = new Set([1, 1.25, 1.5, 1.75, 2]);
+  const addBreakpoint = (value) => {
+    if (value >= 1 && value <= 2) breakpoints.add(value);
+  };
+
+  for (const source of sources) {
+    addBreakpoint(source.width / contract.slotWidth);
+    addBreakpoint(source.width / contract.coverWidth);
+    addBreakpoint(source.height / contract.coverHeight);
+  }
+
+  const boundaries = [...breakpoints].sort((a, b) => a - b);
+  const samples = new Set(boundaries);
+
+  for (const boundary of boundaries) {
+    addBreakpoint(boundary - 1e-6);
+    addBreakpoint(boundary + 1e-6);
+  }
+  for (let index = 1; index < boundaries.length; index += 1) {
+    samples.add((boundaries[index - 1] + boundaries[index]) / 2);
+  }
+
+  for (const breakpoint of breakpoints) samples.add(breakpoint);
+  return [...samples].sort((a, b) => a - b);
+}
+
 describe("responsive Works images", () => {
   test("ZH, EN, and JA expose equivalent responsive and Lightbox contracts", async () => {
     const localeContracts = [];
@@ -206,6 +251,39 @@ describe("responsive Works images", () => {
         expect(width * height, derivativePath).toBeLessThan(originalPixels);
         expect(chunks, derivativePath).not.toContain("EXIF");
         expect(chunks, derivativePath).not.toContain("XMP ");
+      }
+    }
+  });
+
+  test("saturated desktop candidate intervals remain cover-sufficient across intermediate DPRs", () => {
+    for (const image of worksImages) {
+      const contract = saturatedDesktopContracts.get(image.id);
+      const sources = derivativeDimensions
+        .get(image.id)
+        .map(([width, height]) => ({ width, height }));
+      const dprs = candidateThresholdDprs(contract, sources);
+
+      expect(dprs).toEqual(
+        expect.arrayContaining([1, 1.25, 1.5, 1.75, 2]),
+      );
+
+      for (const dpr of dprs) {
+        const selectedSource =
+          sources.find(
+            (source) => source.width >= contract.slotWidth * dpr,
+          ) || sources.at(-1);
+        const requirement = {
+          width: Math.ceil(contract.coverWidth * dpr),
+          height: Math.ceil(contract.coverHeight * dpr),
+        };
+        const diagnostic = `${image.id} at DPR ${dpr}`;
+
+        expect(selectedSource.width, diagnostic).toBeGreaterThanOrEqual(
+          requirement.width,
+        );
+        expect(selectedSource.height, diagnostic).toBeGreaterThanOrEqual(
+          requirement.height,
+        );
       }
     }
   });

@@ -6,7 +6,7 @@ const worksImageRoutePattern =
 const largeImageSizes =
   "(max-width: 722px) 680px, (max-width: 900px) calc(100vw - 42px), 1074px";
 const portraitImageSizes =
-  "(max-width: 900px) calc(100vw - 42px), (max-width: 942px) 383px, (max-width: 1200px) calc(66.667vw - 245px), 555px";
+  "(max-width: 900px) calc(100vw - 42px), (max-width: 942px) 383px, (max-width: 1200px) calc(66.667vw - 245px), min(660px, calc(66.667vw - 298px))";
 const tallImageSizes =
   "(max-width: 526px) 484px, (max-width: 900px) calc(100vw - 42px), 1146px";
 const standardImageSizes =
