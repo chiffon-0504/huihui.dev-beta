@@ -152,6 +152,35 @@ function jsonResponse(data, headers = {}, status = 200) {
   });
 }
 
+function methodNotAllowedResponse(allowedMethod) {
+  return jsonResponse(
+    { ok: false, error: "Method Not Allowed" },
+    {
+      Allow: allowedMethod,
+      "Cache-Control": "no-store",
+    },
+    405
+  );
+}
+
+async function handleReadOnlyRoute(request, handler) {
+  if (request.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        Allow: "GET, OPTIONS",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+      },
+    });
+  }
+
+  if (request.method !== "GET") {
+    return methodNotAllowedResponse("GET");
+  }
+
+  return handler();
+}
+
 export const TECH_NEWS_SOURCE_DEADLINE_MS = 5000;
 export const APOD_ATTEMPT_DEADLINE_MS = 3000;
 export const APOD_TOTAL_BUDGET_MS = 6000;
@@ -1008,45 +1037,76 @@ async function handleContact(request, env) {
    Router
 ========================= */
 
+async function routeRequest(request, env, ctx) {
+  const url = new URL(request.url);
+
+  if (url.pathname === "/api/tech-news") {
+    return handleReadOnlyRoute(request, () =>
+      handleTechNews(request, env, ctx)
+    );
+  }
+
+  if (url.pathname === "/api/apod") {
+    return handleReadOnlyRoute(request, () => handleApod(request, env, ctx));
+  }
+
+  if (url.pathname === "/api/github-updates") {
+    return handleReadOnlyRoute(request, () =>
+      handleGitHubUpdates(request, env, ctx)
+    );
+  }
+
+  if (url.pathname === "/api/steam-library") {
+    return handleReadOnlyRoute(request, () =>
+      handleSteamLibrary(request, env, ctx)
+    );
+  }
+
+  if (url.pathname === "/api/contact") {
+    return handleContact(request, env);
+  }
+
+  if (url.pathname.startsWith("/api/")) {
+    return jsonResponse(
+      { ok: false, error: "Not found" },
+      { "Cache-Control": "no-store" },
+      404
+    );
+  }
+
+  return jsonResponse(
+    {
+      ok: true,
+      message: "huihui.dev API",
+      endpoints: [
+        "/api/tech-news",
+        "/api/apod",
+        "/api/github-updates",
+        "/api/steam-library",
+        "/api/contact",
+      ],
+    },
+    {
+      "Cache-Control": "no-store",
+    }
+  );
+}
+
 export default {
   async fetch(request, env, ctx) {
-    const url = new URL(request.url);
     let response;
 
-    if (url.pathname === "/api/tech-news") {
-      response = await handleTechNews(request, env, ctx);
-    } else if (url.pathname === "/api/apod") {
-      response = await handleApod(request, env, ctx);
-    } else if (url.pathname === "/api/github-updates") {
-      response = await handleGitHubUpdates(request, env, ctx);
-    } else if (url.pathname === "/api/steam-library") {
-      response = await handleSteamLibrary(request, env, ctx);
-    } else if (url.pathname === "/api/contact") {
-      try {
-        response = await handleContact(request, env);
-      } catch (error) {
-        response = contactJsonResponse(
-          request,
-          { ok: false, message: "Internal server error" },
-          500
-        );
-      }
-    } else {
+    try {
+      response = await routeRequest(request, env, ctx);
+    } catch (error) {
+      const url = new URL(request.url);
+      const headers =
+        url.pathname === "/api/contact" ? contactCorsHeaders() : {};
+
       response = jsonResponse(
-        {
-          ok: true,
-          message: "huihui.dev API",
-          endpoints: [
-            "/api/tech-news",
-            "/api/apod",
-            "/api/github-updates",
-            "/api/steam-library",
-            "/api/contact",
-          ],
-        },
-        {
-          "Cache-Control": "no-store",
-        }
+        { ok: false, error: "Internal server error" },
+        headers,
+        500
       );
     }
 
