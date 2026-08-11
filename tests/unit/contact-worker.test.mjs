@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import worker from "../../workers/huihui-api/worker.js";
+import worker, {
+  CONTACT_REQUEST_MAX_BYTES,
+  TURNSTILE_RESPONSE_MAX_BYTES,
+} from "../../workers/huihui-api/worker.js";
 
 const contactUrl = "https://api.example.test/api/contact";
 const turnstileUrl =
@@ -239,6 +242,68 @@ describe("Contact Worker request and upstream error handling", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  test("rejects an oversized declared Contact body before reading or upstream work", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const request = contactRequest({
+      body: new URLSearchParams({
+        name: "Declared Oversize",
+        email: "declared@example.com",
+        message: "This small body is rejected by its oversized declaration.",
+        "cf-turnstile-response": turnstileToken,
+      }),
+      headers: {
+        "Content-Length": String(CONTACT_REQUEST_MAX_BYTES + 1),
+      },
+    });
+    const getReaderSpy = vi.spyOn(request.body, "getReader");
+    const formDataSpy = vi.spyOn(Request.prototype, "formData");
+
+    const response = await worker.fetch(request, baseEnv, {});
+
+    await expectContactResponse(response, 413, {
+      ok: false,
+      message: "Payload Too Large",
+    });
+    expect(getReaderSpy).not.toHaveBeenCalled();
+    expect(formDataSpy).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test("rejects an oversized streamed Contact body without Content-Length", async () => {
+    const fetchMock = vi.fn();
+    const cancel = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const body = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new Uint8Array(CONTACT_REQUEST_MAX_BYTES + 1));
+      },
+      cancel,
+    });
+    const request = new Request(contactUrl, {
+      method: "POST",
+      headers: {
+        Origin: productionOrigin,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body,
+      duplex: "half",
+    });
+    const formDataSpy = vi.spyOn(Request.prototype, "formData");
+
+    expect(request.headers.has("Content-Length")).toBe(false);
+
+    const response = await worker.fetch(request, baseEnv, {});
+
+    await expectContactResponse(response, 413, {
+      ok: false,
+      message: "Payload Too Large",
+    });
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(formDataSpy).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   test("rejects unsupported request content types with a structured 400", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
@@ -397,6 +462,40 @@ describe("Contact Worker request and upstream error handling", () => {
       ok: false,
       message: "Turnstile verification unavailable",
     });
+  });
+
+  test("rejects an oversized Turnstile body without forwarding to Formspree", async () => {
+    const cancel = vi.fn();
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(
+              new Uint8Array(TURNSTILE_RESPONSE_MAX_BYTES + 1),
+            );
+          },
+          cancel,
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Length": "1",
+          },
+        },
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await callContact();
+
+    await expectContactResponse(response, 502, {
+      ok: false,
+      message: "Turnstile verification unavailable",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe(turnstileUrl);
+    expect(cancel).toHaveBeenCalledOnce();
   });
 
   test("preserves the normal Turnstile rejection contract with sanitized codes", async () => {
@@ -584,8 +683,10 @@ describe("Contact Worker request and upstream error handling", () => {
   test("rejects a beta Origin at the production Worker before upstream requests", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
+    const request = contactRequest({ origin: betaOrigin });
+    const getReaderSpy = vi.spyOn(request.body, "getReader");
 
-    const response = await callContact({ origin: betaOrigin });
+    const response = await worker.fetch(request, baseEnv, {});
 
     await expectContactResponse(
       response,
@@ -593,6 +694,7 @@ describe("Contact Worker request and upstream error handling", () => {
       { ok: false, message: "Forbidden" },
       { corsAllowed: false },
     );
+    expect(getReaderSpy).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

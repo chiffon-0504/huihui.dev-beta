@@ -186,6 +186,131 @@ export const APOD_ATTEMPT_DEADLINE_MS = 3000;
 export const APOD_TOTAL_BUDGET_MS = 6000;
 export const GITHUB_UPSTREAM_DEADLINE_MS = 5000;
 export const STEAM_UPSTREAM_DEADLINE_MS = 5000;
+export const CONTACT_REQUEST_MAX_BYTES = 64 * 1024;
+export const TECH_NEWS_RESPONSE_MAX_BYTES = 2 * 1024 * 1024;
+export const APOD_RESPONSE_MAX_BYTES = 256 * 1024;
+export const GITHUB_RESPONSE_MAX_BYTES = 256 * 1024;
+export const STEAM_RESPONSE_MAX_BYTES = 2 * 1024 * 1024;
+export const TURNSTILE_RESPONSE_MAX_BYTES = 64 * 1024;
+
+export class BodySizeLimitError extends Error {
+  constructor() {
+    super("Body size limit exceeded");
+    this.name = "BodySizeLimitError";
+  }
+}
+
+function contentLengthExceedsLimit(headers, maxBytes) {
+  const value = headers.get("Content-Length");
+
+  if (value === null || !/^\d+$/.test(value.trim())) {
+    return false;
+  }
+
+  return Number(value) > maxBytes;
+}
+
+async function cancelBody(body) {
+  if (!body) return;
+
+  try {
+    await body.cancel();
+  } catch (error) {
+    // Cancellation is best-effort; preserve the original body handling error.
+  }
+}
+
+async function cancelReader(reader) {
+  try {
+    await reader.cancel();
+  } catch (error) {
+    // Cancellation is best-effort; preserve the original body handling error.
+  }
+}
+
+async function readBodyBytesWithLimit(body, maxBytes) {
+  if (!body) {
+    return new Uint8Array();
+  }
+
+  const reader = body.getReader();
+  const chunks = [];
+  let totalBytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) break;
+
+      const chunk =
+        value instanceof Uint8Array ? value : new Uint8Array(value);
+
+      if (chunk.byteLength > maxBytes - totalBytes) {
+        await cancelReader(reader);
+        throw new BodySizeLimitError();
+      }
+
+      chunks.push(chunk);
+      totalBytes += chunk.byteLength;
+    }
+  } catch (error) {
+    if (!(error instanceof BodySizeLimitError)) {
+      await cancelReader(reader);
+    }
+
+    throw error;
+  } finally {
+    reader.releaseLock();
+  }
+
+  const bytes = new Uint8Array(totalBytes);
+  let offset = 0;
+
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  return bytes;
+}
+
+async function readResponseBytesWithLimit(response, maxBytes) {
+  if (contentLengthExceedsLimit(response.headers, maxBytes)) {
+    await cancelBody(response.body);
+    throw new BodySizeLimitError();
+  }
+
+  return readBodyBytesWithLimit(response.body, maxBytes);
+}
+
+export async function readResponseTextWithLimit(response, maxBytes) {
+  const bytes = await readResponseBytesWithLimit(response, maxBytes);
+  return new TextDecoder().decode(bytes);
+}
+
+export async function readResponseJsonWithLimit(response, maxBytes) {
+  const text = await readResponseTextWithLimit(response, maxBytes);
+  return JSON.parse(text);
+}
+
+async function readRequestFormDataWithLimit(request, maxBytes) {
+  if (contentLengthExceedsLimit(request.headers, maxBytes)) {
+    await cancelBody(request.body);
+    throw new BodySizeLimitError();
+  }
+
+  const bytes = await readBodyBytesWithLimit(request.body, maxBytes);
+  const headers = new Headers(request.headers);
+  headers.delete("Content-Length");
+  const boundedRequest = new Request(request.url, {
+    method: request.method,
+    headers,
+    body: bytes,
+  });
+
+  return boundedRequest.formData();
+}
 
 export class UpstreamDeadlineError extends Error {
   constructor() {
@@ -289,7 +414,10 @@ async function getTechNews() {
               throw new Error(`Failed to fetch ${source.source}`);
             }
 
-            return res.text();
+            return readResponseTextWithLimit(
+              res,
+              TECH_NEWS_RESPONSE_MAX_BYTES
+            );
           }
         );
         const entry = getEntryBlock(xml);
@@ -386,7 +514,7 @@ async function fetchApodByDate(apiKey, dateString, deadlineMs) {
       throw new Error(`NASA APOD failed: ${res.status}`);
     }
 
-    return res.json();
+    return readResponseJsonWithLimit(res, APOD_RESPONSE_MAX_BYTES);
   });
 }
 
@@ -534,7 +662,7 @@ async function getGitHubProjectUpdate(env) {
         throw new Error(`GitHub API failed: ${res.status}`);
       }
 
-      return res.json();
+      return readResponseJsonWithLimit(res, GITHUB_RESPONSE_MAX_BYTES);
     }
   );
   const latest = commits?.[0];
@@ -648,7 +776,7 @@ async function getSteamLibrary(env) {
         throw new Error(`Steam API failed: ${res.status}`);
       }
 
-      return res.json();
+      return readResponseJsonWithLimit(res, STEAM_RESPONSE_MAX_BYTES);
     }
   );
   const games = data.response?.games || [];
@@ -850,8 +978,19 @@ async function handleContact(request, env) {
   let formData;
 
   try {
-    formData = await request.formData();
+    formData = await readRequestFormDataWithLimit(
+      request,
+      CONTACT_REQUEST_MAX_BYTES
+    );
   } catch (error) {
+    if (error instanceof BodySizeLimitError) {
+      return contactJsonResponse(
+        request,
+        { ok: false, message: "Payload Too Large" },
+        413
+      );
+    }
+
     return contactJsonResponse(
       request,
       { ok: false, message: "Invalid request body" },
@@ -938,7 +1077,10 @@ async function handleContact(request, env) {
           throw new Error("Turnstile upstream response failed");
         }
 
-        return verifyRes.json();
+        return readResponseJsonWithLimit(
+          verifyRes,
+          TURNSTILE_RESPONSE_MAX_BYTES
+        );
       }
     );
   } catch (error) {
