@@ -563,7 +563,7 @@ describe("Contact Worker request and upstream error handling", () => {
 
     await expectContactResponse(response, 500, {
       ok: false,
-      message: "Internal server error",
+      error: "Internal server error",
     });
     expect(fetchMock).not.toHaveBeenCalled();
   });
