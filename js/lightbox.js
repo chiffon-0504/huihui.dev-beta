@@ -51,7 +51,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!isLightboxTrigger(trigger)) return;
 
     activeTrigger = trigger;
-    lightboxImg.src = trigger.currentSrc || trigger.src;
+    lightboxImg.src =
+      trigger.dataset.fullSrc || trigger.currentSrc || trigger.src;
     lightboxImg.alt = trigger.alt || "";
 
     if (!lightbox.open) {

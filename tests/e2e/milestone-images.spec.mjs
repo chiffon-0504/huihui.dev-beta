@@ -7,6 +7,14 @@ const milestoneImages = [
     path: "/images/3013_p.webp",
     width: 8064,
     height: 6048,
+    srcset:
+      "/images/3013_p-800.webp 800w, /images/3013_p-1600.webp 1600w",
+    sizes:
+      "(max-width: 900px) calc(100vw - 44px - clamp(36px, 6vw, 56px)), (max-width: 1200px) min(700px, calc(100vw - 360px - clamp(36px, 6vw, 56px))), 700px",
+    displaySources: [
+      { path: "/images/3013_p-800.webp", width: 800, height: 600 },
+      { path: "/images/3013_p-1600.webp", width: 1600, height: 1200 },
+    ],
   },
   {
     id: "course-mode-phase-10-score",
@@ -58,16 +66,45 @@ const milestoneImages = [
   },
 ];
 const viewportCases = [
-  { name: "desktop", width: 1440, height: 900 },
-  { name: "mobile", width: 390, height: 844 },
+  {
+    name: "desktop",
+    width: 1280,
+    height: 800,
+    deviceScaleFactor: 1,
+    expectedExitusPath: "/images/3013_p-800.webp",
+    expectedRenderedWidth: 700,
+  },
+  {
+    name: "desktop-high-dpi",
+    width: 1280,
+    height: 800,
+    deviceScaleFactor: 2,
+    expectedExitusPath: "/images/3013_p-1600.webp",
+    expectedRenderedWidth: 700,
+  },
+  {
+    name: "mobile",
+    width: 390,
+    height: 844,
+    deviceScaleFactor: 2,
+    expectedExitusPath: "/images/3013_p-800.webp",
+    expectedRenderedWidth: 310,
+  },
 ];
 const deepImage = milestoneImages.at(-1);
+const responsiveImage = milestoneImages[0];
+const milestoneImagePaths = new Set(
+  milestoneImages.flatMap((image) => [
+    image.path,
+    ...(image.displaySources || []).map((source) => source.path),
+  ]),
+);
 
 function localMilestoneImagePath(url) {
   const parsedUrl = new URL(url);
 
   return parsedUrl.origin === localOrigin &&
-    milestoneImages.some((image) => image.path === parsedUrl.pathname)
+    milestoneImagePaths.has(parsedUrl.pathname)
     ? parsedUrl.pathname
     : null;
 }
@@ -87,6 +124,7 @@ for (const viewport of viewportCases) {
   }) => {
     const context = await browser.newContext({
       viewport: { width: viewport.width, height: viewport.height },
+      deviceScaleFactor: viewport.deviceScaleFactor,
     });
     const page = await context.newPage();
     const networkSession = await context.newCDPSession(page);
@@ -124,7 +162,7 @@ for (const viewport of viewportCases) {
       }
     });
 
-    await page.route("**/images/*_p.webp", async (route) => {
+    await page.route("**/images/*.webp", async (route) => {
       const imagePath = localMilestoneImagePath(route.request().url());
 
       if (!imagePath || releasedImages.has(imagePath)) {
@@ -166,6 +204,10 @@ for (const viewport of viewportCases) {
             width: image.getAttribute("width"),
             height: image.getAttribute("height"),
             loading: image.getAttribute("loading"),
+            decoding: image.getAttribute("decoding"),
+            srcset: image.getAttribute("srcset"),
+            sizes: image.getAttribute("sizes"),
+            fullSrc: image.dataset.fullSrc,
             dataImageId: image.dataset.imageId,
             naturalWidth: image.naturalWidth,
             naturalHeight: image.naturalHeight,
@@ -191,6 +233,17 @@ for (const viewport of viewportCases) {
           image.width / image.height,
           5,
         );
+
+        if (image.displaySources) {
+          expect(state.decoding).toBe("async");
+          expect(state.srcset).toBe(image.srcset);
+          expect(state.sizes).toBe(image.sizes);
+          expect(state.fullSrc).toBe(image.path);
+          expect(state.renderedWidth).toBeCloseTo(
+            viewport.expectedRenderedWidth,
+            5,
+          );
+        }
       }
 
       const initialScrollHeight = await page.evaluate(
@@ -206,6 +259,7 @@ for (const viewport of viewportCases) {
 
       expect(deepImageTop).toBeGreaterThan(viewport.height * 2);
       expect(requestedImages.has(deepImage.path)).toBe(false);
+      expect(requestedImages.has(responsiveImage.path)).toBe(false);
 
       await deepImageLocator.scrollIntoViewIfNeeded();
       await expect
@@ -223,24 +277,43 @@ for (const viewport of viewportCases) {
         .toEqual({ complete: true, naturalWidth: 2560, naturalHeight: 1600 });
 
       for (const image of milestoneImages.slice(0, -1)) {
-        const locator = page.locator(`img.zoomable[src$="${image.path}"]`);
+        const locator = page.locator(
+          `img.zoomable[data-image-id="${image.id}"]`,
+        );
+        const expectedDisplayPath = image.displaySources
+          ? viewport.expectedExitusPath
+          : image.path;
 
         await locator.scrollIntoViewIfNeeded();
-        await expect.poll(() => requestedImages.has(image.path)).toBe(true);
-        releaseImage(image.path);
+        await expect
+          .poll(() => requestedImages.has(expectedDisplayPath))
+          .toBe(true);
+        releaseImage(expectedDisplayPath);
         await expect
           .poll(() =>
             locator.evaluate((element) => ({
               complete: element.complete,
-              naturalWidth: element.naturalWidth,
-              naturalHeight: element.naturalHeight,
+              currentPath: element.currentSrc
+                ? new URL(element.currentSrc).pathname
+                : "",
             })),
           )
-          .toEqual({
-            complete: true,
+          .toEqual({ complete: true, currentPath: expectedDisplayPath });
+
+        const loadedImageDimensions = await locator.evaluate((element) => ({
+          naturalWidth: element.naturalWidth,
+          naturalHeight: element.naturalHeight,
+        }));
+
+        if (image.displaySources) {
+          expect(loadedImageDimensions.naturalWidth).toBeGreaterThan(0);
+          expect(loadedImageDimensions.naturalHeight).toBeGreaterThan(0);
+        } else {
+          expect(loadedImageDimensions).toEqual({
             naturalWidth: image.width,
             naturalHeight: image.height,
           });
+        }
       }
 
       const loadedScrollHeight = await page.evaluate(
@@ -263,17 +336,28 @@ for (const viewport of viewportCases) {
         1,
       );
       for (const [index, image] of milestoneImages.entries()) {
-        expect(loadedState[index].path).toBe(image.path);
-        expect(loadedState[index].naturalWidth).toBe(image.width);
-        expect(loadedState[index].naturalHeight).toBe(image.height);
+        const expectedDisplayPath = image.displaySources
+          ? viewport.expectedExitusPath
+          : image.path;
+
+        expect(loadedState[index].path).toBe(expectedDisplayPath);
+        if (!image.displaySources) {
+          expect(loadedState[index].naturalWidth).toBe(image.width);
+          expect(loadedState[index].naturalHeight).toBe(image.height);
+        }
         expect(loadedState[index].renderedRatio).toBeCloseTo(
           image.width / image.height,
           5,
         );
       }
-      expect([...requestedImages].sort()).toEqual(
-        milestoneImages.map((image) => image.path).sort(),
+      const expectedDisplayRequests = milestoneImages.map((image) =>
+        image.displaySources ? viewport.expectedExitusPath : image.path,
       );
+
+      expect([...requestedImages].sort()).toEqual(
+        expectedDisplayRequests.sort(),
+      );
+      expect(requestedImages.has(responsiveImage.path)).toBe(false);
       expect(
         await page.evaluate(
           () =>
@@ -300,6 +384,39 @@ for (const viewport of viewportCases) {
 
       await expect(page.locator("#lightbox")).not.toHaveAttribute("open", "");
       await expect(deepImageLocator).toBeFocused();
+
+      const responsiveImageLocator = page.locator(
+        `img.zoomable[data-image-id="${responsiveImage.id}"]`,
+      );
+      const lightboxImage = page.locator("#lightboxImg");
+
+      await responsiveImageLocator.scrollIntoViewIfNeeded();
+      await responsiveImageLocator.click();
+      await expect(page.locator("#lightbox")).toHaveAttribute("open", "");
+      await expect(lightboxImage).toHaveAttribute(
+        "src",
+        new RegExp(`${responsiveImage.path}$`),
+      );
+      await expect
+        .poll(() => requestedImages.has(responsiveImage.path))
+        .toBe(true);
+      releaseImage(responsiveImage.path);
+      await expect
+        .poll(() =>
+          lightboxImage.evaluate((image) => ({
+            complete: image.complete,
+            naturalWidth: image.naturalWidth,
+            naturalHeight: image.naturalHeight,
+          })),
+        )
+        .toEqual({
+          complete: true,
+          naturalWidth: responsiveImage.width,
+          naturalHeight: responsiveImage.height,
+        });
+      await page.locator("#lightboxClose").click();
+      await expect(page.locator("#lightbox")).not.toHaveAttribute("open", "");
+      await expect(responsiveImageLocator).toBeFocused();
       expect(consoleErrors).toEqual([]);
       expect(pageErrors).toEqual([]);
       expect(missingLocalResources).toEqual([]);
@@ -310,6 +427,10 @@ for (const viewport of viewportCases) {
           initialScrollHeight,
           loadedScrollHeight,
           initialRequestedImages,
+          responsiveImageCurrentSrc: viewport.expectedExitusPath,
+          responsiveImageRenderedWidth: viewport.expectedRenderedWidth,
+          originalRequestedBeforeLightbox: false,
+          originalRequestedAfterLightbox: true,
           deepImageRequestedInitially: false,
           deepImageRequestedAfterScroll: true,
         })}`,
