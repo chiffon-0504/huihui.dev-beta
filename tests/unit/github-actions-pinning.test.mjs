@@ -447,7 +447,7 @@ describe("Playwright cross-browser validation contract", () => {
     );
   });
 
-  test("runs complete Chromium and full-compatible browser coverage nightly", async () => {
+  test("separates stable scheduled coverage from manual full-compatible coverage", async () => {
     const { source, workflow } = await readWorkflow("nightly-regression.yml");
 
     expect(Object.hasOwn(workflow.on, "schedule")).toBe(true);
@@ -455,43 +455,82 @@ describe("Playwright cross-browser validation contract", () => {
     expect(workflow.on.schedule).toEqual([{ cron: "0 19 * * *" }]);
     expect(source).toContain("03:00 Asia/Taipei (UTC+8)");
 
-    const browserFull = workflow.jobs["browser-full"];
-    expect(browserFull.name).toBe("${{ matrix.label }}");
-    expect(browserFull["timeout-minutes"]).toBe(45);
-    expect(browserFull.strategy["fail-fast"]).toBe(false);
-    expect(browserFull.strategy.matrix.include).toEqual([
+    const chromiumFull = workflow.jobs["chromium-full"];
+    expect(chromiumFull.name).toBe("Chromium full regression");
+    expect(chromiumFull["timeout-minutes"]).toBe(45);
+    expect(chromiumFull).not.toHaveProperty("if");
+    expect(chromiumFull).not.toHaveProperty("needs");
+    expect(runCommands(chromiumFull)).toEqual([
+      "npm ci",
+      "npx playwright install --with-deps chromium",
+      "npx playwright test --project=chromium --workers=1 --retries=0",
+    ]);
+    expectFailureArtifact(
+      chromiumFull,
+      "playwright-nightly-chromium-full",
+    );
+
+    const crossBrowserCritical = workflow.jobs["cross-browser-critical"];
+    expect(crossBrowserCritical.name).toBe("${{ matrix.label }}");
+    expect(crossBrowserCritical["timeout-minutes"]).toBe(25);
+    expect(crossBrowserCritical.strategy["fail-fast"]).toBe(false);
+    expect(crossBrowserCritical.strategy.matrix.include).toEqual([
       {
-        browser: "chromium",
-        label: "Chromium full regression",
-        config: "playwright.config.mjs",
-        artifact: "playwright-nightly-chromium",
+        browser: "firefox",
+        label: "Firefox critical regression",
+        artifact: "playwright-nightly-firefox-critical",
       },
+      {
+        browser: "webkit",
+        label: "WebKit critical regression",
+        artifact: "playwright-nightly-webkit-critical",
+      },
+    ]);
+    expect(crossBrowserCritical).not.toHaveProperty("if");
+    expect(crossBrowserCritical).not.toHaveProperty("needs");
+    expect(runCommands(crossBrowserCritical)).toEqual([
+      "npm ci",
+      "npx playwright install --with-deps ${{ matrix.browser }}",
+      "npx playwright test --config=playwright.cross-browser.config.mjs --project=${{ matrix.browser }} --workers=1 --retries=0",
+    ]);
+    expectFailureArtifact(
+      crossBrowserCritical,
+      "${{ matrix.artifact }}",
+    );
+
+    const manualFullCompatible = workflow.jobs["manual-full-compatible"];
+    expect(manualFullCompatible.name).toBe("${{ matrix.label }}");
+    expect(manualFullCompatible.if).toBe(
+      "github.event_name == 'workflow_dispatch'",
+    );
+    expect(manualFullCompatible["timeout-minutes"]).toBe(45);
+    expect(manualFullCompatible.strategy["fail-fast"]).toBe(false);
+    expect(manualFullCompatible.strategy.matrix.include).toEqual([
       {
         browser: "firefox",
         label: "Firefox full-compatible regression",
-        config: "playwright.full-cross-browser.config.mjs",
-        artifact: "playwright-nightly-firefox",
+        artifact: "playwright-manual-firefox-full-compatible",
       },
       {
         browser: "webkit",
         label: "WebKit full-compatible regression",
-        config: "playwright.full-cross-browser.config.mjs",
-        artifact: "playwright-nightly-webkit",
+        artifact: "playwright-manual-webkit-full-compatible",
       },
     ]);
-    expect(browserFull).not.toHaveProperty("needs");
-    expect(runCommands(browserFull)).toEqual([
+    expect(manualFullCompatible).not.toHaveProperty("needs");
+    expect(runCommands(manualFullCompatible)).toEqual([
       "npm ci",
       "npx playwright install --with-deps ${{ matrix.browser }}",
-      "npx playwright test --config=${{ matrix.config }} --project=${{ matrix.browser }} --workers=1 --retries=0",
+      "npx playwright test --config=playwright.full-cross-browser.config.mjs --project=${{ matrix.browser }} --workers=1 --retries=0",
     ]);
-    expect(runCommands(browserFull).join("\n")).not.toContain(
-      "cross-browser-critical",
+    expectFailureArtifact(
+      manualFullCompatible,
+      "${{ matrix.artifact }}",
     );
-    expectFailureArtifact(browserFull, "${{ matrix.artifact }}");
 
     const dependencyAudit = workflow.jobs["dependency-audit"];
     expect(dependencyAudit["timeout-minutes"]).toBe(10);
+    expect(dependencyAudit).not.toHaveProperty("if");
     expect(runCommands(dependencyAudit)).toEqual([
       "npm audit",
       "npm audit --omit=dev",
@@ -503,6 +542,7 @@ describe("Playwright cross-browser validation contract", () => {
     );
     expect(allRuns.join("\n")).not.toMatch(/\bdeploy\b/i);
     expect(allUses.join("\n")).not.toMatch(/wrangler/i);
+    expect(source).not.toContain("continue-on-error");
   });
 
   test("keeps required test tooling and scripts available", async () => {

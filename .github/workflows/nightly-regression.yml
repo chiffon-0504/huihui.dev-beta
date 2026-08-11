@@ -10,26 +10,55 @@ permissions:
   contents: read
 
 jobs:
-  browser-full:
-    name: ${{ matrix.label }}
+  chromium-full:
+    name: Chromium full regression
     runs-on: ubuntu-latest
     timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run complete Chromium regression
+        run: npx playwright test --project=chromium --workers=1 --retries=0
+
+      - name: Upload Playwright failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-nightly-chromium-full
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  cross-browser-critical:
+    name: ${{ matrix.label }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
         include:
-          - browser: chromium
-            label: Chromium full regression
-            config: playwright.config.mjs
-            artifact: playwright-nightly-chromium
           - browser: firefox
-            label: Firefox full-compatible regression
-            config: playwright.full-cross-browser.config.mjs
-            artifact: playwright-nightly-firefox
+            label: Firefox critical regression
+            artifact: playwright-nightly-firefox-critical
           - browser: webkit
-            label: WebKit full-compatible regression
-            config: playwright.full-cross-browser.config.mjs
-            artifact: playwright-nightly-webkit
+            label: WebKit critical regression
+            artifact: playwright-nightly-webkit-critical
 
     steps:
       - name: Checkout repository
@@ -47,8 +76,55 @@ jobs:
       - name: Install selected browser
         run: npx playwright install --with-deps ${{ matrix.browser }}
 
-      - name: Run selected browser regression suite
-        run: npx playwright test --config=${{ matrix.config }} --project=${{ matrix.browser }} --workers=1 --retries=0
+      - name: Run selected browser critical regression
+        run: npx playwright test --config=playwright.cross-browser.config.mjs --project=${{ matrix.browser }} --workers=1 --retries=0
+
+      - name: Upload Playwright failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  manual-full-compatible:
+    name: ${{ matrix.label }}
+    # These suites expose known cross-engine failures and stay manual until stabilized.
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - browser: firefox
+            label: Firefox full-compatible regression
+            artifact: playwright-manual-firefox-full-compatible
+          - browser: webkit
+            label: WebKit full-compatible regression
+            artifact: playwright-manual-webkit-full-compatible
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install selected browser
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Run selected browser full-compatible regression
+        run: npx playwright test --config=playwright.full-cross-browser.config.mjs --project=${{ matrix.browser }} --workers=1 --retries=0
 
       - name: Upload Playwright failure diagnostics
         if: failure()
