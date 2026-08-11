@@ -175,7 +175,7 @@ async function handleReadOnlyRoute(request, handler) {
   }
 
   if (request.method !== "GET") {
-    return methodNotAllowedResponse("GET");
+    return methodNotAllowedResponse("GET, OPTIONS");
   }
 
   return handler();

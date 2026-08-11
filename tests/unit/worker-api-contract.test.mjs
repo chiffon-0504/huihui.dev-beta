@@ -142,7 +142,7 @@ describe("Worker public API contract", () => {
       );
 
       expect(response.status).toBe(405);
-      expect(response.headers.get("Allow")).toBe("GET");
+      expect(response.headers.get("Allow")).toBe("GET, OPTIONS");
       expect(response.headers.get("Content-Type")).toBe(
         "application/json; charset=utf-8",
       );
