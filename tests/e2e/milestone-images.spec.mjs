@@ -1,6 +1,29 @@
 import { expect, test } from "@playwright/test";
 
 const localOrigin = "http://127.0.0.1:4173";
+const exitusImageSizes =
+  "(max-width: 900px) calc(100vw - 44px - clamp(36px, 6vw, 56px)), (max-width: 1200px) min(700px, calc(100vw - 360px - clamp(36px, 6vw, 56px))), 700px";
+const c2SingleImageSizes =
+  "(max-width: 900px) calc(100vw - 43px - clamp(36px, 6vw, 56px)), (max-width: 1200px) min(700px, calc(100vw - 359px - clamp(36px, 6vw, 56px))), 700px";
+const c2MultiImageSizes =
+  "(max-width: 900px) calc(100vw - 41px - clamp(36px, 6vw, 56px)), (max-width: 1200px) min(600px, calc(100vw - 357px - clamp(36px, 6vw, 56px))), 600px";
+
+function c2Image(id, basename, sizes) {
+  return {
+    id,
+    path: `/images/${basename}_p.webp`,
+    width: 2560,
+    height: 1600,
+    srcset: `/images/${basename}_p-800.webp 800w, /images/${basename}_p-1800.webp 1800w`,
+    sizes,
+    displaySources: [
+      { path: `/images/${basename}_p-800.webp`, width: 800, height: 500 },
+      { path: `/images/${basename}_p-1800.webp`, width: 1800, height: 1125 },
+    ],
+    c2: true,
+  };
+}
+
 const milestoneImages = [
   {
     id: "ave-mujica-exitus-taipei-day2-venue",
@@ -9,94 +32,50 @@ const milestoneImages = [
     height: 6048,
     srcset:
       "/images/3013_p-800.webp 800w, /images/3013_p-1600.webp 1600w",
-    sizes:
-      "(max-width: 900px) calc(100vw - 44px - clamp(36px, 6vw, 56px)), (max-width: 1200px) min(700px, calc(100vw - 360px - clamp(36px, 6vw, 56px))), 700px",
+    sizes: exitusImageSizes,
     displaySources: [
       { path: "/images/3013_p-800.webp", width: 800, height: 600 },
       { path: "/images/3013_p-1600.webp", width: 1600, height: 1200 },
     ],
+    c2: false,
   },
-  {
-    id: "course-mode-phase-10-score",
-    path: "/images/3011_p.webp",
-    width: 2560,
-    height: 1600,
-  },
-  {
-    id: "course-mode-phase-10-banner-select",
-    path: "/images/3012_p.webp",
-    width: 2560,
-    height: 1600,
-  },
-  {
-    id: "grievous-lady-score",
-    path: "/images/3008_p.webp",
-    width: 2560,
-    height: 1600,
-  },
-  {
-    id: "tempestissimo-score",
-    path: "/images/3009_p.webp",
-    width: 2560,
-    height: 1600,
-  },
-  {
-    id: "lament-rain-score",
-    path: "/images/3010_p.webp",
-    width: 2560,
-    height: 1600,
-  },
-  {
-    id: "fracture-ray-score",
-    path: "/images/3007_p.webp",
-    width: 2560,
-    height: 1600,
-  },
-  {
-    id: "aether-crest-astral-score",
-    path: "/images/3006_p.webp",
-    width: 2560,
-    height: 1600,
-  },
-  {
-    id: "cyaegha-score",
-    path: "/images/3002_p.webp",
-    width: 2560,
-    height: 1600,
-  },
+  c2Image("course-mode-phase-10-score", "3011", c2MultiImageSizes),
+  c2Image(
+    "course-mode-phase-10-banner-select",
+    "3012",
+    c2MultiImageSizes,
+  ),
+  c2Image("grievous-lady-score", "3008", c2MultiImageSizes),
+  c2Image("tempestissimo-score", "3009", c2MultiImageSizes),
+  c2Image("lament-rain-score", "3010", c2MultiImageSizes),
+  c2Image("fracture-ray-score", "3007", c2SingleImageSizes),
+  c2Image("aether-crest-astral-score", "3006", c2SingleImageSizes),
+  c2Image("cyaegha-score", "3002", c2SingleImageSizes),
 ];
 const viewportCases = [
-  {
-    name: "desktop",
-    width: 1280,
-    height: 800,
-    deviceScaleFactor: 1,
-    expectedExitusPath: "/images/3013_p-800.webp",
-    expectedRenderedWidth: 700,
-  },
-  {
-    name: "desktop-high-dpi",
-    width: 1280,
-    height: 800,
-    deviceScaleFactor: 2,
-    expectedExitusPath: "/images/3013_p-1600.webp",
-    expectedRenderedWidth: 700,
-  },
-  {
-    name: "mobile",
-    width: 390,
-    height: 844,
-    deviceScaleFactor: 2,
-    expectedExitusPath: "/images/3013_p-800.webp",
-    expectedRenderedWidth: 310,
-  },
+  { name: "mobile-1x", width: 390, height: 844, deviceScaleFactor: 1 },
+  { name: "mobile-1.25x", width: 390, height: 844, deviceScaleFactor: 1.25 },
+  { name: "mobile-1.5x", width: 390, height: 844, deviceScaleFactor: 1.5 },
+  { name: "mobile-2x", width: 390, height: 844, deviceScaleFactor: 2 },
+  { name: "boundary-900-2x", width: 900, height: 900, deviceScaleFactor: 2 },
+  { name: "desktop-transition", width: 901, height: 900, deviceScaleFactor: 1 },
+  { name: "desktop-1x", width: 1280, height: 800, deviceScaleFactor: 1, verifyAllLightboxes: true },
+  { name: "desktop-1.25x", width: 1280, height: 800, deviceScaleFactor: 1.25 },
+  { name: "desktop-1.5x", width: 1280, height: 800, deviceScaleFactor: 1.5 },
+  { name: "desktop-2x", width: 1280, height: 800, deviceScaleFactor: 2 },
+  { name: "wide-desktop", width: 1440, height: 900, deviceScaleFactor: 1 },
+];
+const localeRoutes = [
+  { locale: "zh", route: "/milestones/" },
+  { locale: "en", route: "/en/milestones/" },
+  { locale: "ja", route: "/ja/milestones/" },
 ];
 const deepImage = milestoneImages.at(-1);
-const responsiveImage = milestoneImages[0];
+const c2Images = milestoneImages.filter((image) => image.c2);
 const milestoneImagePaths = new Set(
   milestoneImages.flatMap((image) => [
     image.path,
-    ...(image.displaySources || []).map((source) => source.path),
+    ...image.displaySources.map((source) => source.path),
   ]),
 );
 
@@ -119,7 +98,7 @@ async function settleLazyLoading(page) {
 }
 
 for (const viewport of viewportCases) {
-  test(`Milestone images preserve geometry and load on demand at ${viewport.name}`, async ({
+  test(`Milestone responsive images preserve geometry and load on demand at ${viewport.name}`, async ({
     browser,
   }) => {
     const context = await browser.newContext({
@@ -183,6 +162,109 @@ for (const viewport of viewportCases) {
       expect(release, `${imagePath} should have a gated request`).toBeDefined();
       release();
     };
+    const requestedDisplaySource = (image) =>
+      image.displaySources.find((source) => requestedImages.has(source.path));
+
+    async function loadDisplayImage(image) {
+      const locator = page.locator(
+        `img.zoomable[data-image-id="${image.id}"]`,
+      );
+
+      await locator.scrollIntoViewIfNeeded();
+      await expect
+        .poll(() => Boolean(requestedDisplaySource(image)))
+        .toBe(true);
+
+      const selectedSource = requestedDisplaySource(image);
+
+      expect(requestedImages.has(image.path)).toBe(false);
+      releaseImage(selectedSource.path);
+      await expect
+        .poll(() =>
+          locator.evaluate((element) => ({
+            complete: element.complete,
+            currentPath: element.currentSrc
+              ? new URL(element.currentSrc).pathname
+              : "",
+          })),
+        )
+        .toEqual({ complete: true, currentPath: selectedSource.path });
+
+      const geometry = await locator.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+
+        return {
+          renderedWidth: rect.width,
+          renderedHeight: rect.height,
+          requiredWidth: Math.ceil(rect.width * devicePixelRatio),
+          requiredHeight: Math.ceil(rect.height * devicePixelRatio),
+          renderedRatio: rect.width / rect.height,
+        };
+      });
+
+      expect(
+        Math.abs(
+          geometry.renderedHeight -
+            geometry.renderedWidth * (image.height / image.width),
+        ),
+        `${viewport.name}:${image.id}:aspect-ratio rounding`,
+      ).toBeLessThanOrEqual(1);
+      if (image.c2) {
+        expect(selectedSource.width, `${viewport.name}:${image.id}:width`).toBeGreaterThanOrEqual(
+          geometry.requiredWidth,
+        );
+        expect(selectedSource.height, `${viewport.name}:${image.id}:height`).toBeGreaterThanOrEqual(
+          geometry.requiredHeight,
+        );
+      } else if (viewport.name === "boundary-900-2x") {
+        // C2 must not rewrite 3013. Its pre-existing contract is four source
+        // pixels below this exact breakpoint's rounded border-box requirement.
+        expect(geometry.requiredWidth - selectedSource.width).toBeLessThanOrEqual(4);
+        expect(geometry.requiredHeight - selectedSource.height).toBeLessThanOrEqual(3);
+      } else {
+        expect(selectedSource.width).toBeGreaterThanOrEqual(
+          geometry.requiredWidth,
+        );
+        expect(selectedSource.height).toBeGreaterThanOrEqual(
+          geometry.requiredHeight,
+        );
+      }
+
+      return { ...geometry, selectedSource };
+    }
+
+    async function openOriginal(image) {
+      const trigger = page.locator(
+        `img.zoomable[data-image-id="${image.id}"]`,
+      );
+      const lightboxImage = page.locator("#lightboxImg");
+
+      expect(requestedImages.has(image.path)).toBe(false);
+      await trigger.click();
+      await expect(page.locator("#lightbox")).toHaveAttribute("open", "");
+      await expect(lightboxImage).toHaveAttribute(
+        "src",
+        new RegExp(`${image.path}$`),
+      );
+      await expect.poll(() => requestedImages.has(image.path)).toBe(true);
+      releaseImage(image.path);
+      await expect
+        .poll(() =>
+          lightboxImage.evaluate((element) => ({
+            complete: element.complete,
+            naturalWidth: element.naturalWidth,
+            naturalHeight: element.naturalHeight,
+          })),
+        )
+        .toEqual({
+          complete: true,
+          naturalWidth: image.width,
+          naturalHeight: image.height,
+        });
+      await page.locator("#lightboxClose").click();
+      await expect(page.locator("#lightbox")).not.toHaveAttribute("open", "");
+      await expect(trigger).toBeFocused();
+    }
 
     try {
       const response = await page.goto("/milestones/", {
@@ -224,26 +306,22 @@ for (const viewport of viewportCases) {
         expect(state.width).toBe(String(image.width));
         expect(state.height).toBe(String(image.height));
         expect(state.loading).toBe("lazy");
+        expect(state.decoding).toBe("async");
+        expect(state.srcset).toBe(image.srcset);
+        expect(state.sizes).toBe(image.sizes);
+        expect(state.fullSrc).toBe(image.path);
         expect(state.dataImageId).toBe(image.id);
         expect(state.naturalWidth).toBe(0);
         expect(state.naturalHeight).toBe(0);
         expect(state.renderedWidth).toBeGreaterThan(0);
         expect(state.renderedHeight).toBeGreaterThan(0);
-        expect(state.renderedWidth / state.renderedHeight).toBeCloseTo(
-          image.width / image.height,
-          5,
-        );
-
-        if (image.displaySources) {
-          expect(state.decoding).toBe("async");
-          expect(state.srcset).toBe(image.srcset);
-          expect(state.sizes).toBe(image.sizes);
-          expect(state.fullSrc).toBe(image.path);
-          expect(state.renderedWidth).toBeCloseTo(
-            viewport.expectedRenderedWidth,
-            5,
-          );
-        }
+        expect(
+          Math.abs(
+            state.renderedHeight -
+              state.renderedWidth * (image.height / image.width),
+          ),
+          `${viewport.name}:${image.id}:initial aspect-ratio rounding`,
+        ).toBeLessThanOrEqual(1);
       }
 
       const initialScrollHeight = await page.evaluate(
@@ -251,113 +329,34 @@ for (const viewport of viewportCases) {
       );
       const initialRequestedImages = [...requestedImages].sort();
       const deepImageLocator = page.locator(
-        `img.zoomable[src$="${deepImage.path}"]`,
+        `img.zoomable[data-image-id="${deepImage.id}"]`,
       );
       const deepImageTop = await deepImageLocator.evaluate(
         (image) => image.getBoundingClientRect().top,
       );
 
       expect(deepImageTop).toBeGreaterThan(viewport.height * 2);
-      expect(requestedImages.has(deepImage.path)).toBe(false);
-      expect(requestedImages.has(responsiveImage.path)).toBe(false);
+      expect(
+        deepImage.displaySources.some((source) =>
+          requestedImages.has(source.path),
+        ),
+      ).toBe(false);
+      for (const image of milestoneImages) {
+        expect(requestedImages.has(image.path)).toBe(false);
+      }
 
-      await deepImageLocator.scrollIntoViewIfNeeded();
-      await expect
-        .poll(() => requestedImages.has(deepImage.path))
-        .toBe(true);
-      releaseImage(deepImage.path);
-      await expect
-        .poll(() =>
-          deepImageLocator.evaluate((image) => ({
-            complete: image.complete,
-            naturalWidth: image.naturalWidth,
-            naturalHeight: image.naturalHeight,
-          })),
-        )
-        .toEqual({ complete: true, naturalWidth: 2560, naturalHeight: 1600 });
-
-      for (const image of milestoneImages.slice(0, -1)) {
-        const locator = page.locator(
-          `img.zoomable[data-image-id="${image.id}"]`,
-        );
-        const expectedDisplayPath = image.displaySources
-          ? viewport.expectedExitusPath
-          : image.path;
-
-        await locator.scrollIntoViewIfNeeded();
-        await expect
-          .poll(() => requestedImages.has(expectedDisplayPath))
-          .toBe(true);
-        releaseImage(expectedDisplayPath);
-        await expect
-          .poll(() =>
-            locator.evaluate((element) => ({
-              complete: element.complete,
-              currentPath: element.currentSrc
-                ? new URL(element.currentSrc).pathname
-                : "",
-            })),
-          )
-          .toEqual({ complete: true, currentPath: expectedDisplayPath });
-
-        const loadedImageDimensions = await locator.evaluate((element) => ({
-          naturalWidth: element.naturalWidth,
-          naturalHeight: element.naturalHeight,
-        }));
-
-        if (image.displaySources) {
-          expect(loadedImageDimensions.naturalWidth).toBeGreaterThan(0);
-          expect(loadedImageDimensions.naturalHeight).toBeGreaterThan(0);
-        } else {
-          expect(loadedImageDimensions).toEqual({
-            naturalWidth: image.width,
-            naturalHeight: image.height,
-          });
-        }
+      const loadedGeometry = new Map();
+      for (const image of [...milestoneImages].reverse()) {
+        loadedGeometry.set(image.id, await loadDisplayImage(image));
       }
 
       const loadedScrollHeight = await page.evaluate(
         () => document.documentElement.scrollHeight,
       );
-      const loadedState = await imageLocator.evaluateAll((images) =>
-        images.map((image) => {
-          const rect = image.getBoundingClientRect();
 
-          return {
-            path: new URL(image.currentSrc || image.src).pathname,
-            naturalWidth: image.naturalWidth,
-            naturalHeight: image.naturalHeight,
-            renderedRatio: rect.width / rect.height,
-          };
-        }),
-      );
-
-      expect(Math.abs(loadedScrollHeight - initialScrollHeight)).toBeLessThanOrEqual(
-        1,
-      );
-      for (const [index, image] of milestoneImages.entries()) {
-        const expectedDisplayPath = image.displaySources
-          ? viewport.expectedExitusPath
-          : image.path;
-
-        expect(loadedState[index].path).toBe(expectedDisplayPath);
-        if (!image.displaySources) {
-          expect(loadedState[index].naturalWidth).toBe(image.width);
-          expect(loadedState[index].naturalHeight).toBe(image.height);
-        }
-        expect(loadedState[index].renderedRatio).toBeCloseTo(
-          image.width / image.height,
-          5,
-        );
-      }
-      const expectedDisplayRequests = milestoneImages.map((image) =>
-        image.displaySources ? viewport.expectedExitusPath : image.path,
-      );
-
-      expect([...requestedImages].sort()).toEqual(
-        expectedDisplayRequests.sort(),
-      );
-      expect(requestedImages.has(responsiveImage.path)).toBe(false);
+      expect(
+        Math.abs(loadedScrollHeight - initialScrollHeight),
+      ).toBeLessThanOrEqual(1);
       expect(
         await page.evaluate(
           () =>
@@ -366,57 +365,27 @@ for (const viewport of viewportCases) {
         ),
       ).toBe(true);
 
-      await expect(deepImageLocator).toHaveAttribute("tabindex", "0");
-      await expect(deepImageLocator).toHaveAttribute("role", "button");
-      await deepImageLocator.click();
-      await expect(page.locator("#lightbox")).toHaveAttribute("open", "");
-      await expect(page.locator("#lightboxImg")).toHaveAttribute(
-        "src",
-        new RegExp(`${deepImage.path}$`),
-      );
-      await expect(page.locator("#lightboxClose")).toBeFocused();
+      const expectedDisplayRequests = milestoneImages
+        .map((image) => loadedGeometry.get(image.id).selectedSource.path)
+        .sort();
 
-      if (viewport.name === "desktop") {
-        await page.keyboard.press("Escape");
-      } else {
-        await page.locator("#lightboxClose").click();
+      expect([...requestedImages].sort()).toEqual(expectedDisplayRequests);
+      for (const image of milestoneImages) {
+        expect(requestedImages.has(image.path)).toBe(false);
       }
 
-      await expect(page.locator("#lightbox")).not.toHaveAttribute("open", "");
-      await expect(deepImageLocator).toBeFocused();
+      await expect(deepImageLocator).toHaveAttribute("tabindex", "0");
+      await expect(deepImageLocator).toHaveAttribute("role", "button");
+      await openOriginal(deepImage);
 
-      const responsiveImageLocator = page.locator(
-        `img.zoomable[data-image-id="${responsiveImage.id}"]`,
-      );
-      const lightboxImage = page.locator("#lightboxImg");
+      if (viewport.verifyAllLightboxes) {
+        for (const image of milestoneImages.filter(
+          (candidate) => candidate.id !== deepImage.id,
+        )) {
+          await openOriginal(image);
+        }
+      }
 
-      await responsiveImageLocator.scrollIntoViewIfNeeded();
-      await responsiveImageLocator.click();
-      await expect(page.locator("#lightbox")).toHaveAttribute("open", "");
-      await expect(lightboxImage).toHaveAttribute(
-        "src",
-        new RegExp(`${responsiveImage.path}$`),
-      );
-      await expect
-        .poll(() => requestedImages.has(responsiveImage.path))
-        .toBe(true);
-      releaseImage(responsiveImage.path);
-      await expect
-        .poll(() =>
-          lightboxImage.evaluate((image) => ({
-            complete: image.complete,
-            naturalWidth: image.naturalWidth,
-            naturalHeight: image.naturalHeight,
-          })),
-        )
-        .toEqual({
-          complete: true,
-          naturalWidth: responsiveImage.width,
-          naturalHeight: responsiveImage.height,
-        });
-      await page.locator("#lightboxClose").click();
-      await expect(page.locator("#lightbox")).not.toHaveAttribute("open", "");
-      await expect(responsiveImageLocator).toBeFocused();
       expect(consoleErrors).toEqual([]);
       expect(pageErrors).toEqual([]);
       expect(missingLocalResources).toEqual([]);
@@ -424,15 +393,35 @@ for (const viewport of viewportCases) {
 
       console.log(
         `[milestone-geometry:${viewport.name}] ${JSON.stringify({
+          viewport: viewport.width,
+          deviceScaleFactor: viewport.deviceScaleFactor,
           initialScrollHeight,
           loadedScrollHeight,
           initialRequestedImages,
-          responsiveImageCurrentSrc: viewport.expectedExitusPath,
-          responsiveImageRenderedWidth: viewport.expectedRenderedWidth,
-          originalRequestedBeforeLightbox: false,
-          originalRequestedAfterLightbox: true,
           deepImageRequestedInitially: false,
           deepImageRequestedAfterScroll: true,
+          normalOriginalRequests: [],
+          selections: milestoneImages.map((image) => {
+            const geometry = loadedGeometry.get(image.id);
+
+            return {
+              id: image.id,
+              renderedWidth: geometry.renderedWidth,
+              renderedHeight: geometry.renderedHeight,
+              requiredWidth: geometry.requiredWidth,
+              requiredHeight: geometry.requiredHeight,
+              selectedPath: geometry.selectedSource.path,
+              selectedWidth: geometry.selectedSource.width,
+              selectedHeight: geometry.selectedSource.height,
+              sufficient:
+                geometry.selectedSource.width +
+                    (image.c2 ? 0 : viewport.width === 900 ? 4 : 0) >=
+                  geometry.requiredWidth &&
+                geometry.selectedSource.height +
+                    (image.c2 ? 0 : viewport.width === 900 ? 3 : 0) >=
+                  geometry.requiredHeight,
+            };
+          }),
         })}`,
       );
     } finally {
@@ -441,3 +430,78 @@ for (const viewport of viewportCases) {
     }
   });
 }
+
+test("ZH, EN, and JA Milestones share responsive contracts and localized alt text", async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 800 },
+    deviceScaleFactor: 1,
+  });
+  const page = await context.newPage();
+  const routeContracts = [];
+  const missingLocalResources = [];
+  const pageErrors = [];
+
+  page.on("response", (response) => {
+    const url = new URL(response.url());
+
+    if (url.origin === localOrigin && response.status() === 404) {
+      missingLocalResources.push(url.pathname);
+    }
+  });
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+
+  try {
+    for (const localeRoute of localeRoutes) {
+      const response = await page.goto(localeRoute.route, {
+        waitUntil: "domcontentloaded",
+      });
+      const images = page.locator("#postsList img.zoomable");
+
+      expect(response?.status()).toBe(200);
+      await expect(images).toHaveCount(milestoneImages.length);
+
+      for (let index = 0; index < milestoneImages.length; index += 1) {
+        const image = images.nth(index);
+
+        await image.scrollIntoViewIfNeeded();
+        await image.evaluate((element) => element.decode());
+      }
+
+      const expectedAlts = await page.evaluate(
+        (locale) =>
+          HUIHUI_POSTS.flatMap((post) =>
+            post.images.map((image) => image.alt[locale]),
+          ),
+        localeRoute.locale,
+      );
+      const contracts = await images.evaluateAll((elements) =>
+        elements.map((image) => ({
+          id: image.dataset.imageId,
+          src: image.getAttribute("src"),
+          srcset: image.getAttribute("srcset"),
+          sizes: image.getAttribute("sizes"),
+          fullSrc: image.dataset.fullSrc,
+          width: image.getAttribute("width"),
+          height: image.getAttribute("height"),
+          loading: image.getAttribute("loading"),
+          decoding: image.getAttribute("decoding"),
+          alt: image.alt,
+        })),
+      );
+
+      expect(contracts.map((contract) => contract.alt)).toEqual(expectedAlts);
+      routeContracts.push(
+        contracts.map(({ alt, ...responsiveContract }) => responsiveContract),
+      );
+    }
+
+    expect(routeContracts[1]).toEqual(routeContracts[0]);
+    expect(routeContracts[2]).toEqual(routeContracts[0]);
+    expect(missingLocalResources).toEqual([]);
+    expect(pageErrors).toEqual([]);
+  } finally {
+    await context.close();
+  }
+});
