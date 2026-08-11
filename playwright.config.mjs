@@ -1,22 +1,9 @@
-import { defineConfig, devices } from "@playwright/test";
+import { defineConfig } from "@playwright/test";
+import { baseConfig, chromiumProject } from "./playwright.base.config.mjs";
 
 export default defineConfig({
-  testDir: "./tests/e2e",
-  globalSetup: "./tests/support/global-setup.mjs",
-  fullyParallel: false,
+  ...baseConfig,
   retries: process.env.CI ? 1 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: process.env.CI
-    ? [["line"], ["html", { open: "never" }]]
-    : "line",
-  use: {
-    baseURL: "http://127.0.0.1:4173",
-    trace: "retain-on-failure",
-  },
-  projects: [
-    {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
-    },
-  ],
+  projects: [chromiumProject],
 });
