@@ -240,7 +240,7 @@ jobs:
 });
 
 describe("Playwright cross-browser validation contract", () => {
-  test("keeps the full Chromium suite separate from Firefox and WebKit smoke", async () => {
+  test("keeps complete Chromium and full-compatible cross-browser suites distinct", async () => {
     const baseConfig = (
       await import(
         pathToFileURL(path.join(root, "playwright.base.config.mjs")).href
@@ -278,6 +278,7 @@ describe("Playwright cross-browser validation contract", () => {
     });
     expect(defaultConfig.testDir).toBe("./tests/e2e");
     expect(defaultConfig.testMatch).toBeUndefined();
+    expect(defaultConfig.testIgnore).toBeUndefined();
     expect(defaultConfig.projects.map(({ name }) => name)).toEqual([
       "chromium",
     ]);
@@ -307,6 +308,10 @@ describe("Playwright cross-browser validation contract", () => {
 
     expect(fullCrossBrowserConfig.testDir).toBe("./tests/e2e");
     expect(fullCrossBrowserConfig.testMatch).toBeUndefined();
+    expect(fullCrossBrowserConfig.testIgnore).toEqual([
+      "about-media.spec.mjs",
+      "milestone-images.spec.mjs",
+    ]);
     expect(fullCrossBrowserConfig.projects.map(({ name }) => name)).toEqual([
       "firefox",
       "webkit",
@@ -315,6 +320,31 @@ describe("Playwright cross-browser validation contract", () => {
     expect(fullCrossBrowserConfig.retries).toBe(0);
     expect(fullCrossBrowserConfig).not.toHaveProperty("timeout");
     expect(fullCrossBrowserConfig.expect).toBeUndefined();
+
+    const e2eDirectory = path.join(root, "tests/e2e");
+    const e2eSpecFiles = (await readdir(e2eDirectory))
+      .filter((file) => file.endsWith(".spec.mjs"))
+      .sort();
+    const chromiumOnlyApiPattern =
+      /(?:CDPSession|connectOverCDP|["']Network\.(?:enable|emulateNetworkConditions))/;
+    const chromiumOnlySpecFiles = [];
+
+    for (const specFile of e2eSpecFiles) {
+      const source = await readFile(path.join(e2eDirectory, specFile), "utf8");
+      if (chromiumOnlyApiPattern.test(source)) {
+        chromiumOnlySpecFiles.push(specFile);
+      }
+    }
+
+    expect(chromiumOnlySpecFiles).toEqual(fullCrossBrowserConfig.testIgnore);
+
+    const fullCompatibleSpecFiles = e2eSpecFiles.filter(
+      (specFile) => !fullCrossBrowserConfig.testIgnore.includes(specFile),
+    );
+    expect(fullCompatibleSpecFiles).toContain("cross-browser-critical.spec.mjs");
+    expect(fullCompatibleSpecFiles).toContain("routes.spec.mjs");
+    expect(fullCompatibleSpecFiles).not.toContain("about-media.spec.mjs");
+    expect(fullCompatibleSpecFiles).not.toContain("milestone-images.spec.mjs");
   });
 
   test("keeps the critical smoke file browser-independent and timeout-neutral", async () => {
@@ -417,7 +447,7 @@ describe("Playwright cross-browser validation contract", () => {
     );
   });
 
-  test("runs full browser coverage and audits without deploying nightly", async () => {
+  test("runs complete Chromium and full-compatible browser coverage nightly", async () => {
     const { source, workflow } = await readWorkflow("nightly-regression.yml");
 
     expect(Object.hasOwn(workflow.on, "schedule")).toBe(true);
@@ -426,21 +456,25 @@ describe("Playwright cross-browser validation contract", () => {
     expect(source).toContain("03:00 Asia/Taipei (UTC+8)");
 
     const browserFull = workflow.jobs["browser-full"];
+    expect(browserFull.name).toBe("${{ matrix.label }}");
     expect(browserFull["timeout-minutes"]).toBe(45);
     expect(browserFull.strategy["fail-fast"]).toBe(false);
     expect(browserFull.strategy.matrix.include).toEqual([
       {
         browser: "chromium",
+        label: "Chromium full regression",
         config: "playwright.config.mjs",
         artifact: "playwright-nightly-chromium",
       },
       {
         browser: "firefox",
+        label: "Firefox full-compatible regression",
         config: "playwright.full-cross-browser.config.mjs",
         artifact: "playwright-nightly-firefox",
       },
       {
         browser: "webkit",
+        label: "WebKit full-compatible regression",
         config: "playwright.full-cross-browser.config.mjs",
         artifact: "playwright-nightly-webkit",
       },

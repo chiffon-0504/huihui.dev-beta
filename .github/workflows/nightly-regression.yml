@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   browser-full:
-    name: ${{ matrix.browser }} full
+    name: ${{ matrix.label }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -19,12 +19,15 @@ jobs:
       matrix:
         include:
           - browser: chromium
+            label: Chromium full regression
             config: playwright.config.mjs
             artifact: playwright-nightly-chromium
           - browser: firefox
+            label: Firefox full-compatible regression
             config: playwright.full-cross-browser.config.mjs
             artifact: playwright-nightly-firefox
           - browser: webkit
+            label: WebKit full-compatible regression
             config: playwright.full-cross-browser.config.mjs
             artifact: playwright-nightly-webkit
 
@@ -44,7 +47,7 @@ jobs:
       - name: Install selected browser
         run: npx playwright install --with-deps ${{ matrix.browser }}
 
-      - name: Run selected browser full E2E suite
+      - name: Run selected browser regression suite
         run: npx playwright test --config=${{ matrix.config }} --project=${{ matrix.browser }} --workers=1 --retries=0
 
       - name: Upload Playwright failure diagnostics
