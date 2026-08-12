@@ -1,30 +1,3 @@
-function shouldReduceCodeRevealMotion() {
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
-
-function setCodeRevealProgress(wrapper, progress) {
-  const reduceMotion = shouldReduceCodeRevealMotion();
-  const hiddenPercent = `${(1 - progress) * 100}%`;
-  const clipPath = `inset(0 0 ${hiddenPercent} 0)`;
-  const pre = wrapper.querySelector("pre");
-  const code = wrapper.querySelector("code");
-  const lineNumbers = wrapper.querySelector(".line-numbers-rows");
-  const customLineNumbers = wrapper.querySelector(".custom-line-numbers");
-
-  wrapper.style.setProperty("--code-reveal-progress", progress.toFixed(3));
-
-  if (pre) {
-    pre.style.position = "relative";
-  }
-
-  [code, lineNumbers, customLineNumbers].forEach((element) => {
-    if (!element) return;
-    element.style.clipPath = clipPath;
-    element.style.transition = reduceMotion ? "none" : "clip-path 0.08s linear";
-    element.style.willChange = reduceMotion ? "auto" : "clip-path";
-  });
-}
-
 function rebuildAboutCodeLineNumbers() {
   const blocks = document.querySelectorAll(".about-page .code-block pre.line-numbers, .about-page .code-block pre");
 

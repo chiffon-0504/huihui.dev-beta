@@ -223,6 +223,7 @@ function setCodeRevealProgress(wrapper, progress) {
   const pre = wrapper.querySelector("pre");
   const code = wrapper.querySelector("code");
   const lineNumbers = wrapper.querySelector(".line-numbers-rows");
+  const customLineNumbers = wrapper.querySelector(".custom-line-numbers");
 
   wrapper.style.setProperty("--code-reveal-progress", progress.toFixed(3));
 
@@ -230,7 +231,7 @@ function setCodeRevealProgress(wrapper, progress) {
     pre.style.position = "relative";
   }
 
-  [code, lineNumbers].forEach((element) => {
+  [code, lineNumbers, customLineNumbers].forEach((element) => {
     if (!element) return;
     element.style.clipPath = clipPath;
     element.style.transition = reduceMotion ? "none" : "clip-path 0.08s linear";
