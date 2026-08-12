@@ -3,10 +3,8 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const rootDir = process.cwd();
+const homePages = ["index.html", "en/index.html", "ja/index.html"];
 const lightboxPages = [
-  "index.html",
-  "en/index.html",
-  "ja/index.html",
   "about/index.html",
   "en/about/index.html",
   "ja/about/index.html",
@@ -19,6 +17,12 @@ const lightboxPages = [
 ];
 
 describe("lightbox markup", () => {
+  it.each(homePages)("does not retain dead Lightbox markup in %s", (file) => {
+    const html = fs.readFileSync(path.join(rootDir, file), "utf8");
+
+    expect(html).not.toMatch(/\bid="lightbox(?:Img|Close)?"/);
+  });
+
   it.each(lightboxPages)("uses a native dialog and real close button in %s", (file) => {
     const html = fs.readFileSync(path.join(rootDir, file), "utf8");
 
