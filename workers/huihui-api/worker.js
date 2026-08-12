@@ -927,14 +927,8 @@ function contactCorsHeaders() {
   };
 }
 
-function contactJsonResponse(request, data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      ...contactCorsHeaders(),
-    },
-  });
+function contactJsonResponse(data, status = 200) {
+  return jsonResponse(data, contactCorsHeaders(), status);
 }
 
 async function handleContact(request, env) {
@@ -947,7 +941,6 @@ async function handleContact(request, env) {
 
   if (request.method !== "POST") {
     return contactJsonResponse(
-      request,
       { ok: false, message: "Method Not Allowed" },
       405
     );
@@ -957,7 +950,6 @@ async function handleContact(request, env) {
 
   if (!requestOrigin) {
     return contactJsonResponse(
-      request,
       { ok: false, message: "Forbidden" },
       403
     );
@@ -969,7 +961,6 @@ async function handleContact(request, env) {
 
   if (!CONTACT_FORM_CONTENT_TYPE_PATTERN.test(contentType)) {
     return contactJsonResponse(
-      request,
       { ok: false, message: "Invalid request body" },
       400
     );
@@ -985,14 +976,12 @@ async function handleContact(request, env) {
   } catch (error) {
     if (error instanceof BodySizeLimitError) {
       return contactJsonResponse(
-        request,
         { ok: false, message: "Payload Too Large" },
         413
       );
     }
 
     return contactJsonResponse(
-      request,
       { ok: false, message: "Invalid request body" },
       400
     );
@@ -1005,7 +994,6 @@ async function handleContact(request, env) {
 
   if (!name || !email || !message) {
     return contactJsonResponse(
-      request,
       { ok: false, message: "Missing required fields" },
       400
     );
@@ -1013,7 +1001,6 @@ async function handleContact(request, env) {
 
   if (!token) {
     return contactJsonResponse(
-      request,
       { ok: false, message: "Missing Turnstile token" },
       400
     );
@@ -1025,7 +1012,6 @@ async function handleContact(request, env) {
     message.length > CONTACT_FIELD_LIMITS.message
   ) {
     return contactJsonResponse(
-      request,
       { ok: false, message: "Contact field is too long" },
       400
     );
@@ -1033,7 +1019,6 @@ async function handleContact(request, env) {
 
   if (!CONTACT_EMAIL_PATTERN.test(email)) {
     return contactJsonResponse(
-      request,
       { ok: false, message: "Invalid email address" },
       400
     );
@@ -1041,7 +1026,6 @@ async function handleContact(request, env) {
 
   if (token.length > CONTACT_FIELD_LIMITS.turnstileToken) {
     return contactJsonResponse(
-      request,
       { ok: false, message: "Invalid Turnstile token" },
       400
     );
@@ -1049,7 +1033,6 @@ async function handleContact(request, env) {
 
   if (!env.TURNSTILE_SECRET_KEY || !env.FORMSPREE_ENDPOINT) {
     return contactJsonResponse(
-      request,
       { ok: false, message: "Contact service unavailable" },
       500
     );
@@ -1085,7 +1068,6 @@ async function handleContact(request, env) {
     );
   } catch (error) {
     return contactJsonResponse(
-      request,
       {
         ok: false,
         message:
@@ -1103,7 +1085,6 @@ async function handleContact(request, env) {
     typeof verifyData.success !== "boolean"
   ) {
     return contactJsonResponse(
-      request,
       { ok: false, message: "Turnstile verification unavailable" },
       502
     );
@@ -1116,7 +1097,6 @@ async function handleContact(request, env) {
     verifyData.hostname.toLowerCase() !== expectedTurnstileHostname
   ) {
     return contactJsonResponse(
-      request,
       {
         ok: false,
         message: "Turnstile verification failed",
@@ -1148,7 +1128,6 @@ async function handleContact(request, env) {
     );
   } catch (error) {
     return contactJsonResponse(
-      request,
       {
         ok: false,
         message:
@@ -1162,14 +1141,12 @@ async function handleContact(request, env) {
 
   if (!forwardRes.ok) {
     return contactJsonResponse(
-      request,
       { ok: false, message: "Failed to forward contact form" },
       502
     );
   }
 
   return contactJsonResponse(
-    request,
     { ok: true, message: "Message sent" },
     200
   );
@@ -1242,14 +1219,12 @@ export default {
       response = await routeRequest(request, env, ctx);
     } catch (error) {
       const url = new URL(request.url);
-      const headers =
-        url.pathname === "/api/contact" ? contactCorsHeaders() : {};
+      const errorData = { ok: false, error: "Internal server error" };
 
-      response = jsonResponse(
-        { ok: false, error: "Internal server error" },
-        headers,
-        500
-      );
+      response =
+        url.pathname === "/api/contact"
+          ? contactJsonResponse(errorData, 500)
+          : jsonResponse(errorData, {}, 500);
     }
 
     return applyCors(response, request, env);
