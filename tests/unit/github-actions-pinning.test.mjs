@@ -452,8 +452,15 @@ describe("Playwright cross-browser validation contract", () => {
 
     expect(Object.hasOwn(workflow.on, "schedule")).toBe(true);
     expect(Object.hasOwn(workflow.on, "workflow_dispatch")).toBe(true);
-    expect(workflow.on.schedule).toEqual([{ cron: "0 19 * * *" }]);
-    expect(source).toContain("03:00 Asia/Taipei (UTC+8)");
+    expect(workflow.on.schedule).toEqual([
+      {
+        cron: "50 3 * * *",
+        timezone: "Asia/Taipei",
+      },
+    ]);
+    expect(source).toContain(
+      "Nightly runs daily at 03:50 Asia/Taipei and intentionally avoids the start-of-hour scheduling peak.",
+    );
 
     const chromiumFull = workflow.jobs["chromium-full"];
     expect(chromiumFull.name).toBe("Chromium full regression");

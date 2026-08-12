@@ -2,8 +2,9 @@ name: Nightly regression
 
 on:
   schedule:
-    # 03:00 Asia/Taipei (UTC+8) is 19:00 UTC on the previous calendar day.
-    - cron: "0 19 * * *"
+    # Nightly runs daily at 03:50 Asia/Taipei and intentionally avoids the start-of-hour scheduling peak.
+    - cron: "50 3 * * *"
+      timezone: "Asia/Taipei"
   workflow_dispatch:
 
 permissions:
