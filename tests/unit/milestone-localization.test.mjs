@@ -9,6 +9,29 @@ const exitusImageSrcset =
   "/images/3013_p-800.webp 800w, /images/3013_p-1600.webp 1600w";
 const exitusImageSizes =
   "(max-width: 900px) calc(100vw - 44px - clamp(36px, 6vw, 56px)), (max-width: 1200px) min(700px, calc(100vw - 360px - clamp(36px, 6vw, 56px))), 700px";
+const c2SingleImageSizes =
+  "(max-width: 900px) calc(100vw - 43px - clamp(36px, 6vw, 56px)), (max-width: 1200px) min(700px, calc(100vw - 359px - clamp(36px, 6vw, 56px))), 700px";
+const c2MultiImageSizes =
+  "(max-width: 900px) calc(100vw - 41px - clamp(36px, 6vw, 56px)), (max-width: 1200px) min(600px, calc(100vw - 357px - clamp(36px, 6vw, 56px))), 600px";
+const c2Basenames = new Set([
+  "3002",
+  "3006",
+  "3007",
+  "3008",
+  "3009",
+  "3010",
+  "3011",
+  "3012",
+]);
+
+function c2ResponsiveFields(basename, sizes) {
+  return {
+    srcset: `/images/${basename}_p-800.webp 800w, /images/${basename}_p-1800.webp 1800w, /images/${basename}_p.webp 2560w`,
+    sizes,
+    fullSrc: `/images/${basename}_p.webp`,
+    decoding: "async",
+  };
+}
 
 async function createMilestoneContext(pathname = "/milestones/") {
   const container = { innerHTML: "" };
@@ -97,6 +120,26 @@ function readWebpDimensions(buffer) {
   throw new Error("WebP dimensions not found");
 }
 
+function readWebpChunks(buffer) {
+  const chunks = [];
+  let chunkOffset = 12;
+
+  while (chunkOffset + 8 <= buffer.length) {
+    const chunkType = buffer.toString("ascii", chunkOffset, chunkOffset + 4);
+    const chunkLength = buffer.readUInt32LE(chunkOffset + 4);
+    const dataOffset = chunkOffset + 8;
+
+    if (dataOffset + chunkLength > buffer.length) {
+      throw new Error("Invalid WebP chunk length");
+    }
+
+    chunks.push(chunkType.trim());
+    chunkOffset = dataOffset + chunkLength + (chunkLength % 2);
+  }
+
+  return chunks;
+}
+
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -128,6 +171,12 @@ describe("milestone localization", () => {
         expect(Number.isInteger(image.height), `${image.id}:height`).toBe(true);
         expect(image.width, `${image.id}:width`).toBeGreaterThan(0);
         expect(image.height, `${image.id}:height`).toBeGreaterThan(0);
+        expect(image.srcset, `${image.id}:srcset`).toMatch(
+          /^\/images\/[a-z0-9_-]+\.webp \d+w, \/images\/[a-z0-9_-]+\.webp \d+w(?:, \/images\/[a-z0-9_-]+\.webp \d+w)?$/,
+        );
+        expect(image.sizes, `${image.id}:sizes`).not.toBe("");
+        expect(image.fullSrc, `${image.id}:fullSrc`).toBe(image.src);
+        expect(image.decoding, `${image.id}:decoding`).toBe("async");
         expect(Object.keys(image.alt).sort()).toEqual([...locales].sort());
         for (const locale of locales) {
           expect(image.alt[locale].trim(), `${image.id}:${locale}`).not.toBe("");
@@ -224,6 +273,7 @@ describe("milestone localization", () => {
       {
         id: "course-mode-phase-10-score",
         src: "/images/3011_p.webp",
+        ...c2ResponsiveFields("3011", c2MultiImageSizes),
         width: 2560,
         height: 1600,
         alt: {
@@ -235,6 +285,7 @@ describe("milestone localization", () => {
       {
         id: "course-mode-phase-10-banner-select",
         src: "/images/3012_p.webp",
+        ...c2ResponsiveFields("3012", c2MultiImageSizes),
         width: 2560,
         height: 1600,
         alt: {
@@ -293,24 +344,98 @@ describe("milestone localization", () => {
     }
   });
 
-  test("milestone image metadata matches the actual local WebP files", async () => {
+  test("milestone originals and responsive derivatives match their semantic data contracts", async () => {
     const { context } = await createMilestoneContext();
     const posts = readJsonExpression(context, "HUIHUI_POSTS");
     const images = posts.flatMap((post) => post.images);
+    const c2Images = images.filter((image) =>
+      c2Basenames.has(path.basename(image.src, "_p.webp")),
+    );
 
     expect(images).toHaveLength(9);
+    expect(c2Images).toHaveLength(8);
+    expect(
+      c2Images
+        .map((image) => path.basename(image.src, "_p.webp"))
+        .sort(),
+    ).toEqual([...c2Basenames].sort());
 
-    for (const image of images) {
-      expect(image.src).toMatch(/^\/images\/[a-z0-9_-]+\.webp$/);
+    for (const post of posts) {
+      for (const image of post.images) {
+        expect(image.src).toMatch(/^\/images\/[a-z0-9_-]+\.webp$/);
+        expect(image.fullSrc).toBe(image.src);
+        expect(image.decoding).toBe("async");
 
-      const imageBuffer = await readFile(
-        path.join(root, image.src.replace(/^\//, "")),
-      );
+        const originalBuffer = await readFile(
+          path.join(root, image.src.replace(/^\//, "")),
+        );
+        const originalDimensions = readWebpDimensions(originalBuffer);
+        const candidates = image.srcset.split(", ").map((candidate) => {
+          const [src, descriptor] = candidate.split(" ");
 
-      expect(readWebpDimensions(imageBuffer), image.src).toEqual({
-        width: image.width,
-        height: image.height,
-      });
+          return { src, width: Number.parseInt(descriptor, 10) };
+        });
+        const basename = path.basename(image.src, "_p.webp");
+        const isC2Image = c2Basenames.has(basename);
+        const expectedWidths = isC2Image ? [800, 1800, 2560] : [800, 1600];
+        const expectedSizes = isC2Image
+          ? post.images.length > 1
+            ? c2MultiImageSizes
+            : c2SingleImageSizes
+          : exitusImageSizes;
+
+        expect(originalDimensions, image.src).toEqual({
+          width: image.width,
+          height: image.height,
+        });
+        expect(image.sizes).toBe(expectedSizes);
+        expect(candidates.map((candidate) => candidate.width)).toEqual(
+          expectedWidths,
+        );
+
+        for (const candidate of candidates) {
+          const isOriginalCandidate = candidate.width === image.width;
+
+          expect(candidate.src).toBe(
+            isOriginalCandidate
+              ? image.src
+              : `/images/${basename}_p-${candidate.width}.webp`,
+          );
+
+          const candidateBuffer = await readFile(
+            path.join(root, candidate.src.replace(/^\//, "")),
+          );
+          const dimensions = readWebpDimensions(candidateBuffer);
+
+          expect(dimensions.width).toBe(candidate.width);
+          expect(dimensions.height).toBe(
+            candidate.width * (image.height / image.width),
+          );
+          expect(dimensions.width).toBeLessThanOrEqual(image.width);
+          expect(dimensions.height).toBeLessThanOrEqual(image.height);
+          if (isOriginalCandidate) {
+            expect(dimensions.width * dimensions.height).toBe(
+              image.width * image.height,
+            );
+          } else {
+            expect(dimensions.width * dimensions.height).toBeLessThan(
+              image.width * image.height,
+            );
+          }
+
+          if (isC2Image && !isOriginalCandidate) {
+            const chunks = readWebpChunks(candidateBuffer);
+
+            expect(
+              candidateBuffer.byteLength,
+              `${candidate.src}:compressed bytes`,
+            ).toBeLessThan(originalBuffer.byteLength);
+            expect(chunks).toContain("ICCP");
+            expect(chunks).not.toContain("EXIF");
+            expect(chunks).not.toContain("XMP");
+          }
+        }
+      }
     }
   });
 
@@ -351,6 +476,81 @@ describe("milestone localization", () => {
       expect(dimensions.width * dimensions.height).toBeLessThan(
         image.width * image.height,
       );
+    }
+  });
+
+  test("C2 candidate thresholds remain sufficient from DPR 1 through 3", () => {
+    const measuredCases = [
+      { viewport: 390, singleWidth: 310, multiWidth: 312 },
+      { viewport: 899, singleWidth: 801.0625, multiWidth: 803.0625 },
+      { viewport: 900, singleWidth: 802, multiWidth: 804 },
+      { viewport: 901, singleWidth: 486.96875, multiWidth: 488.96875 },
+      { viewport: 1200, singleWidth: 700, multiWidth: 600 },
+      { viewport: 1280, singleWidth: 700, multiWidth: 600 },
+      { viewport: 1440, singleWidth: 700, multiWidth: 600 },
+    ];
+    const clamp = (minimum, value, maximum) =>
+      Math.min(maximum, Math.max(minimum, value));
+    const declaredSlots = (viewport) => {
+      const padding = clamp(36, viewport * 0.06, 56);
+
+      if (viewport <= 900) {
+        return {
+          single: viewport - 43 - padding,
+          multi: viewport - 41 - padding,
+        };
+      }
+      if (viewport <= 1200) {
+        return {
+          single: Math.min(700, viewport - 359 - padding),
+          multi: Math.min(600, viewport - 357 - padding),
+        };
+      }
+
+      return { single: 700, multi: 600 };
+    };
+    const sources = [
+      { width: 800, height: 500 },
+      { width: 1800, height: 1125 },
+      { width: 2560, height: 1600 },
+    ];
+
+    for (const measured of measuredCases) {
+      const slots = declaredSlots(measured.viewport);
+
+      for (const type of ["single", "multi"]) {
+        const actualWidth = measured[`${type}Width`];
+        const lowerThreshold = 800 / slots[type];
+        const upperThreshold = 1800 / slots[type];
+        const dprs = [
+          1,
+          1.25,
+          1.5,
+          2,
+          2.5,
+          3,
+          lowerThreshold,
+          lowerThreshold + 0.0001,
+          upperThreshold,
+          upperThreshold + 0.0001,
+        ].filter((dpr) => dpr >= 1 && dpr <= 3);
+
+        for (const dpr of dprs) {
+          const selectedSource =
+            sources.find((source) => source.width >= slots[type] * dpr) ||
+            sources.at(-1);
+          const requiredWidth = Math.ceil(actualWidth * dpr);
+          const requiredHeight = Math.ceil((actualWidth / 1.6) * dpr);
+          const diagnostic = `${measured.viewport}px ${type} at DPR ${dpr}`;
+
+          expect(selectedSource.width, `${diagnostic}:width`).toBeGreaterThanOrEqual(
+            requiredWidth,
+          );
+          expect(selectedSource.height, `${diagnostic}:height`).toBeGreaterThanOrEqual(
+            requiredHeight,
+          );
+        }
+      }
     }
   });
 
@@ -454,12 +654,27 @@ describe("milestone localization", () => {
     const sharedShape = (post) => ({
       id: post.id,
       date: post.date,
-      images: post.images.map(({ id, src, width, height }) => ({
-        id,
-        src,
-        width,
-        height,
-      })),
+      images: post.images.map(
+        ({
+          id,
+          src,
+          srcset,
+          sizes,
+          fullSrc,
+          width,
+          height,
+          decoding,
+        }) => ({
+          id,
+          src,
+          srcset,
+          sizes,
+          fullSrc,
+          width,
+          height,
+          decoding,
+        }),
+      ),
       links: post.links,
     });
     const expectedShape = localizedPosts.zh.map(sharedShape);
