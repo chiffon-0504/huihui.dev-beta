@@ -161,10 +161,43 @@ describe("high-confidence dead CSS removal", () => {
       ".post-image",
       ".tier-board",
       ".image-pool",
-      ".works-gallery",
       ".works-showcase-grid",
     ]);
     expect(overflowRule).toContain("max-width: 100% !important");
     expect(overflowRule).toContain("box-sizing: border-box !important");
+  });
+
+  test("removes verified legacy layout families while preserving live card systems", () => {
+    for (const selector of [
+      ".hero",
+      ".hero-text",
+      ".works-grid",
+      ".work-card.large",
+      ".work-card.tall",
+      ".work-card.small",
+      ".home-image",
+      ".home-image img",
+      ".section-title",
+      ".works-eyebrow",
+      ".works-intro",
+      ".works-feature",
+      ".works-feature img",
+      ".works-feature:hover img",
+      ".works-gallery",
+      ".works-gallery .work-card",
+      ".works-gallery .work-card img",
+      ".works-gallery .work-card:hover img",
+      ".works-gallery .work-card-wide",
+      ".works-gallery .work-card-tall",
+      ".works-kicker",
+    ]) {
+      expectSelectorAbsent(globalCss, selector);
+    }
+
+    expect(globalCss).toMatch(/\.work-card\s*\{/);
+    expect(globalCss).toMatch(/\.works-showcase-grid\s*\{/);
+    expect(globalCss).toMatch(/\.showcase-card\s*\{/);
+    expect(globalCss).toMatch(/\.showcase-card-wide\s*\{/);
+    expect(globalCss).toMatch(/\.showcase-card-tall\s*\{/);
   });
 });

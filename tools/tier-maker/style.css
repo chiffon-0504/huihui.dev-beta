@@ -23,13 +23,13 @@
 
 .tier-toolbar button,.upload-button{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 18px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);font-size:.95rem;font-weight:600;cursor:pointer}
 
-.upload-button{border-color:#2f8cff;background:rgba(47,140,255,.16);color:#7db8ff}
+.upload-button{border-color:#2f8cff;background:rgba(47,140,255,.16)}
 
-.size-control{display:inline-flex;align-items:center;gap:10px;color:rgba(255,255,255,.78)}
+.size-control{display:inline-flex;align-items:center;gap:10px}
 
 .size-control input{width:160px}
 
-.tier-row{display:grid;grid-template-columns:110px 1fr 42px;min-height:190px;border:1px solid rgba(255,255,255,.12);border-bottom:0;background:#090909}
+.tier-row{display:grid;grid-template-columns:110px 1fr 42px;min-height:190px;border:1px solid rgba(255,255,255,.12);border-bottom:0}
 
 .tier-board.exporting .tier-row{grid-template-columns:110px 1fr}
 
@@ -39,7 +39,7 @@
 
 .tier-label{position:relative;z-index:2;border:0;outline:0;background:transparent;text-align:center;font-size:1.15rem;font-weight:700;color:#111;width:86%;padding:8px 4px;cursor:text}
 
-.tier-label:focus{background:rgba(255,255,255,.28);border-radius:8px}
+.tier-label:focus{border-radius:8px}
 
 .tier-board.exporting .tier-label{display:none}
 
@@ -49,11 +49,11 @@
 
 .tier-content,.pool-content{min-height:190px;display:flex;align-items:center;align-content:flex-start;justify-content:flex-start;gap:14px;flex-wrap:wrap;padding:16px;background:#0f0f0f}
 
-.pool-content{border:1px solid rgba(255,255,255,.12);border-radius:16px}
+.pool-content{border:1px solid rgba(255,255,255,.12)}
 
-.tier-item{height:150px;width:auto;max-width:260px;object-fit:contain;border-radius:8px;background:transparent;cursor:grab;flex:0 0 auto}
+.tier-item{height:150px;width:auto;max-width:260px;object-fit:contain;background:transparent;cursor:grab;flex:0 0 auto}
 
-.delete-tier{border:0;border-left:1px solid rgba(255,255,255,.12);background:#080808;color:rgba(255,255,255,.55);font-size:1.4rem;cursor:pointer}
+.delete-tier{border:0;font-size:1.4rem;cursor:pointer}
 
 .tier-board.exporting .delete-tier{display:none}
 
