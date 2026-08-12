@@ -81,7 +81,7 @@ This was the best concert ever!`,
         id: "course-mode-phase-10-score",
         src: "/images/3011_p.webp",
         srcset:
-          "/images/3011_p-800.webp 800w, /images/3011_p-1800.webp 1800w",
+          "/images/3011_p-800.webp 800w, /images/3011_p-1800.webp 1800w, /images/3011_p.webp 2560w",
         sizes:
           "(max-width: 900px) calc(100vw - 41px - clamp(36px, 6vw, 56px)), (max-width: 1200px) min(600px, calc(100vw - 357px - clamp(36px, 6vw, 56px))), 600px",
         fullSrc: "/images/3011_p.webp",
@@ -98,7 +98,7 @@ This was the best concert ever!`,
         id: "course-mode-phase-10-banner-select",
         src: "/images/3012_p.webp",
         srcset:
-          "/images/3012_p-800.webp 800w, /images/3012_p-1800.webp 1800w",
+          "/images/3012_p-800.webp 800w, /images/3012_p-1800.webp 1800w, /images/3012_p.webp 2560w",
         sizes:
           "(max-width: 900px) calc(100vw - 41px - clamp(36px, 6vw, 56px)), (max-width: 1200px) min(600px, calc(100vw - 357px - clamp(36px, 6vw, 56px))), 600px",
         fullSrc: "/images/3012_p.webp",
@@ -136,7 +136,7 @@ The 3.0 boss song, Tempestissimo <span class="future">FUTURE 10+</span> <span cl
         id: "grievous-lady-score",
         src: "/images/3008_p.webp",
         srcset:
-          "/images/3008_p-800.webp 800w, /images/3008_p-1800.webp 1800w",
+          "/images/3008_p-800.webp 800w, /images/3008_p-1800.webp 1800w, /images/3008_p.webp 2560w",
         sizes:
           "(max-width: 900px) calc(100vw - 41px - clamp(36px, 6vw, 56px)), (max-width: 1200px) min(600px, calc(100vw - 357px - clamp(36px, 6vw, 56px))), 600px",
         fullSrc: "/images/3008_p.webp",
@@ -153,7 +153,7 @@ The 3.0 boss song, Tempestissimo <span class="future">FUTURE 10+</span> <span cl
         id: "tempestissimo-score",
         src: "/images/3009_p.webp",
         srcset:
-          "/images/3009_p-800.webp 800w, /images/3009_p-1800.webp 1800w",
+          "/images/3009_p-800.webp 800w, /images/3009_p-1800.webp 1800w, /images/3009_p.webp 2560w",
         sizes:
           "(max-width: 900px) calc(100vw - 41px - clamp(36px, 6vw, 56px)), (max-width: 1200px) min(600px, calc(100vw - 357px - clamp(36px, 6vw, 56px))), 600px",
         fullSrc: "/images/3009_p.webp",
@@ -170,7 +170,7 @@ The 3.0 boss song, Tempestissimo <span class="future">FUTURE 10+</span> <span cl
         id: "lament-rain-score",
         src: "/images/3010_p.webp",
         srcset:
-          "/images/3010_p-800.webp 800w, /images/3010_p-1800.webp 1800w",
+          "/images/3010_p-800.webp 800w, /images/3010_p-1800.webp 1800w, /images/3010_p.webp 2560w",
         sizes:
           "(max-width: 900px) calc(100vw - 41px - clamp(36px, 6vw, 56px)), (max-width: 1200px) min(600px, calc(100vw - 357px - clamp(36px, 6vw, 56px))), 600px",
         fullSrc: "/images/3010_p.webp",
@@ -223,7 +223,7 @@ Fracture Ray <span class="future">FUTURE 11</span> <span class="ex">EX</span>
         id: "fracture-ray-score",
         src: "/images/3007_p.webp",
         srcset:
-          "/images/3007_p-800.webp 800w, /images/3007_p-1800.webp 1800w",
+          "/images/3007_p-800.webp 800w, /images/3007_p-1800.webp 1800w, /images/3007_p.webp 2560w",
         sizes:
           "(max-width: 900px) calc(100vw - 43px - clamp(36px, 6vw, 56px)), (max-width: 1200px) min(700px, calc(100vw - 359px - clamp(36px, 6vw, 56px))), 700px",
         fullSrc: "/images/3007_p.webp",
@@ -261,7 +261,7 @@ Aether Crest: Astral <span class="future">FUTURE 10</span> <span class="ex">EX</
         id: "aether-crest-astral-score",
         src: "/images/3006_p.webp",
         srcset:
-          "/images/3006_p-800.webp 800w, /images/3006_p-1800.webp 1800w",
+          "/images/3006_p-800.webp 800w, /images/3006_p-1800.webp 1800w, /images/3006_p.webp 2560w",
         sizes:
           "(max-width: 900px) calc(100vw - 43px - clamp(36px, 6vw, 56px)), (max-width: 1200px) min(700px, calc(100vw - 359px - clamp(36px, 6vw, 56px))), 700px",
         fullSrc: "/images/3006_p.webp",
@@ -293,7 +293,7 @@ Aether Crest: Astral <span class="future">FUTURE 10</span> <span class="ex">EX</
         id: "cyaegha-score",
         src: "/images/3002_p.webp",
         srcset:
-          "/images/3002_p-800.webp 800w, /images/3002_p-1800.webp 1800w",
+          "/images/3002_p-800.webp 800w, /images/3002_p-1800.webp 1800w, /images/3002_p.webp 2560w",
         sizes:
           "(max-width: 900px) calc(100vw - 43px - clamp(36px, 6vw, 56px)), (max-width: 1200px) min(700px, calc(100vw - 359px - clamp(36px, 6vw, 56px))), 700px",
         fullSrc: "/images/3002_p.webp",

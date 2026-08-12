@@ -26,7 +26,7 @@ const c2Basenames = new Set([
 
 function c2ResponsiveFields(basename, sizes) {
   return {
-    srcset: `/images/${basename}_p-800.webp 800w, /images/${basename}_p-1800.webp 1800w`,
+    srcset: `/images/${basename}_p-800.webp 800w, /images/${basename}_p-1800.webp 1800w, /images/${basename}_p.webp 2560w`,
     sizes,
     fullSrc: `/images/${basename}_p.webp`,
     decoding: "async",
@@ -172,7 +172,7 @@ describe("milestone localization", () => {
         expect(image.width, `${image.id}:width`).toBeGreaterThan(0);
         expect(image.height, `${image.id}:height`).toBeGreaterThan(0);
         expect(image.srcset, `${image.id}:srcset`).toMatch(
-          /^\/images\/[a-z0-9_-]+\.webp \d+w, \/images\/[a-z0-9_-]+\.webp \d+w$/,
+          /^\/images\/[a-z0-9_-]+\.webp \d+w, \/images\/[a-z0-9_-]+\.webp \d+w(?:, \/images\/[a-z0-9_-]+\.webp \d+w)?$/,
         );
         expect(image.sizes, `${image.id}:sizes`).not.toBe("");
         expect(image.fullSrc, `${image.id}:fullSrc`).toBe(image.src);
@@ -377,7 +377,7 @@ describe("milestone localization", () => {
         });
         const basename = path.basename(image.src, "_p.webp");
         const isC2Image = c2Basenames.has(basename);
-        const expectedWidths = isC2Image ? [800, 1800] : [800, 1600];
+        const expectedWidths = isC2Image ? [800, 1800, 2560] : [800, 1600];
         const expectedSizes = isC2Image
           ? post.images.length > 1
             ? c2MultiImageSizes
@@ -394,14 +394,18 @@ describe("milestone localization", () => {
         );
 
         for (const candidate of candidates) {
+          const isOriginalCandidate = candidate.width === image.width;
+
           expect(candidate.src).toBe(
-            `/images/${basename}_p-${candidate.width}.webp`,
+            isOriginalCandidate
+              ? image.src
+              : `/images/${basename}_p-${candidate.width}.webp`,
           );
 
-          const derivativeBuffer = await readFile(
+          const candidateBuffer = await readFile(
             path.join(root, candidate.src.replace(/^\//, "")),
           );
-          const dimensions = readWebpDimensions(derivativeBuffer);
+          const dimensions = readWebpDimensions(candidateBuffer);
 
           expect(dimensions.width).toBe(candidate.width);
           expect(dimensions.height).toBe(
@@ -409,12 +413,18 @@ describe("milestone localization", () => {
           );
           expect(dimensions.width).toBeLessThanOrEqual(image.width);
           expect(dimensions.height).toBeLessThanOrEqual(image.height);
-          expect(dimensions.width * dimensions.height).toBeLessThan(
-            image.width * image.height,
-          );
+          if (isOriginalCandidate) {
+            expect(dimensions.width * dimensions.height).toBe(
+              image.width * image.height,
+            );
+          } else {
+            expect(dimensions.width * dimensions.height).toBeLessThan(
+              image.width * image.height,
+            );
+          }
 
-          if (isC2Image) {
-            const chunks = readWebpChunks(derivativeBuffer);
+          if (isC2Image && !isOriginalCandidate) {
+            const chunks = readWebpChunks(candidateBuffer);
 
             expect(chunks).toContain("ICCP");
             expect(chunks).not.toContain("EXIF");
@@ -465,9 +475,10 @@ describe("milestone localization", () => {
     }
   });
 
-  test("C2 candidate thresholds remain sufficient from DPR 1 through 2", () => {
+  test("C2 candidate thresholds remain sufficient from DPR 1 through 3", () => {
     const measuredCases = [
       { viewport: 390, singleWidth: 310, multiWidth: 312 },
+      { viewport: 899, singleWidth: 801.0625, multiWidth: 803.0625 },
       { viewport: 900, singleWidth: 802, multiWidth: 804 },
       { viewport: 901, singleWidth: 486.96875, multiWidth: 488.96875 },
       { viewport: 1200, singleWidth: 700, multiWidth: 600 },
@@ -497,6 +508,7 @@ describe("milestone localization", () => {
     const sources = [
       { width: 800, height: 500 },
       { width: 1800, height: 1125 },
+      { width: 2560, height: 1600 },
     ];
 
     for (const measured of measuredCases) {
@@ -504,15 +516,20 @@ describe("milestone localization", () => {
 
       for (const type of ["single", "multi"]) {
         const actualWidth = measured[`${type}Width`];
-        const threshold = 800 / slots[type];
+        const lowerThreshold = 800 / slots[type];
+        const upperThreshold = 1800 / slots[type];
         const dprs = [
           1,
           1.25,
           1.5,
           2,
-          threshold,
-          threshold + 0.0001,
-        ].filter((dpr) => dpr >= 1 && dpr <= 2);
+          2.5,
+          3,
+          lowerThreshold,
+          lowerThreshold + 0.0001,
+          upperThreshold,
+          upperThreshold + 0.0001,
+        ].filter((dpr) => dpr >= 1 && dpr <= 3);
 
         for (const dpr of dprs) {
           const selectedSource =

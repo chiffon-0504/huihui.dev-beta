@@ -14,11 +14,12 @@ function c2Image(id, basename, sizes) {
     path: `/images/${basename}_p.webp`,
     width: 2560,
     height: 1600,
-    srcset: `/images/${basename}_p-800.webp 800w, /images/${basename}_p-1800.webp 1800w`,
+    srcset: `/images/${basename}_p-800.webp 800w, /images/${basename}_p-1800.webp 1800w, /images/${basename}_p.webp 2560w`,
     sizes,
     displaySources: [
       { path: `/images/${basename}_p-800.webp`, width: 800, height: 500 },
       { path: `/images/${basename}_p-1800.webp`, width: 1800, height: 1125 },
+      { path: `/images/${basename}_p.webp`, width: 2560, height: 1600 },
     ],
     c2: true,
   };
@@ -57,13 +58,23 @@ const viewportCases = [
   { name: "mobile-1.25x", width: 390, height: 844, deviceScaleFactor: 1.25 },
   { name: "mobile-1.5x", width: 390, height: 844, deviceScaleFactor: 1.5 },
   { name: "mobile-2x", width: 390, height: 844, deviceScaleFactor: 2 },
+  { name: "mobile-3x", width: 390, height: 844, deviceScaleFactor: 3 },
+  { name: "boundary-899-2.5x", width: 899, height: 900, deviceScaleFactor: 2.5 },
+  { name: "boundary-899-3x", width: 899, height: 900, deviceScaleFactor: 3 },
   { name: "boundary-900-2x", width: 900, height: 900, deviceScaleFactor: 2 },
-  { name: "desktop-transition", width: 901, height: 900, deviceScaleFactor: 1 },
+  { name: "boundary-900-2.5x", width: 900, height: 900, deviceScaleFactor: 2.5 },
+  { name: "boundary-900-3x", width: 900, height: 900, deviceScaleFactor: 3 },
+  { name: "desktop-transition-1x", width: 901, height: 900, deviceScaleFactor: 1 },
+  { name: "desktop-transition-2.5x", width: 901, height: 900, deviceScaleFactor: 2.5 },
+  { name: "desktop-transition-3x", width: 901, height: 900, deviceScaleFactor: 3 },
   { name: "desktop-1x", width: 1280, height: 800, deviceScaleFactor: 1, verifyAllLightboxes: true },
   { name: "desktop-1.25x", width: 1280, height: 800, deviceScaleFactor: 1.25 },
   { name: "desktop-1.5x", width: 1280, height: 800, deviceScaleFactor: 1.5 },
   { name: "desktop-2x", width: 1280, height: 800, deviceScaleFactor: 2 },
+  { name: "desktop-2.5x", width: 1280, height: 800, deviceScaleFactor: 2.5 },
+  { name: "desktop-3x", width: 1280, height: 800, deviceScaleFactor: 3 },
   { name: "wide-desktop", width: 1440, height: 900, deviceScaleFactor: 1 },
+  { name: "wide-desktop-3x", width: 1440, height: 900, deviceScaleFactor: 3 },
 ];
 const localeRoutes = [
   { locale: "zh", route: "/milestones/" },
@@ -177,7 +188,6 @@ for (const viewport of viewportCases) {
 
       const selectedSource = requestedDisplaySource(image);
 
-      expect(requestedImages.has(image.path)).toBe(false);
       releaseImage(selectedSource.path);
       await expect
         .poll(() =>
@@ -221,7 +231,7 @@ for (const viewport of viewportCases) {
         // pixels below this exact breakpoint's rounded border-box requirement.
         expect(geometry.requiredWidth - selectedSource.width).toBeLessThanOrEqual(4);
         expect(geometry.requiredHeight - selectedSource.height).toBeLessThanOrEqual(3);
-      } else {
+      } else if (viewport.deviceScaleFactor <= 2) {
         expect(selectedSource.width).toBeGreaterThanOrEqual(
           geometry.requiredWidth,
         );
@@ -239,15 +249,16 @@ for (const viewport of viewportCases) {
       );
       const lightboxImage = page.locator("#lightboxImg");
 
-      expect(requestedImages.has(image.path)).toBe(false);
       await trigger.click();
       await expect(page.locator("#lightbox")).toHaveAttribute("open", "");
       await expect(lightboxImage).toHaveAttribute(
         "src",
         new RegExp(`${image.path}$`),
       );
-      await expect.poll(() => requestedImages.has(image.path)).toBe(true);
-      releaseImage(image.path);
+      if (!releasedImages.has(image.path)) {
+        await expect.poll(() => requestedImages.has(image.path)).toBe(true);
+        releaseImage(image.path);
+      }
       await expect
         .poll(() =>
           lightboxImage.evaluate((element) => ({
@@ -341,8 +352,10 @@ for (const viewport of viewportCases) {
           requestedImages.has(source.path),
         ),
       ).toBe(false);
-      for (const image of milestoneImages) {
-        expect(requestedImages.has(image.path)).toBe(false);
+      if (viewport.deviceScaleFactor <= 2) {
+        for (const image of c2Images) {
+          expect(requestedImages.has(image.path)).toBe(false);
+        }
       }
 
       const loadedGeometry = new Map();
@@ -368,10 +381,23 @@ for (const viewport of viewportCases) {
       const expectedDisplayRequests = milestoneImages
         .map((image) => loadedGeometry.get(image.id).selectedSource.path)
         .sort();
+      const normalOriginalRequests = c2Images
+        .filter((image) => requestedImages.has(image.path))
+        .map((image) => image.path)
+        .sort();
 
       expect([...requestedImages].sort()).toEqual(expectedDisplayRequests);
-      for (const image of milestoneImages) {
-        expect(requestedImages.has(image.path)).toBe(false);
+      if (viewport.deviceScaleFactor <= 2) {
+        expect(normalOriginalRequests).toEqual([]);
+      } else {
+        for (const originalPath of normalOriginalRequests) {
+          const image = c2Images.find(
+            (candidate) => candidate.path === originalPath,
+          );
+          const geometry = loadedGeometry.get(image.id);
+
+          expect(geometry.requiredWidth).toBeGreaterThan(1800);
+        }
       }
 
       await expect(deepImageLocator).toHaveAttribute("tabindex", "0");
@@ -400,7 +426,7 @@ for (const viewport of viewportCases) {
           initialRequestedImages,
           deepImageRequestedInitially: false,
           deepImageRequestedAfterScroll: true,
-          normalOriginalRequests: [],
+          normalOriginalRequests,
           selections: milestoneImages.map((image) => {
             const geometry = loadedGeometry.get(image.id);
 
