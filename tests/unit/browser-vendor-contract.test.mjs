@@ -225,9 +225,11 @@ describe("vendored browser dependencies", () => {
     expect(connectSources).toEqual([
       "'self'",
       "https://api.huihui.dev",
-      "https://huihui-api.huihuigames01.workers.dev",
       "https://huihui-api-beta.huihuigames01.workers.dev",
     ]);
+    expect(connectSources).not.toContain(
+      "https://huihui-api.huihuigames01.workers.dev",
+    );
     expect(headers).not.toContain(removedRuntimeCdn);
     expect(headers).not.toContain("'unsafe-eval'");
     expect([
