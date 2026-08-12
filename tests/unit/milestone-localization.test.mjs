@@ -426,6 +426,10 @@ describe("milestone localization", () => {
           if (isC2Image && !isOriginalCandidate) {
             const chunks = readWebpChunks(candidateBuffer);
 
+            expect(
+              candidateBuffer.byteLength,
+              `${candidate.src}:compressed bytes`,
+            ).toBeLessThan(originalBuffer.byteLength);
             expect(chunks).toContain("ICCP");
             expect(chunks).not.toContain("EXIF");
             expect(chunks).not.toContain("XMP");

@@ -74,6 +74,10 @@ const viewportCases = [
   { name: "desktop-2.5x", width: 1280, height: 800, deviceScaleFactor: 2.5 },
   { name: "desktop-3x", width: 1280, height: 800, deviceScaleFactor: 3 },
   { name: "wide-desktop", width: 1440, height: 900, deviceScaleFactor: 1 },
+  { name: "wide-desktop-1.25x", width: 1440, height: 900, deviceScaleFactor: 1.25 },
+  { name: "wide-desktop-1.5x", width: 1440, height: 900, deviceScaleFactor: 1.5 },
+  { name: "wide-desktop-2x", width: 1440, height: 900, deviceScaleFactor: 2 },
+  { name: "wide-desktop-2.5x", width: 1440, height: 900, deviceScaleFactor: 2.5 },
   { name: "wide-desktop-3x", width: 1440, height: 900, deviceScaleFactor: 3 },
 ];
 const localeRoutes = [
