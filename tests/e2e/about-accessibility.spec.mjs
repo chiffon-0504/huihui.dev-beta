@@ -118,6 +118,49 @@ const expectedHeadingStyles = {
     },
   },
 };
+const cardStyleTolerances = {
+  fontSize: 0.001,
+  lineHeight: 0.01,
+};
+const cssPixelStringPattern = /^-?(?:\d+(?:\.\d+)?|\.\d+)px$/;
+
+function expectCssPixelString(actual, expected, tolerance) {
+  expect(actual).toMatch(cssPixelStringPattern);
+  expect(expected).toMatch(cssPixelStringPattern);
+
+  const actualPixels = Number.parseFloat(actual);
+  const expectedPixels = Number.parseFloat(expected);
+  const floatingPointSlack =
+    Number.EPSILON * Math.max(1, Math.abs(actualPixels), Math.abs(expectedPixels));
+
+  expect(Math.abs(actualPixels - expectedPixels)).toBeLessThanOrEqual(
+    tolerance + floatingPointSlack,
+  );
+}
+
+test("About card CSS pixel tolerances stay narrow and reject non-px values", () => {
+  expectCssPixelString("43.199997px", "43.2px", cardStyleTolerances.fontSize);
+  expectCssPixelString("43.199px", "43.2px", cardStyleTolerances.fontSize);
+  expect(() =>
+    expectCssPixelString("43.198px", "43.2px", cardStyleTolerances.fontSize),
+  ).toThrow();
+
+  expectCssPixelString("46.65px", "46.656px", cardStyleTolerances.lineHeight);
+  expectCssPixelString("46.646px", "46.656px", cardStyleTolerances.lineHeight);
+  expectCssPixelString("34.5667px", "34.56px", cardStyleTolerances.lineHeight);
+  expect(() =>
+    expectCssPixelString("46.645px", "46.656px", cardStyleTolerances.lineHeight),
+  ).toThrow();
+
+  for (const invalidValue of ["43.2%", "2.7em", "2.7rem", "normal", "43.2"])
+    expect(() =>
+      expectCssPixelString(
+        invalidValue,
+        "43.2px",
+        cardStyleTolerances.fontSize,
+      ),
+    ).toThrow();
+});
 
 function watchPage(page) {
   const diagnostics = {
@@ -351,11 +394,50 @@ for (const locale of locales) {
       );
       await expect(page.locator("#aboutPage .arcaea-title-link")).toHaveText("Arcaea");
 
-      expect(await getHeadingStyles(page)).toEqual(expectedHeadingStyles.desktop);
+      const desktopStyles = await getHeadingStyles(page);
+      const {
+        fontSize: desktopCardFontSize,
+        lineHeight: desktopCardLineHeight,
+        ...desktopCardStrictStyles
+      } = desktopStyles.card;
+      const {
+        fontSize: expectedDesktopCardFontSize,
+        lineHeight: expectedDesktopCardLineHeight,
+        ...expectedDesktopCardStrictStyles
+      } = expectedHeadingStyles.desktop.card;
+
+      expect(desktopCardStrictStyles).toEqual(expectedDesktopCardStrictStyles);
+      expect(desktopStyles.child).toEqual(expectedHeadingStyles.desktop.child);
+      expectCssPixelString(
+        desktopCardFontSize,
+        expectedDesktopCardFontSize,
+        cardStyleTolerances.fontSize,
+      );
+      expectCssPixelString(
+        desktopCardLineHeight,
+        expectedDesktopCardLineHeight,
+        cardStyleTolerances.lineHeight,
+      );
       await expectNoHorizontalOverflow(page);
 
       await page.setViewportSize({ width: 390, height: 844 });
-      expect(await getHeadingStyles(page)).toEqual(expectedHeadingStyles.mobile);
+      const mobileStyles = await getHeadingStyles(page);
+      const {
+        lineHeight: mobileCardLineHeight,
+        ...mobileCardStrictStyles
+      } = mobileStyles.card;
+      const {
+        lineHeight: expectedMobileCardLineHeight,
+        ...expectedMobileCardStrictStyles
+      } = expectedHeadingStyles.mobile.card;
+
+      expect(mobileCardStrictStyles).toEqual(expectedMobileCardStrictStyles);
+      expect(mobileStyles.child).toEqual(expectedHeadingStyles.mobile.child);
+      expectCssPixelString(
+        mobileCardLineHeight,
+        expectedMobileCardLineHeight,
+        cardStyleTolerances.lineHeight,
+      );
       await expectNoHorizontalOverflow(page);
       await expectNoDiagnostics(diagnostics);
     });
