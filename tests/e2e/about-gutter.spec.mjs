@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
 
+function expectCssPixels(actual, expected) {
+  expect(Math.abs(actual - expected)).toBeLessThanOrEqual(0.001);
+}
+
 async function stubAboutDependencies(page) {
   await page.route("https://api.huihui.dev/api/steam-library", (route) =>
     route.fulfill({
@@ -69,9 +73,9 @@ test("desktop About code gutter preserves its geometry and line alignment", asyn
     gutterWidth: 40,
     lineHeightsMatch: true,
     overflowX: "auto",
-    prePaddingLeft: 70.4,
     wrapperPosition: "relative",
   });
+  expectCssPixels(geometry.prePaddingLeft, 70.4);
   expect(geometry.lineCount).toBe(geometry.expectedLineCount);
 });
 
@@ -85,12 +89,12 @@ test("mobile About code gutter preserves its compact geometry and line alignment
     codeStartsAfterGutter: true,
     gutterLeft: 12.8,
     gutterPaddingRight: 8,
-    gutterTop: 80.8,
     gutterWidth: 28,
     lineHeightsMatch: true,
     overflowX: "auto",
-    prePaddingLeft: 50.4,
     wrapperPosition: "relative",
   });
+  expectCssPixels(geometry.gutterTop, 80.8);
+  expectCssPixels(geometry.prePaddingLeft, 50.4);
   expect(geometry.lineCount).toBe(geometry.expectedLineCount);
 });
