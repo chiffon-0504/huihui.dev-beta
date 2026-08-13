@@ -79,14 +79,10 @@ async function stubHomeDependencies(
         return;
       }
 
-      const body = pathname === "/api/github-updates"
-        ? { ok: true, updatedText: "", link: "/" }
-        : { ok: true };
-
       await route.fulfill({
-        status: 200,
+        status: 500,
         contentType: "application/json",
-        body: JSON.stringify(body),
+        body: JSON.stringify({ ok: false }),
       });
     },
   );

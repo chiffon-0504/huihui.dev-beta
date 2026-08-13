@@ -85,12 +85,12 @@ async function stubHomeApis(page) {
               },
             ],
           }
-        : { ok: true };
+        : null;
 
     return route.fulfill({
-      status: 200,
+      status: body ? 200 : 500,
       contentType: "application/json",
-      body: JSON.stringify(body),
+      body: JSON.stringify(body || { ok: false }),
     });
   };
 
@@ -193,13 +193,7 @@ for (const route of homeRoutes) {
 
     expect(overflow.body).toBeLessThanOrEqual(0);
     expect(overflow.document).toBeLessThanOrEqual(0);
-    expect(apiRequests.filter((path) => path === "/api/tech-news")).toHaveLength(
-      1,
-    );
-    expect(apiRequests.filter((path) => path === "/api/apod")).toHaveLength(0);
-    expect(
-      apiRequests.filter((path) => path === "/api/github-updates"),
-    ).toHaveLength(0);
+    expect(apiRequests).toEqual(["/api/tech-news"]);
     expect(
       intervalObservations.filter(({ delay }) => delay === 300000),
     ).toHaveLength(0);

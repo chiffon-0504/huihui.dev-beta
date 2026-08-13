@@ -24,13 +24,11 @@ const liveHomeFunctionNames = [
 ];
 
 let homeCardsSource;
-let workerSource;
 let homeSources;
 
 beforeAll(async () => {
-  [homeCardsSource, workerSource, homeSources] = await Promise.all([
+  [homeCardsSource, homeSources] = await Promise.all([
     readFile(path.join(root, "js/home-cards.js"), "utf8"),
-    readFile(path.join(root, "workers/huihui-api/worker.js"), "utf8"),
     Promise.all(
       homeDocuments.map((document) =>
         readFile(path.join(root, document), "utf8"),
@@ -134,16 +132,5 @@ describe("Home loader contract", () => {
     for (const id of obsoleteElementIds) {
       expect(homeCardsSource).not.toContain(id);
     }
-  });
-
-  test("the Worker preserves both API route contracts", () => {
-    expect(workerSource).toMatch(
-      /url\.pathname === "\/api\/apod"[\s\S]*?handleApod\(request, env, ctx\)/,
-    );
-    expect(workerSource).toMatch(
-      /url\.pathname === "\/api\/github-updates"[\s\S]*?handleGitHubUpdates\(request, env, ctx\)/,
-    );
-    expect(workerSource).toMatch(/async function handleApod\(/);
-    expect(workerSource).toMatch(/async function handleGitHubUpdates\(/);
   });
 });

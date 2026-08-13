@@ -83,13 +83,18 @@ const secondaryImageSources = [
 ];
 
 async function stubExternalDependencies(page) {
-  await page.route("https://api.huihui.dev/**", (route) =>
-    route.fulfill({
-      status: 200,
+  await page.route("https://api.huihui.dev/**", (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    const body = pathname === "/api/steam-library"
+      ? { ok: true, games: [] }
+      : null;
+
+    return route.fulfill({
+      status: body ? 200 : 500,
       contentType: "application/json",
-      body: JSON.stringify({ ok: true, games: [] }),
-    }),
-  );
+      body: JSON.stringify(body || { ok: false }),
+    });
+  });
 }
 
 async function expectValidI18nMarkup(page, localeId) {

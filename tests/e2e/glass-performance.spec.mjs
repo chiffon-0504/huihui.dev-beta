@@ -8,36 +8,27 @@ const expectedInitialWrites = [
 async function stubHomepageApis(page) {
   await page.route("https://api.huihui.dev/**", async (route) => {
     const pathname = new URL(route.request().url()).pathname;
-    let body;
-
-    if (pathname === "/api/tech-news") {
-      body = {
-        ok: true,
-        techNews: [
-          {
-            category: "AI",
-            title: "Glass performance fixture",
-            source: "Fixture",
-            timeAgo: "",
-            tag: "Test",
-            link: "https://example.test/glass",
-          },
-        ],
-      };
-    } else if (pathname === "/api/github-updates") {
-      body = {
-        ok: true,
-        updatedText: "now",
-        link: "https://example.test/project",
-      };
-    } else {
-      body = { ok: false };
-    }
+    const body =
+      pathname === "/api/tech-news"
+        ? {
+            ok: true,
+            techNews: [
+              {
+                category: "AI",
+                title: "Glass performance fixture",
+                source: "Fixture",
+                timeAgo: "",
+                tag: "Test",
+                link: "https://example.test/glass",
+              },
+            ],
+          }
+        : null;
 
     await route.fulfill({
-      status: 200,
+      status: body ? 200 : 500,
       contentType: "application/json",
-      body: JSON.stringify(body),
+      body: JSON.stringify(body || { ok: false }),
     });
   });
 }
@@ -279,28 +270,10 @@ async function stubGlassDependencies(page, controller) {
       return;
     }
 
-    const body =
-      pathname === "/api/github-updates"
-        ? {
-            ok: true,
-            updatedText: "now",
-            link: "https://example.test/project",
-          }
-        : pathname === "/api/apod"
-          ? {
-              imageUrl: "/images/0001_hp.webp",
-              originalUrl: "https://example.test/apod",
-              title: "Fallback APOD fixture",
-              explanation: "Deterministic fallback material fixture.",
-              date: "2026-07-27",
-              mediaType: "image",
-            }
-          : { ok: true };
-
     await route.fulfill({
-      status: 200,
+      status: 500,
       contentType: "application/json",
-      body: JSON.stringify(body),
+      body: JSON.stringify({ ok: false }),
     });
   });
 }
