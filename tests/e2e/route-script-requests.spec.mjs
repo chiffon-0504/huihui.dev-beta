@@ -6,22 +6,28 @@ const sharedScripts = [
   "/js/glass-material.js",
   "/js/mobile-drawer.js",
   "/js/main.js",
-  "/js/locales/zh.js",
-  "/js/locales/en.js",
-  "/js/locales/ja.js",
   "/js/i18n.js",
 ];
+const localeScripts = {
+  zh: "/js/locales/zh.js",
+  en: "/js/locales/en.js",
+  ja: "/js/locales/ja.js",
+};
+
+function scriptsFor(locale, featureScripts = []) {
+  return [...sharedScripts, localeScripts[locale], ...featureScripts];
+}
+
 const routeCases = [
   {
     name: "Home",
     route: "/",
-    scripts: [...sharedScripts, "/js/home-cards.js"],
+    scripts: scriptsFor("zh", ["/js/home-cards.js"]),
   },
   {
     name: "About",
     route: "/about/",
-    scripts: [
-      ...sharedScripts,
+    scripts: scriptsFor("zh", [
       "/vendor/prism/components/prism-core.min.js",
       "/vendor/prism/components/prism-python.min.js",
       "/vendor/prism/plugins/line-numbers/prism-line-numbers.min.js",
@@ -30,27 +36,26 @@ const routeCases = [
       "/js/profile-code.js",
       "/js/about-page.js",
       "/js/about-code-line-numbers.js",
-    ],
+    ]),
   },
   {
     name: "Works",
     route: "/works/",
-    scripts: [...sharedScripts, "/js/lightbox.js"],
+    scripts: scriptsFor("zh", ["/js/lightbox.js"]),
   },
   {
     name: "Milestones",
     route: "/milestones/",
-    scripts: [
-      ...sharedScripts,
+    scripts: scriptsFor("zh", [
       "/js/lightbox.js",
       "/js/posts-data.js",
       "/js/posts-render.js",
-    ],
+    ]),
   },
   {
     name: "Contact",
     route: "/contact/",
-    scripts: [...sharedScripts, "/js/contact.js"],
+    scripts: scriptsFor("zh", ["/js/contact.js"]),
   },
 ];
 

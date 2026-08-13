@@ -4,6 +4,7 @@ const STEAM_API_URL = "https://api.huihui.dev/api/steam-library";
 const MAX_ROUNDING_ERROR = 1;
 const BANNER_APPID = 3418570;
 const FAVORITE_APPIDS = [2458530, 1829980, 1044620, 3682050];
+const ENGLISH_STEAM_LOAD_ERROR = "Steam games are temporarily unavailable.";
 
 const locales = [
   { id: "zh", path: "/about/", htmlLang: "zh-Hant" },
@@ -145,11 +146,8 @@ async function expectSteamTerminalState(page, locale, steamState) {
   await expect(page.locator("#steamFavorites > .steam-game-card")).toHaveCount(0);
 
   if (locale.id !== "en") {
-    const englishError = await page.evaluate(
-      () => window.HUIHUI_I18N?.en?.about?.steam?.loadError,
-    );
     await expect(page.locator(".steam-favorites-card")).not.toContainText(
-      englishError,
+      ENGLISH_STEAM_LOAD_ERROR,
     );
   }
 }
