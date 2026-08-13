@@ -1,5 +1,20 @@
 import { expect, test } from "@playwright/test";
 
+function expectCssPixels(actual, expected) {
+  const tolerance = 0.001;
+  const floatingPointSlack =
+    Number.EPSILON * Math.max(1, Math.abs(actual), Math.abs(expected));
+
+  expect(Math.abs(actual - expected)).toBeLessThanOrEqual(
+    tolerance + floatingPointSlack,
+  );
+}
+
+test("CSS pixel tolerance preserves its floating-point boundary", () => {
+  expectCssPixels(70.399, 70.4);
+  expect(() => expectCssPixels(70.3989, 70.4)).toThrow();
+});
+
 async function stubAboutDependencies(page) {
   await page.route("https://api.huihui.dev/api/steam-library", (route) =>
     route.fulfill({
@@ -69,9 +84,9 @@ test("desktop About code gutter preserves its geometry and line alignment", asyn
     gutterWidth: 40,
     lineHeightsMatch: true,
     overflowX: "auto",
-    prePaddingLeft: 70.4,
     wrapperPosition: "relative",
   });
+  expectCssPixels(geometry.prePaddingLeft, 70.4);
   expect(geometry.lineCount).toBe(geometry.expectedLineCount);
 });
 
@@ -85,12 +100,12 @@ test("mobile About code gutter preserves its compact geometry and line alignment
     codeStartsAfterGutter: true,
     gutterLeft: 12.8,
     gutterPaddingRight: 8,
-    gutterTop: 80.8,
     gutterWidth: 28,
     lineHeightsMatch: true,
     overflowX: "auto",
-    prePaddingLeft: 50.4,
     wrapperPosition: "relative",
   });
+  expectCssPixels(geometry.gutterTop, 80.8);
+  expectCssPixels(geometry.prePaddingLeft, 50.4);
   expect(geometry.lineCount).toBe(geometry.expectedLineCount);
 });
