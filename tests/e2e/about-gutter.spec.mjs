@@ -1,8 +1,19 @@
 import { expect, test } from "@playwright/test";
 
 function expectCssPixels(actual, expected) {
-  expect(Math.abs(actual - expected)).toBeLessThanOrEqual(0.001);
+  const tolerance = 0.001;
+  const floatingPointSlack =
+    Number.EPSILON * Math.max(1, Math.abs(actual), Math.abs(expected));
+
+  expect(Math.abs(actual - expected)).toBeLessThanOrEqual(
+    tolerance + floatingPointSlack,
+  );
 }
+
+test("CSS pixel tolerance preserves its floating-point boundary", () => {
+  expectCssPixels(70.399, 70.4);
+  expect(() => expectCssPixels(70.3989, 70.4)).toThrow();
+});
 
 async function stubAboutDependencies(page) {
   await page.route("https://api.huihui.dev/api/steam-library", (route) =>
