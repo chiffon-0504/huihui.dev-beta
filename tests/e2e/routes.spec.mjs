@@ -27,6 +27,8 @@ const worksVerificationViewports = [
 ];
 
 async function stubExternalDependencies(page) {
+  const apiRequests = [];
+
   await page.route("https://challenges.cloudflare.com/**", (route) =>
     route.fulfill({
       status: 200,
@@ -35,31 +37,47 @@ async function stubExternalDependencies(page) {
     }),
   );
 
-  const apiResponse = (url) => {
-    if (url.includes("/api/tech-news")) {
+  const apiResponse = (pathname) => {
+    if (pathname === "/api/tech-news") {
       return { ok: true, techNews: [] };
     }
-    if (url.includes("/api/steam-library")) {
+    if (pathname === "/api/steam-library") {
       return { ok: true, games: [] };
     }
-    if (url.includes("/api/apod")) {
-      return { ok: true };
-    }
-    if (url.includes("/api/github-updates")) {
-      return { ok: true, updatedText: "", link: "/" };
-    }
-    return { ok: true };
+    return null;
   };
 
-  for (const pattern of ["https://api.huihui.dev/**"]) {
-    await page.route(pattern, (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(apiResponse(route.request().url())),
-      }),
-    );
+  await page.route("https://api.huihui.dev/**", (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    const body = apiResponse(pathname);
+
+    apiRequests.push(pathname);
+    return route.fulfill({
+      status: body ? 200 : 500,
+      contentType: "application/json",
+      body: JSON.stringify(body || { ok: false }),
+    });
+  });
+
+  return apiRequests;
+}
+
+async function awaitRouteReady(page, route) {
+  if (route.routeKey === "home") {
+    await expect(
+      page.locator(
+        '#techNewsCards > .tech-news-status[data-tech-news-state="empty"]',
+      ),
+    ).toHaveCount(1);
+    return;
   }
+
+  if (route.routeKey === "about") {
+    await expect(page.locator("#steamFavorites > .steam-error")).toHaveCount(1);
+    return;
+  }
+
+  await expect(page.locator("main.main")).toHaveCount(1);
 }
 
 for (const route of primaryRoutes) {
@@ -92,9 +110,9 @@ for (const route of primaryRoutes) {
     });
     page.on("pageerror", (error) => pageErrors.push(error.message));
 
-    await stubExternalDependencies(page);
+    const apiRequests = await stubExternalDependencies(page);
     const response = await page.goto(route.url, { waitUntil: "load" });
-    await page.waitForTimeout(100);
+    await awaitRouteReady(page, route);
 
     expect(response?.status()).toBe(200);
     await expect(page.locator("html")).toHaveAttribute("lang", route.lang);
@@ -182,6 +200,13 @@ for (const route of primaryRoutes) {
         contactPlaceholders[route.locale].message,
       );
     }
+
+    const expectedApiRequests = route.routeKey === "home"
+      ? ["/api/tech-news"]
+      : route.routeKey === "about"
+        ? ["/api/steam-library"]
+        : [];
+    expect(apiRequests).toEqual(expectedApiRequests);
 
     expect(consoleErrors).toEqual([]);
     expect(localFailures).toEqual([]);

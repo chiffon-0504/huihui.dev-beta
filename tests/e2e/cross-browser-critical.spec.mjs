@@ -91,11 +91,6 @@ async function preparePage(page) {
   const apiResponse = (pathname) => {
     if (pathname === "/api/tech-news") return { ok: true, techNews: [] };
     if (pathname === "/api/steam-library") return { ok: true, games: [] };
-    if (pathname === "/api/github-updates") {
-      return { ok: true, updatedText: "", link: "/" };
-    }
-    if (pathname === "/api/apod") return { ok: true };
-    if (pathname === "/api/contact") return { ok: true };
     return null;
   };
 

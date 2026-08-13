@@ -3,36 +3,27 @@ import { expect, test } from "@playwright/test";
 async function stubHomepageApis(page) {
   await page.route("https://api.huihui.dev/**", async (route) => {
     const pathname = new URL(route.request().url()).pathname;
-    let body;
-
-    if (pathname === "/api/tech-news") {
-      body = {
-        ok: true,
-        techNews: [
-          {
-            category: "AI",
-            title: "Reduced motion fixture",
-            source: "Fixture",
-            timeAgo: "",
-            tag: "Test",
-            link: "https://example.test/reduced-motion",
-          },
-        ],
-      };
-    } else if (pathname === "/api/github-updates") {
-      body = {
-        ok: true,
-        updatedText: "now",
-        link: "https://example.test/project",
-      };
-    } else {
-      body = { ok: false };
-    }
+    const body =
+      pathname === "/api/tech-news"
+        ? {
+            ok: true,
+            techNews: [
+              {
+                category: "AI",
+                title: "Reduced motion fixture",
+                source: "Fixture",
+                timeAgo: "",
+                tag: "Test",
+                link: "https://example.test/reduced-motion",
+              },
+            ],
+          }
+        : null;
 
     await route.fulfill({
-      status: 200,
+      status: body ? 200 : 500,
       contentType: "application/json",
-      body: JSON.stringify(body),
+      body: JSON.stringify(body || { ok: false }),
     });
   });
 }

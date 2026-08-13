@@ -12,19 +12,17 @@ async function stubExternalDependencies(page) {
   );
 
   await page.route("https://api.huihui.dev/**", (route) => {
-    const url = route.request().url();
-    let response = { ok: true };
-
-    if (url.includes("/api/tech-news")) response = { ok: true, techNews: [] };
-    if (url.includes("/api/steam-library")) response = { ok: true, games: [] };
-    if (url.includes("/api/github-updates")) {
-      response = { ok: true, updatedText: "", link: "/" };
-    }
+    const pathname = new URL(route.request().url()).pathname;
+    const response = pathname === "/api/tech-news"
+      ? { ok: true, techNews: [] }
+      : pathname === "/api/steam-library"
+        ? { ok: true, games: [] }
+        : null;
 
     return route.fulfill({
-      status: 200,
+      status: response ? 200 : 500,
       contentType: "application/json",
-      body: JSON.stringify(response),
+      body: JSON.stringify(response || { ok: false }),
     });
   });
 }

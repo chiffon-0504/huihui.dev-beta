@@ -22,16 +22,14 @@ async function stubExternalDependencies(page, handleTechNews = null) {
 
     const body = pathname === "/api/steam-library"
       ? { ok: true, games: [] }
-      : pathname === "/api/github-updates"
-        ? { ok: true, updatedText: "", link: "/" }
-        : pathname === "/api/tech-news"
-          ? { ok: true, techNews: [] }
-          : { ok: true };
+      : pathname === "/api/tech-news"
+        ? { ok: true, techNews: [] }
+        : null;
 
     await route.fulfill({
-      status: 200,
+      status: body ? 200 : 500,
       contentType: "application/json",
-      body: JSON.stringify(body),
+      body: JSON.stringify(body || { ok: false }),
     });
   });
 }

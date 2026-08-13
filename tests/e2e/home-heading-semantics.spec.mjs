@@ -31,16 +31,12 @@ async function stubExternalDependencies(page) {
     const pathname = new URL(route.request().url()).pathname;
     const body = pathname === "/api/tech-news"
       ? { ok: true, techNews: [] }
-      : pathname === "/api/steam-library"
-        ? { ok: true, games: [] }
-        : pathname === "/api/github-updates"
-          ? { ok: true, updatedText: "", link: "/" }
-          : { ok: true };
+      : null;
 
     return route.fulfill({
-      status: 200,
+      status: body ? 200 : 500,
       contentType: "application/json",
-      body: JSON.stringify(body),
+      body: JSON.stringify(body || { ok: false }),
     });
   });
 }

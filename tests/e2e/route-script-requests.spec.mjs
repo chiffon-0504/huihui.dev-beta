@@ -78,12 +78,14 @@ async function stubExternalDependencies(page) {
             },
           ],
         }
-      : { ok: true, games: [] };
+      : pathname.endsWith("/api/steam-library")
+        ? { ok: true, games: [] }
+        : null;
 
     return route.fulfill({
-      status: 200,
+      status: body ? 200 : 500,
       contentType: "application/json",
-      body: JSON.stringify(body),
+      body: JSON.stringify(body || { ok: false }),
     });
   });
 }
