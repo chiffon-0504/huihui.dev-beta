@@ -90,7 +90,7 @@ async function expectLanguageContract(page, pageContract) {
 
 for (const pageContract of pages) {
   for (const viewport of viewports) {
-    test(`${pageContract.name} preserves language, text, focus, and layout at ${viewport.name}`, async ({ browser }) => {
+    test(`${pageContract.name} preserves language, text, focus, and layout at ${viewport.name}`, async ({ browser, browserName }) => {
       const context = await browser.newContext({ viewport: viewport.size });
       const page = await context.newPage();
       const diagnostics = observePage(page, pageContract.path, pageContract.status);
@@ -100,8 +100,17 @@ for (const pageContract of pages) {
       await expectLanguageContract(page, pageContract);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 
-      await page.keyboard.press("Tab");
-      await expect(page.locator("a.error-home-button")).toBeFocused();
+      const homeLink = page.locator("a.error-home-button");
+      expect(await homeLink.evaluate((element) => element.tabIndex)).toBe(0);
+      if (browserName === "webkit") {
+        // Bundled WebKit excludes ordinary anchors from its plain-Tab sequence.
+        // Explicit focus verifies focusability; it does not emulate Safari Tab navigation.
+        await homeLink.focus();
+      } else {
+        // Chromium and Firefox retain native plain-Tab sequential navigation.
+        await page.keyboard.press("Tab");
+      }
+      await expect(homeLink).toBeFocused();
       expect(diagnostics.consoleErrors).toEqual([]);
       expect(diagnostics.pageErrors).toEqual([]);
       expect(diagnostics.localFailures).toEqual([]);
