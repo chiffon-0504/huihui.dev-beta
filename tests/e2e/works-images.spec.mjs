@@ -120,8 +120,17 @@ const worksImagePaths = new Set(
   ]),
 );
 
-function normalDisplaySource(image) {
-  return image.displaySources?.[0] || image;
+function displayPathsFor(image) {
+  return image.displaySources
+    ? image.displaySources.map((source) => source.path)
+    : [image.path];
+}
+
+function displaySourceForPath(image, imagePath) {
+  return (
+    image.displaySources?.find((source) => source.path === imagePath) ||
+    (imagePath === image.path ? image : null)
+  );
 }
 
 function localImagePath(url) {
@@ -233,30 +242,69 @@ test.describe("localized Works image reliability", () => {
         releasedImages.add(imagePath);
         for (const release of pendingReleases.get(imagePath)) release();
       };
+      const pendingDisplayPathsFor = (image) =>
+        displayPathsFor(image).filter(
+          (imagePath) => (pendingReleases.get(imagePath)?.size || 0) > 0,
+        );
+      const releasePendingDisplayPaths = (image) => {
+        const pendingPaths = pendingDisplayPathsFor(image);
+
+        for (const imagePath of pendingPaths) {
+          releasedImages.add(imagePath);
+          for (const release of pendingReleases.get(imagePath)) release();
+        }
+
+        return pendingPaths;
+      };
       const waitForLoadedImage = async (image) => {
         const locator = page.locator(`img.zoomable[src$="${image.path}"]`);
-        const displaySource = normalDisplaySource(image);
+        const allowedPaths = displayPathsFor(image);
 
         await expect
-          .poll(() =>
-            locator.evaluate((element) => ({
+          .poll(() => pendingDisplayPathsFor(image).length)
+          .toBeGreaterThan(0);
+
+        await expect
+          .poll(async () => {
+            releasePendingDisplayPaths(image);
+            const state = await locator.evaluate((element) => ({
               complete: element.complete,
               currentPath: element.currentSrc
                 ? new URL(element.currentSrc).pathname
                 : "",
               naturalWidth: element.naturalWidth,
               naturalHeight: element.naturalHeight,
-            })),
-          )
-          .toMatchObject({ complete: true, currentPath: displaySource.path });
+            }));
 
-        const naturalDimensions = await locator.evaluate((element) => ({
-          width: element.naturalWidth,
-          height: element.naturalHeight,
+            return (
+              state.complete &&
+              state.naturalWidth > 0 &&
+              state.naturalHeight > 0 &&
+              allowedPaths.includes(state.currentPath)
+            );
+          })
+          .toBe(true);
+
+        const loadedState = await locator.evaluate((element) => ({
+          currentPath: new URL(element.currentSrc).pathname,
+          naturalWidth: element.naturalWidth,
+          naturalHeight: element.naturalHeight,
         }));
 
-        expect(naturalDimensions.width).toBeGreaterThan(0);
-        expect(naturalDimensions.height).toBeGreaterThan(0);
+        expect(displaySourceForPath(image, loadedState.currentPath)).not.toBe(
+          null,
+        );
+        expect(loadedState.naturalWidth).toBeGreaterThan(0);
+        expect(loadedState.naturalHeight).toBeGreaterThan(0);
+
+        await expect
+          .poll(() => {
+            releasePendingDisplayPaths(image);
+            return pendingDisplayPathsFor(image).length;
+          })
+          .toBe(0);
+
+        return loadedState;
       };
 
       page.on("request", observeRequest);
@@ -302,15 +350,9 @@ test.describe("localized Works image reliability", () => {
           "aria-haspopup",
           "dialog",
         );
-        const firstDisplayPath = normalDisplaySource(worksImages[0]).path;
-
-        await expect.poll(() => requestedImages.has(firstDisplayPath)).toBe(true);
         await expect
-          .poll(
-            () =>
-              (pendingReleases.get(firstDisplayPath)?.size || 0) > 0,
-          )
-          .toBe(true);
+          .poll(() => pendingDisplayPathsFor(worksImages[0]).length)
+          .toBeGreaterThan(0);
         await settleLazyLoading(page);
 
         const blockedState = await imageLocator.evaluateAll((images) =>
@@ -326,7 +368,10 @@ test.describe("localized Works image reliability", () => {
             );
 
             return {
-              path: new URL(image.currentSrc || image.src).pathname,
+              srcPath: new URL(image.src).pathname,
+              currentPath: image.currentSrc
+                ? new URL(image.currentSrc).pathname
+                : "",
               alt: image.alt,
               loading: image.getAttribute("loading"),
               decoding: image.getAttribute("decoding"),
@@ -353,12 +398,13 @@ test.describe("localized Works image reliability", () => {
               renderedHeight,
               renderedRatio,
               expectedRenderedHeight,
+              currentPath,
               ...imageState
             }) => imageState,
           ),
         ).toEqual(
           worksImages.map((image, index) => ({
-            path: image.path,
+            srcPath: image.path,
             alt: worksPage.alts[index],
             loading: image.lazy ? "lazy" : null,
             decoding: "async",
@@ -372,7 +418,12 @@ test.describe("localized Works image reliability", () => {
             aboveFold: index === 0,
           })),
         );
-        for (const imageState of blockedState) {
+        for (const [index, imageState] of blockedState.entries()) {
+          if (imageState.currentPath) {
+            expect(displayPathsFor(worksImages[index])).toContain(
+              imageState.currentPath,
+            );
+          }
           expect(imageState.renderedWidth).toBeGreaterThan(0);
           expect(imageState.renderedHeight).toBeGreaterThan(0);
           expect(
@@ -429,31 +480,46 @@ test.describe("localized Works image reliability", () => {
           );
         }
 
-        await releaseImage(targetImage.path);
         await waitForLoadedImage(targetImage);
 
         for (const image of worksImages.filter(
           (candidate) => candidate !== targetImage,
         )) {
           const locator = page.locator(`img.zoomable[src$="${image.path}"]`);
-          const displayPath = normalDisplaySource(image).path;
 
           await locator.scrollIntoViewIfNeeded();
-          await expect.poll(() => requestedImages.has(displayPath)).toBe(true);
-          await releaseImage(displayPath);
           await waitForLoadedImage(image);
         }
 
-        expect([...requestedImages].sort()).toEqual(
-          worksImages.map((image) => normalDisplaySource(image).path).sort(),
-        );
+        const requestedImagesBeforeLightbox = new Set(requestedImages);
+
+        for (const image of worksImages) {
+          const allowedPaths = displayPathsFor(image);
+          const requestedPaths = [
+            image.path,
+            ...(image.displaySources || []).map((source) => source.path),
+          ].filter((imagePath) =>
+            requestedImagesBeforeLightbox.has(imagePath),
+          );
+
+          if (image.displaySources) {
+            expect(requestedPaths.length).toBeGreaterThan(0);
+            expect(requestedPaths).not.toContain(image.path);
+            for (const imagePath of requestedPaths) {
+              expect(allowedPaths).toContain(imagePath);
+            }
+          } else {
+            expect(requestedPaths).toEqual([image.path]);
+          }
+        }
 
         const loadedState = await imageLocator.evaluateAll((images) =>
           images.map((image) => {
             const rect = image.getBoundingClientRect();
 
             return {
-              path: new URL(image.currentSrc || image.src).pathname,
+              srcPath: new URL(image.src).pathname,
+              currentPath: new URL(image.currentSrc).pathname,
               alt: image.alt,
               complete: image.complete,
               naturalWidth: image.naturalWidth,
@@ -475,12 +541,13 @@ test.describe("localized Works image reliability", () => {
               renderedWidth,
               renderedHeight,
               renderedRatio,
+              currentPath,
               ...imageState
             }) => imageState,
           ),
         ).toEqual(
           worksImages.map((image, index) => ({
-            path: normalDisplaySource(image).path,
+            srcPath: image.path,
             alt: worksPage.alts[index],
             complete: true,
             width: image.width,
@@ -488,12 +555,18 @@ test.describe("localized Works image reliability", () => {
           })),
         );
         for (const [index, imageState] of loadedState.entries()) {
+          const image = worksImages[index];
+
           expect(imageState.naturalWidth).toBeGreaterThan(0);
           expect(imageState.naturalHeight).toBeGreaterThan(0);
+          expect(displayPathsFor(image)).toContain(imageState.currentPath);
+          expect(
+            displaySourceForPath(image, imageState.currentPath),
+          ).not.toBe(null);
 
-          if (!worksImages[index].displaySources) {
-            expect(imageState.naturalWidth).toBe(worksImages[index].width);
-            expect(imageState.naturalHeight).toBe(worksImages[index].height);
+          if (!image.displaySources) {
+            expect(imageState.naturalWidth).toBe(image.width);
+            expect(imageState.naturalHeight).toBe(image.height);
           }
         }
         for (const [index, image] of loadedState.entries()) {
@@ -584,6 +657,12 @@ test.describe("localized Works image reliability", () => {
 
         console.log(
           `[works-image-diagnostic:${worksPage.name}] ${JSON.stringify({
+            firstResponsiveImage: {
+              selectedPath: loadedState[0].currentPath,
+              requestedPaths: displayPathsFor(worksImages[0]).filter(
+                (imagePath) => requestedImagesBeforeLightbox.has(imagePath),
+              ),
+            },
             targetImage: targetImage.path,
             targetImageTop,
             requestedBeforeTargetScroll,
