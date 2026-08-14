@@ -57,6 +57,8 @@ const viewportWidths = [
   { name: "desktop-1728", width: 1728, height: 900 },
 ];
 const deviceScaleFactors = [1, 1.25, 1.5, 1.75, 2];
+const borderSides = ["left", "right", "top", "bottom"];
+const geometrySlack = 1 / 32;
 const boundaryViewportWidths = [
   { name: "portrait-floor-942", width: 942, height: 900 },
   { name: "portrait-fluid-943", width: 943, height: 900 },
@@ -142,17 +144,38 @@ for (const viewport of viewportCases) {
       const normalState = await Promise.all(
         imageLocators.map((locator) =>
           locator.evaluate((element) => {
-            const rect = element.getBoundingClientRect();
-            const cardRect = element
-              .closest(".showcase-card")
-              .getBoundingClientRect();
+            const imageRect = element.getBoundingClientRect();
+            const card = element.closest(".showcase-card");
+            const cardRect = card.getBoundingClientRect();
+            const cardStyle = getComputedStyle(card);
+            const authoredCardRule = Array.from(document.styleSheets)
+              .flatMap((sheet) => Array.from(sheet.cssRules))
+              .find((rule) => rule.selectorText === ".showcase-card");
 
             return {
               currentPath: new URL(element.currentSrc).pathname,
-              displayedWidth: rect.width,
-              displayedHeight: rect.height,
+              displayedWidth: imageRect.width,
+              displayedHeight: imageRect.height,
               cardWidth: cardRect.width,
               cardHeight: cardRect.height,
+              edgeInsets: {
+                left: imageRect.left - cardRect.left,
+                right: cardRect.right - imageRect.right,
+                top: imageRect.top - cardRect.top,
+                bottom: cardRect.bottom - imageRect.bottom,
+              },
+              borderWidths: {
+                left: parseFloat(cardStyle.borderLeftWidth),
+                right: parseFloat(cardStyle.borderRightWidth),
+                top: parseFloat(cardStyle.borderTopWidth),
+                bottom: parseFloat(cardStyle.borderBottomWidth),
+              },
+              authoredBorderWidths: {
+                left: authoredCardRule.style.borderLeftWidth,
+                right: authoredCardRule.style.borderRightWidth,
+                top: authoredCardRule.style.borderTopWidth,
+                bottom: authoredCardRule.style.borderBottomWidth,
+              },
               objectFit: getComputedStyle(element).objectFit,
               sizes: element.sizes,
               fullSrc: element.dataset.fullSrc,
@@ -202,6 +225,9 @@ for (const viewport of viewportCases) {
             height: state.displayedHeight,
           },
           cardBox: { width: state.cardWidth, height: state.cardHeight },
+          edgeInsets: state.edgeInsets,
+          borderWidths: state.borderWidths,
+          authoredBorderWidths: state.authoredBorderWidths,
           coverCss: { width: coverCssWidth, height: coverCssHeight },
           requirement,
           selectedSource,
@@ -234,8 +260,32 @@ for (const viewport of viewportCases) {
         expect(audit.selectedSource.height).toBeGreaterThanOrEqual(
           audit.requirement.height,
         );
-        expect(audit.cardBox.width - audit.renderedBox.width).toBeCloseTo(2, 1);
-        expect(audit.cardBox.height - audit.renderedBox.height).toBeCloseTo(2, 1);
+        expect(audit.renderedBox.width).toBeLessThanOrEqual(
+          audit.cardBox.width,
+        );
+        expect(audit.renderedBox.height).toBeLessThanOrEqual(
+          audit.cardBox.height,
+        );
+
+        for (const side of borderSides) {
+          const borderWidth = audit.borderWidths[side];
+          const edgeInset = audit.edgeInsets[side];
+
+          expect(audit.authoredBorderWidths[side]).toBe("1px");
+          expect(borderWidth).toBeGreaterThan(0);
+          expect(borderWidth).toBeLessThanOrEqual(1 + geometrySlack);
+          expect(
+            borderWidth * viewport.deviceScaleFactor,
+          ).toBeGreaterThanOrEqual(1 - geometrySlack);
+          expect(edgeInset).toBeGreaterThan(0);
+          expect(edgeInset).toBeLessThanOrEqual(1 + geometrySlack);
+          expect(Math.abs(edgeInset - borderWidth)).toBeLessThanOrEqual(
+            geometrySlack,
+          );
+          expect(
+            edgeInset * viewport.deviceScaleFactor,
+          ).toBeGreaterThanOrEqual(1 - geometrySlack);
+        }
       }
       expect(
         await page.evaluate(
