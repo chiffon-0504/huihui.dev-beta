@@ -25,7 +25,7 @@ window.HUIHUI_I18N.ja = {
   },
   home: {
     hero: {
-      subtitle: "開発者 / 写真",
+      subtitle: "Web UI、コードレンダリング、組み込みシステムに焦点を当てた個人開発スペースです。",
       about: "私について",
       contact: "連絡先"
     },

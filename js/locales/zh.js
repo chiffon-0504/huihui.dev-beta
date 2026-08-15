@@ -25,7 +25,7 @@ window.HUIHUI_I18N.zh = {
   },
   home: {
     hero: {
-      subtitle: "開發者 / 攝影",
+      subtitle: "專注於 Web UI、程式碼呈現與嵌入式系統的個人開發空間。",
       about: "關於",
       contact: "聯絡"
     },
