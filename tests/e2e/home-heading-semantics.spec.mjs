@@ -5,21 +5,23 @@ const homeRoutes = [
   {
     path: "/",
     lang: "zh-Hant",
-    subtitle: "\u958b\u767c\u8005 / \u651d\u5f71",
+    subtitle: "專注於 Web UI、程式碼呈現與嵌入式系統的個人開發空間。",
     aboutHref: "/about/",
     contactHref: "/contact/",
   },
   {
     path: "/en/",
     lang: "en",
-    subtitle: "Developer / Photography",
+    subtitle:
+      "A personal development space focused on Web UI, code rendering, and embedded systems.",
     aboutHref: "/en/about/",
     contactHref: "/en/contact/",
   },
   {
     path: "/ja/",
     lang: "ja",
-    subtitle: "\u958b\u767a\u8005 / \u5199\u771f",
+    subtitle:
+      "Web UI、コードレンダリング、組み込みシステムに焦点を当てた個人開発スペースです。",
     aboutHref: "/ja/about/",
     contactHref: "/ja/contact/",
   },

@@ -25,7 +25,7 @@ window.HUIHUI_I18N.en = {
   },
   home: {
     hero: {
-      subtitle: "Developer / Photography",
+      subtitle: "A personal development space focused on Web UI, code rendering, and embedded systems.",
       about: "About",
       contact: "Contact"
     },
