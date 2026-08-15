@@ -11,10 +11,10 @@ const homeRoutes = [
     status: "🟢 更新中",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
-      "改善 Tier Maker 分級表與「待排序」區塊之間的視覺分隔與間距",
-      "Contact 公開信箱備用連結改為開啟 Gmail 撰寫新信，並預填 contact@huihui.dev",
-      "新增 Ave Mujica LIVE TOUR 2026「Exitus」台北 DAY2 三語 Milestone 與現場照片",
-      "新增 #Exitus_TAIPEI／#AveMujica 連結，並改善三語圖片描述的安全呈現",
+      "強化 Cloudflare Worker API 的 HTTP、安全性與請求／回應大小限制",
+      "改善 Works 與 Milestones 的響應式圖片載入，並精簡各頁腳本與語系資源",
+      "完善三語介面、導覽、狀態訊息與鍵盤操作的無障礙支援",
+      "升級 CI／Nightly regression 與跨瀏覽器測試，Chromium、Firefox 與 Playwright WebKit 全面通過",
     ],
   },
   {
@@ -23,10 +23,10 @@ const homeRoutes = [
     status: "🟢 Active",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
-      "Improved visual separation and spacing between the Tier Maker board and Unsorted section",
-      "Updated the Contact email fallback to open Gmail Compose with contact@huihui.dev prefilled",
-      "Added the localized Ave Mujica LIVE TOUR 2026 “Exitus” Taipei DAY2 Milestone and venue photo",
-      "Added #Exitus_TAIPEI and #AveMujica links with safer localized image descriptions",
+      "Hardened Cloudflare Worker API HTTP contracts, security checks, and request/response size limits",
+      "Improved responsive image delivery for Works and Milestones while reducing route-specific scripts and locale payloads",
+      "Expanded multilingual accessibility across navigation, status messaging, and keyboard interaction",
+      "Upgraded CI, nightly regression, and cross-browser coverage with Chromium, Firefox, and Playwright WebKit fully passing",
     ],
   },
   {
@@ -35,10 +35,10 @@ const homeRoutes = [
     status: "🟢 更新中",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
-      "Tier Maker のティア表と Unsorted セクションの間隔と視覚的な区切りを改善",
-      "Contact のメール代替リンクから Gmail の新規メール作成画面を開き、contact@huihui.dev を宛先に設定",
-      "Ave Mujica LIVE TOUR 2026「Exitus」台北公演 DAY2 の多言語 Milestone と会場写真を追加",
-      "#Exitus_TAIPEI／#AveMujica リンクと、安全な多言語画像説明を追加",
+      "Cloudflare Worker API の HTTP 契約、セキュリティ検証、リクエスト／レスポンスのサイズ制限を強化",
+      "Works と Milestones のレスポンシブ画像配信を改善し、ページ別スクリプトとロケール資源を軽量化",
+      "ナビゲーション、状態表示、キーボード操作を含む多言語アクセシビリティを改善",
+      "CI／Nightly regression とクロスブラウザ検証を強化し、Chromium、Firefox、Playwright WebKit ですべて通過",
     ],
   },
 ];
@@ -155,7 +155,7 @@ for (const route of homeRoutes) {
     await expect(main.locator(".project-update-card h2")).toHaveText(
       route.status,
     );
-    await expect(releaseCard.locator("h2")).toHaveText("v1.3.1");
+    await expect(releaseCard.locator("h2")).toHaveText("v1.4.0");
     await expect(releaseCard.locator(".version-badge")).toHaveText(
       "Stable release",
     );
