@@ -17,7 +17,7 @@
 
 html {
   scroll-behavior: smooth;
-  scrollbar-color: rgba(37, 65, 90, 0.4) transparent;
+  scrollbar-color: rgba(37, 65, 90, 0.7) transparent;
   scrollbar-width: thin;
 }
 
@@ -30,12 +30,12 @@ html::-webkit-scrollbar-track {
 }
 
 html::-webkit-scrollbar-thumb {
-  background: rgba(37, 65, 90, 0.4);
+  background: rgba(37, 65, 90, 0.7);
   border-radius: 999px;
 }
 
 html::-webkit-scrollbar-thumb:hover {
-  background: rgba(37, 65, 90, 0.55);
+  background: rgba(37, 65, 90, 0.8);
 }
 
 body {
