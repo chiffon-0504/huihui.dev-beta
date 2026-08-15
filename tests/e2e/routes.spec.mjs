@@ -81,7 +81,10 @@ async function awaitRouteReady(page, route) {
 }
 
 for (const route of primaryRoutes) {
-  test(`${route.url} loads its localized page shell`, async ({ page }) => {
+  test(`${route.url} loads its localized page shell`, async ({
+    browserName,
+    page,
+  }) => {
     const consoleErrors = [];
     const localFailures = [];
     const pageErrors = [];
@@ -126,9 +129,17 @@ for (const route of primaryRoutes) {
     await expect(skipLink).toHaveCount(1);
     await expect(skipLink).toHaveAttribute("href", "#main-content");
     await expect(skipLink).toHaveText(skipLinkText[route.locale]);
+    expect(await skipLink.evaluate((element) => element.tabIndex)).toBe(0);
     await expect(page.locator("#site-sidebar .sidebar-top")).toHaveCount(1);
 
-    await page.keyboard.press("Tab");
+    if (browserName === "webkit") {
+      // Bundled WebKit excludes ordinary anchors from its plain-Tab sequence.
+      // Explicit focus verifies focusability; it does not emulate Safari Tab navigation.
+      await skipLink.focus();
+    } else {
+      // Chromium and Firefox retain native plain-Tab sequential navigation.
+      await page.keyboard.press("Tab");
+    }
     await expect(skipLink).toBeFocused();
     const skipLinkFocus = await skipLink.evaluate((link) => {
       const style = getComputedStyle(link);

@@ -120,16 +120,25 @@ test("the closed mobile drawer is outside the keyboard tab order", async ({
   ).toBe(false);
 });
 
-test("the localized skip link remains the first mobile keyboard shortcut", async ({
+test("the localized skip link remains keyboard-focusable and activates main content", async ({
+  browserName,
   page,
 }) => {
   const { sidebar, toggle } = await loadMobilePage(page, "/ja/");
   const skipLink = page.locator(".skip-link");
   const main = page.locator("#main-content");
 
-  await page.keyboard.press("Tab");
-  await expect(skipLink).toBeFocused();
   await expect(skipLink).toHaveText("メインコンテンツへ移動");
+  expect(await skipLink.evaluate((element) => element.tabIndex)).toBe(0);
+  if (browserName === "webkit") {
+    // Bundled WebKit excludes ordinary anchors from its plain-Tab sequence.
+    // Explicit focus verifies focusability; it does not emulate Safari Tab navigation.
+    await skipLink.focus();
+  } else {
+    // Chromium and Firefox retain native plain-Tab sequential navigation.
+    await page.keyboard.press("Tab");
+  }
+  await expect(skipLink).toBeFocused();
 
   await page.keyboard.press("Enter");
   await expect(main).toBeFocused();

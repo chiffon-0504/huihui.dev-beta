@@ -43,6 +43,7 @@ async function stubExternalDependencies(page) {
 
 for (const route of homeRoutes) {
   test(`${route.path} preserves accessible Home heading semantics`, async ({
+    browserName,
     page,
   }) => {
     const consoleErrors = [];
@@ -114,9 +115,22 @@ for (const route of homeRoutes) {
     await expect(heroButtons).toHaveCount(2);
     await expect(heroButtons.nth(0)).toHaveAttribute("href", route.aboutHref);
     await expect(heroButtons.nth(1)).toHaveAttribute("href", route.contactHref);
+    expect(await heroButtons.nth(0).evaluate((element) => element.tabIndex)).toBe(
+      0,
+    );
+    expect(await heroButtons.nth(1).evaluate((element) => element.tabIndex)).toBe(
+      0,
+    );
     await heroButtons.nth(0).focus();
     await expect(heroButtons.nth(0)).toBeFocused();
-    await page.keyboard.press("Tab");
+    if (browserName === "webkit") {
+      // Bundled WebKit excludes ordinary anchors from its plain-Tab sequence.
+      // Explicit focus verifies focusability; it does not emulate Safari Tab navigation.
+      await heroButtons.nth(1).focus();
+    } else {
+      // Chromium and Firefox retain native plain-Tab sequential navigation.
+      await page.keyboard.press("Tab");
+    }
     await expect(heroButtons.nth(1)).toBeFocused();
 
     expect(consoleErrors).toEqual([]);
