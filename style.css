@@ -1,3 +1,5 @@
+@import url("/vendor/overlayscrollbars/overlayscrollbars.scriptingenabled.min.css");
+
 /* =========================
    CSS Architecture
    Shared layout and global page styles live here. About code styles live in
@@ -36,6 +38,20 @@ html::-webkit-scrollbar-thumb {
 
 html::-webkit-scrollbar-thumb:hover {
   background: rgba(37, 65, 90, 0.8);
+}
+
+.os-theme-huihui {
+  --os-size: 10px;
+  --os-padding-perpendicular: 2px;
+  --os-padding-axis: 4px;
+  --os-track-bg: transparent;
+  --os-track-bg-hover: transparent;
+  --os-track-bg-active: transparent;
+  --os-handle-bg: rgba(37, 65, 90, 0.72);
+  --os-handle-bg-hover: rgba(37, 65, 90, 0.84);
+  --os-handle-bg-active: rgba(37, 65, 90, 0.92);
+  --os-handle-border-radius: 999px;
+  --os-handle-min-size: 32px;
 }
 
 body {

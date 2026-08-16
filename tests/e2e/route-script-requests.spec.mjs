@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 const localOrigin = "http://127.0.0.1:4173";
 const sharedScripts = [
+  "/vendor/overlayscrollbars/overlayscrollbars.browser.es6.min.js",
   "/js/layout.js",
   "/js/glass-material.js",
   "/js/mobile-drawer.js",

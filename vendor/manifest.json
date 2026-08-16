@@ -67,6 +67,34 @@
           "sha256": "86200ce4e92d9a22c41c8647a55f7a5fddff304ff89b4d36ecc699ed8c123d2c"
         }
       ]
+    },
+    {
+      "package": "overlayscrollbars",
+      "version": "2.16.0",
+      "license": "MIT",
+      "source": "https://registry.npmjs.org/overlayscrollbars/-/overlayscrollbars-2.16.0.tgz",
+      "sourceSha256": "dd016cc4418d7e40abe0b859bb010ff7770f1778df4503d0f588dc6a6a9d3d9e",
+      "repository": "https://github.com/KingSora/OverlayScrollbars/tree/v2.16.0",
+      "files": [
+        {
+          "path": "vendor/overlayscrollbars/overlayscrollbars.browser.es6.min.js",
+          "upstream": "browser/overlayscrollbars.browser.es6.min.js",
+          "role": "runtime",
+          "sha256": "53fc4a48c3145d736c1c16e96e76a5e6db44396ab14dd45ae3d0d6479170467e"
+        },
+        {
+          "path": "vendor/overlayscrollbars/overlayscrollbars.scriptingenabled.min.css",
+          "upstream": "styles/overlayscrollbars.scriptingenabled.min.css",
+          "role": "runtime",
+          "sha256": "f71dc0bca2ababde4317a7a49b41f09a44932b45d67df466d49b06eb16f5010f"
+        },
+        {
+          "path": "vendor/overlayscrollbars/LICENSE",
+          "upstream": "LICENSE",
+          "role": "license",
+          "sha256": "e15ad22c5d4a4e4d63ddfe8cf1993e9fecfcf87dd320a701daa939d55beeefbc"
+        }
+      ]
     }
   ]
 }
