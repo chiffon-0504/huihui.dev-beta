@@ -54,6 +54,18 @@ html::-webkit-scrollbar-thumb:hover {
   --os-handle-min-size: 32px;
 }
 
+@media (forced-colors: active) {
+  .os-theme-huihui {
+    --os-track-bg: Canvas;
+    --os-track-bg-hover: Canvas;
+    --os-track-bg-active: Canvas;
+    --os-handle-bg: CanvasText;
+    --os-handle-bg-hover: CanvasText;
+    --os-handle-bg-active: CanvasText;
+    forced-color-adjust: none;
+  }
+}
+
 body {
   margin: 0;
   background: #000;

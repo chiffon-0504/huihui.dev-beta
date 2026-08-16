@@ -281,6 +281,110 @@ test("wheel, handle drag, and track click update window.scrollY", async ({
     .toBeGreaterThan(0);
 });
 
+test("forced colors keeps the custom root scrollbar visible and interactive", async ({
+  page,
+}) => {
+  await page.emulateMedia({ forcedColors: "active" });
+  await loadAbout(page);
+
+  const forcedColorsState = await page.evaluate(() => {
+    const verticalScrollbar = document.querySelector(
+      ".os-scrollbar-vertical",
+    );
+    const track = verticalScrollbar.querySelector(".os-scrollbar-track");
+    const handle = verticalScrollbar.querySelector(".os-scrollbar-handle");
+    const scrollbarStyle = getComputedStyle(verticalScrollbar);
+
+    return {
+      forcedColorsActive: matchMedia("(forced-colors: active)").matches,
+      gutterWidth: window.innerWidth - document.documentElement.clientWidth,
+      handleBackground: getComputedStyle(handle).backgroundColor,
+      handleColors: [
+        "--os-handle-bg",
+        "--os-handle-bg-hover",
+        "--os-handle-bg-active",
+      ].map((property) => scrollbarStyle.getPropertyValue(property).trim()),
+      horizontalOverflow:
+        document.documentElement.scrollWidth -
+        document.documentElement.clientWidth,
+      scrollingElement: document.scrollingElement?.tagName,
+      trackBackground: getComputedStyle(track).backgroundColor,
+      trackColors: [
+        "--os-track-bg",
+        "--os-track-bg-hover",
+        "--os-track-bg-active",
+      ].map((property) => scrollbarStyle.getPropertyValue(property).trim()),
+      verticalPosition: scrollbarStyle.position,
+      verticalScrollbarCount: document.querySelectorAll(
+        ".os-scrollbar-vertical",
+      ).length,
+    };
+  });
+
+  expect(forcedColorsState).toEqual({
+    forcedColorsActive: true,
+    gutterWidth: 0,
+    handleBackground: forcedColorsState.handleBackground,
+    handleColors: ["CanvasText", "CanvasText", "CanvasText"],
+    horizontalOverflow: 0,
+    scrollingElement: "HTML",
+    trackBackground: forcedColorsState.trackBackground,
+    trackColors: ["Canvas", "Canvas", "Canvas"],
+    verticalPosition: "fixed",
+    verticalScrollbarCount: 1,
+  });
+  expect(forcedColorsState.handleBackground).not.toBe(
+    forcedColorsState.trackBackground,
+  );
+
+  await page.mouse.wheel(0, 240);
+  await expect
+    .poll(() => page.evaluate(() => window.scrollY))
+    .toBeGreaterThan(0);
+  let rootScrollState = await getRootScrollState(page);
+  expect(rootScrollState.bodyScrollTop).toBe(0);
+  expect(rootScrollState.documentElementScrollTop).toBe(
+    rootScrollState.windowScrollY,
+  );
+  expect(rootScrollState.scrollingElement).toBe("HTML");
+
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  expect((await getRootScrollState(page)).activeElement).toBe("BODY");
+  await page.keyboard.press("PageDown");
+  await expect
+    .poll(() => page.evaluate(() => window.scrollY))
+    .toBeGreaterThan(0);
+  rootScrollState = await getRootScrollState(page);
+  expect(rootScrollState.bodyScrollTop).toBe(0);
+  expect(rootScrollState.documentElementScrollTop).toBe(
+    rootScrollState.windowScrollY,
+  );
+  expect(rootScrollState.scrollingElement).toBe("HTML");
+
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  const handle = page.locator(
+    ".os-scrollbar-vertical .os-scrollbar-handle",
+  );
+  const handleBox = await handle.boundingBox();
+  expect(handleBox).not.toBeNull();
+  await page.mouse.move(
+    handleBox.x + handleBox.width / 2,
+    handleBox.y + handleBox.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    handleBox.x + handleBox.width / 2,
+    handleBox.y + handleBox.height / 2 + 180,
+    { steps: 6 },
+  );
+  await page.mouse.up();
+  await expect
+    .poll(() => page.evaluate(() => window.scrollY))
+    .toBeGreaterThan(0);
+});
+
 test("reduced motion disables animated track clicks without disabling native wheel scrolling", async ({
   page,
 }) => {
