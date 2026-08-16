@@ -25,22 +25,40 @@ function initRootOverlayScrollbar() {
 
     if (typeof OverlayScrollbars !== "function") return;
 
-    const prefersReducedMotion =
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reducedMotionMedia =
+      typeof window.matchMedia === "function"
+        ? window.matchMedia("(prefers-reduced-motion: reduce)")
+        : null;
 
     OverlayScrollbars.plugin(ClickScrollPlugin);
     const instance = OverlayScrollbars(document.body, {
       scrollbars: {
         autoHide: "never",
-        clickScroll: !prefersReducedMotion,
+        clickScroll: !reducedMotionMedia?.matches,
         dragScroll: true,
         theme: "os-theme-huihui",
         visibility: "auto",
       },
     });
 
-    if (instance) rootOverlayScrollbarInitialized = true;
+    if (!instance) return;
+
+    rootOverlayScrollbarInitialized = true;
+
+    if (reducedMotionMedia) {
+      const syncClickScroll = () => {
+        instance.options({
+          scrollbars: {
+            clickScroll: !reducedMotionMedia.matches,
+          },
+        });
+      };
+
+      reducedMotionMedia.addEventListener("change", syncClickScroll);
+      instance.on("destroyed", () => {
+        reducedMotionMedia.removeEventListener("change", syncClickScroll);
+      });
+    }
   }
 
   if (typeof window.OverlayScrollbarsGlobal?.OverlayScrollbars === "function") {

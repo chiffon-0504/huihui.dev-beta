@@ -310,6 +310,102 @@ test("reduced motion disables animated track clicks without disabling native whe
     .toBeGreaterThan(0);
 });
 
+test("click scrolling follows reduced motion changes on the existing instance", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await loadAbout(page);
+
+  const initialClickScroll = await page.evaluate(() => {
+    const instance =
+      window.OverlayScrollbarsGlobal.OverlayScrollbars(document.body);
+    window.__rootOverlayScrollbarInstance = instance;
+    window.__rootOverlayScrollbarClickScrollChanges = [];
+    instance.on("updated", (_, { changedOptions }) => {
+      const clickScroll = changedOptions.scrollbars?.clickScroll;
+      if (typeof clickScroll === "boolean") {
+        window.__rootOverlayScrollbarClickScrollChanges.push(clickScroll);
+      }
+    });
+
+    initHuihuiSite();
+    initHuihuiSite();
+
+    return instance.options().scrollbars.clickScroll;
+  });
+  expect(initialClickScroll).toBe(true);
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const instance =
+          window.OverlayScrollbarsGlobal.OverlayScrollbars(document.body);
+        return {
+          clickScroll: instance.options().scrollbars.clickScroll,
+          changes: window.__rootOverlayScrollbarClickScrollChanges,
+          sameInstance: instance === window.__rootOverlayScrollbarInstance,
+        };
+      }),
+    )
+    .toEqual({
+      clickScroll: false,
+      changes: [false],
+      sameInstance: true,
+    });
+
+  const trackBox = await page
+    .locator(".os-scrollbar-vertical .os-scrollbar-track")
+    .boundingBox();
+  expect(trackBox).not.toBeNull();
+  await page.mouse.click(
+    trackBox.x + trackBox.width / 2,
+    trackBox.y + trackBox.height * 0.75,
+  );
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+
+  await page.mouse.wheel(0, 240);
+  await expect
+    .poll(() => page.evaluate(() => window.scrollY))
+    .toBeGreaterThan(0);
+  const reducedMotionScrollState = await getRootScrollState(page);
+  expect(reducedMotionScrollState.bodyScrollTop).toBe(0);
+  expect(reducedMotionScrollState.documentElementScrollTop).toBe(
+    reducedMotionScrollState.windowScrollY,
+  );
+  expect(reducedMotionScrollState.scrollingElement).toBe("HTML");
+
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const instance =
+          window.OverlayScrollbarsGlobal.OverlayScrollbars(document.body);
+        return {
+          clickScroll: instance.options().scrollbars.clickScroll,
+          changes: window.__rootOverlayScrollbarClickScrollChanges,
+          sameInstance: instance === window.__rootOverlayScrollbarInstance,
+        };
+      }),
+    )
+    .toEqual({
+      clickScroll: true,
+      changes: [false, true],
+      sameInstance: true,
+    });
+
+  await page.mouse.click(
+    trackBox.x + trackBox.width / 2,
+    trackBox.y + trackBox.height * 0.75,
+  );
+  await expect
+    .poll(() => page.evaluate(() => window.scrollY))
+    .toBeGreaterThan(0);
+});
+
 test("native controls keep their keyboard behavior without moving the page", async ({
   page,
 }) => {
