@@ -4435,3 +4435,45 @@ body:has(#aboutPage) .steam-game-hours {
     transform: none;
   }
 }
+
+/* =========================
+   App Scroll Container Experiment
+   Keep the viewport and background fixed while main owns vertical scrolling,
+   placing its element scrollbar over the real site canvas on Windows Chromium.
+========================= */
+
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.main {
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  scrollbar-color: rgba(37, 65, 90, 0.7) transparent;
+  scrollbar-width: thin;
+}
+
+.main::-webkit-scrollbar {
+  width: 8px;
+}
+
+.main::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.main::-webkit-scrollbar-thumb {
+  background: rgba(37, 65, 90, 0.7);
+  border-radius: 999px;
+}
+
+.main::-webkit-scrollbar-thumb:hover {
+  background: rgba(37, 65, 90, 0.8);
+}
