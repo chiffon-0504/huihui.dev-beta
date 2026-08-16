@@ -23,10 +23,13 @@ html {
 
 html::-webkit-scrollbar {
   width: 8px;
+  background: transparent;
 }
 
 html::-webkit-scrollbar-track {
   background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 
 html::-webkit-scrollbar-thumb {
