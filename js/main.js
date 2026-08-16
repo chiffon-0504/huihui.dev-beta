@@ -25,11 +25,15 @@ function initRootOverlayScrollbar() {
 
     if (typeof OverlayScrollbars !== "function") return;
 
+    const prefersReducedMotion =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     OverlayScrollbars.plugin(ClickScrollPlugin);
     const instance = OverlayScrollbars(document.body, {
       scrollbars: {
         autoHide: "never",
-        clickScroll: true,
+        clickScroll: !prefersReducedMotion,
         dragScroll: true,
         theme: "os-theme-huihui",
         visibility: "auto",

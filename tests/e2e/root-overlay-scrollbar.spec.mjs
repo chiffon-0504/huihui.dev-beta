@@ -16,6 +16,15 @@ async function getRootScrollState(page) {
   }));
 }
 
+async function waitForScrollHistoryCommit(page) {
+  await page.evaluate(
+    () =>
+      new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve)),
+      ),
+  );
+}
+
 test("body mode keeps the document root as the native page scroll owner", async ({
   page,
 }) => {
@@ -130,6 +139,8 @@ test("hash, Back, Forward, reload, and cross-page restoration stay native", asyn
 }) => {
   await loadAbout(page);
   await page.evaluate(() => window.scrollTo({ top: 1200, behavior: "instant" }));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(1200);
+  await waitForScrollHistoryCommit(page);
   await page.locator(".skip-link").focus();
   await page.keyboard.press("Enter");
   await expect(page.locator("#main-content")).toBeFocused();
@@ -153,11 +164,9 @@ test("hash, Back, Forward, reload, and cross-page restoration stay native", asyn
     await aboutLink.click({ trial: true });
   }
   await page.evaluate(() => window.scrollTo({ top: 160, behavior: "instant" }));
-  // Bundled WebKit can still be completing the authored smooth scroll here.
   // Confirm the exact restoration precondition before leaving the page.
-  if (browserName === "webkit") {
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(160);
-  }
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(160);
+  await waitForScrollHistoryCommit(page);
   await aboutLink.click();
   await expect(page).toHaveURL(/\/about\/$/);
   await page.goBack();
@@ -169,6 +178,10 @@ test("hash, Back, Forward, reload, and cross-page restoration stay native", asyn
   await expect(page.locator(".os-scrollbar-vertical")).toBeVisible();
   await page.evaluate(() => window.scrollTo({ top: 900, behavior: "instant" }));
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(900);
+  // Let Chromium commit the new position to session history before reloading.
+  if (browserName === "chromium") {
+    await waitForScrollHistoryCommit(page);
+  }
   await page.reload();
   await expect(page.locator("#aboutPage h1")).toBeVisible();
   await expect(page.locator(".os-scrollbar-vertical")).toBeVisible();
@@ -263,6 +276,35 @@ test("wheel, handle drag, and track click update window.scrollY", async ({
     trackBox.x + trackBox.width / 2,
     trackBox.y + trackBox.height * 0.75,
   );
+  await expect
+    .poll(() => page.evaluate(() => window.scrollY))
+    .toBeGreaterThan(0);
+});
+
+test("reduced motion disables animated track clicks without disabling native wheel scrolling", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await loadAbout(page);
+
+  const clickScroll = await page.evaluate(() =>
+    window.OverlayScrollbarsGlobal
+      .OverlayScrollbars(document.body)
+      .options().scrollbars.clickScroll,
+  );
+  expect(clickScroll).toBe(false);
+
+  const trackBox = await page
+    .locator(".os-scrollbar-vertical .os-scrollbar-track")
+    .boundingBox();
+  expect(trackBox).not.toBeNull();
+  await page.mouse.click(
+    trackBox.x + trackBox.width / 2,
+    trackBox.y + trackBox.height * 0.75,
+  );
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+
+  await page.mouse.wheel(0, 240);
   await expect
     .poll(() => page.evaluate(() => window.scrollY))
     .toBeGreaterThan(0);
