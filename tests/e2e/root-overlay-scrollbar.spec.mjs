@@ -146,8 +146,19 @@ test("hash, Back, Forward, reload, and cross-page restoration stay native", asyn
 
   await page.goto("/");
   await expect(page.locator(".os-scrollbar-vertical")).toBeVisible();
+  const aboutLink = page.locator('a[data-nav="about"]');
+  if (browserName === "webkit") {
+    // WebKit locator actionability can adjust the page for this fixed link.
+    // Complete that work before establishing the restoration position.
+    await aboutLink.click({ trial: true });
+  }
   await page.evaluate(() => window.scrollTo({ top: 160, behavior: "instant" }));
-  await page.locator('a[data-nav="about"]').click();
+  // Bundled WebKit can still be completing the authored smooth scroll here.
+  // Confirm the exact restoration precondition before leaving the page.
+  if (browserName === "webkit") {
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(160);
+  }
+  await aboutLink.click();
   await expect(page).toHaveURL(/\/about\/$/);
   await page.goBack();
   await expect(page).toHaveURL(/\/$/);
@@ -157,12 +168,13 @@ test("hash, Back, Forward, reload, and cross-page restoration stay native", asyn
   await expect(page.locator("#aboutPage h1")).toBeVisible();
   await expect(page.locator(".os-scrollbar-vertical")).toBeVisible();
   await page.evaluate(() => window.scrollTo({ top: 900, behavior: "instant" }));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(900);
   await page.reload();
   await expect(page.locator("#aboutPage h1")).toBeVisible();
   await expect(page.locator(".os-scrollbar-vertical")).toBeVisible();
-  // Bundled WebKit resets reload scroll to 0 on the unchanged native baseline.
-  // Chromium and Firefox preserve 900, so keep that browser behavior exact.
-  const expectedReloadScroll = browserName === "webkit" ? 0 : 900;
+  // Bundled Firefox and WebKit reset reload scroll to 0 on their unchanged
+  // native baselines. Chromium preserves 900, so keep each behavior exact.
+  const expectedReloadScroll = browserName === "chromium" ? 900 : 0;
   await expect
     .poll(() => page.evaluate(() => window.scrollY))
     .toBe(expectedReloadScroll);
