@@ -93,6 +93,7 @@ describe("vendored browser dependencies", () => {
     ).toEqual([
       { package: "prismjs", version: "1.30.0", license: "MIT" },
       { package: "html2canvas", version: "1.4.1", license: "MIT" },
+      { package: "overlayscrollbars", version: "2.16.0", license: "MIT" },
     ]);
 
     for (const dependency of manifest.dependencies) {

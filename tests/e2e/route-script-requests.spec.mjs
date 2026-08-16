@@ -6,6 +6,7 @@ const sharedScripts = [
   "/js/glass-material.js",
   "/js/mobile-drawer.js",
   "/js/main.js",
+  "/vendor/overlayscrollbars/overlayscrollbars.browser.es6.min.js",
   "/js/i18n.js",
 ];
 const localeScripts = {
