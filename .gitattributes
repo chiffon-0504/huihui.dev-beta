@@ -7,3 +7,6 @@ vendor/prism/themes/prism-tomorrow.min.css binary
 vendor/prism/LICENSE -text
 vendor/html2canvas/html2canvas.esm.js binary
 vendor/html2canvas/LICENSE -text
+vendor/overlayscrollbars/overlayscrollbars.browser.es6.min.js binary
+vendor/overlayscrollbars/overlayscrollbars.scriptingenabled.min.css binary
+vendor/overlayscrollbars/LICENSE -text
