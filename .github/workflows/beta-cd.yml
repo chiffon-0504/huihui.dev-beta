@@ -1,0 +1,83 @@
+name: Beta CD verification
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  checks: read
+  actions: read
+
+concurrency:
+  group: beta-cd
+  cancel-in-progress: true
+
+jobs:
+  synchronize:
+    name: Wait for exact beta deployments
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine whether the beta Worker must deploy
+        id: worker
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          TARGET_SHA: ${{ github.sha }}
+        run: node tests/scripts/beta-deployment-sync.mjs detect-worker-change
+
+      - name: Wait for exact Pages and Worker deployments
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ github.sha }}
+          WORKER_REQUIRED: ${{ steps.worker.outputs.required }}
+        run: node tests/scripts/beta-deployment-sync.mjs wait
+
+  live-smoke:
+    name: Live beta smoke
+    needs: synchronize
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: beta
+      url: https://beta.huihui.dev
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run live HTTP and beta Worker API smoke checks
+        run: node tests/scripts/beta-http-smoke.mjs
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run live Chromium deployment smoke
+        run: npx playwright test --config=playwright.beta-smoke.config.mjs --project=chromium --workers=1 --retries=0
+
+      - name: Upload Playwright failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-beta-deployment-smoke
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7

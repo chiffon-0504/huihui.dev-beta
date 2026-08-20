@@ -447,6 +447,111 @@ describe("Playwright cross-browser validation contract", () => {
     );
   });
 
+  test("verifies the exact deployed main SHA before focused beta smoke", async () => {
+    const { source, workflow } = await readWorkflow("beta-cd.yml");
+    const syncSource = await readFile(
+      path.join(root, "tests/scripts/beta-deployment-sync.mjs"),
+      "utf8",
+    );
+    const httpSmokeSource = await readFile(
+      path.join(root, "tests/scripts/beta-http-smoke.mjs"),
+      "utf8",
+    );
+    const browserSmokeSource = await readFile(
+      path.join(root, "tests/e2e/beta-deployment-smoke.spec.mjs"),
+      "utf8",
+    );
+    const betaConfig = (
+      await import(
+        pathToFileURL(path.join(root, "playwright.beta-smoke.config.mjs")).href
+      )
+    ).default;
+    const { hasWorkerDeploymentChange } = await import(
+      pathToFileURL(
+        path.join(root, "tests/scripts/beta-deployment-sync.mjs"),
+      ).href
+    );
+
+    expect(workflow.on.push.branches).toEqual(["main"]);
+    expect(Object.hasOwn(workflow.on, "pull_request")).toBe(false);
+    expect(workflow.concurrency).toEqual({
+      group: "beta-cd",
+      "cancel-in-progress": true,
+    });
+    expect(workflow.permissions).toEqual({
+      contents: "read",
+      checks: "read",
+      actions: "read",
+    });
+    expect(source).not.toMatch(/production|workflow_dispatch|\bsleep\b/i);
+
+    const synchronize = workflow.jobs.synchronize;
+    expect(synchronize["timeout-minutes"]).toBe(18);
+    expect(runCommands(synchronize)).toEqual([
+      "node tests/scripts/beta-deployment-sync.mjs detect-worker-change",
+      "node tests/scripts/beta-deployment-sync.mjs wait",
+    ]);
+    expect(syncSource).toContain('const PAGES_CHECK_NAME = "Cloudflare Pages"');
+    expect(syncSource).toContain(
+      'const PAGES_APP_SLUG = "cloudflare-workers-and-pages"',
+    );
+    expect(syncSource).toContain("item.head_sha === targetSha");
+    expect(syncSource).toContain("head_sha=${targetSha}");
+    expect(syncSource).toContain("DEFAULT_TIMEOUT_MS");
+    expect(syncSource).toContain("DEFAULT_POLL_INTERVAL_MS");
+    expect(syncSource).toContain("workers/huihui-api/");
+    expect(syncSource).toContain("WORKER_REQUIRED");
+    expect(hasWorkerDeploymentChange(["workers/huihui-api/worker.js"])).toBe(
+      true,
+    );
+    expect(
+      hasWorkerDeploymentChange([
+        ".github/workflows/deploy-huihui-api-worker.yml",
+      ]),
+    ).toBe(true);
+    expect(hasWorkerDeploymentChange(["style.css", "tests/unit/example.mjs"])).toBe(
+      false,
+    );
+
+    const liveSmoke = workflow.jobs["live-smoke"];
+    expect(liveSmoke.needs).toBe("synchronize");
+    expect(liveSmoke.environment).toEqual({
+      name: "beta",
+      url: "https://beta.huihui.dev",
+    });
+    expect(runCommands(liveSmoke)).toEqual([
+      "npm ci",
+      "node tests/scripts/beta-http-smoke.mjs",
+      "npx playwright install --with-deps chromium",
+      "npx playwright test --config=playwright.beta-smoke.config.mjs --project=chromium --workers=1 --retries=0",
+    ]);
+    expectFailureArtifact(
+      liveSmoke,
+      "playwright-beta-deployment-smoke",
+    );
+
+    expect(betaConfig.testMatch).toBe("beta-deployment-smoke.spec.mjs");
+    expect(betaConfig.globalSetup).toBeUndefined();
+    expect(betaConfig.webServer).toBeUndefined();
+    expect(betaConfig.use.baseURL).toBe("https://beta.huihui.dev");
+    expect(betaConfig.projects.map(({ name }) => name)).toEqual(["chromium"]);
+    expect(betaConfig.retries).toBe(0);
+    expect(betaConfig.workers).toBe(1);
+
+    for (const route of ["/", "/en/", "/ja/", "/about/", "/contact/"]) {
+      expect(httpSmokeSource).toContain(`path: "${route}"`);
+    }
+    expect(httpSmokeSource).toContain(
+      "https://huihui-api-beta.huihuigames01.workers.dev",
+    );
+    expect(httpSmokeSource).toContain("/api/tech-news");
+    expect(httpSmokeSource).toContain("/api/steam-library");
+    expect(browserSmokeSource).toContain(
+      "https://huihui-api-beta.huihuigames01.workers.dev/api/contact",
+    );
+    expect(browserSmokeSource).not.toMatch(/\.click\(.*submit|dispatchEvent\(.*submit/s);
+  });
+
   test("separates stable scheduled coverage from manual full-compatible coverage", async () => {
     const { source, workflow } = await readWorkflow("nightly-regression.yml");
 
