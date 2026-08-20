@@ -33,9 +33,22 @@ async function waitForScrollHistoryCommit(page) {
 }
 
 async function runAndWaitForScrollEnd(page, action) {
+  const supportsScrollEnd = await page.evaluate(() => "onscrollend" in window);
+  if (!supportsScrollEnd) {
+    throw new Error("This test requires window scrollend support");
+  }
+
   await page.evaluate(() => {
-    window.__rootOverlayScrollEnd = new Promise((resolve) => {
-      window.addEventListener("scrollend", resolve, { once: true });
+    window.__rootOverlayScrollEnd = new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        window.removeEventListener("scrollend", handleScrollEnd);
+        reject(new Error("Timed out after 2s waiting for window scrollend"));
+      }, 2000);
+      const handleScrollEnd = () => {
+        clearTimeout(timeoutId);
+        resolve();
+      };
+      window.addEventListener("scrollend", handleScrollEnd, { once: true });
     });
   });
   await action();
