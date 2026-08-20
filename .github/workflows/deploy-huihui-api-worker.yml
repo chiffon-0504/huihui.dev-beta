@@ -21,6 +21,12 @@ on:
 permissions:
   contents: read
 
+# Cancel the entire stale beta workflow before its validation can later reach
+# deploy-beta. Production uses a separate, non-canceling concurrency domain.
+concurrency:
+  group: huihui-api-${{ github.event_name == 'workflow_dispatch' && inputs.target == 'production' && 'production' || 'beta' }}
+  cancel-in-progress: ${{ github.event_name == 'push' || inputs.target == 'beta' }}
+
 jobs:
   validate-beta:
     if: >-

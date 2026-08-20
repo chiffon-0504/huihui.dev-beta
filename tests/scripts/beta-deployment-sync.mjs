@@ -5,7 +5,8 @@ import { pathToFileURL } from "node:url";
 const PAGES_CHECK_NAME = "Cloudflare Pages";
 const PAGES_APP_SLUG = "cloudflare-workers-and-pages";
 const WORKER_WORKFLOW = "deploy-huihui-api-worker.yml";
-const DEFAULT_TIMEOUT_MS = 15 * 60 * 1000;
+const DEFAULT_PAGES_TIMEOUT_MS = 15 * 60 * 1000;
+const DEFAULT_WORKER_TIMEOUT_MS = 30 * 60 * 1000;
 const DEFAULT_POLL_INTERVAL_MS = 10 * 1000;
 const ZERO_SHA = /^0{40}$/;
 
@@ -176,17 +177,29 @@ async function waitForDeployments() {
   const [owner, repository] = repositoryName.split("/");
   const targetSha = requiredEnvironment("TARGET_SHA");
   const workerRequired = requiredEnvironment("WORKER_REQUIRED") === "true";
-  const timeoutMs = Number(process.env.DEPLOYMENT_TIMEOUT_MS) || DEFAULT_TIMEOUT_MS;
+  const pagesTimeoutMs =
+    Number(process.env.PAGES_DEPLOYMENT_TIMEOUT_MS) ||
+    DEFAULT_PAGES_TIMEOUT_MS;
+  const workerTimeoutMs =
+    Number(process.env.WORKER_DEPLOYMENT_TIMEOUT_MS) ||
+    DEFAULT_WORKER_TIMEOUT_MS;
   const intervalMs =
     Number(process.env.DEPLOYMENT_POLL_INTERVAL_MS) ||
     DEFAULT_POLL_INTERVAL_MS;
-  const options = { timeoutMs, intervalMs };
 
   console.log(`Synchronizing beta deployment for exact SHA ${targetSha}.`);
   await Promise.all([
-    waitForPages(owner, repository, targetSha, options),
+    waitForPages(owner, repository, targetSha, {
+      timeoutMs: pagesTimeoutMs,
+      intervalMs,
+    }),
     ...(workerRequired
-      ? [waitForWorker(owner, repository, targetSha, options)]
+      ? [
+          waitForWorker(owner, repository, targetSha, {
+            timeoutMs: workerTimeoutMs,
+            intervalMs,
+          }),
+        ]
       : []),
   ]);
   console.log(

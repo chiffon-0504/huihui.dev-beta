@@ -40,6 +40,18 @@ describe("Worker deployment isolation", () => {
     ]);
   });
 
+  test("cancels stale beta workflows without sharing production concurrency", () => {
+    expect(workflow.concurrency).toEqual({
+      group:
+        "huihui-api-${{ github.event_name == 'workflow_dispatch' && inputs.target == 'production' && 'production' || 'beta' }}",
+      "cancel-in-progress":
+        "${{ github.event_name == 'push' || inputs.target == 'beta' }}",
+    });
+    expect(workflow.concurrency.group).not.toBe(
+      "${{ github.workflow }}-${{ github.ref }}",
+    );
+  });
+
   test("gates beta deployment on lightweight validation", () => {
     const validation = workflow.jobs["validate-beta"];
     const deployment = workflow.jobs["deploy-beta"];

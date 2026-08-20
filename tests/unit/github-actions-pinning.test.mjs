@@ -486,7 +486,7 @@ describe("Playwright cross-browser validation contract", () => {
     expect(source).not.toMatch(/production|workflow_dispatch|\bsleep\b/i);
 
     const synchronize = workflow.jobs.synchronize;
-    expect(synchronize["timeout-minutes"]).toBe(18);
+    expect(synchronize["timeout-minutes"]).toBe(35);
     expect(runCommands(synchronize)).toEqual([
       "node tests/scripts/beta-deployment-sync.mjs detect-worker-change",
       "node tests/scripts/beta-deployment-sync.mjs wait",
@@ -497,7 +497,16 @@ describe("Playwright cross-browser validation contract", () => {
     );
     expect(syncSource).toContain("item.head_sha === targetSha");
     expect(syncSource).toContain("head_sha=${targetSha}");
-    expect(syncSource).toContain("DEFAULT_TIMEOUT_MS");
+    expect(syncSource).toContain(
+      "const DEFAULT_PAGES_TIMEOUT_MS = 15 * 60 * 1000",
+    );
+    expect(syncSource).toContain(
+      "const DEFAULT_WORKER_TIMEOUT_MS = 30 * 60 * 1000",
+    );
+    expect(syncSource).toContain("PAGES_DEPLOYMENT_TIMEOUT_MS");
+    expect(syncSource).toContain("WORKER_DEPLOYMENT_TIMEOUT_MS");
+    expect(syncSource).toContain("timeoutMs: pagesTimeoutMs");
+    expect(syncSource).toContain("timeoutMs: workerTimeoutMs");
     expect(syncSource).toContain("DEFAULT_POLL_INTERVAL_MS");
     expect(syncSource).toContain("workers/huihui-api/");
     expect(syncSource).toContain("WORKER_REQUIRED");
@@ -546,6 +555,10 @@ describe("Playwright cross-browser validation contract", () => {
     );
     expect(httpSmokeSource).toContain("/api/tech-news");
     expect(httpSmokeSource).toContain("/api/steam-library");
+    expect(httpSmokeSource).toContain(
+      'response.headers.get("access-control-allow-origin")',
+    );
+    expect(httpSmokeSource).toContain("allowedOrigin !== SITE_BASE_URL");
     expect(browserSmokeSource).toContain(
       "https://huihui-api-beta.huihuigames01.workers.dev/api/contact",
     );

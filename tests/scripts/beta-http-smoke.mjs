@@ -1,3 +1,5 @@
+import { pathToFileURL } from "node:url";
+
 const SITE_BASE_URL = "https://beta.huihui.dev";
 const API_BASE_URL = "https://huihui-api-beta.huihuigames01.workers.dev";
 const REQUEST_TIMEOUT_MS = 15_000;
@@ -44,6 +46,15 @@ async function checkPage({ path, lang, identity }) {
   console.log(`Page healthy: ${url} (${response.status}, ${body.length} bytes)`);
 }
 
+export function assertBrowserCors(response, url) {
+  const allowedOrigin = response.headers.get("access-control-allow-origin");
+  if (allowedOrigin !== SITE_BASE_URL) {
+    throw new Error(
+      `${url} returned Access-Control-Allow-Origin ${allowedOrigin || "<missing>"}; expected ${SITE_BASE_URL}`,
+    );
+  }
+}
+
 function assertJsonResponse(response, body, url) {
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.toLowerCase().includes("application/json")) {
@@ -61,6 +72,7 @@ async function checkTechNews() {
   const url = `${API_BASE_URL}/api/tech-news`;
   const response = await getResponse(url, { Origin: SITE_BASE_URL });
   const body = await response.json().catch(() => null);
+  assertBrowserCors(response, url);
   assertJsonResponse(response, body, url);
 
   if (response.status !== 200 || body.ok !== true || !Array.isArray(body.techNews)) {
@@ -73,6 +85,7 @@ async function checkSteamLibrary() {
   const url = `${API_BASE_URL}/api/steam-library`;
   const response = await getResponse(url, { Origin: SITE_BASE_URL });
   const body = await response.json().catch(() => null);
+  assertBrowserCors(response, url);
   assertJsonResponse(response, body, url);
 
   const success =
@@ -98,5 +111,14 @@ async function checkSteamLibrary() {
   );
 }
 
-await Promise.all(pageContracts.map(checkPage));
-await Promise.all([checkTechNews(), checkSteamLibrary()]);
+async function main() {
+  await Promise.all(pageContracts.map(checkPage));
+  await Promise.all([checkTechNews(), checkSteamLibrary()]);
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  });
+}
