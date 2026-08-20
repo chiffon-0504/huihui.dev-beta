@@ -6,6 +6,46 @@ const HUIHUI_API_ENDPOINTS = Object.freeze({
 const ROOT_OVERLAY_SCROLLBAR_SCRIPT =
   "/vendor/overlayscrollbars/overlayscrollbars.browser.es6.min.js";
 
+function preserveNativeScrollRestoration() {
+  if (
+    typeof performance === "undefined" ||
+    typeof window.addEventListener !== "function" ||
+    !document.documentElement?.style
+  ) {
+    return;
+  }
+
+  const root = document.documentElement;
+  const [navigation] = performance.getEntriesByType("navigation");
+  let inlineScrollBehavior = root.style.scrollBehavior;
+  let restorationPending = ["back_forward", "reload"].includes(
+    navigation?.type,
+  );
+
+  const useInstantRestoration = () => {
+    inlineScrollBehavior = root.style.scrollBehavior;
+    root.style.scrollBehavior = "auto";
+    restorationPending = true;
+  };
+
+  // Chromium applies persisted offsets after parsing starts. Keep that native
+  // restoration instant so OverlayScrollbars cannot interrupt a smooth scroll.
+  if (restorationPending) root.style.scrollBehavior = "auto";
+
+  // A cached document must also be instant before a Back/Forward traversal.
+  window.addEventListener("pagehide", useInstantRestoration);
+  window.addEventListener("pageshow", () => {
+    if (!restorationPending) return;
+
+    requestAnimationFrame(() => {
+      root.style.scrollBehavior = inlineScrollBehavior;
+      restorationPending = false;
+    });
+  });
+}
+
+preserveNativeScrollRestoration();
+
 let rootOverlayScrollbarInitialized = false;
 let rootOverlayScrollbarRequested = false;
 

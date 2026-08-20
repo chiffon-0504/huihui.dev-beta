@@ -16,6 +16,13 @@ async function getRootScrollState(page) {
   }));
 }
 
+async function getRootScrollBehavior(page) {
+  return page.evaluate(() => ({
+    computed: getComputedStyle(document.documentElement).scrollBehavior,
+    inline: document.documentElement.style.scrollBehavior,
+  }));
+}
+
 async function waitForScrollHistoryCommit(page) {
   await page.evaluate(
     () =>
@@ -23,6 +30,19 @@ async function waitForScrollHistoryCommit(page) {
         requestAnimationFrame(() => requestAnimationFrame(resolve)),
       ),
   );
+}
+
+async function runAndWaitForScrollEnd(page, action) {
+  await page.evaluate(() => {
+    window.__rootOverlayScrollEnd = new Promise((resolve) => {
+      window.addEventListener("scrollend", resolve, { once: true });
+    });
+  });
+  await action();
+  await page.evaluate(async () => {
+    await window.__rootOverlayScrollEnd;
+    delete window.__rootOverlayScrollEnd;
+  });
 }
 
 test("body mode keeps the document root as the native page scroll owner", async ({
@@ -172,6 +192,10 @@ test("hash, Back, Forward, reload, and cross-page restoration stay native", asyn
   await page.goBack();
   await expect(page).toHaveURL(/\/$/);
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(160);
+  await expect.poll(() => getRootScrollBehavior(page)).toEqual({
+    computed: "smooth",
+    inline: "",
+  });
 
   await page.goto("/about/");
   await expect(page.locator("#aboutPage h1")).toBeVisible();
@@ -191,6 +215,10 @@ test("hash, Back, Forward, reload, and cross-page restoration stay native", asyn
   await expect
     .poll(() => page.evaluate(() => window.scrollY))
     .toBe(expectedReloadScroll);
+  await expect.poll(() => getRootScrollBehavior(page)).toEqual({
+    computed: "smooth",
+    inline: "",
+  });
 
   await page.goto("/about/#profileCode");
   await expect(page.locator("#profileCode")).toBeVisible();
@@ -337,7 +365,7 @@ test("forced colors keeps the custom root scrollbar visible and interactive", as
     forcedColorsState.trackBackground,
   );
 
-  await page.mouse.wheel(0, 240);
+  await runAndWaitForScrollEnd(page, () => page.mouse.wheel(0, 240));
   await expect
     .poll(() => page.evaluate(() => window.scrollY))
     .toBeGreaterThan(0);
@@ -351,7 +379,7 @@ test("forced colors keeps the custom root scrollbar visible and interactive", as
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   expect((await getRootScrollState(page)).activeElement).toBe("BODY");
-  await page.keyboard.press("PageDown");
+  await runAndWaitForScrollEnd(page, () => page.keyboard.press("PageDown"));
   await expect
     .poll(() => page.evaluate(() => window.scrollY))
     .toBeGreaterThan(0);
