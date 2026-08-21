@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   synchronize:
-    name: Wait for exact beta deployments
+    name: Wait for required beta deployments
     runs-on: ubuntu-latest
     timeout-minutes: 35
 
@@ -26,18 +26,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Determine whether the beta Worker must deploy
+      - name: Resolve required beta Worker state
         id: worker
         env:
-          BEFORE_SHA: ${{ github.event.before }}
           TARGET_SHA: ${{ github.sha }}
-        run: node tests/scripts/beta-deployment-sync.mjs detect-worker-change
+        run: node tests/scripts/beta-deployment-sync.mjs resolve-worker-sha
 
-      - name: Wait for exact Pages and Worker deployments
+      - name: Wait for exact Pages and required Worker deployments
         env:
           GITHUB_TOKEN: ${{ github.token }}
           TARGET_SHA: ${{ github.sha }}
-          WORKER_REQUIRED: ${{ steps.worker.outputs.required }}
+          REQUIRED_WORKER_SHA: ${{ steps.worker.outputs.required_sha }}
         run: node tests/scripts/beta-deployment-sync.mjs wait
 
   live-smoke:

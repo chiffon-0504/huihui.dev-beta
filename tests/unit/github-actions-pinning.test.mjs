@@ -466,7 +466,7 @@ describe("Playwright cross-browser validation contract", () => {
         pathToFileURL(path.join(root, "playwright.beta-smoke.config.mjs")).href
       )
     ).default;
-    const { hasWorkerDeploymentChange } = await import(
+    const { WORKER_DEPLOYMENT_PATHS } = await import(
       pathToFileURL(
         path.join(root, "tests/scripts/beta-deployment-sync.mjs"),
       ).href
@@ -487,16 +487,36 @@ describe("Playwright cross-browser validation contract", () => {
 
     const synchronize = workflow.jobs.synchronize;
     expect(synchronize["timeout-minutes"]).toBe(35);
+    const synchronizeCheckout = synchronize.steps.find(
+      ({ uses }) =>
+        typeof uses === "string" && uses.startsWith("actions/checkout@"),
+    );
+    expect(synchronizeCheckout.with["fetch-depth"]).toBe(0);
     expect(runCommands(synchronize)).toEqual([
-      "node tests/scripts/beta-deployment-sync.mjs detect-worker-change",
+      "node tests/scripts/beta-deployment-sync.mjs resolve-worker-sha",
       "node tests/scripts/beta-deployment-sync.mjs wait",
     ]);
+    const resolveWorker = synchronize.steps.find(
+      ({ run }) =>
+        run === "node tests/scripts/beta-deployment-sync.mjs resolve-worker-sha",
+    );
+    const waitForDeployments = synchronize.steps.find(
+      ({ run }) => run === "node tests/scripts/beta-deployment-sync.mjs wait",
+    );
+    expect(resolveWorker.env).toEqual({ TARGET_SHA: "${{ github.sha }}" });
+    expect(waitForDeployments.env).toMatchObject({
+      TARGET_SHA: "${{ github.sha }}",
+      REQUIRED_WORKER_SHA: "${{ steps.worker.outputs.required_sha }}",
+    });
     expect(syncSource).toContain('const PAGES_CHECK_NAME = "Cloudflare Pages"');
     expect(syncSource).toContain(
       'const PAGES_APP_SLUG = "cloudflare-workers-and-pages"',
     );
     expect(syncSource).toContain("item.head_sha === targetSha");
-    expect(syncSource).toContain("head_sha=${targetSha}");
+    expect(syncSource).toContain("selectNewestCoveringWorkerRun");
+    expect(syncSource).toContain("isGitAncestor");
+    expect(syncSource).not.toContain("head_sha=${targetSha}");
+    expect(syncSource).toContain("branch=main&event=push&per_page=100");
     expect(syncSource).toContain(
       "const DEFAULT_PAGES_TIMEOUT_MS = 15 * 60 * 1000",
     );
@@ -509,18 +529,12 @@ describe("Playwright cross-browser validation contract", () => {
     expect(syncSource).toContain("timeoutMs: workerTimeoutMs");
     expect(syncSource).toContain("DEFAULT_POLL_INTERVAL_MS");
     expect(syncSource).toContain("workers/huihui-api/");
-    expect(syncSource).toContain("WORKER_REQUIRED");
-    expect(hasWorkerDeploymentChange(["workers/huihui-api/worker.js"])).toBe(
-      true,
-    );
-    expect(
-      hasWorkerDeploymentChange([
-        ".github/workflows/deploy-huihui-api-worker.yml",
-      ]),
-    ).toBe(true);
-    expect(hasWorkerDeploymentChange(["style.css", "tests/unit/example.mjs"])).toBe(
-      false,
-    );
+    expect(syncSource).toContain("REQUIRED_WORKER_SHA");
+    expect(syncSource).not.toContain("WORKER_REQUIRED");
+    expect(WORKER_DEPLOYMENT_PATHS).toEqual([
+      "workers/huihui-api/",
+      ".github/workflows/deploy-huihui-api-worker.yml",
+    ]);
 
     const liveSmoke = workflow.jobs["live-smoke"];
     expect(liveSmoke.needs).toBe("synchronize");
