@@ -1,7 +1,12 @@
 import { pathToFileURL } from "node:url";
+import {
+  BETA_SITE_ORIGIN,
+  assertBetaPageOrigin,
+  assertExactFinalUrl,
+} from "../support/beta-origin.mjs";
 import { classifySteamResponse } from "../support/steam-contract.mjs";
 
-const SITE_BASE_URL = "https://beta.huihui.dev";
+const SITE_BASE_URL = BETA_SITE_ORIGIN;
 const API_BASE_URL = "https://huihui-api-beta.huihuigames01.workers.dev";
 const REQUEST_TIMEOUT_MS = 15_000;
 
@@ -24,6 +29,7 @@ async function getResponse(url, headers = {}) {
 async function checkPage({ path, lang, identity }) {
   const url = new URL(path, SITE_BASE_URL);
   const response = await getResponse(url);
+  assertBetaPageOrigin(url, response.url);
   const body = await response.text();
   const contentType = response.headers.get("content-type") || "";
 
@@ -72,6 +78,7 @@ function assertJsonResponse(response, body, url) {
 async function checkTechNews() {
   const url = `${API_BASE_URL}/api/tech-news`;
   const response = await getResponse(url, { Origin: SITE_BASE_URL });
+  assertExactFinalUrl(url, response.url);
   const body = await response.json().catch(() => null);
   assertBrowserCors(response, url);
   assertJsonResponse(response, body, url);
@@ -85,6 +92,7 @@ async function checkTechNews() {
 async function checkSteamLibrary() {
   const url = `${API_BASE_URL}/api/steam-library`;
   const response = await getResponse(url, { Origin: SITE_BASE_URL });
+  assertExactFinalUrl(url, response.url);
   const body = await response.json().catch(() => null);
   assertBrowserCors(response, url);
   assertJsonResponse(response, body, url);

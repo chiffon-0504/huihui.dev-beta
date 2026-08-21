@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { assertBetaPageOrigin } from "../support/beta-origin.mjs";
 import {
   classifySteamResponse,
   isSteamUiStateAllowed,
@@ -60,6 +61,7 @@ async function expectLocalizedShell(page, path, lang) {
   const assertCleanRuntime = monitorRuntime(page);
   const response = await page.goto(path, { waitUntil: "load" });
 
+  assertBetaPageOrigin(path, page.url());
   expect(response?.ok()).toBe(true);
   await expect(page.locator("html")).toHaveAttribute("lang", lang);
   await expect(page.locator("main.main")).toBeVisible();
@@ -83,6 +85,7 @@ test("Home reaches a deployed terminal state without runtime failures", async ({
   );
   const response = await page.goto("/", { waitUntil: "load" });
 
+  assertBetaPageOrigin("/", page.url());
   expect(response?.ok()).toBe(true);
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-Hant");
   await expect(page.locator("main.main")).toBeVisible();
@@ -135,6 +138,7 @@ test("About initializes content, Steam terminal state, and root scrollbar", asyn
   );
   const response = await page.goto("/about/", { waitUntil: "load" });
 
+  assertBetaPageOrigin("/about/", page.url());
   expect(response?.ok()).toBe(true);
   await expect(page.getByRole("heading", { level: 1, name: "關於我" })).toBeVisible();
   await expect(page.locator(".os-scrollbar-vertical")).toBeVisible();
@@ -176,6 +180,7 @@ test("Contact uses beta wiring and does not submit", async ({ page }) => {
   const response = await page.goto("/contact/", { waitUntil: "load" });
   const form = page.locator("#contact-form");
 
+  assertBetaPageOrigin("/contact/", page.url());
   expect(response?.ok()).toBe(true);
   await expect(form).toBeVisible();
   await expect(form).toHaveAttribute(

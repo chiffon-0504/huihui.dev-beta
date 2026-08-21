@@ -461,6 +461,10 @@ describe("Playwright cross-browser validation contract", () => {
       path.join(root, "tests/e2e/beta-deployment-smoke.spec.mjs"),
       "utf8",
     );
+    const betaOriginSource = await readFile(
+      path.join(root, "tests/support/beta-origin.mjs"),
+      "utf8",
+    );
     const steamContractSource = await readFile(
       path.join(root, "tests/support/steam-contract.mjs"),
       "utf8",
@@ -626,6 +630,24 @@ describe("Playwright cross-browser validation contract", () => {
       'response.headers.get("access-control-allow-origin")',
     );
     expect(httpSmokeSource).toContain("allowedOrigin !== SITE_BASE_URL");
+    expect(betaOriginSource).toContain(
+      'export const BETA_SITE_ORIGIN = "https://beta.huihui.dev"',
+    );
+    expect(betaOriginSource).toContain("unexpected origin ${final.origin}");
+    expect(httpSmokeSource).toContain(
+      "assertBetaPageOrigin(url, response.url)",
+    );
+    expect(
+      httpSmokeSource.match(/assertExactFinalUrl\(url, response\.url\)/g),
+    ).toHaveLength(2);
+    expect(browserSmokeSource).toContain(
+      "assertBetaPageOrigin(path, page.url())",
+    );
+    for (const route of ["/", "/about/", "/contact/"]) {
+      expect(browserSmokeSource).toContain(
+        `assertBetaPageOrigin("${route}", page.url())`,
+      );
+    }
     expect(browserSmokeSource).toContain(
       "https://huihui-api-beta.huihuigames01.workers.dev/api/contact",
     );
