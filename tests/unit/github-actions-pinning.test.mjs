@@ -461,6 +461,10 @@ describe("Playwright cross-browser validation contract", () => {
       path.join(root, "tests/e2e/beta-deployment-smoke.spec.mjs"),
       "utf8",
     );
+    const steamContractSource = await readFile(
+      path.join(root, "tests/support/steam-contract.mjs"),
+      "utf8",
+    );
     const betaConfig = (
       await import(
         pathToFileURL(path.join(root, "playwright.beta-smoke.config.mjs")).href
@@ -542,6 +546,11 @@ describe("Playwright cross-browser validation contract", () => {
       'export const PAGES_CUSTOM_DOMAIN = "beta.huihui.dev"',
     );
     expect(syncSource).toContain("canonical_deployment");
+    expect(syncSource).toContain(
+      "deployments?env=production&per_page=${PAGES_DEPLOYMENTS_PER_PAGE}&page=${page}",
+    );
+    expect(syncSource).toContain("PAGES_NON_TERMINAL_STAGE_STATUSES");
+    expect(syncSource).toContain("inspectPagesProductionQuiescence");
     expect(syncSource).toContain("deployment_trigger?.metadata?.commit_hash");
     expect(syncSource).toContain('deployment.environment !== "production"');
     expect(syncSource).toContain(
@@ -556,28 +565,42 @@ describe("Playwright cross-browser validation contract", () => {
 
     const liveSmoke = workflow.jobs["live-smoke"];
     expect(liveSmoke.needs).toBe("synchronize");
+    expect(liveSmoke["timeout-minutes"]).toBe(35);
     expect(liveSmoke.environment).toEqual({
       name: "beta",
       url: "https://beta.huihui.dev",
     });
     expect(runCommands(liveSmoke)).toEqual([
       "npm ci",
-      "node tests/scripts/beta-deployment-sync.mjs verify-pages-active",
+      "node tests/scripts/beta-deployment-sync.mjs wait-pages-quiescent",
       "node tests/scripts/beta-http-smoke.mjs",
       "npx playwright install --with-deps chromium",
       "npx playwright test --config=playwright.beta-smoke.config.mjs --project=chromium --workers=1 --retries=0",
+      "node tests/scripts/beta-deployment-sync.mjs verify-pages-active",
     ]);
+    const waitForQuiescentPages = liveSmoke.steps.find(
+      ({ run }) =>
+        run ===
+        "node tests/scripts/beta-deployment-sync.mjs wait-pages-quiescent",
+    );
     const verifyActivePages = liveSmoke.steps.find(
       ({ run }) =>
         run ===
         "node tests/scripts/beta-deployment-sync.mjs verify-pages-active",
     );
-    expect(verifyActivePages.env).toEqual({
+    const pagesReadEnv = {
       CLOUDFLARE_ACCOUNT_ID: "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}",
       CLOUDFLARE_PAGES_READ_API_TOKEN:
         "${{ secrets.CLOUDFLARE_PAGES_READ_API_TOKEN }}",
       TARGET_SHA: "${{ github.sha }}",
-    });
+    };
+    expect(waitForQuiescentPages.env).toEqual(pagesReadEnv);
+    expect(verifyActivePages.env).toEqual(pagesReadEnv);
+    expect(liveSmoke.steps.indexOf(verifyActivePages)).toBeGreaterThan(
+      liveSmoke.steps.findIndex(({ run }) =>
+        run?.startsWith("npx playwright test --config=playwright.beta-smoke"),
+      ),
+    );
     expectFailureArtifact(
       liveSmoke,
       "playwright-beta-deployment-smoke",
@@ -644,19 +667,18 @@ describe("Playwright cross-browser validation contract", () => {
     expect(browserSmokeSource).toContain(
       "expect(steamResponse.url()).toBe(expectedSteamUrl)",
     );
-    expect(browserSmokeSource).toContain(
-      "expect(steamResponse.ok()).toBe(true)",
+    expect(browserSmokeSource).not.toContain("steamResponse.ok()");
+    expect(browserSmokeSource).toContain("classifySteamResponse(");
+    expect(browserSmokeSource).toContain("isSteamUiStateAllowed(");
+    expect(httpSmokeSource).toContain("classifySteamResponse(");
+    expect(steamContractSource).toContain(
+      '"Steam library temporarily unavailable"',
     );
-    expect(browserSmokeSource).toContain(
-      "expect(steamBody).toMatchObject({ ok: true, source: \"Steam\" })",
-    );
-    expect(browserSmokeSource).toContain(
-      "expect(steamBody.count).toBe(steamBody.games.length)",
-    );
-    expect(browserSmokeSource).toContain("steamBody.games.every(isValidSteamGame)");
-    expect(browserSmokeSource).toContain("#steamFavorites > .steam-empty");
-    expect(browserSmokeSource).toContain(
-      "page.locator(STEAM_FAILURE_SELECTOR)",
+    expect(steamContractSource).toContain('status === 200');
+    expect(steamContractSource).toContain('status === 500');
+    expect(steamContractSource).toContain('body.games.length === 0');
+    expect(steamContractSource).toContain(
+      'responseFamily === "degraded" && uiState === "error"',
     );
     expect(browserSmokeSource).not.toMatch(/\.click\(.*submit|dispatchEvent\(.*submit/s);
   });

@@ -6,7 +6,10 @@ import {
   assertActivePagesDomain,
   cloudflareApiResult,
   completedFailure,
+  inspectActivePagesIdentity,
   inspectCanonicalPagesDeployment,
+  inspectPagesProductionQuiescence,
+  inspectQuiescentPagesState,
   pollExactDeployment,
   resolveRequiredWorkerSha,
   selectNewestCoveringWorkerRun,
@@ -67,6 +70,31 @@ function pagesProject({
     },
   };
 }
+
+function pagesDeployment({
+  id = "deployment-id",
+  sha = A,
+  stageName = "deploy",
+  stageStatus = "success",
+  environment = "production",
+  isSkipped = false,
+} = {}) {
+  return {
+    id,
+    environment,
+    is_skipped: isSkipped,
+    deployment_trigger: {
+      type: "github:push",
+      metadata: { commit_hash: sha },
+    },
+    latest_stage: { name: stageName, status: stageStatus },
+  };
+}
+
+const activePagesDomain = {
+  name: PAGES_CUSTOM_DOMAIN,
+  status: "active",
+};
 
 describe("beta Worker deployment synchronization", () => {
   test("resolves the latest Worker-affecting commit in target ancestry", () => {
@@ -279,6 +307,123 @@ describe("active Cloudflare Pages deployment synchronization", () => {
     expect(() =>
       assertActivePagesDomain({ name: PAGES_CUSTOM_DOMAIN, status: "pending" }),
     ).toThrow(/status pending; expected active/);
+  });
+
+  test("allows smoke when TARGET_SHA is canonical and production is quiescent", () => {
+    expect(
+      inspectQuiescentPagesState(
+        pagesProject(),
+        activePagesDomain,
+        [pagesDeployment()],
+        A,
+      ),
+    ).toEqual({
+      complete: true,
+      diagnostic: expect.stringContaining(
+        "no different production deployment remains non-terminal",
+      ),
+    });
+  });
+
+  test.each(["idle", "active"])(
+    "waits while an older production deployment remains %s",
+    (stageStatus) => {
+      const state = inspectQuiescentPagesState(
+        pagesProject(),
+        activePagesDomain,
+        [
+          pagesDeployment(),
+          pagesDeployment({
+            id: "stale-deployment",
+            sha: B,
+            stageName: stageStatus === "idle" ? "queued" : "build",
+            stageStatus,
+          }),
+        ],
+        A,
+      );
+
+      expect(state.complete).toBe(false);
+      expect(state.diagnostic).toContain(
+        `stale-deployment ${B}`,
+      );
+    },
+  );
+
+  test.each(["failure", "canceled"])(
+    "re-evaluates successfully after the stale deployment becomes %s",
+    (stageStatus) => {
+      const state = inspectQuiescentPagesState(
+        pagesProject(),
+        activePagesDomain,
+        [
+          pagesDeployment(),
+          pagesDeployment({
+            id: "stale-deployment",
+            sha: B,
+            stageStatus,
+          }),
+        ],
+        A,
+      );
+
+      expect(state.complete).toBe(true);
+    },
+  );
+
+  test("never accepts a stale deployment that completes and replaces TARGET_SHA", () => {
+    const whileRunning = inspectQuiescentPagesState(
+      pagesProject(),
+      activePagesDomain,
+      [
+        pagesDeployment(),
+        pagesDeployment({ id: "stale-deployment", sha: B, stageStatus: "active" }),
+      ],
+      A,
+    );
+    const afterReplacement = inspectQuiescentPagesState(
+      pagesProject({ sha: B }),
+      activePagesDomain,
+      [pagesDeployment({ id: "stale-deployment", sha: B })],
+      A,
+    );
+
+    expect(whileRunning.complete).toBe(false);
+    expect(afterReplacement.complete).toBe(false);
+    expect(afterReplacement.diagnostic).toContain(`waiting for ${A}`);
+  });
+
+  test("does not let an in-progress preview deployment block production", () => {
+    expect(
+      inspectPagesProductionQuiescence(
+        [
+          pagesDeployment(),
+          pagesDeployment({
+            id: "preview-deployment",
+            sha: B,
+            stageStatus: "active",
+            environment: "preview",
+          }),
+        ],
+        A,
+      ).complete,
+    ).toBe(true);
+  });
+
+  test("passes the post-smoke identity gate only while TARGET_SHA remains canonical", () => {
+    expect(
+      inspectActivePagesIdentity(pagesProject(), activePagesDomain, A).complete,
+    ).toBe(true);
+    expect(
+      inspectActivePagesIdentity(
+        pagesProject({ sha: B }),
+        activePagesDomain,
+        A,
+      ),
+    ).toEqual({
+      complete: false,
+      diagnostic: expect.stringContaining(`waiting for ${A}`),
+    });
   });
 
   test("reports Cloudflare Pages API authentication errors clearly", async () => {

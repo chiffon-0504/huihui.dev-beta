@@ -10,6 +10,15 @@ const WORKER_WORKFLOW = "deploy-huihui-api-worker.yml";
 const DEFAULT_PAGES_TIMEOUT_MS = 15 * 60 * 1000;
 const DEFAULT_WORKER_TIMEOUT_MS = 30 * 60 * 1000;
 const DEFAULT_POLL_INTERVAL_MS = 10 * 1000;
+const PAGES_DEPLOYMENTS_PER_PAGE = 100;
+const MAX_PAGES_DEPLOYMENT_LIST_PAGES = 100;
+const PAGES_TERMINAL_STAGE_STATUSES = new Set([
+  "success",
+  "failure",
+  "canceled",
+  "cancelled",
+]);
+const PAGES_NON_TERMINAL_STAGE_STATUSES = new Set(["idle", "active"]);
 
 export const WORKER_DEPLOYMENT_PATHS = [
   "workers/huihui-api/",
@@ -116,7 +125,7 @@ async function githubJson(pathname) {
   return response.json();
 }
 
-export async function cloudflareApiResult(
+async function cloudflareApiEnvelope(
   pathname,
   { accountId, apiToken, fetchImpl = fetch },
 ) {
@@ -155,6 +164,11 @@ export async function cloudflareApiResult(
     );
   }
 
+  return payload;
+}
+
+export async function cloudflareApiResult(pathname, options) {
+  const payload = await cloudflareApiEnvelope(pathname, options);
   return payload.result;
 }
 
@@ -236,6 +250,112 @@ export function assertActivePagesDomain(domain) {
   return `${PAGES_CUSTOM_DOMAIN} is active`;
 }
 
+export function inspectPagesProductionQuiescence(deployments, targetSha) {
+  if (!Array.isArray(deployments)) {
+    throw new Error("Cloudflare Pages deployments response was not an array.");
+  }
+
+  const blockers = deployments.filter((deployment) => {
+    if (deployment?.environment !== "production" || deployment.is_skipped) {
+      return false;
+    }
+
+    const stageStatus = deployment.latest_stage?.status;
+    if (
+      !PAGES_TERMINAL_STAGE_STATUSES.has(stageStatus) &&
+      !PAGES_NON_TERMINAL_STAGE_STATUSES.has(stageStatus)
+    ) {
+      throw new Error(
+        `Pages production deployment ${deployment.id || "<missing id>"} has unknown stage status ${stageStatus || "<missing>"}.`,
+      );
+    }
+
+    const commitHash = deployment.deployment_trigger?.metadata?.commit_hash;
+    return (
+      commitHash !== targetSha &&
+      PAGES_NON_TERMINAL_STAGE_STATUSES.has(stageStatus)
+    );
+  });
+
+  if (blockers.length > 0) {
+    return {
+      complete: false,
+      diagnostic: `waiting for ${blockers.length} different production deployment(s): ${blockers
+        .map((deployment) => {
+          const commitHash =
+            deployment.deployment_trigger?.metadata?.commit_hash ||
+            "<missing SHA>";
+          return `${deployment.id || "<missing id>"} ${commitHash} ${deployment.latest_stage.name || "<missing stage>"}/${deployment.latest_stage.status}`;
+        })
+        .join(", ")}`,
+    };
+  }
+
+  return {
+    complete: true,
+    diagnostic: "no different production deployment remains non-terminal",
+  };
+}
+
+export function inspectActivePagesIdentity(project, domain, targetSha) {
+  const deploymentState = inspectCanonicalPagesDeployment(project, targetSha);
+  const domainDiagnostic = assertActivePagesDomain(domain);
+
+  return {
+    complete: deploymentState.complete,
+    diagnostic: `${deploymentState.diagnostic}; ${domainDiagnostic}`,
+  };
+}
+
+export function inspectQuiescentPagesState(
+  project,
+  domain,
+  deployments,
+  targetSha,
+) {
+  const identityState = inspectActivePagesIdentity(project, domain, targetSha);
+  const quiescenceState = inspectPagesProductionQuiescence(
+    deployments,
+    targetSha,
+  );
+
+  return {
+    complete: identityState.complete && quiescenceState.complete,
+    diagnostic: `${identityState.diagnostic}; ${quiescenceState.diagnostic}`,
+  };
+}
+
+async function getProductionPagesDeployments(accountId, apiToken) {
+  const projectPath = `/pages/projects/${encodeURIComponent(PAGES_PROJECT_NAME)}`;
+  const deployments = [];
+  let page = 1;
+  let totalPages = 1;
+
+  do {
+    const payload = await cloudflareApiEnvelope(
+      `${projectPath}/deployments?env=production&per_page=${PAGES_DEPLOYMENTS_PER_PAGE}&page=${page}`,
+      { accountId, apiToken },
+    );
+    if (!Array.isArray(payload.result)) {
+      throw new Error("Cloudflare Pages deployments response was not an array.");
+    }
+    deployments.push(...payload.result);
+
+    const reportedTotalPages = Number(payload.result_info?.total_pages);
+    totalPages = Number.isInteger(reportedTotalPages)
+      ? Math.max(1, reportedTotalPages)
+      : 1;
+    if (totalPages > MAX_PAGES_DEPLOYMENT_LIST_PAGES) {
+      throw new Error(
+        `Cloudflare Pages deployments response requires ${totalPages} pages; maximum supported is ${MAX_PAGES_DEPLOYMENT_LIST_PAGES}.`,
+      );
+    }
+    page += 1;
+  } while (page <= totalPages);
+
+  return deployments;
+}
+
 async function getActivePagesState(accountId, apiToken, targetSha) {
   const projectPath = `/pages/projects/${encodeURIComponent(PAGES_PROJECT_NAME)}`;
   const domainPath = `${projectPath}/domains/${encodeURIComponent(PAGES_CUSTOM_DOMAIN)}`;
@@ -245,10 +365,20 @@ async function getActivePagesState(accountId, apiToken, targetSha) {
     cloudflareApiResult(domainPath, cloudflareOptions),
   ]);
 
-  return {
-    deploymentState: inspectCanonicalPagesDeployment(project, targetSha),
-    domainDiagnostic: assertActivePagesDomain(domain),
-  };
+  return inspectActivePagesIdentity(project, domain, targetSha);
+}
+
+async function getQuiescentPagesState(accountId, apiToken, targetSha) {
+  const projectPath = `/pages/projects/${encodeURIComponent(PAGES_PROJECT_NAME)}`;
+  const domainPath = `${projectPath}/domains/${encodeURIComponent(PAGES_CUSTOM_DOMAIN)}`;
+  const cloudflareOptions = { accountId, apiToken };
+  const [project, domain, deployments] = await Promise.all([
+    cloudflareApiResult(projectPath, cloudflareOptions),
+    cloudflareApiResult(domainPath, cloudflareOptions),
+    getProductionPagesDeployments(accountId, apiToken),
+  ]);
+
+  return inspectQuiescentPagesState(project, domain, deployments, targetSha);
 }
 
 export function completedFailure(label, item, subject) {
@@ -330,15 +460,15 @@ async function waitForPages(owner, repository, targetSha, options) {
         }
       }
 
-      const { deploymentState, domainDiagnostic } = await getActivePagesState(
+      const pagesState = await getQuiescentPagesState(
         accountId,
         apiToken,
         targetSha,
       );
 
       return {
-        complete: deploymentState.complete,
-        diagnostic: `exact GitHub check succeeded; ${deploymentState.diagnostic}; ${domainDiagnostic}`,
+        complete: pagesState.complete,
+        diagnostic: `exact GitHub check succeeded; ${pagesState.diagnostic}`,
       };
     },
   });
@@ -348,19 +478,39 @@ async function verifyPagesActive() {
   const accountId = requiredEnvironment("CLOUDFLARE_ACCOUNT_ID");
   const apiToken = requiredEnvironment("CLOUDFLARE_PAGES_READ_API_TOKEN");
   const targetSha = requiredEnvironment("TARGET_SHA");
-  const { deploymentState, domainDiagnostic } = await getActivePagesState(
+  const pagesState = await getActivePagesState(
     accountId,
     apiToken,
     targetSha,
   );
 
-  if (!deploymentState.complete) {
+  if (!pagesState.complete) {
     throw new Error(
-      `Active Pages deployment does not represent target SHA ${targetSha}: ${deploymentState.diagnostic}`,
+      `Active Pages deployment does not represent target SHA ${targetSha}: ${pagesState.diagnostic}`,
     );
   }
 
-  console.log(`${deploymentState.diagnostic}; ${domainDiagnostic}.`);
+  console.log(`${pagesState.diagnostic}.`);
+}
+
+async function waitForPagesQuiescence() {
+  const accountId = requiredEnvironment("CLOUDFLARE_ACCOUNT_ID");
+  const apiToken = requiredEnvironment("CLOUDFLARE_PAGES_READ_API_TOKEN");
+  const targetSha = requiredEnvironment("TARGET_SHA");
+  const timeoutMs =
+    Number(process.env.PAGES_DEPLOYMENT_TIMEOUT_MS) ||
+    DEFAULT_PAGES_TIMEOUT_MS;
+  const intervalMs =
+    Number(process.env.DEPLOYMENT_POLL_INTERVAL_MS) ||
+    DEFAULT_POLL_INTERVAL_MS;
+
+  await pollExactDeployment({
+    label: "Cloudflare Pages quiescence",
+    timeoutSubject: `for target SHA ${targetSha}`,
+    timeoutMs,
+    intervalMs,
+    inspect: () => getQuiescentPagesState(accountId, apiToken, targetSha),
+  });
 }
 
 async function waitForWorker(
@@ -449,9 +599,10 @@ async function main() {
   const command = process.argv[2];
   if (command === "resolve-worker-sha") return writeRequiredWorkerSha();
   if (command === "wait") return waitForDeployments();
+  if (command === "wait-pages-quiescent") return waitForPagesQuiescence();
   if (command === "verify-pages-active") return verifyPagesActive();
   throw new Error(
-    "Expected command: resolve-worker-sha, wait, or verify-pages-active",
+    "Expected command: resolve-worker-sha, wait, wait-pages-quiescent, or verify-pages-active",
   );
 }
 

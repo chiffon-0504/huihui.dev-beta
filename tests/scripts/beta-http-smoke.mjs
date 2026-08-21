@@ -1,4 +1,5 @@
 import { pathToFileURL } from "node:url";
+import { classifySteamResponse } from "../support/steam-contract.mjs";
 
 const SITE_BASE_URL = "https://beta.huihui.dev";
 const API_BASE_URL = "https://huihui-api-beta.huihuigames01.workers.dev";
@@ -88,24 +89,13 @@ async function checkSteamLibrary() {
   assertBrowserCors(response, url);
   assertJsonResponse(response, body, url);
 
-  const success =
-    response.status === 200 &&
-    body.ok === true &&
-    body.source === "Steam" &&
-    Number.isInteger(body.count) &&
-    Array.isArray(body.games);
-  const validDegradedState =
-    response.status === 500 &&
-    body.ok === false &&
-    body.source === "Steam" &&
-    typeof body.message === "string" &&
-    Array.isArray(body.games);
+  const responseFamily = classifySteamResponse(response.status, body);
 
-  if (!success && !validDegradedState) {
+  if (!responseFamily) {
     throw new Error(`${url} failed the expected success/degraded response contract`);
   }
   console.log(
-    success
+    responseFamily === "healthy"
       ? `API healthy: ${url} (${body.games.length} games)`
       : `API valid degraded state: ${url} (HTTP ${response.status}: ${body.message})`,
   );

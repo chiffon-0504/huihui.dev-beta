@@ -45,7 +45,7 @@ jobs:
     name: Live beta smoke
     needs: synchronize
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     environment:
       name: beta
       url: https://beta.huihui.dev
@@ -63,12 +63,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Re-verify active Pages deployment before live smoke
+      - name: Wait for quiescent Pages deployment before live smoke
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_PAGES_READ_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_READ_API_TOKEN }}
           TARGET_SHA: ${{ github.sha }}
-        run: node tests/scripts/beta-deployment-sync.mjs verify-pages-active
+        run: node tests/scripts/beta-deployment-sync.mjs wait-pages-quiescent
 
       - name: Run live HTTP and beta Worker API smoke checks
         run: node tests/scripts/beta-http-smoke.mjs
@@ -78,6 +78,13 @@ jobs:
 
       - name: Run live Chromium deployment smoke
         run: npx playwright test --config=playwright.beta-smoke.config.mjs --project=chromium --workers=1 --retries=0
+
+      - name: Re-verify active Pages deployment after live smoke
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PAGES_READ_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_READ_API_TOKEN }}
+          TARGET_SHA: ${{ github.sha }}
+        run: node tests/scripts/beta-deployment-sync.mjs verify-pages-active
 
       - name: Upload Playwright failure diagnostics
         if: failure()

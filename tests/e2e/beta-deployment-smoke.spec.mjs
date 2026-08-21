@@ -1,4 +1,8 @@
 import { expect, test } from "@playwright/test";
+import {
+  classifySteamResponse,
+  isSteamUiStateAllowed,
+} from "../support/steam-contract.mjs";
 import { isTurnstileFrameUrl } from "../support/turnstile-frame.mjs";
 
 const TURNSTILE_RENDER_TIMEOUT_MS = 15_000;
@@ -8,31 +12,19 @@ const TECH_NEWS_SUCCESS_SELECTOR =
   '#techNewsCards > .tech-news-card, #techNewsCards > .tech-news-status[data-tech-news-state="empty"]';
 const TECH_NEWS_FAILURE_SELECTOR =
   '#techNewsCards > .tech-news-status[data-tech-news-state="error"], #techNewsCards > .tech-news-status[data-tech-news-state="timeout"]';
-const STEAM_SUCCESS_SELECTOR =
-  "#steamFavorites > .steam-game-card, #steamFavorites > .steam-empty";
-const STEAM_FAILURE_SELECTOR =
-  "#steamFavorites > .steam-error, #steamFavorites > .steam-loading";
+async function getSteamUiState(page) {
+  const counts = await page.locator("#steamFavorites").evaluate((container) => ({
+    cards: container.querySelectorAll(":scope > .steam-game-card").length,
+    empty: container.querySelectorAll(":scope > .steam-empty").length,
+    error: container.querySelectorAll(":scope > .steam-error").length,
+    loading: container.querySelectorAll(":scope > .steam-loading").length,
+  }));
+  const terminalStates = ["cards", "empty", "error"].filter(
+    (state) => counts[state] > 0,
+  );
 
-function isValidSteamGame(game) {
-  if (
-    !game ||
-    typeof game !== "object" ||
-    !Number.isInteger(game.appid) ||
-    typeof game.name !== "string" ||
-    !game.name.trim() ||
-    !Number.isFinite(game.playtimeHours) ||
-    game.playtimeHours < 0
-  ) {
-    return false;
-  }
-
-  return [game.coverUrl, game.capsuleUrl, game.storeUrl].every((value) => {
-    try {
-      return new URL(value).protocol === "https:";
-    } catch (error) {
-      return false;
-    }
-  });
+  if (counts.loading > 0) return "loading";
+  return terminalStates.length === 1 ? terminalStates[0] : "invalid";
 }
 
 function monitorRuntime(page) {
@@ -153,22 +145,24 @@ test("About initializes content, Steam terminal state, and root scrollbar", asyn
   const steamContentType = steamResponse.headers()["content-type"] || "";
 
   expect(steamResponse.url()).toBe(expectedSteamUrl);
-  expect(steamResponse.ok()).toBe(true);
   expect(steamContentType).toMatch(/^application\/json\b/i);
 
   const steamBody = await steamResponse.json();
-  expect(steamBody).toMatchObject({ ok: true, source: "Steam" });
-  expect(Number.isInteger(steamBody.count)).toBe(true);
-  expect(Array.isArray(steamBody.games)).toBe(true);
-  expect(steamBody.count).toBe(steamBody.games.length);
-  expect(steamBody.games.every(isValidSteamGame)).toBe(true);
+  const steamResponseFamily = classifySteamResponse(
+    steamResponse.status(),
+    steamBody,
+  );
+
+  expect(steamResponseFamily).not.toBeNull();
 
   await expect
-    .poll(() => page.locator(STEAM_SUCCESS_SELECTOR).count(), {
+    .poll(async () => {
+      const uiState = await getSteamUiState(page);
+      return isSteamUiStateAllowed(steamResponseFamily, uiState);
+    }, {
       timeout: 12_000,
     })
-    .toBeGreaterThan(0);
-  await expect(page.locator(STEAM_FAILURE_SELECTOR)).toHaveCount(0);
+    .toBe(true);
   assertCleanRuntime();
 });
 
