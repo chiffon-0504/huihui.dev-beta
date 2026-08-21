@@ -644,15 +644,20 @@ describe("Playwright cross-browser validation contract", () => {
     expect(betaConfig.retries).toBe(0);
     expect(betaConfig.workers).toBe(1);
 
-    for (const route of ["/", "/en/", "/ja/", "/about/"]) {
-      expect(httpSmokeSource).toContain(`path: "${route}"`);
-    }
-    expect(httpSmokeSource).not.toContain('path: "/contact/"');
+    expect(httpSmokeSource).not.toContain("pageContracts");
+    expect(httpSmokeSource).not.toContain("checkPage");
+    expect(httpSmokeSource).not.toContain("assertBetaPageOrigin");
+    expect(httpSmokeSource).not.toContain("text/html");
     expect(httpSmokeSource).toContain(
       "https://huihui-api-beta.huihuigames01.workers.dev",
     );
-    expect(httpSmokeSource).toContain("/api/tech-news");
-    expect(httpSmokeSource).toContain("/api/steam-library");
+    expect(
+      [
+        ...httpSmokeSource.matchAll(
+          /`\$\{API_BASE_URL\}(\/api\/[^`]+)`/g,
+        ),
+      ].map((match) => match[1]),
+    ).toEqual(["/api/tech-news", "/api/steam-library"]);
     expect(httpSmokeSource).toContain(
       'response.headers.get("access-control-allow-origin")',
     );
@@ -661,12 +666,19 @@ describe("Playwright cross-browser validation contract", () => {
       'export const BETA_SITE_ORIGIN = "https://beta.huihui.dev"',
     );
     expect(betaOriginSource).toContain("unexpected origin ${final.origin}");
-    expect(httpSmokeSource).toContain(
-      "assertBetaPageOrigin(url, response.url)",
-    );
     expect(
       httpSmokeSource.match(/assertExactFinalUrl\(url, response\.url\)/g),
     ).toHaveLength(2);
+    expect(browserSmokeSource.match(/^test\(/gm)).toHaveLength(5);
+    for (const routeCall of [
+      'page.goto("/", { waitUntil: "load" })',
+      'expectLocalizedShell(page, "/en/", "en")',
+      'expectLocalizedShell(page, "/ja/", "ja")',
+      'page.goto("/about/", { waitUntil: "load" })',
+      'page.goto("/contact/", { waitUntil: "load" })',
+    ]) {
+      expect(browserSmokeSource).toContain(routeCall);
+    }
     expect(browserSmokeSource).toContain(
       "assertBetaPageOrigin(path, page.url())",
     );
