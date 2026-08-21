@@ -10,7 +10,7 @@ const WORKER_WORKFLOW = "deploy-huihui-api-worker.yml";
 const DEFAULT_PAGES_TIMEOUT_MS = 15 * 60 * 1000;
 const DEFAULT_WORKER_TIMEOUT_MS = 30 * 60 * 1000;
 const DEFAULT_POLL_INTERVAL_MS = 10 * 1000;
-const PAGES_DEPLOYMENTS_PER_PAGE = 100;
+const PAGES_DEPLOYMENTS_PER_PAGE = 20;
 const MAX_PAGES_DEPLOYMENT_LIST_PAGES = 100;
 const PAGES_TERMINAL_STAGE_STATUSES = new Set([
   "success",
@@ -325,7 +325,11 @@ export function inspectQuiescentPagesState(
   };
 }
 
-async function getProductionPagesDeployments(accountId, apiToken) {
+export async function getProductionPagesDeployments(
+  accountId,
+  apiToken,
+  fetchImpl = fetch,
+) {
   const projectPath = `/pages/projects/${encodeURIComponent(PAGES_PROJECT_NAME)}`;
   const deployments = [];
   let page = 1;
@@ -334,7 +338,7 @@ async function getProductionPagesDeployments(accountId, apiToken) {
   do {
     const payload = await cloudflareApiEnvelope(
       `${projectPath}/deployments?env=production&per_page=${PAGES_DEPLOYMENTS_PER_PAGE}&page=${page}`,
-      { accountId, apiToken },
+      { accountId, apiToken, fetchImpl },
     );
     if (!Array.isArray(payload.result)) {
       throw new Error("Cloudflare Pages deployments response was not an array.");

@@ -6,6 +6,7 @@ import {
   assertActivePagesDomain,
   cloudflareApiResult,
   completedFailure,
+  getProductionPagesDeployments,
   inspectActivePagesIdentity,
   inspectCanonicalPagesDeployment,
   inspectPagesProductionQuiescence,
@@ -215,6 +216,75 @@ describe("beta Worker deployment synchronization", () => {
 });
 
 describe("active Cloudflare Pages deployment synchronization", () => {
+  test("lists every production deployment page with the supported query contract", async () => {
+    const preview = pagesDeployment({
+      id: "preview-deployment",
+      sha: B,
+      stageStatus: "active",
+      environment: "preview",
+    });
+    const production = pagesDeployment({ id: "production-deployment" });
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            success: true,
+            result: [preview],
+            result_info: { total_pages: 2 },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            success: true,
+            result: [production],
+            result_info: { total_pages: 2 },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+
+    await expect(
+      getProductionPagesDeployments(
+        "account-id",
+        "pages-read-token",
+        fetchImpl,
+      ),
+    ).resolves.toEqual([preview, production]);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(fetchImpl.mock.calls.map(([url]) => url)).toEqual([
+      `https://api.cloudflare.com/client/v4/accounts/account-id/pages/projects/${PAGES_PROJECT_NAME}/deployments?env=production&per_page=20&page=1`,
+      `https://api.cloudflare.com/client/v4/accounts/account-id/pages/projects/${PAGES_PROJECT_NAME}/deployments?env=production&per_page=20&page=2`,
+    ]);
+  });
+
+  test("fails closed when the production deployments list returns a 4xx", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: false,
+          errors: [{ code: 8000024, message: "Invalid list options provided." }],
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    await expect(
+      getProductionPagesDeployments(
+        "account-id",
+        "pages-read-token",
+        fetchImpl,
+      ),
+    ).rejects.toThrow(/returned HTTP 400.*8000024/);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(fetchImpl.mock.calls[0][0]).toBe(
+      `https://api.cloudflare.com/client/v4/accounts/account-id/pages/projects/${PAGES_PROJECT_NAME}/deployments?env=production&per_page=20&page=1`,
+    );
+  });
+
   test("accepts the successful canonical production deployment for TARGET_SHA", () => {
     expect(inspectCanonicalPagesDeployment(pagesProject(), A)).toEqual({
       complete: true,
