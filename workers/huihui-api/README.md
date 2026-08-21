@@ -2,19 +2,19 @@
 
 This directory contains the Cloudflare Worker that serves the site's existing API routes. Beta is a named Wrangler environment, while production remains the default deployment target with a separate Worker name.
 
-| Environment | Worker name | Public API base | Local deploy command |
+| Environment | Worker name | Public API base | Deployment entry point |
 | --- | --- | --- | --- |
-| Beta | `huihui-api-beta` | `https://huihui-api-beta.huihuigames01.workers.dev` | `npx wrangler deploy --env beta` |
-| Production | `huihui-api` | `https://api.huihui.dev` | `npx wrangler deploy` |
+| Beta | `huihui-api-beta` | `https://huihui-api-beta.huihuigames01.workers.dev` | Relevant push to `main` |
+| Production | `huihui-api` | `https://api.huihui.dev` | `workflow_dispatch` from `main` with `target=production` |
 
-Run the commands from this directory. Do not commit secrets.
+GitHub Actions supplies deployment credentials. Do not commit secrets.
 
 ## GitHub Actions deployment flow
 
 The `Deploy huihui API Worker` workflow keeps the environments explicit and separate:
 
 - A relevant push to `main` runs validation and automatically deploys only the beta Worker.
-- A manual workflow run requires a `beta` or `production` target. Selecting `beta` deploys with `wrangler deploy --env beta`.
+- Manual workflow dispatch is production-only; beta has no manual deployment entry point that can bypass post-deployment verification.
 - Production deploys only when a manual run selects `production` from the `main` branch. The production job references the GitHub environment named `production`.
 - Pull requests do not deploy either Worker.
 

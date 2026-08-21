@@ -128,7 +128,7 @@ for (const locale of locales) {
 
         expect(response?.status()).toBe(200);
         await expect(page.locator("html")).toHaveAttribute("lang", locale.htmlLang);
-        await expect(page.locator("#steamFavorites > .steam-error")).toHaveCount(1);
+        await expect(page.locator("#steamFavorites > .steam-empty")).toHaveCount(1);
         await expect(imageLocator).toHaveCount(localImages.length);
         await settleLazyLoading(page);
 

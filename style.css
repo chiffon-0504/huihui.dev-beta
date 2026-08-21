@@ -772,6 +772,7 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 }
 
 .steam-loading,
+.steam-empty,
 .steam-error {
   margin: 0;
   color: rgba(255, 255, 255, 0.65);

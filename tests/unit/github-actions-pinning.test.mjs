@@ -447,6 +447,276 @@ describe("Playwright cross-browser validation contract", () => {
     );
   });
 
+  test("verifies the exact deployed main SHA before focused beta smoke", async () => {
+    const { source, workflow } = await readWorkflow("beta-cd.yml");
+    const syncSource = await readFile(
+      path.join(root, "tests/scripts/beta-deployment-sync.mjs"),
+      "utf8",
+    );
+    const httpSmokeSource = await readFile(
+      path.join(root, "tests/scripts/beta-http-smoke.mjs"),
+      "utf8",
+    );
+    const browserSmokeSource = await readFile(
+      path.join(root, "tests/e2e/beta-deployment-smoke.spec.mjs"),
+      "utf8",
+    );
+    const betaOriginSource = await readFile(
+      path.join(root, "tests/support/beta-origin.mjs"),
+      "utf8",
+    );
+    const steamContractSource = await readFile(
+      path.join(root, "tests/support/steam-contract.mjs"),
+      "utf8",
+    );
+    const betaConfig = (
+      await import(
+        pathToFileURL(path.join(root, "playwright.beta-smoke.config.mjs")).href
+      )
+    ).default;
+    const { WORKER_DEPLOYMENT_PATHS } = await import(
+      pathToFileURL(
+        path.join(root, "tests/scripts/beta-deployment-sync.mjs"),
+      ).href
+    );
+
+    expect(workflow.on.push.branches).toEqual(["main"]);
+    expect(Object.hasOwn(workflow.on, "pull_request")).toBe(false);
+    expect(workflow.concurrency).toEqual({
+      group: "beta-cd",
+      "cancel-in-progress": true,
+    });
+    expect(workflow.permissions).toEqual({
+      contents: "read",
+      checks: "read",
+      actions: "read",
+    });
+    expect(source).not.toMatch(/production|workflow_dispatch|\bsleep\b/i);
+
+    const synchronize = workflow.jobs.synchronize;
+    expect(synchronize["timeout-minutes"]).toBe(35);
+    const synchronizeCheckout = synchronize.steps.find(
+      ({ uses }) =>
+        typeof uses === "string" && uses.startsWith("actions/checkout@"),
+    );
+    expect(synchronizeCheckout.with["fetch-depth"]).toBe(0);
+    const synchronizeNodeSetup = actionSteps(
+      synchronize,
+      "actions/setup-node",
+    );
+    expect(synchronizeNodeSetup).toHaveLength(1);
+    expect(synchronizeNodeSetup[0]).toMatchObject({
+      uses: "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+      with: { "node-version": 24 },
+    });
+    expect(synchronize.steps.indexOf(synchronizeNodeSetup[0])).toBeLessThan(
+      synchronize.steps.findIndex(({ run }) => run?.startsWith("node ")),
+    );
+    expect(runCommands(synchronize)).toEqual([
+      "node tests/scripts/beta-deployment-sync.mjs resolve-worker-sha",
+      "node tests/scripts/beta-deployment-sync.mjs wait",
+    ]);
+    const resolveWorker = synchronize.steps.find(
+      ({ run }) =>
+        run === "node tests/scripts/beta-deployment-sync.mjs resolve-worker-sha",
+    );
+    const waitForDeployments = synchronize.steps.find(
+      ({ run }) => run === "node tests/scripts/beta-deployment-sync.mjs wait",
+    );
+    expect(resolveWorker.env).toEqual({ TARGET_SHA: "${{ github.sha }}" });
+    expect(waitForDeployments.env).toMatchObject({
+      CLOUDFLARE_ACCOUNT_ID: "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}",
+      CLOUDFLARE_PAGES_READ_API_TOKEN:
+        "${{ secrets.CLOUDFLARE_PAGES_READ_API_TOKEN }}",
+      TARGET_SHA: "${{ github.sha }}",
+      REQUIRED_WORKER_SHA: "${{ steps.worker.outputs.required_sha }}",
+    });
+    expect(waitForDeployments.env).not.toHaveProperty("CLOUDFLARE_API_TOKEN");
+    expect(syncSource).toContain('const PAGES_CHECK_NAME = "Cloudflare Pages"');
+    expect(syncSource).toContain(
+      'const PAGES_APP_SLUG = "cloudflare-workers-and-pages"',
+    );
+    expect(syncSource).toContain("item.head_sha === targetSha");
+    expect(syncSource).toContain("selectNewestCoveringWorkerRun");
+    expect(syncSource).toContain("isGitAncestor");
+    expect(syncSource).not.toContain("head_sha=${targetSha}");
+    expect(syncSource).toContain("branch=main&event=push&per_page=100");
+    expect(syncSource).toContain(
+      "const DEFAULT_PAGES_TIMEOUT_MS = 15 * 60 * 1000",
+    );
+    expect(syncSource).toContain(
+      "const DEFAULT_WORKER_TIMEOUT_MS = 30 * 60 * 1000",
+    );
+    expect(syncSource).toContain("PAGES_DEPLOYMENT_TIMEOUT_MS");
+    expect(syncSource).toContain("WORKER_DEPLOYMENT_TIMEOUT_MS");
+    expect(syncSource).toContain("timeoutMs: pagesTimeoutMs");
+    expect(syncSource).toContain("timeoutMs: workerTimeoutMs");
+    expect(syncSource).toContain("DEFAULT_POLL_INTERVAL_MS");
+    expect(syncSource).toContain("workers/huihui-api/");
+    expect(syncSource).toContain("REQUIRED_WORKER_SHA");
+    expect(syncSource).not.toContain("WORKER_REQUIRED");
+    expect(syncSource).toContain(
+      'export const PAGES_PROJECT_NAME = "huihuidev-beta"',
+    );
+    expect(syncSource).toContain(
+      'export const PAGES_CUSTOM_DOMAIN = "beta.huihui.dev"',
+    );
+    expect(syncSource).toContain("canonical_deployment");
+    expect(syncSource).toContain(
+      "deployments?env=production&per_page=${PAGES_DEPLOYMENTS_PER_PAGE}&page=${page}",
+    );
+    expect(syncSource).toContain("PAGES_NON_TERMINAL_STAGE_STATUSES");
+    expect(syncSource).toContain("inspectPagesProductionQuiescence");
+    expect(syncSource).toContain("deployment_trigger?.metadata?.commit_hash");
+    expect(syncSource).toContain('deployment.environment !== "production"');
+    expect(syncSource).toContain(
+      'deployment.deployment_trigger?.type !== "github:push"',
+    );
+    expect(syncSource).toContain('stageStatus !== "success"');
+    expect(syncSource).toContain('domain.status !== "active"');
+    expect(WORKER_DEPLOYMENT_PATHS).toEqual([
+      "workers/huihui-api/",
+      ".github/workflows/deploy-huihui-api-worker.yml",
+    ]);
+
+    const liveSmoke = workflow.jobs["live-smoke"];
+    expect(liveSmoke.needs).toBe("synchronize");
+    expect(liveSmoke["timeout-minutes"]).toBe(35);
+    expect(liveSmoke.environment).toEqual({
+      name: "beta",
+      url: "https://beta.huihui.dev",
+    });
+    expect(runCommands(liveSmoke)).toEqual([
+      "npm ci",
+      "node tests/scripts/beta-deployment-sync.mjs wait-pages-quiescent",
+      "node tests/scripts/beta-http-smoke.mjs",
+      "npx playwright install --with-deps chromium",
+      "npx playwright test --config=playwright.beta-smoke.config.mjs --project=chromium --workers=1 --retries=0",
+      "node tests/scripts/beta-deployment-sync.mjs verify-pages-active",
+    ]);
+    const waitForQuiescentPages = liveSmoke.steps.find(
+      ({ run }) =>
+        run ===
+        "node tests/scripts/beta-deployment-sync.mjs wait-pages-quiescent",
+    );
+    const verifyActivePages = liveSmoke.steps.find(
+      ({ run }) =>
+        run ===
+        "node tests/scripts/beta-deployment-sync.mjs verify-pages-active",
+    );
+    const pagesReadEnv = {
+      CLOUDFLARE_ACCOUNT_ID: "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}",
+      CLOUDFLARE_PAGES_READ_API_TOKEN:
+        "${{ secrets.CLOUDFLARE_PAGES_READ_API_TOKEN }}",
+      TARGET_SHA: "${{ github.sha }}",
+    };
+    expect(waitForQuiescentPages.env).toEqual(pagesReadEnv);
+    expect(verifyActivePages.env).toEqual(pagesReadEnv);
+    expect(liveSmoke.steps.indexOf(verifyActivePages)).toBeGreaterThan(
+      liveSmoke.steps.findIndex(({ run }) =>
+        run?.startsWith("npx playwright test --config=playwright.beta-smoke"),
+      ),
+    );
+    expectFailureArtifact(
+      liveSmoke,
+      "playwright-beta-deployment-smoke",
+    );
+
+    expect(betaConfig.testMatch).toBe("beta-deployment-smoke.spec.mjs");
+    expect(betaConfig.globalSetup).toBeUndefined();
+    expect(betaConfig.webServer).toBeUndefined();
+    expect(betaConfig.use.baseURL).toBe("https://beta.huihui.dev");
+    expect(betaConfig.projects.map(({ name }) => name)).toEqual(["chromium"]);
+    expect(betaConfig.retries).toBe(0);
+    expect(betaConfig.workers).toBe(1);
+
+    for (const route of ["/", "/en/", "/ja/", "/about/", "/contact/"]) {
+      expect(httpSmokeSource).toContain(`path: "${route}"`);
+    }
+    expect(httpSmokeSource).toContain(
+      "https://huihui-api-beta.huihuigames01.workers.dev",
+    );
+    expect(httpSmokeSource).toContain("/api/tech-news");
+    expect(httpSmokeSource).toContain("/api/steam-library");
+    expect(httpSmokeSource).toContain(
+      'response.headers.get("access-control-allow-origin")',
+    );
+    expect(httpSmokeSource).toContain("allowedOrigin !== SITE_BASE_URL");
+    expect(betaOriginSource).toContain(
+      'export const BETA_SITE_ORIGIN = "https://beta.huihui.dev"',
+    );
+    expect(betaOriginSource).toContain("unexpected origin ${final.origin}");
+    expect(httpSmokeSource).toContain(
+      "assertBetaPageOrigin(url, response.url)",
+    );
+    expect(
+      httpSmokeSource.match(/assertExactFinalUrl\(url, response\.url\)/g),
+    ).toHaveLength(2);
+    expect(browserSmokeSource).toContain(
+      "assertBetaPageOrigin(path, page.url())",
+    );
+    for (const route of ["/", "/about/", "/contact/"]) {
+      expect(browserSmokeSource).toContain(
+        `assertBetaPageOrigin("${route}", page.url())`,
+      );
+    }
+    expect(browserSmokeSource).toContain(
+      "https://huihui-api-beta.huihuigames01.workers.dev/api/contact",
+    );
+    expect(browserSmokeSource).toContain("isTurnstileFrameUrl(frame.url())");
+    expect(browserSmokeSource).toContain(
+      'input[name="cf-turnstile-response"]',
+    );
+    expect(browserSmokeSource).toContain(
+      "const TURNSTILE_RENDER_TIMEOUT_MS = 15_000",
+    );
+    expect(browserSmokeSource).toContain("page.waitForResponse(");
+    expect(browserSmokeSource).toContain(
+      "getHuihuiApiBase(window.location.hostname)",
+    );
+    expect(browserSmokeSource).toContain(
+      'candidate.request().resourceType() === "fetch"',
+    );
+    expect(browserSmokeSource).toContain(
+      'url.pathname === "/api/tech-news"',
+    );
+    expect(browserSmokeSource).toContain(
+      "expect(techNewsResponse.url()).toBe(expectedTechNewsUrl)",
+    );
+    expect(browserSmokeSource).toContain(
+      "expect(techNewsResponse.ok()).toBe(true)",
+    );
+    expect(browserSmokeSource).toContain(
+      "expect(Array.isArray(techNewsBody.techNews)).toBe(true)",
+    );
+    expect(browserSmokeSource).toContain(
+      'data-tech-news-state="empty"',
+    );
+    expect(browserSmokeSource).toContain(
+      "page.locator(TECH_NEWS_FAILURE_SELECTOR)",
+    );
+    expect(browserSmokeSource).toContain(
+      'url.pathname === "/api/steam-library"',
+    );
+    expect(browserSmokeSource).toContain(
+      "expect(steamResponse.url()).toBe(expectedSteamUrl)",
+    );
+    expect(browserSmokeSource).not.toContain("steamResponse.ok()");
+    expect(browserSmokeSource).toContain("classifySteamResponse(");
+    expect(browserSmokeSource).toContain("isSteamUiStateAllowed(");
+    expect(httpSmokeSource).toContain("classifySteamResponse(");
+    expect(steamContractSource).toContain(
+      '"Steam library temporarily unavailable"',
+    );
+    expect(steamContractSource).toContain('status === 200');
+    expect(steamContractSource).toContain('status === 500');
+    expect(steamContractSource).toContain('body.games.length === 0');
+    expect(steamContractSource).toContain(
+      'responseFamily === "degraded" && uiState === "error"',
+    );
+    expect(browserSmokeSource).not.toMatch(/\.click\(.*submit|dispatchEvent\(.*submit/s);
+  });
+
   test("separates stable scheduled coverage from manual full-compatible coverage", async () => {
     const { source, workflow } = await readWorkflow("nightly-regression.yml");
 

@@ -1,0 +1,103 @@
+name: Beta CD verification
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  checks: read
+  actions: read
+
+concurrency:
+  group: beta-cd
+  cancel-in-progress: true
+
+jobs:
+  synchronize:
+    name: Wait for required beta deployments
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+
+      - name: Resolve required beta Worker state
+        id: worker
+        env:
+          TARGET_SHA: ${{ github.sha }}
+        run: node tests/scripts/beta-deployment-sync.mjs resolve-worker-sha
+
+      - name: Wait for exact Pages and required Worker deployments
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PAGES_READ_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_READ_API_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ github.sha }}
+          REQUIRED_WORKER_SHA: ${{ steps.worker.outputs.required_sha }}
+        run: node tests/scripts/beta-deployment-sync.mjs wait
+
+  live-smoke:
+    name: Live beta smoke
+    needs: synchronize
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    environment:
+      name: beta
+      url: https://beta.huihui.dev
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Wait for quiescent Pages deployment before live smoke
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PAGES_READ_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_READ_API_TOKEN }}
+          TARGET_SHA: ${{ github.sha }}
+        run: node tests/scripts/beta-deployment-sync.mjs wait-pages-quiescent
+
+      - name: Run live HTTP and beta Worker API smoke checks
+        run: node tests/scripts/beta-http-smoke.mjs
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run live Chromium deployment smoke
+        run: npx playwright test --config=playwright.beta-smoke.config.mjs --project=chromium --workers=1 --retries=0
+
+      - name: Re-verify active Pages deployment after live smoke
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PAGES_READ_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_READ_API_TOKEN }}
+          TARGET_SHA: ${{ github.sha }}
+        run: node tests/scripts/beta-deployment-sync.mjs verify-pages-active
+
+      - name: Upload Playwright failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-beta-deployment-smoke
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7

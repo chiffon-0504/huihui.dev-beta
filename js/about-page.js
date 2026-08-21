@@ -271,7 +271,7 @@ function createSteamGameCard(game, config) {
 function renderSteamGameList(container, games, config) {
   if (games.length === 0) {
     container.replaceChildren(
-      createSteamStatus("steam-error", "gamesUnavailable"),
+      createSteamStatus("steam-empty", "gamesUnavailable"),
     );
     return;
   }

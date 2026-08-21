@@ -12,20 +12,24 @@ on:
       target:
         description: Worker environment to deploy
         required: true
-        default: beta
+        default: production
         type: choice
         options:
-          - beta
           - production
 
 permissions:
   contents: read
 
+# Cancel the entire stale beta push workflow before its validation can later
+# reach deploy-beta. Manual dispatch is production-only and uses a separate,
+# non-canceling concurrency domain.
+concurrency:
+  group: huihui-api-${{ github.event_name == 'push' && 'beta' || 'production' }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
+
 jobs:
   validate-beta:
-    if: >-
-      github.event_name == 'push' ||
-      (github.event_name == 'workflow_dispatch' && inputs.target == 'beta')
+    if: github.event_name == 'push'
     uses: ./.github/workflows/validate.yml
 
   validate-production:
@@ -36,9 +40,7 @@ jobs:
     uses: ./.github/workflows/main-regression.yml
 
   deploy-beta:
-    if: >-
-      github.event_name == 'push' ||
-      (github.event_name == 'workflow_dispatch' && inputs.target == 'beta')
+    if: github.event_name == 'push'
     needs: validate-beta
     runs-on: ubuntu-latest
     timeout-minutes: 10

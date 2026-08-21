@@ -261,7 +261,7 @@ for (const locale of locales) {
       await expect(page.locator("#galgameBannerHours")).toHaveText(
         locale.steam.bannerUnavailable,
       );
-      await expect(page.locator("#steamFavorites > .steam-error")).toHaveText(
+      await expect(page.locator("#steamFavorites > .steam-empty")).toHaveText(
         locale.steam.gamesUnavailable,
       );
       await expectTerminalState(page, locale);
