@@ -5,6 +5,7 @@ import { parseDocument } from "yaml";
 
 const root = path.resolve(import.meta.dirname, "../..");
 let workflow;
+let workerReadme;
 
 function parseWorkflow(source) {
   const document = parseDocument(source);
@@ -28,6 +29,10 @@ beforeAll(async () => {
     "utf8",
   );
   workflow = parseWorkflow(source);
+  workerReadme = await readFile(
+    path.join(root, "workers/huihui-api/README.md"),
+    "utf8",
+  );
 });
 
 describe("Worker deployment isolation", () => {
@@ -43,9 +48,9 @@ describe("Worker deployment isolation", () => {
   test("cancels stale beta workflows without sharing production concurrency", () => {
     expect(workflow.concurrency).toEqual({
       group:
-        "huihui-api-${{ github.event_name == 'workflow_dispatch' && inputs.target == 'production' && 'production' || 'beta' }}",
+        "huihui-api-${{ github.event_name == 'push' && 'beta' || 'production' }}",
       "cancel-in-progress":
-        "${{ github.event_name == 'push' || inputs.target == 'beta' }}",
+        "${{ github.event_name == 'push' }}",
     });
     expect(workflow.concurrency.group).not.toBe(
       "${{ github.workflow }}-${{ github.ref }}",
@@ -57,25 +62,34 @@ describe("Worker deployment isolation", () => {
     const deployment = workflow.jobs["deploy-beta"];
 
     expect(validation.uses).toBe("./.github/workflows/validate.yml");
-    expect(validation.if).toContain("github.event_name == 'push'");
-    expect(validation.if).toContain("inputs.target == 'beta'");
+    expect(validation.if).toBe("github.event_name == 'push'");
     expect(deployment.needs).toBe("validate-beta");
-    expect(deployment.if).toContain("github.event_name == 'push'");
-    expect(deployment.if).toContain("inputs.target == 'beta'");
+    expect(deployment.if).toBe("github.event_name == 'push'");
 
     const wrangler = jobAction(deployment, "cloudflare/wrangler-action");
     expect(wrangler.with.workingDirectory).toBe("workers/huihui-api");
     expect(wrangler.with.command).toBe("deploy --env beta");
   });
 
+  test("has no documented or workflow-dispatched manual beta bypass", () => {
+    expect(workflow.on.workflow_dispatch.inputs.target.options).toEqual([
+      "production",
+    ]);
+    expect(workerReadme).toContain(
+      "beta has no manual deployment entry point",
+    );
+    expect(workerReadme).not.toContain("npx wrangler deploy --env beta");
+  });
+
   test("requires strong validation before an explicit main production dispatch", () => {
     const validation = workflow.jobs["validate-production"];
     const deployment = workflow.jobs["deploy-production"];
 
-    expect(workflow.on.workflow_dispatch.inputs.target.options).toEqual([
-      "beta",
-      "production",
-    ]);
+    expect(workflow.on.workflow_dispatch.inputs.target).toMatchObject({
+      default: "production",
+      required: true,
+      options: ["production"],
+    });
     expect(validation.uses).toBe(
       "./.github/workflows/main-regression.yml",
     );

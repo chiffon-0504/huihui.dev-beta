@@ -1,4 +1,7 @@
 import { expect, test } from "@playwright/test";
+import { isTurnstileFrameUrl } from "../support/turnstile-frame.mjs";
+
+const TURNSTILE_RENDER_TIMEOUT_MS = 15_000;
 
 function monitorRuntime(page) {
   const pageErrors = [];
@@ -108,6 +111,18 @@ test("Contact uses beta wiring and does not submit", async ({ page }) => {
     "https://huihui-api-beta.huihuigames01.workers.dev/api/contact",
   );
   await expect(form.locator('.cf-turnstile[data-action="contact"]')).toHaveCount(1);
+  await expect
+    .poll(
+      () => page.frames().some((frame) => isTurnstileFrameUrl(frame.url())),
+      {
+        message: "Cloudflare Turnstile challenge frame did not render",
+        timeout: TURNSTILE_RENDER_TIMEOUT_MS,
+      },
+    )
+    .toBe(true);
+  await expect(
+    form.locator('input[name="cf-turnstile-response"]'),
+  ).toHaveCount(1, { timeout: TURNSTILE_RENDER_TIMEOUT_MS });
   await expect(form.locator("button[type='submit']")).toBeEnabled();
   await expect(page.locator("#contact-status")).toBeEmpty();
   expect(contactRequests).toBe(0);

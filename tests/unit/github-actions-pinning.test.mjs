@@ -562,6 +562,13 @@ describe("Playwright cross-browser validation contract", () => {
     expect(browserSmokeSource).toContain(
       "https://huihui-api-beta.huihuigames01.workers.dev/api/contact",
     );
+    expect(browserSmokeSource).toContain("isTurnstileFrameUrl(frame.url())");
+    expect(browserSmokeSource).toContain(
+      'input[name="cf-turnstile-response"]',
+    );
+    expect(browserSmokeSource).toContain(
+      "const TURNSTILE_RENDER_TIMEOUT_MS = 15_000",
+    );
     expect(browserSmokeSource).not.toMatch(/\.click\(.*submit|dispatchEvent\(.*submit/s);
   });
 
