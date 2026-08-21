@@ -500,6 +500,18 @@ describe("Playwright cross-browser validation contract", () => {
         typeof uses === "string" && uses.startsWith("actions/checkout@"),
     );
     expect(synchronizeCheckout.with["fetch-depth"]).toBe(0);
+    const synchronizeNodeSetup = actionSteps(
+      synchronize,
+      "actions/setup-node",
+    );
+    expect(synchronizeNodeSetup).toHaveLength(1);
+    expect(synchronizeNodeSetup[0]).toMatchObject({
+      uses: "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+      with: { "node-version": 24 },
+    });
+    expect(synchronize.steps.indexOf(synchronizeNodeSetup[0])).toBeLessThan(
+      synchronize.steps.findIndex(({ run }) => run?.startsWith("node ")),
+    );
     expect(runCommands(synchronize)).toEqual([
       "node tests/scripts/beta-deployment-sync.mjs resolve-worker-sha",
       "node tests/scripts/beta-deployment-sync.mjs wait",
