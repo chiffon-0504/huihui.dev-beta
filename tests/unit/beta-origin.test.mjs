@@ -28,6 +28,8 @@ describe("beta deployment final-origin contract", () => {
     ["production", "https://huihui.dev/about/"],
     ["www production", "https://www.huihui.dev/about/"],
     ["Pages deployment", "https://example.huihuidev-beta.pages.dev/about/"],
+    ["localhost", "http://127.0.0.1:4173/about/"],
+    ["another site", "https://example.com/about/"],
   ])("rejects a redirect to the %s origin", (_label, finalUrl) => {
     const requestedUrl = `${BETA_SITE_ORIGIN}/about/`;
 

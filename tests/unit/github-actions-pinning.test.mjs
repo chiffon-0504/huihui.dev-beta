@@ -269,6 +269,7 @@ describe("Playwright cross-browser validation contract", () => {
 
     expect(baseConfig).toMatchObject({
       testDir: "./tests/e2e",
+      testIgnore: ["beta-deployment-smoke.spec.mjs"],
       globalSetup: "./tests/support/global-setup.mjs",
       fullyParallel: false,
       use: {
@@ -278,7 +279,9 @@ describe("Playwright cross-browser validation contract", () => {
     });
     expect(defaultConfig.testDir).toBe("./tests/e2e");
     expect(defaultConfig.testMatch).toBeUndefined();
-    expect(defaultConfig.testIgnore).toBeUndefined();
+    expect(defaultConfig.testIgnore).toEqual([
+      "beta-deployment-smoke.spec.mjs",
+    ]);
     expect(defaultConfig.projects.map(({ name }) => name)).toEqual([
       "chromium",
     ]);
@@ -309,6 +312,7 @@ describe("Playwright cross-browser validation contract", () => {
     expect(fullCrossBrowserConfig.testDir).toBe("./tests/e2e");
     expect(fullCrossBrowserConfig.testMatch).toBeUndefined();
     expect(fullCrossBrowserConfig.testIgnore).toEqual([
+      "beta-deployment-smoke.spec.mjs",
       "about-media.spec.mjs",
       "milestone-images.spec.mjs",
     ]);
@@ -336,7 +340,11 @@ describe("Playwright cross-browser validation contract", () => {
       }
     }
 
-    expect(chromiumOnlySpecFiles).toEqual(fullCrossBrowserConfig.testIgnore);
+    expect(chromiumOnlySpecFiles).toEqual(
+      fullCrossBrowserConfig.testIgnore.filter(
+        (specFile) => specFile !== "beta-deployment-smoke.spec.mjs",
+      ),
+    );
 
     const fullCompatibleSpecFiles = e2eSpecFiles.filter(
       (specFile) => !fullCrossBrowserConfig.testIgnore.includes(specFile),
@@ -345,6 +353,9 @@ describe("Playwright cross-browser validation contract", () => {
     expect(fullCompatibleSpecFiles).toContain("routes.spec.mjs");
     expect(fullCompatibleSpecFiles).not.toContain("about-media.spec.mjs");
     expect(fullCompatibleSpecFiles).not.toContain("milestone-images.spec.mjs");
+    expect(fullCompatibleSpecFiles).not.toContain(
+      "beta-deployment-smoke.spec.mjs",
+    );
   });
 
   test("keeps the critical smoke file browser-independent and timeout-neutral", async () => {
@@ -565,6 +576,8 @@ describe("Playwright cross-browser validation contract", () => {
     expect(syncSource).toContain(
       "deployments?env=production&per_page=${PAGES_DEPLOYMENTS_PER_PAGE}&page=${page}",
     );
+    expect(syncSource).toContain("const PAGES_DEPLOYMENTS_PER_PAGE = 20");
+    expect(syncSource).not.toContain("const PAGES_DEPLOYMENTS_PER_PAGE = 100");
     expect(syncSource).toContain("PAGES_NON_TERMINAL_STAGE_STATUSES");
     expect(syncSource).toContain("inspectPagesProductionQuiescence");
     expect(syncSource).toContain("deployment_trigger?.metadata?.commit_hash");
@@ -623,6 +636,7 @@ describe("Playwright cross-browser validation contract", () => {
     );
 
     expect(betaConfig.testMatch).toBe("beta-deployment-smoke.spec.mjs");
+    expect(betaConfig.testIgnore).toBeUndefined();
     expect(betaConfig.globalSetup).toBeUndefined();
     expect(betaConfig.webServer).toBeUndefined();
     expect(betaConfig.use.baseURL).toBe("https://beta.huihui.dev");

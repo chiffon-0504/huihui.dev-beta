@@ -2,6 +2,7 @@ import { devices } from "@playwright/test";
 
 export const baseConfig = {
   testDir: "./tests/e2e",
+  testIgnore: ["beta-deployment-smoke.spec.mjs"],
   globalSetup: "./tests/support/global-setup.mjs",
   fullyParallel: false,
   reporter: process.env.CI
