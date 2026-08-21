@@ -1,12 +1,35 @@
-import { describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import {
   assertBrowserCors,
-  assertPageResponseOk,
-  pageContracts,
+  runLiveSmoke,
 } from "../scripts/beta-http-smoke.mjs";
 
-const endpoint =
-  "https://huihui-api-beta.huihuigames01.workers.dev/api/tech-news";
+const betaOrigin = "https://beta.huihui.dev";
+const apiBaseUrl = "https://huihui-api-beta.huihuigames01.workers.dev";
+const techNewsEndpoint = `${apiBaseUrl}/api/tech-news`;
+const steamEndpoint = `${apiBaseUrl}/api/steam-library`;
+const healthySteamBody = {
+  ok: true,
+  source: "Steam",
+  count: 0,
+  games: [],
+};
+
+function jsonResponse(url, body, status = 200) {
+  return {
+    url,
+    status,
+    headers: new Headers({
+      "Access-Control-Allow-Origin": betaOrigin,
+      "Content-Type": "application/json",
+    }),
+    json: async () => body,
+  };
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("Beta HTTP smoke CORS assertion", () => {
   test("accepts the exact browser-visible beta origin", () => {
@@ -16,7 +39,7 @@ describe("Beta HTTP smoke CORS assertion", () => {
       },
     });
 
-    expect(() => assertBrowserCors(response, endpoint)).not.toThrow();
+    expect(() => assertBrowserCors(response, techNewsEndpoint)).not.toThrow();
   });
 
   test.each([
@@ -30,48 +53,68 @@ describe("Beta HTTP smoke CORS assertion", () => {
     }
     const response = new Response(null, { headers });
 
-    expect(() => assertBrowserCors(response, endpoint)).toThrow(
+    expect(() => assertBrowserCors(response, techNewsEndpoint)).toThrow(
       /expected https:\/\/beta\.huihui\.dev/,
     );
   });
 });
 
-describe("Beta HTTP page smoke layering", () => {
-  test("owns only ordinary static routes", () => {
-    expect(pageContracts.map(({ path }) => path)).toEqual([
-      "/",
-      "/en/",
-      "/ja/",
-      "/about/",
-    ]);
-    expect(pageContracts.some(({ path }) => path === "/contact/")).toBe(false);
-  });
-
-  test("fails closed with only safe response metadata", () => {
-    const response = new Response("sensitive response body", {
-      status: 403,
-      headers: {
-        "cf-ray": "abc123-TPE",
-        "cf-mitigated": "challenge",
-        server: "cloudflare",
-        "content-type": "text/html; charset=UTF-8",
-        "set-cookie": "secret=value",
-      },
-    });
-
-    expect(() =>
-      assertPageResponseOk(response, "https://beta.huihui.dev/about/"),
-    ).toThrowError(
-      "https://beta.huihui.dev/about/ returned HTTP 403 " +
-        "(cf-ray=abc123-TPE, cf-mitigated=challenge, server=cloudflare, " +
-        "content-type=text/html; charset=UTF-8)",
+describe("Beta HTTP live smoke ownership", () => {
+  test("requests exactly the two Worker APIs with the beta browser Origin", async () => {
+    const fetchMock = vi.fn(async (url) =>
+      url === techNewsEndpoint
+        ? jsonResponse(url, { ok: true, techNews: [] })
+        : jsonResponse(url, healthySteamBody),
     );
+    vi.stubGlobal("fetch", fetchMock);
 
-    try {
-      assertPageResponseOk(response, "https://beta.huihui.dev/about/");
-    } catch (error) {
-      expect(error.message).not.toContain("sensitive response body");
-      expect(error.message).not.toContain("secret=value");
-    }
+    await runLiveSmoke();
+
+    expect(
+      fetchMock.mock.calls.map(([url, init]) => ({
+        url,
+        origin: init.headers.Origin,
+        redirect: init.redirect,
+      })),
+    ).toEqual([
+      { url: techNewsEndpoint, origin: betaOrigin, redirect: "follow" },
+      { url: steamEndpoint, origin: betaOrigin, redirect: "follow" },
+    ]);
   });
+
+  test.each([
+    [
+      "malformed Tech News JSON",
+      techNewsEndpoint,
+      {
+        ...jsonResponse(techNewsEndpoint, null),
+        json: async () => {
+          throw new SyntaxError("malformed JSON");
+        },
+      },
+      /invalid top-level JSON value/,
+    ],
+    [
+      "unexpected Steam contract",
+      steamEndpoint,
+      jsonResponse(steamEndpoint, { ok: true, games: "not-an-array" }),
+      /expected success\/degraded response contract/,
+    ],
+  ])(
+    "fails closed for %s",
+    async (_label, invalidUrl, invalidResponse, error) => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (url) => {
+          if (url === invalidUrl) return invalidResponse;
+          if (url === techNewsEndpoint) {
+            return jsonResponse(url, { ok: true, techNews: [] });
+          }
+          return jsonResponse(url, healthySteamBody);
+        }),
+      );
+
+      await expect(runLiveSmoke()).rejects.toThrow(error);
+    },
+  );
 });
