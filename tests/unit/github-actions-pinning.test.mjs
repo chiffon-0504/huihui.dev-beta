@@ -505,9 +505,13 @@ describe("Playwright cross-browser validation contract", () => {
     );
     expect(resolveWorker.env).toEqual({ TARGET_SHA: "${{ github.sha }}" });
     expect(waitForDeployments.env).toMatchObject({
+      CLOUDFLARE_ACCOUNT_ID: "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}",
+      CLOUDFLARE_PAGES_READ_API_TOKEN:
+        "${{ secrets.CLOUDFLARE_PAGES_READ_API_TOKEN }}",
       TARGET_SHA: "${{ github.sha }}",
       REQUIRED_WORKER_SHA: "${{ steps.worker.outputs.required_sha }}",
     });
+    expect(waitForDeployments.env).not.toHaveProperty("CLOUDFLARE_API_TOKEN");
     expect(syncSource).toContain('const PAGES_CHECK_NAME = "Cloudflare Pages"');
     expect(syncSource).toContain(
       'const PAGES_APP_SLUG = "cloudflare-workers-and-pages"',
@@ -531,6 +535,20 @@ describe("Playwright cross-browser validation contract", () => {
     expect(syncSource).toContain("workers/huihui-api/");
     expect(syncSource).toContain("REQUIRED_WORKER_SHA");
     expect(syncSource).not.toContain("WORKER_REQUIRED");
+    expect(syncSource).toContain(
+      'export const PAGES_PROJECT_NAME = "huihuidev-beta"',
+    );
+    expect(syncSource).toContain(
+      'export const PAGES_CUSTOM_DOMAIN = "beta.huihui.dev"',
+    );
+    expect(syncSource).toContain("canonical_deployment");
+    expect(syncSource).toContain("deployment_trigger?.metadata?.commit_hash");
+    expect(syncSource).toContain('deployment.environment !== "production"');
+    expect(syncSource).toContain(
+      'deployment.deployment_trigger?.type !== "github:push"',
+    );
+    expect(syncSource).toContain('stageStatus !== "success"');
+    expect(syncSource).toContain('domain.status !== "active"');
     expect(WORKER_DEPLOYMENT_PATHS).toEqual([
       "workers/huihui-api/",
       ".github/workflows/deploy-huihui-api-worker.yml",
@@ -544,10 +562,22 @@ describe("Playwright cross-browser validation contract", () => {
     });
     expect(runCommands(liveSmoke)).toEqual([
       "npm ci",
+      "node tests/scripts/beta-deployment-sync.mjs verify-pages-active",
       "node tests/scripts/beta-http-smoke.mjs",
       "npx playwright install --with-deps chromium",
       "npx playwright test --config=playwright.beta-smoke.config.mjs --project=chromium --workers=1 --retries=0",
     ]);
+    const verifyActivePages = liveSmoke.steps.find(
+      ({ run }) =>
+        run ===
+        "node tests/scripts/beta-deployment-sync.mjs verify-pages-active",
+    );
+    expect(verifyActivePages.env).toEqual({
+      CLOUDFLARE_ACCOUNT_ID: "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}",
+      CLOUDFLARE_PAGES_READ_API_TOKEN:
+        "${{ secrets.CLOUDFLARE_PAGES_READ_API_TOKEN }}",
+      TARGET_SHA: "${{ github.sha }}",
+    });
     expectFailureArtifact(
       liveSmoke,
       "playwright-beta-deployment-smoke",
@@ -607,6 +637,26 @@ describe("Playwright cross-browser validation contract", () => {
     );
     expect(browserSmokeSource).toContain(
       "page.locator(TECH_NEWS_FAILURE_SELECTOR)",
+    );
+    expect(browserSmokeSource).toContain(
+      'url.pathname === "/api/steam-library"',
+    );
+    expect(browserSmokeSource).toContain(
+      "expect(steamResponse.url()).toBe(expectedSteamUrl)",
+    );
+    expect(browserSmokeSource).toContain(
+      "expect(steamResponse.ok()).toBe(true)",
+    );
+    expect(browserSmokeSource).toContain(
+      "expect(steamBody).toMatchObject({ ok: true, source: \"Steam\" })",
+    );
+    expect(browserSmokeSource).toContain(
+      "expect(steamBody.count).toBe(steamBody.games.length)",
+    );
+    expect(browserSmokeSource).toContain("steamBody.games.every(isValidSteamGame)");
+    expect(browserSmokeSource).toContain("#steamFavorites > .steam-empty");
+    expect(browserSmokeSource).toContain(
+      "page.locator(STEAM_FAILURE_SELECTOR)",
     );
     expect(browserSmokeSource).not.toMatch(/\.click\(.*submit|dispatchEvent\(.*submit/s);
   });

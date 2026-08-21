@@ -73,7 +73,7 @@ async function awaitRouteReady(page, route) {
   }
 
   if (route.routeKey === "about") {
-    await expect(page.locator("#steamFavorites > .steam-error")).toHaveCount(1);
+    await expect(page.locator("#steamFavorites > .steam-empty")).toHaveCount(1);
     return;
   }
 

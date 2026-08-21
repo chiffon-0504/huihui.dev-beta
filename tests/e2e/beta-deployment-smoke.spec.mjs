@@ -3,10 +3,37 @@ import { isTurnstileFrameUrl } from "../support/turnstile-frame.mjs";
 
 const TURNSTILE_RENDER_TIMEOUT_MS = 15_000;
 const TECH_NEWS_RESPONSE_TIMEOUT_MS = 15_000;
+const STEAM_RESPONSE_TIMEOUT_MS = 15_000;
 const TECH_NEWS_SUCCESS_SELECTOR =
   '#techNewsCards > .tech-news-card, #techNewsCards > .tech-news-status[data-tech-news-state="empty"]';
 const TECH_NEWS_FAILURE_SELECTOR =
   '#techNewsCards > .tech-news-status[data-tech-news-state="error"], #techNewsCards > .tech-news-status[data-tech-news-state="timeout"]';
+const STEAM_SUCCESS_SELECTOR =
+  "#steamFavorites > .steam-game-card, #steamFavorites > .steam-empty";
+const STEAM_FAILURE_SELECTOR =
+  "#steamFavorites > .steam-error, #steamFavorites > .steam-loading";
+
+function isValidSteamGame(game) {
+  if (
+    !game ||
+    typeof game !== "object" ||
+    !Number.isInteger(game.appid) ||
+    typeof game.name !== "string" ||
+    !game.name.trim() ||
+    !Number.isFinite(game.playtimeHours) ||
+    game.playtimeHours < 0
+  ) {
+    return false;
+  }
+
+  return [game.coverUrl, game.capsuleUrl, game.storeUrl].every((value) => {
+    try {
+      return new URL(value).protocol === "https:";
+    } catch (error) {
+      return false;
+    }
+  });
+}
 
 function monitorRuntime(page) {
   const pageErrors = [];
@@ -104,18 +131,44 @@ test("About initializes content, Steam terminal state, and root scrollbar", asyn
   page,
 }) => {
   const assertCleanRuntime = monitorRuntime(page);
+  const steamResponsePromise = page.waitForResponse(
+    (candidate) => {
+      const url = new URL(candidate.url());
+      return (
+        candidate.request().resourceType() === "fetch" &&
+        url.pathname === "/api/steam-library"
+      );
+    },
+    { timeout: STEAM_RESPONSE_TIMEOUT_MS },
+  );
   const response = await page.goto("/about/", { waitUntil: "load" });
 
   expect(response?.ok()).toBe(true);
   await expect(page.getByRole("heading", { level: 1, name: "關於我" })).toBeVisible();
   await expect(page.locator(".os-scrollbar-vertical")).toBeVisible();
+  const expectedSteamUrl = await page.evaluate(
+    () => `${getHuihuiApiBase(window.location.hostname)}/api/steam-library`,
+  );
+  const steamResponse = await steamResponsePromise;
+  const steamContentType = steamResponse.headers()["content-type"] || "";
+
+  expect(steamResponse.url()).toBe(expectedSteamUrl);
+  expect(steamResponse.ok()).toBe(true);
+  expect(steamContentType).toMatch(/^application\/json\b/i);
+
+  const steamBody = await steamResponse.json();
+  expect(steamBody).toMatchObject({ ok: true, source: "Steam" });
+  expect(Number.isInteger(steamBody.count)).toBe(true);
+  expect(Array.isArray(steamBody.games)).toBe(true);
+  expect(steamBody.count).toBe(steamBody.games.length);
+  expect(steamBody.games.every(isValidSteamGame)).toBe(true);
+
   await expect
-    .poll(async () => {
-      const cards = await page.locator("#steamFavorites > .steam-game-card").count();
-      const error = await page.locator("#steamFavorites > .steam-error").count();
-      return cards > 0 ? "cards" : error > 0 ? "error" : "loading";
-    }, { timeout: 12_000 })
-    .toMatch(/^(?:cards|error)$/);
+    .poll(() => page.locator(STEAM_SUCCESS_SELECTOR).count(), {
+      timeout: 12_000,
+    })
+    .toBeGreaterThan(0);
+  await expect(page.locator(STEAM_FAILURE_SELECTOR)).toHaveCount(0);
   assertCleanRuntime();
 });
 

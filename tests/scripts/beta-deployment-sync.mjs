@@ -4,6 +4,8 @@ import { pathToFileURL } from "node:url";
 
 const PAGES_CHECK_NAME = "Cloudflare Pages";
 const PAGES_APP_SLUG = "cloudflare-workers-and-pages";
+export const PAGES_PROJECT_NAME = "huihuidev-beta";
+export const PAGES_CUSTOM_DOMAIN = "beta.huihui.dev";
 const WORKER_WORKFLOW = "deploy-huihui-api-worker.yml";
 const DEFAULT_PAGES_TIMEOUT_MS = 15 * 60 * 1000;
 const DEFAULT_WORKER_TIMEOUT_MS = 30 * 60 * 1000;
@@ -114,6 +116,141 @@ async function githubJson(pathname) {
   return response.json();
 }
 
+export async function cloudflareApiResult(
+  pathname,
+  { accountId, apiToken, fetchImpl = fetch },
+) {
+  const response = await fetchImpl(
+    `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}${pathname}`,
+    {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${apiToken}`,
+      },
+      signal: AbortSignal.timeout(15_000),
+    },
+  );
+  const responseText = await response.text();
+  let payload;
+
+  try {
+    payload = JSON.parse(responseText);
+  } catch (error) {
+    throw new Error(
+      `Cloudflare Pages API ${pathname} returned invalid JSON with HTTP ${response.status}.`,
+    );
+  }
+
+  if (!response.ok) {
+    const details = JSON.stringify(payload?.errors || payload).slice(0, 500);
+    throw new Error(
+      `Cloudflare Pages API ${pathname} returned HTTP ${response.status}: ${details}`,
+    );
+  }
+
+  if (payload?.success !== true || !Object.hasOwn(payload, "result")) {
+    const details = JSON.stringify(payload?.errors || payload).slice(0, 500);
+    throw new Error(
+      `Cloudflare Pages API ${pathname} reported an unsuccessful response: ${details}`,
+    );
+  }
+
+  return payload.result;
+}
+
+export function inspectCanonicalPagesDeployment(project, targetSha) {
+  if (!project || typeof project !== "object") {
+    throw new Error("Cloudflare Pages project response did not contain a project.");
+  }
+  if (project.name !== PAGES_PROJECT_NAME) {
+    throw new Error(
+      `Cloudflare Pages API returned project ${project.name || "<missing>"}; expected ${PAGES_PROJECT_NAME}.`,
+    );
+  }
+
+  const deployment = project.canonical_deployment;
+  if (!deployment || typeof deployment !== "object") {
+    return {
+      complete: false,
+      diagnostic: "canonical deployment is not present",
+    };
+  }
+
+  const commitHash = deployment.deployment_trigger?.metadata?.commit_hash;
+  const stageStatus = deployment.latest_stage?.status;
+  if (commitHash !== targetSha) {
+    return {
+      complete: false,
+      diagnostic: `canonical deployment is ${commitHash || "<missing SHA>"} with stage ${stageStatus || "<missing>"}; waiting for ${targetSha}`,
+    };
+  }
+
+  if (deployment.environment !== "production") {
+    throw new Error(
+      `Canonical Pages deployment for ${targetSha} has environment ${deployment.environment || "<missing>"}; expected production.`,
+    );
+  }
+  if (deployment.deployment_trigger?.type !== "github:push") {
+    throw new Error(
+      `Canonical Pages deployment for ${targetSha} has trigger ${deployment.deployment_trigger?.type || "<missing>"}; expected github:push.`,
+    );
+  }
+  if (deployment.is_skipped !== false) {
+    throw new Error(
+      `Canonical Pages deployment for ${targetSha} has is_skipped=${String(deployment.is_skipped)}; expected false.`,
+    );
+  }
+  if (["failure", "canceled", "cancelled"].includes(stageStatus)) {
+    throw new Error(
+      `Canonical Pages deployment for ${targetSha} completed with ${stageStatus}.`,
+    );
+  }
+  if (stageStatus !== "success") {
+    return {
+      complete: false,
+      diagnostic: `canonical deployment for ${targetSha} has stage ${stageStatus || "<missing>"}`,
+    };
+  }
+
+  return {
+    complete: true,
+    diagnostic: `canonical production deployment ${deployment.id || "<missing id>"} is successful for ${targetSha}`,
+  };
+}
+
+export function assertActivePagesDomain(domain) {
+  if (!domain || typeof domain !== "object") {
+    throw new Error("Cloudflare Pages domain response did not contain a domain.");
+  }
+  if (domain.name !== PAGES_CUSTOM_DOMAIN) {
+    throw new Error(
+      `Cloudflare Pages API returned domain ${domain.name || "<missing>"}; expected ${PAGES_CUSTOM_DOMAIN}.`,
+    );
+  }
+  if (domain.status !== "active") {
+    throw new Error(
+      `Cloudflare Pages domain ${PAGES_CUSTOM_DOMAIN} has status ${domain.status || "<missing>"}; expected active.`,
+    );
+  }
+
+  return `${PAGES_CUSTOM_DOMAIN} is active`;
+}
+
+async function getActivePagesState(accountId, apiToken, targetSha) {
+  const projectPath = `/pages/projects/${encodeURIComponent(PAGES_PROJECT_NAME)}`;
+  const domainPath = `${projectPath}/domains/${encodeURIComponent(PAGES_CUSTOM_DOMAIN)}`;
+  const cloudflareOptions = { accountId, apiToken };
+  const [project, domain] = await Promise.all([
+    cloudflareApiResult(projectPath, cloudflareOptions),
+    cloudflareApiResult(domainPath, cloudflareOptions),
+  ]);
+
+  return {
+    deploymentState: inspectCanonicalPagesDeployment(project, targetSha),
+    domainDiagnostic: assertActivePagesDomain(domain),
+  };
+}
+
 export function completedFailure(label, item, subject) {
   if (item.status !== "completed") return;
   if (item.conclusion === "success") return;
@@ -123,7 +260,7 @@ export function completedFailure(label, item, subject) {
   );
 }
 
-async function pollExactDeployment({
+export async function pollExactDeployment({
   label,
   timeoutSubject,
   inspect,
@@ -154,34 +291,76 @@ async function pollExactDeployment({
 }
 
 async function waitForPages(owner, repository, targetSha, options) {
+  const accountId = requiredEnvironment("CLOUDFLARE_ACCOUNT_ID");
+  const apiToken = requiredEnvironment("CLOUDFLARE_PAGES_READ_API_TOKEN");
+  let exactCheckSucceeded = false;
+
   return pollExactDeployment({
     label: "Cloudflare Pages",
     timeoutSubject: `for exact target SHA ${targetSha}`,
     ...options,
     async inspect() {
-      const data = await githubJson(
-        `/repos/${owner}/${repository}/commits/${targetSha}/check-runs?per_page=100`,
-      );
-      const check = data.check_runs
-        .filter(
-          (item) =>
-            item.head_sha === targetSha &&
-            item.name === PAGES_CHECK_NAME &&
-            item.app?.slug === PAGES_APP_SLUG,
-        )
-        .sort((left, right) => right.id - left.id)[0];
+      if (!exactCheckSucceeded) {
+        const data = await githubJson(
+          `/repos/${owner}/${repository}/commits/${targetSha}/check-runs?per_page=100`,
+        );
+        const check = data.check_runs
+          .filter(
+            (item) =>
+              item.head_sha === targetSha &&
+              item.name === PAGES_CHECK_NAME &&
+              item.app?.slug === PAGES_APP_SLUG,
+          )
+          .sort((left, right) => right.id - left.id)[0];
 
-      if (!check) {
-        return { complete: false, diagnostic: `waiting for exact SHA ${targetSha}` };
+        if (!check) {
+          return {
+            complete: false,
+            diagnostic: `waiting for exact SHA ${targetSha} GitHub check`,
+          };
+        }
+
+        completedFailure("Cloudflare Pages", check, `exact SHA ${targetSha}`);
+        exactCheckSucceeded = check.status === "completed";
+        if (!exactCheckSucceeded) {
+          return {
+            complete: false,
+            diagnostic: `${check.status}/${check.conclusion || "pending"} for exact SHA ${check.head_sha} (${check.details_url})`,
+          };
+        }
       }
 
-      completedFailure("Cloudflare Pages", check, `exact SHA ${targetSha}`);
+      const { deploymentState, domainDiagnostic } = await getActivePagesState(
+        accountId,
+        apiToken,
+        targetSha,
+      );
+
       return {
-        complete: check.status === "completed",
-        diagnostic: `${check.status}/${check.conclusion || "pending"} for ${check.head_sha} (${check.details_url})`,
+        complete: deploymentState.complete,
+        diagnostic: `exact GitHub check succeeded; ${deploymentState.diagnostic}; ${domainDiagnostic}`,
       };
     },
   });
+}
+
+async function verifyPagesActive() {
+  const accountId = requiredEnvironment("CLOUDFLARE_ACCOUNT_ID");
+  const apiToken = requiredEnvironment("CLOUDFLARE_PAGES_READ_API_TOKEN");
+  const targetSha = requiredEnvironment("TARGET_SHA");
+  const { deploymentState, domainDiagnostic } = await getActivePagesState(
+    accountId,
+    apiToken,
+    targetSha,
+  );
+
+  if (!deploymentState.complete) {
+    throw new Error(
+      `Active Pages deployment does not represent target SHA ${targetSha}: ${deploymentState.diagnostic}`,
+    );
+  }
+
+  console.log(`${deploymentState.diagnostic}; ${domainDiagnostic}.`);
 }
 
 async function waitForWorker(
@@ -270,7 +449,10 @@ async function main() {
   const command = process.argv[2];
   if (command === "resolve-worker-sha") return writeRequiredWorkerSha();
   if (command === "wait") return waitForDeployments();
-  throw new Error("Expected command: resolve-worker-sha or wait");
+  if (command === "verify-pages-active") return verifyPagesActive();
+  throw new Error(
+    "Expected command: resolve-worker-sha, wait, or verify-pages-active",
+  );
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {

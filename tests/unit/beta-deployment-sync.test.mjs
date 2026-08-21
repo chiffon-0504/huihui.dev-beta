@@ -1,7 +1,13 @@
-import { describe, expect, test, vi } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import {
+  PAGES_CUSTOM_DOMAIN,
+  PAGES_PROJECT_NAME,
   WORKER_DEPLOYMENT_PATHS,
+  assertActivePagesDomain,
+  cloudflareApiResult,
   completedFailure,
+  inspectCanonicalPagesDeployment,
+  pollExactDeployment,
   resolveRequiredWorkerSha,
   selectNewestCoveringWorkerRun,
 } from "../scripts/beta-deployment-sync.mjs";
@@ -11,6 +17,10 @@ const B = "b".repeat(40);
 const C = "c".repeat(40);
 const D = "d".repeat(40);
 const X = "e".repeat(40);
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 const ancestry = new Map([
   [A, new Set([A])],
@@ -33,6 +43,28 @@ function workerRun({ id, headSha, status = "completed", conclusion = "success" }
     status,
     conclusion,
     html_url: `https://example.test/runs/${id}`,
+  };
+}
+
+function pagesProject({
+  sha = A,
+  stageStatus = "success",
+  environment = "production",
+  triggerType = "github:push",
+  isSkipped = false,
+} = {}) {
+  return {
+    name: PAGES_PROJECT_NAME,
+    canonical_deployment: {
+      id: "deployment-id",
+      environment,
+      is_skipped: isSkipped,
+      deployment_trigger: {
+        type: triggerType,
+        metadata: { commit_hash: sha },
+      },
+      latest_stage: { status: stageStatus },
+    },
   };
 }
 
@@ -151,5 +183,144 @@ describe("beta Worker deployment synchronization", () => {
         `required Worker SHA ${A}`,
       ),
     ).toThrow(/cancelled/);
+  });
+});
+
+describe("active Cloudflare Pages deployment synchronization", () => {
+  test("accepts the successful canonical production deployment for TARGET_SHA", () => {
+    expect(inspectCanonicalPagesDeployment(pagesProject(), A)).toEqual({
+      complete: true,
+      diagnostic: `canonical production deployment deployment-id is successful for ${A}`,
+    });
+  });
+
+  test.each([
+    ["older", A, B],
+    ["newer or different", B, A],
+  ])("does not accept a %s canonical deployment SHA", (label, observed, target) => {
+    const result = inspectCanonicalPagesDeployment(
+      pagesProject({ sha: observed }),
+      target,
+    );
+
+    expect(result.complete).toBe(false);
+    expect(result.diagnostic).toContain(`waiting for ${target}`);
+  });
+
+  test.each(["failure", "canceled", "cancelled"])(
+    "fails a target canonical deployment with stage %s",
+    (stageStatus) => {
+      expect(() =>
+        inspectCanonicalPagesDeployment(pagesProject({ stageStatus }), A),
+      ).toThrow(stageStatus);
+    },
+  );
+
+  test("fails a skipped target canonical deployment", () => {
+    expect(() =>
+      inspectCanonicalPagesDeployment(pagesProject({ isSkipped: true }), A),
+    ).toThrow(/is_skipped=true/);
+  });
+
+  test("waits when the canonical deployment is missing", () => {
+    expect(
+      inspectCanonicalPagesDeployment(
+        { name: PAGES_PROJECT_NAME, canonical_deployment: null },
+        A,
+      ),
+    ).toEqual({
+      complete: false,
+      diagnostic: "canonical deployment is not present",
+    });
+  });
+
+  test.each([
+    [
+      "different SHA",
+      inspectCanonicalPagesDeployment(pagesProject({ sha: A }), B),
+    ],
+    [
+      "missing canonical deployment",
+      inspectCanonicalPagesDeployment(
+        { name: PAGES_PROJECT_NAME, canonical_deployment: null },
+        B,
+      ),
+    ],
+  ])("fails after a bounded wait for %s", async (label, state) => {
+    vi.useFakeTimers();
+    const pending = pollExactDeployment({
+      label: "Cloudflare Pages",
+      timeoutSubject: `for exact target SHA ${B}`,
+      timeoutMs: 1_000,
+      intervalMs: 100,
+      inspect: vi.fn().mockResolvedValue(state),
+    });
+    const rejection = expect(pending).rejects.toThrow(
+      new RegExp(`Last state: ${state.diagnostic.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`),
+    );
+
+    await vi.advanceTimersByTimeAsync(1_000);
+    await rejection;
+  });
+
+  test.each([
+    ["environment", { environment: "preview" }, /expected production/],
+    ["trigger", { triggerType: "ad_hoc" }, /expected github:push/],
+  ])("rejects the wrong canonical deployment %s", (label, overrides, error) => {
+    expect(() =>
+      inspectCanonicalPagesDeployment(pagesProject(overrides), A),
+    ).toThrow(error);
+  });
+
+  test("requires the configured custom domain to be active", () => {
+    expect(
+      assertActivePagesDomain({ name: PAGES_CUSTOM_DOMAIN, status: "active" }),
+    ).toBe(`${PAGES_CUSTOM_DOMAIN} is active`);
+    expect(() =>
+      assertActivePagesDomain({ name: PAGES_CUSTOM_DOMAIN, status: "pending" }),
+    ).toThrow(/status pending; expected active/);
+  });
+
+  test("reports Cloudflare Pages API authentication errors clearly", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ success: false, errors: [{ code: 10000 }] }), {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    await expect(
+      cloudflareApiResult(`/pages/projects/${PAGES_PROJECT_NAME}`, {
+        accountId: "account-id",
+        apiToken: "pages-read-token",
+        fetchImpl,
+      }),
+    ).rejects.toThrow(/returned HTTP 403/);
+    expect(fetchImpl).toHaveBeenCalledWith(
+      `https://api.cloudflare.com/client/v4/accounts/account-id/pages/projects/${PAGES_PROJECT_NAME}`,
+      expect.objectContaining({
+        headers: {
+          Accept: "application/json",
+          Authorization: "Bearer pages-read-token",
+        },
+      }),
+    );
+  });
+
+  test("reports a successful HTTP response with a Cloudflare API error envelope", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ success: false, errors: [{ code: 8000000 }] }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    await expect(
+      cloudflareApiResult(`/pages/projects/${PAGES_PROJECT_NAME}`, {
+        accountId: "account-id",
+        apiToken: "pages-read-token",
+        fetchImpl,
+      }),
+    ).rejects.toThrow(/reported an unsuccessful response/);
   });
 });

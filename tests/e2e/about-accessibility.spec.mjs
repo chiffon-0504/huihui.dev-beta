@@ -212,7 +212,7 @@ async function loadAbout(page, locale, clipboardMode = "resolve") {
 
   expect(response?.status()).toBe(200);
   await expect(page.locator("#aboutPage .code-block")).toHaveCount(1);
-  await expect(page.locator("#steamFavorites > .steam-error")).toHaveCount(1);
+  await expect(page.locator("#steamFavorites > .steam-empty")).toHaveCount(1);
 
   return diagnostics;
 }
