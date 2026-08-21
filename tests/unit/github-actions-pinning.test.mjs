@@ -680,6 +680,10 @@ describe("Playwright cross-browser validation contract", () => {
         'test("Contact uses beta wiring and does not submit"',
       ),
     );
+    expect(browserSmokeSource.match(/test\.setTimeout\(60_000\)/g)).toHaveLength(
+      1,
+    );
+    expect(contactSmokeSource).toContain("test.setTimeout(60_000)");
     expect(contactSmokeSource).toContain('page.goto("/contact/"');
     expect(contactSmokeSource).toContain(
       'assertBetaPageOrigin("/contact/", page.url())',
@@ -695,7 +699,11 @@ describe("Playwright cross-browser validation contract", () => {
     expect(contactSmokeSource).toContain(
       'input[name="cf-turnstile-response"]',
     );
+    expect(contactSmokeSource).toContain(
+      'page.locator("#contact-status")).toBeEmpty()',
+    );
     expect(contactSmokeSource).toContain("expect(contactRequests).toBe(0)");
+    expect(contactSmokeSource).toContain("assertCleanRuntime()");
     expect(browserSmokeSource).toContain(
       "const TURNSTILE_RENDER_TIMEOUT_MS = 15_000",
     );

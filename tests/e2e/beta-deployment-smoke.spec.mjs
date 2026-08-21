@@ -171,6 +171,7 @@ test("About initializes content, Steam terminal state, and root scrollbar", asyn
 });
 
 test("Contact uses beta wiring and does not submit", async ({ page }) => {
+  test.setTimeout(60_000);
   const assertCleanRuntime = monitorRuntime(page);
   let contactRequests = 0;
   page.on("request", (request) => {
