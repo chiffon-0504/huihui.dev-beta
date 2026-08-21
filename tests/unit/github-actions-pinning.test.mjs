@@ -644,9 +644,10 @@ describe("Playwright cross-browser validation contract", () => {
     expect(betaConfig.retries).toBe(0);
     expect(betaConfig.workers).toBe(1);
 
-    for (const route of ["/", "/en/", "/ja/", "/about/", "/contact/"]) {
+    for (const route of ["/", "/en/", "/ja/", "/about/"]) {
       expect(httpSmokeSource).toContain(`path: "${route}"`);
     }
+    expect(httpSmokeSource).not.toContain('path: "/contact/"');
     expect(httpSmokeSource).toContain(
       "https://huihui-api-beta.huihuigames01.workers.dev",
     );
@@ -674,13 +675,35 @@ describe("Playwright cross-browser validation contract", () => {
         `assertBetaPageOrigin("${route}", page.url())`,
       );
     }
-    expect(browserSmokeSource).toContain(
+    const contactSmokeSource = browserSmokeSource.slice(
+      browserSmokeSource.indexOf(
+        'test("Contact uses beta wiring and does not submit"',
+      ),
+    );
+    expect(browserSmokeSource.match(/test\.setTimeout\(60_000\)/g)).toHaveLength(
+      1,
+    );
+    expect(contactSmokeSource).toContain("test.setTimeout(60_000)");
+    expect(contactSmokeSource).toContain('page.goto("/contact/"');
+    expect(contactSmokeSource).toContain(
+      'assertBetaPageOrigin("/contact/", page.url())',
+    );
+    expect(contactSmokeSource).toContain("expect(response?.ok()).toBe(true)");
+    expect(contactSmokeSource).toContain(
       "https://huihui-api-beta.huihuigames01.workers.dev/api/contact",
     );
-    expect(browserSmokeSource).toContain("isTurnstileFrameUrl(frame.url())");
-    expect(browserSmokeSource).toContain(
+    expect(contactSmokeSource).toContain(
+      '.cf-turnstile[data-action="contact"]',
+    );
+    expect(contactSmokeSource).toContain("isTurnstileFrameUrl(frame.url())");
+    expect(contactSmokeSource).toContain(
       'input[name="cf-turnstile-response"]',
     );
+    expect(contactSmokeSource).toContain(
+      'page.locator("#contact-status")).toBeEmpty()',
+    );
+    expect(contactSmokeSource).toContain("expect(contactRequests).toBe(0)");
+    expect(contactSmokeSource).toContain("assertCleanRuntime()");
     expect(browserSmokeSource).toContain(
       "const TURNSTILE_RENDER_TIMEOUT_MS = 15_000",
     );

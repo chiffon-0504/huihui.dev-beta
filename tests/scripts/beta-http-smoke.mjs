@@ -10,12 +10,18 @@ const SITE_BASE_URL = BETA_SITE_ORIGIN;
 const API_BASE_URL = "https://huihui-api-beta.huihuigames01.workers.dev";
 const REQUEST_TIMEOUT_MS = 15_000;
 
-const pageContracts = [
+export const pageContracts = [
   { path: "/", lang: "zh-Hant", identity: /<h1>huihui\.dev<\/h1>/i },
   { path: "/en/", lang: "en", identity: /<h1>huihui\.dev<\/h1>/i },
   { path: "/ja/", lang: "ja", identity: /<h1>huihui\.dev<\/h1>/i },
   { path: "/about/", lang: "zh-Hant", identity: /id=["']aboutPage["']/i },
-  { path: "/contact/", lang: "zh-Hant", identity: /id=["']contact-form["']/i },
+];
+
+const SAFE_PAGE_DIAGNOSTIC_HEADERS = [
+  "cf-ray",
+  "cf-mitigated",
+  "server",
+  "content-type",
 ];
 
 async function getResponse(url, headers = {}) {
@@ -26,14 +32,26 @@ async function getResponse(url, headers = {}) {
   });
 }
 
+export function assertPageResponseOk(response, url) {
+  if (response.ok) return;
+
+  const metadata = SAFE_PAGE_DIAGNOSTIC_HEADERS.flatMap((name) => {
+    const value = response.headers.get(name);
+    return value ? [`${name}=${value}`] : [];
+  });
+  const diagnosticSuffix = metadata.length ? ` (${metadata.join(", ")})` : "";
+
+  throw new Error(`${url} returned HTTP ${response.status}${diagnosticSuffix}`);
+}
+
 async function checkPage({ path, lang, identity }) {
   const url = new URL(path, SITE_BASE_URL);
   const response = await getResponse(url);
   assertBetaPageOrigin(url, response.url);
+  assertPageResponseOk(response, url);
   const body = await response.text();
   const contentType = response.headers.get("content-type") || "";
 
-  if (!response.ok) throw new Error(`${url} returned HTTP ${response.status}`);
   if (!contentType.toLowerCase().includes("text/html")) {
     throw new Error(`${url} returned unexpected Content-Type ${contentType}`);
   }
