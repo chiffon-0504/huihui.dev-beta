@@ -569,6 +569,31 @@ describe("Playwright cross-browser validation contract", () => {
     expect(browserSmokeSource).toContain(
       "const TURNSTILE_RENDER_TIMEOUT_MS = 15_000",
     );
+    expect(browserSmokeSource).toContain("page.waitForResponse(");
+    expect(browserSmokeSource).toContain(
+      "getHuihuiApiBase(window.location.hostname)",
+    );
+    expect(browserSmokeSource).toContain(
+      'candidate.request().resourceType() === "fetch"',
+    );
+    expect(browserSmokeSource).toContain(
+      'url.pathname === "/api/tech-news"',
+    );
+    expect(browserSmokeSource).toContain(
+      "expect(techNewsResponse.url()).toBe(expectedTechNewsUrl)",
+    );
+    expect(browserSmokeSource).toContain(
+      "expect(techNewsResponse.ok()).toBe(true)",
+    );
+    expect(browserSmokeSource).toContain(
+      "expect(Array.isArray(techNewsBody.techNews)).toBe(true)",
+    );
+    expect(browserSmokeSource).toContain(
+      'data-tech-news-state="empty"',
+    );
+    expect(browserSmokeSource).toContain(
+      "page.locator(TECH_NEWS_FAILURE_SELECTOR)",
+    );
     expect(browserSmokeSource).not.toMatch(/\.click\(.*submit|dispatchEvent\(.*submit/s);
   });
 
