@@ -223,12 +223,10 @@ test("reduced motion disables the remaining About code and image movement", asyn
 
   const code = page.locator("#profileCode");
   const gutter = page.locator(".custom-line-numbers");
-  const copyButton = page.locator(".copy-btn");
   const banner = page.locator(".galgame-banner");
 
   expectZeroDuration((await getMotionStyle(code)).transitionDuration);
   expectZeroDuration((await getMotionStyle(gutter)).transitionDuration);
-  expectZeroDuration((await getMotionStyle(copyButton)).transitionDuration);
   expectZeroDuration((await getMotionStyle(banner)).transitionDuration);
 
   await banner.hover();

@@ -1,8 +1,4 @@
 import { expect, test } from "@playwright/test";
-import {
-  focusWithTab,
-  installClipboardStub,
-} from "../support/clipboard-stub.mjs";
 
 const localOrigin = "http://127.0.0.1:4173";
 const apiOrigins = [
@@ -79,7 +75,6 @@ async function preparePage(page) {
   const apiRequests = [];
   const unexpectedApiRequests = [];
 
-  await installClipboardStub(page);
   await page.route("https://challenges.cloudflare.com/**", (route) =>
     route.fulfill({
       status: 200,
@@ -301,35 +296,40 @@ test("native Lightbox blocks background interaction and restores focus", async (
   expectNoDiagnostics(state);
 });
 
-test("About copy control uses the deterministic clipboard and keeps focus", async ({
+test("About initializes the accessible VS Code workspace with selectable profile text", async ({
   page,
 }) => {
   const state = await preparePage(page);
   const response = await page.goto("/en/about/", { waitUntil: "load" });
-  const button = page.getByRole("button", { name: "Copy code" });
-  const status = button.locator(
-    "xpath=following-sibling::span[contains(@class, 'code-copy-status')]",
-  );
+  const workspace = page.getByRole("region", {
+    name: "huihuidev.py profile code workspace",
+  });
+  const editor = page.getByRole("region", {
+    name: "huihuidev.py source code",
+  });
+  const code = page.locator("#profileCode");
 
   expect(response?.status()).toBe(200);
   await expect(page.locator("#steamFavorites .steam-loading")).toHaveCount(0);
-  await expect(button).toHaveCount(1);
-  await expect(button).toHaveAccessibleName("Copy code");
-  await expect(status).toHaveAttribute("role", "status");
-  await expect(status).toHaveAttribute("aria-live", "polite");
-  await expect(status).toHaveAttribute("aria-atomic", "true");
-  const codeText = await page
-    .locator("#profileCode")
-    .evaluate((code) => code.innerText);
+  await expect(workspace).toHaveAttribute("data-vscode-ready", "true");
+  await expect(editor).toHaveCount(1);
+  await expect(code).not.toBeEmpty();
+  await expect(code).toContainText("class HuiHui");
+  expect(
+    await code.evaluate((element) => {
+      const range = document.createRange();
+      const selection = window.getSelection();
 
-  await focusWithTab(page, button);
-  await expect(button).toBeFocused();
-  await page.keyboard.press("Enter");
-  await expect(status).toHaveText("Code copied");
-  expect(await page.evaluate(() => window.__copyClipboard.writes.at(-1))).toBe(
-    codeText,
-  );
-  await expect(button).toBeFocused();
+      range.selectNodeContents(element);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      const selectedText = selection.toString().trim();
+      selection.removeAllRanges();
+
+      return selectedText.length;
+    }),
+  ).toBeGreaterThan(0);
+  await expect(page.getByRole("button", { name: "Copy code" })).toHaveCount(0);
   expect(state.apiRequests).toEqual(["/api/steam-library"]);
   expectNoDiagnostics(state);
 });

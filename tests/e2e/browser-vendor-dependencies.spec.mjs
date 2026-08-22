@@ -21,26 +21,9 @@ async function stubSteam(page) {
 }
 
 for (const route of aboutRoutes) {
-  test(`${route} renders with local Prism highlighting, line numbers, and copy control`, async ({
+  test(`${route} renders the VS Code workspace with local Prism profile text`, async ({
     page,
   }) => {
-    await page.addInitScript(() => {
-      const writes = [];
-
-      Object.defineProperty(window, "__vendorCopyWrites", {
-        configurable: true,
-        value: writes,
-      });
-      Object.defineProperty(navigator, "clipboard", {
-        configurable: true,
-        value: {
-          writeText(text) {
-            writes.push(text);
-            return Promise.resolve();
-          },
-        },
-      });
-    });
     await stubSteam(page);
 
     const executableRequests = [];
@@ -61,9 +44,21 @@ for (const route of aboutRoutes) {
     const response = await page.goto(route, { waitUntil: "load" });
 
     expect(response?.status()).toBe(200);
+    await expect(page.locator(".vscode-window[role='region']")).toHaveAttribute(
+      "data-vscode-ready",
+      "true",
+    );
+    await expect(page.locator(".vscode-window[role='region']")).toHaveAttribute(
+      "aria-label",
+      /.+/,
+    );
+    await expect(page.locator(".vscode-editor-scroll[role='region']")).toHaveAttribute(
+      "aria-label",
+      /.+/,
+    );
     await expect(page.locator("#profileCode .token.keyword").first()).toBeVisible();
     await expect(page.locator(".custom-line-numbers")).toBeVisible();
-    await expect(page.locator(".copy-btn")).toBeVisible();
+    await expect(page.locator(".vscode-window .copy-btn")).toBeHidden();
 
     expect(
       await page.evaluate(() => ({
@@ -77,25 +72,17 @@ for (const route of aboutRoutes) {
       gutterCount: code
         .closest(".code-block")
         .querySelectorAll(".custom-line-numbers > span").length,
-      text: code.innerText,
+      textLength: code.innerText.trim().length,
     }));
     expect(renderedCode.gutterCount).toBe(renderedCode.lineCount);
     expect(renderedCode.gutterCount).toBeGreaterThan(1);
+    expect(renderedCode.textLength).toBeGreaterThan(0);
     expect(
       await page
         .locator("#profileCode .token.keyword")
         .first()
         .evaluate((token) => getComputedStyle(token).color),
     ).toBe("rgb(204, 153, 205)");
-
-    await page.locator(".copy-btn").click();
-    await expect
-      .poll(() =>
-        page.evaluate(() =>
-          window.__vendorCopyWrites.at(-1)?.replace(/\r\n/g, "\n"),
-        ),
-      )
-      .toBe(renderedCode.text.replace(/\r\n/g, "\n"));
 
     expect([...vendorResponses.entries()].sort()).toEqual(
       expectedPrismAssets.map((asset) => [asset, 200]).sort(),

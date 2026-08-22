@@ -1,8 +1,5 @@
 import { expect, test } from "@playwright/test";
-import {
-  focusWithTab,
-  installClipboardStub,
-} from "../support/clipboard-stub.mjs";
+import { installClipboardStub } from "../support/clipboard-stub.mjs";
 
 const localOrigin = "http://127.0.0.1:4173";
 const steamApiUrl = "https://api.huihui.dev/api/steam-library";
@@ -10,6 +7,8 @@ const locales = [
   {
     id: "zh",
     path: "/about/",
+    editorLabel: "huihuidev.py 原始碼",
+    workspaceLabel: "huihuidev.py 個人檔案程式碼工作區",
     copy: {
       label: "複製程式碼",
       success: "已複製程式碼",
@@ -30,6 +29,8 @@ const locales = [
   {
     id: "en",
     path: "/en/about/",
+    editorLabel: "huihuidev.py source code",
+    workspaceLabel: "huihuidev.py profile code workspace",
     copy: {
       label: "Copy code",
       success: "Code copied",
@@ -50,6 +51,8 @@ const locales = [
   {
     id: "ja",
     path: "/ja/about/",
+    editorLabel: "huihuidev.py ソースコード",
+    workspaceLabel: "huihuidev.py プロフィールコードのワークスペース",
     copy: {
       label: "コードをコピー",
       success: "コードをコピーしました",
@@ -270,77 +273,38 @@ async function expectNoHorizontalOverflow(page) {
 
 for (const locale of locales) {
   test.describe(`${locale.id} About accessibility`, () => {
-    test("copy success uses keyboard, localized name, status, and exact code", async ({
+    test("workspace exposes localized regions and selectable profile text", async ({
       page,
     }) => {
       const diagnostics = await loadAbout(page, locale);
-      const button = page.getByRole("button", { name: locale.copy.label });
-      const status = getStatus(button);
-      const codeText = await page.locator("#profileCode").evaluate((code) => code.innerText);
+      const workspace = page.getByRole("region", { name: locale.workspaceLabel });
+      const editor = page.getByRole("region", { name: locale.editorLabel });
+      const code = page.locator("#profileCode");
 
-      await expect(button).toHaveCount(1);
-      await expect(button).toHaveAttribute("aria-label", locale.copy.label);
-      await expect(status).toHaveAttribute("role", "status");
-      await expect(status).toHaveAttribute("aria-live", "polite");
-      await expect(status).toHaveAttribute("aria-atomic", "true");
-      await expect(status).not.toHaveAttribute("hidden", "");
+      await expect(workspace).toHaveAttribute("data-vscode-ready", "true");
+      await expect(editor).toHaveCount(1);
+      await expect(code).toContainText("class HuiHui");
       expect(
-        await status.evaluate((element) => ({
-          display: getComputedStyle(element).display,
-          height: getComputedStyle(element).height,
-          visibility: getComputedStyle(element).visibility,
-          width: getComputedStyle(element).width,
-        })),
-      ).toEqual({
-        display: "block",
-        height: "1px",
-        visibility: "visible",
-        width: "1px",
-      });
+        await code.evaluate((element) => {
+          const range = document.createRange();
+          const selection = window.getSelection();
 
-      await focusWithTab(page, button);
-      await expect(button).toBeFocused();
-      await page.keyboard.press("Enter");
+          range.selectNodeContents(element);
+          selection.removeAllRanges();
+          selection.addRange(range);
+          const selectedText = selection.toString().trim();
+          selection.removeAllRanges();
 
-      await expect(status).toHaveText(locale.copy.success);
-      expect(
-        await page.evaluate(() => window.__copyClipboard.writes.at(-1)),
-      ).toBe(codeText);
-      await expect(button).toBeFocused();
-      await expect(button).toHaveAccessibleName(locale.copy.label);
+          return selectedText.length;
+        }),
+      ).toBeGreaterThan(0);
+      await expect(
+        page.getByRole("button", { name: locale.copy.label }),
+      ).toHaveCount(0);
       await expectNoDiagnostics(diagnostics);
     });
 
-    test("copy rejection is localized, non-blocking, focus-safe, and clears stale state", async ({
-      page,
-    }) => {
-      const diagnostics = await loadAbout(page, locale, "reject");
-      const button = page.getByRole("button", { name: locale.copy.label });
-      const status = getStatus(button);
-
-      await button.focus();
-      await page.keyboard.press("Enter");
-      await expect(status).toHaveText(locale.copy.failure);
-      await expect(button).toBeFocused();
-      await expect(button).toHaveAccessibleName(locale.copy.label);
-
-      await page.evaluate(() => {
-        window.__copyClipboard.mode = "pending";
-      });
-      await page.keyboard.press("Enter");
-      await expect(status).toHaveText("");
-      await expect
-        .poll(() => page.evaluate(() => window.__copyClipboard.pending.length))
-        .toBe(1);
-      await page.evaluate(() => {
-        window.__copyClipboard.pending.shift().resolve();
-      });
-      await expect(status).toHaveText(locale.copy.success);
-      await expect(button).toBeFocused();
-      await expectNoDiagnostics(diagnostics);
-    });
-
-    test("multiple controls keep local status, headings, styles, and viewport containment", async ({
+    test("an added shared code block keeps copy behavior, headings, styles, and containment", async ({
       page,
     }) => {
       const diagnostics = await loadAbout(page, locale);
@@ -358,19 +322,18 @@ for (const locale of locales) {
       });
 
       const buttons = page.getByRole("button", { name: locale.copy.label });
-      const firstStatus = getStatus(buttons.nth(0));
-      const secondStatus = getStatus(buttons.nth(1));
-      await expect(buttons).toHaveCount(2);
-      await buttons.nth(1).click();
-      await expect(secondStatus).toHaveText(locale.copy.success);
-      await expect(firstStatus).toHaveText("");
+      const status = getStatus(buttons.first());
+      const workspaceCopyButton = page.locator(".vscode-window .copy-btn");
+
+      await expect(buttons).toHaveCount(1);
+      await expect(workspaceCopyButton).toHaveAttribute("aria-hidden", "true");
+      await expect(workspaceCopyButton).toHaveAttribute("tabindex", "-1");
+      await expect(workspaceCopyButton).toBeHidden();
+      await buttons.click();
+      await expect(status).toHaveText(locale.copy.success);
       expect(
         await page.evaluate(() => window.__copyClipboard.writes.at(-1)),
       ).toBe('print("second block")');
-
-      await buttons.nth(0).click();
-      await expect(firstStatus).toHaveText(locale.copy.success);
-      await expect(secondStatus).toHaveText(locale.copy.success);
 
       const headings = await page.locator("#aboutPage h1, #aboutPage h2, #aboutPage h3, #aboutPage h4, #aboutPage h5, #aboutPage h6").evaluateAll(
         (elements) =>
