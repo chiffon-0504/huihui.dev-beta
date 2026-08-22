@@ -18,39 +18,46 @@ beforeAll(async () => {
 });
 
 describe("About VS Code workspace contracts", () => {
-  test("keeps the profile code as a real accessible local scroll region", () => {
+  test("keeps the profile code as an accessible document-driven region", () => {
     expect(source).toContain('editorScroll.className = "vscode-editor-scroll"');
     expect(source).toContain('editorScroll.setAttribute("role", "region")');
-    expect(source).toContain("editorScroll.tabIndex = 0");
     expect(source).toContain("editorScroll.append(pre)");
     expect(styles).toMatch(
-      /\.vscode-editor-scroll\s*\{[^}]*overflow-y:\s*auto;/s,
+      /\.vscode-editor-scroll\s*\{[^}]*overflow-y:\s*hidden;/s,
     );
+    expect(source).not.toContain("editorScroll.tabIndex");
     expect(codeBlocksSource).toContain('if (pre.closest(".code-block")) return;');
   });
 
-  test("uses an explicit reversible global scroll-gate state machine", () => {
-    for (const state of [
+  test("uses native document scrolling with a requestAnimationFrame sticky stage", () => {
+    expect(source).toContain('stage.className = "vscode-scroll-stage"');
+    expect(source).toContain("editorScroll.scrollHeight - editorScroll.clientHeight");
+    expect(source).toContain("stageScrollableDistance = maxEditorScroll");
+    expect(source).toContain("editorScroll.scrollTop = progress * maxEditorScroll");
+    expect(source).toContain(
+      'window.addEventListener("scroll", requestScrollSync, { passive: true })',
+    );
+    expect(source).toContain("requestAnimationFrame(syncEditorScroll)");
+    expect(source).toContain("new ResizeObserver(requestStageMeasure)");
+    expect(styles).toMatch(
+      /\.vscode-scroll-stage\s*>\s*\.vscode-window\.code-block\s*\{[^}]*position:\s*sticky;/s,
+    );
+
+    for (const rejectedPattern of [
       "BEFORE_GATE",
       "LOCKED_EDITOR_DOWN",
       "AFTER_GATE",
       "LOCKED_EDITOR_UP",
+      "preventDefault()",
+      "window.scrollTo",
+      'addEventListener("wheel"',
+      'addEventListener("touchmove"',
+      'addEventListener("keydown"',
+      "passive: false",
     ]) {
-      expect(source).toContain(state);
+      expect(source).not.toContain(rejectedPattern);
     }
 
-    expect(source).toContain('window.addEventListener("wheel", handleWheel');
-    expect(source).toContain('window.addEventListener("keydown", handleKeydown');
-    expect(source).toContain('window.addEventListener("touchmove", handleTouchMove');
-    expect(source).toContain("passive: false");
-    expect(source).toContain("getMaximumEditorScroll() - editorScroll.scrollTop");
-    expect(source).toContain("ABOUT_VSCODE_SCROLL_GATE_TOLERANCE = 1");
-    expect(source).toContain("isInteractiveKeyboardTarget(event.target)");
-    expect(source).toContain('event.key === "PageDown"');
-    expect(source).toContain('event.key === "PageUp"');
-    expect(source).toContain('event.key === "ArrowDown"');
-    expect(source).toContain('event.key === "ArrowUp"');
-    expect(source).toContain("event.shiftKey ? -pageDelta : pageDelta");
     expect(source).not.toContain("scrollIntoView");
     expect(source).not.toMatch(/setTimeout|setInterval|line\s*64/i);
     expect(styles).not.toMatch(/overflow:\s*hidden[^}]*html|html[^}]*overflow:\s*hidden/is);

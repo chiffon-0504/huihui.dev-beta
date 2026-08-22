@@ -9,6 +9,18 @@
   margin-bottom: 0;
 }
 
+.about-page .vscode-scroll-stage {
+  position: relative;
+  width: 100%;
+  margin: 0 0 40px;
+}
+
+.about-page .vscode-scroll-stage > .vscode-window.code-block {
+  position: sticky;
+  top: var(--vscode-sticky-top, 0px);
+  margin: 0 auto;
+}
+
 .about-page .vscode-window.code-block {
   width: 100%;
   max-width: 1120px;
@@ -486,7 +498,8 @@
   height: 100%;
   min-width: 0;
   min-height: 0;
-  overflow-y: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-color: #5a5a5a transparent;
   scrollbar-width: thin;
   scrollbar-gutter: stable;
@@ -712,10 +725,14 @@
 }
 
 @media (max-width: 720px) {
+  .about-page .vscode-scroll-stage {
+    margin: 18px 0 32px;
+  }
+
   .about-page .vscode-window.code-block {
     height: min(760px, 86svh);
     min-height: 610px;
-    margin: 18px auto 32px;
+    margin: 0 auto;
     border-radius: 14px !important;
   }
 

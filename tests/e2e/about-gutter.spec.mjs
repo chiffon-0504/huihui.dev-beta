@@ -86,7 +86,7 @@ test("desktop About code gutter preserves its geometry and line alignment", asyn
     gutterTop: 4,
     lineHeightsMatch: true,
     overflowX: "auto",
-    wrapperPosition: "relative",
+    wrapperPosition: "sticky",
   });
   expectCssPixels(
     geometry.gutterWidth,
@@ -109,7 +109,7 @@ test("mobile About code gutter preserves its compact geometry and line alignment
     gutterPaddingRight: 8,
     lineHeightsMatch: true,
     overflowX: "auto",
-    wrapperPosition: "relative",
+    wrapperPosition: "sticky",
   });
   expectCssPixels(
     geometry.gutterWidth,

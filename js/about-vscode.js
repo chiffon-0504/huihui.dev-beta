@@ -39,15 +39,6 @@ const ABOUT_VSCODE_TREE = [
   ["playwright.config.mjs", "javascript"],
 ];
 
-const ABOUT_VSCODE_SCROLL_GATE_STATES = Object.freeze({
-  before: "BEFORE_GATE",
-  lockedDown: "LOCKED_EDITOR_DOWN",
-  after: "AFTER_GATE",
-  lockedUp: "LOCKED_EDITOR_UP",
-});
-
-const ABOUT_VSCODE_SCROLL_GATE_TOLERANCE = 1;
-
 function getAboutVscodeLabels() {
   const locale = typeof getCurrentLocale === "function" ? getCurrentLocale() : "zh";
   return ABOUT_VSCODE_LABELS[locale] || ABOUT_VSCODE_LABELS.zh;
@@ -238,348 +229,80 @@ function renderAboutVscodeStatusbar() {
   `;
 }
 
-function initAboutVscodeScrollGate(wrapper, editorScroll) {
-  const states = ABOUT_VSCODE_SCROLL_GATE_STATES;
-  const tolerance = ABOUT_VSCODE_SCROLL_GATE_TOLERANCE;
-  let state = states.before;
-  let gateScrollY = 0;
-  let lockedScrollY = null;
-  let lastDocumentScrollY = window.scrollY;
-  let touchX = null;
-  let touchY = null;
+function initAboutVscodeScrollStage(wrapper, editorScroll) {
+  const stage = document.createElement("div");
+  let stageStart = 0;
+  let stageScrollableDistance = 0;
+  let maxEditorScroll = 0;
+  let scrollFrame = null;
+  let measureFrame = null;
 
-  const isLocked = () =>
-    state === states.lockedDown || state === states.lockedUp;
-  const getMaximumDocumentScroll = () =>
-    Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-  const getMaximumEditorScroll = () =>
-    Math.max(0, editorScroll.scrollHeight - editorScroll.clientHeight);
-  const isEditorAtTop = () => editorScroll.scrollTop <= tolerance;
-  const isEditorAtBottom = () =>
-    getMaximumEditorScroll() - editorScroll.scrollTop <= tolerance;
+  stage.className = "vscode-scroll-stage";
+  wrapper.before(stage);
+  stage.append(wrapper);
 
-  const setState = (nextState) => {
-    state = nextState;
-    wrapper.dataset.scrollGateState = nextState;
-    wrapper.dataset.scrollGateLocked = String(isLocked());
+  const syncEditorScroll = () => {
+    scrollFrame = null;
+    const progress =
+      stageScrollableDistance > 0
+        ? Math.min(
+            Math.max((window.scrollY - stageStart) / stageScrollableDistance, 0),
+            1,
+          )
+        : 0;
+
+    editorScroll.scrollTop = progress * maxEditorScroll;
   };
 
-  const setDocumentScrollTop = (nextScrollY) => {
-    const root = document.documentElement;
-    const previousScrollBehavior = root.style.scrollBehavior;
-    const boundedScrollY = Math.min(
-      Math.max(0, nextScrollY),
-      getMaximumDocumentScroll(),
-    );
-
-    root.style.scrollBehavior = "auto";
-    window.scrollTo(0, boundedScrollY);
-    root.style.scrollBehavior = previousScrollBehavior;
-    lastDocumentScrollY = window.scrollY;
+  const requestScrollSync = () => {
+    if (scrollFrame !== null) return;
+    scrollFrame = requestAnimationFrame(syncEditorScroll);
   };
 
-  const measureGate = () => {
-    const wrapperRect = wrapper.getBoundingClientRect();
-    const viewportAnchor = Math.max(
+  const measureStage = () => {
+    measureFrame = null;
+    const workspaceHeight = wrapper.offsetHeight;
+    const stickyTop = Math.max(
       0,
-      Math.min(120, (window.innerHeight - wrapperRect.height) / 2),
+      Math.min(120, (window.innerHeight - workspaceHeight) / 2),
     );
 
-    gateScrollY = Math.min(
-      Math.max(0, window.scrollY + wrapperRect.top - viewportAnchor),
-      getMaximumDocumentScroll(),
+    maxEditorScroll = Math.max(
+      0,
+      editorScroll.scrollHeight - editorScroll.clientHeight,
     );
-    wrapper.dataset.scrollGateY = String(gateScrollY);
-  };
+    stageScrollableDistance = maxEditorScroll;
 
-  const keepDocumentLocked = () => {
-    if (lockedScrollY === null) return;
-    if (Math.abs(window.scrollY - lockedScrollY) <= tolerance) return;
+    const stageHeight = workspaceHeight + stageScrollableDistance;
+    const nextHeight = `${stageHeight}px`;
+    const nextStickyTop = `${stickyTop}px`;
 
-    setDocumentScrollTop(lockedScrollY);
-  };
-
-  const enterGate = (direction) => {
-    const previousState = state;
-
-    if (direction > 0 && previousState === states.before) {
-      editorScroll.scrollTop = 0;
-    } else if (direction < 0 && previousState === states.after) {
-      editorScroll.scrollTop = getMaximumEditorScroll();
+    if (stage.style.height !== nextHeight) stage.style.height = nextHeight;
+    if (stage.style.getPropertyValue("--vscode-sticky-top") !== nextStickyTop) {
+      stage.style.setProperty("--vscode-sticky-top", nextStickyTop);
     }
 
-    lockedScrollY = gateScrollY;
-    setState(direction > 0 ? states.lockedDown : states.lockedUp);
-    setDocumentScrollTop(lockedScrollY);
+    stageStart = window.scrollY + stage.getBoundingClientRect().top - stickyTop;
+    stage.dataset.scrollStageStart = String(stageStart);
+    stage.dataset.scrollStageDistance = String(stageScrollableDistance);
+    stage.dataset.scrollStageReady = "true";
+    requestScrollSync();
   };
 
-  const leaveGate = (direction) => {
-    lockedScrollY = null;
-    setState(direction > 0 ? states.after : states.before);
+  const requestStageMeasure = () => {
+    if (measureFrame !== null) return;
+    measureFrame = requestAnimationFrame(measureStage);
   };
 
-  const scrollEditorBy = (deltaY) => {
-    editorScroll.scrollTop = Math.min(
-      Math.max(0, editorScroll.scrollTop + deltaY),
-      getMaximumEditorScroll(),
-    );
-  };
+  measureStage();
+  requestStageMeasure();
+  window.addEventListener("scroll", requestScrollSync, { passive: true });
+  window.addEventListener("resize", requestStageMeasure, { passive: true });
 
-  const targetUsesEditorScroll = (target) =>
-    target instanceof Element && Boolean(target.closest(".vscode-editor-scroll"));
-
-  const routeLockedDelta = (deltaY) => {
-    if (deltaY > 0) {
-      if (isEditorAtBottom()) {
-        leaveGate(1);
-        return { consumed: false, released: true };
-      }
-
-      setState(states.lockedDown);
-    } else {
-      if (isEditorAtTop()) {
-        leaveGate(-1);
-        return { consumed: false, released: true };
-      }
-
-      setState(states.lockedUp);
-    }
-
-    scrollEditorBy(deltaY);
-    keepDocumentLocked();
-    return { consumed: true, released: false };
-  };
-
-  const routeUnlockedDelta = (deltaY, target) => {
-    const currentScrollY = window.scrollY;
-    const editorOwnsTarget = targetUsesEditorScroll(target);
-
-    if (state === states.before && deltaY > 0) {
-      const distanceToGate = Math.max(0, gateScrollY - currentScrollY);
-
-      if (editorOwnsTarget || deltaY >= distanceToGate - tolerance) {
-        const documentDelta = Math.min(deltaY, distanceToGate);
-        setDocumentScrollTop(currentScrollY + documentDelta);
-
-        if (distanceToGate - documentDelta <= tolerance) {
-          enterGate(1);
-          const editorDelta = Math.max(0, deltaY - distanceToGate);
-          if (editorDelta > tolerance) scrollEditorBy(editorDelta);
-        }
-
-        return { consumed: true, released: false };
-      }
-    }
-
-    if (state === states.after && deltaY < 0) {
-      const distanceToGate = Math.max(0, currentScrollY - gateScrollY);
-      const upwardDelta = Math.abs(deltaY);
-
-      if (editorOwnsTarget || upwardDelta >= distanceToGate - tolerance) {
-        const documentDelta = Math.min(upwardDelta, distanceToGate);
-        setDocumentScrollTop(currentScrollY - documentDelta);
-
-        if (distanceToGate - documentDelta <= tolerance) {
-          enterGate(-1);
-          const editorDelta = Math.max(0, upwardDelta - distanceToGate);
-          if (editorDelta > tolerance) scrollEditorBy(-editorDelta);
-        }
-
-        return { consumed: true, released: false };
-      }
-    }
-
-    return { consumed: false, released: false };
-  };
-
-  const routeDelta = (deltaY, target) => {
-    if (Math.abs(deltaY) <= tolerance) {
-      return { consumed: false, released: false };
-    }
-
-    return isLocked()
-      ? routeLockedDelta(deltaY)
-      : routeUnlockedDelta(deltaY, target);
-  };
-
-  const normalizeWheelDelta = (delta, deltaMode) => {
-    if (deltaMode === WheelEvent.DOM_DELTA_LINE) return delta * 16;
-    if (deltaMode === WheelEvent.DOM_DELTA_PAGE) return delta * window.innerHeight;
-    return delta;
-  };
-
-  const preserveHorizontalWheel = (event) => {
-    if (Math.abs(event.deltaX) <= tolerance) return;
-    if (!(event.target instanceof Element)) return;
-
-    const horizontalScroller = event.target.closest(
-      ".vscode-editor-scroll pre[class*='language-']",
-    );
-    if (!horizontalScroller) return;
-
-    horizontalScroller.scrollLeft += normalizeWheelDelta(
-      event.deltaX,
-      event.deltaMode,
-    );
-  };
-
-  const handleWheel = (event) => {
-    const deltaY = normalizeWheelDelta(event.deltaY, event.deltaMode);
-    const result = routeDelta(deltaY, event.target);
-
-    if (!result.consumed && !result.released) return;
-
-    event.preventDefault();
-    preserveHorizontalWheel(event);
-    if (result.released) {
-      setDocumentScrollTop(window.scrollY + deltaY);
-    }
-  };
-
-  const isInteractiveKeyboardTarget = (target) => {
-    if (!(target instanceof Element)) return false;
-    if (target.isContentEditable) return true;
-
-    return Boolean(
-      target.closest(
-        "a, button, input, textarea, select, summary, [contenteditable='true'], [role='button'], [role='link'], [role='slider'], [role='textbox']",
-      ),
-    );
-  };
-
-  const getKeyboardDelta = (event) => {
-    const pageDelta = Math.max(40, editorScroll.clientHeight * 0.9);
-
-    if (event.key === "PageDown") return pageDelta;
-    if (event.key === "PageUp") return -pageDelta;
-    if (event.key === "ArrowDown") return 40;
-    if (event.key === "ArrowUp") return -40;
-    if (event.key === " ") return event.shiftKey ? -pageDelta : pageDelta;
-    return 0;
-  };
-
-  const handleKeydown = (event) => {
-    if (event.altKey || event.ctrlKey || event.metaKey) return;
-    if (isInteractiveKeyboardTarget(event.target)) return;
-
-    const deltaY = getKeyboardDelta(event);
-    if (!deltaY) return;
-
-    const result = routeDelta(deltaY, event.target);
-    if (!result.consumed && !result.released) return;
-
-    event.preventDefault();
-    if (result.released) {
-      setDocumentScrollTop(window.scrollY + deltaY);
-    }
-  };
-
-  const handleTouchStart = (event) => {
-    if (event.touches.length !== 1) {
-      touchX = null;
-      touchY = null;
-      return;
-    }
-
-    touchX = event.touches[0].clientX;
-    touchY = event.touches[0].clientY;
-  };
-
-  const handleTouchMove = (event) => {
-    if (event.touches.length !== 1 || touchX === null || touchY === null) return;
-
-    const nextTouchX = event.touches[0].clientX;
-    const nextTouchY = event.touches[0].clientY;
-    const deltaX = touchX - nextTouchX;
-    const deltaY = touchY - nextTouchY;
-    touchX = nextTouchX;
-    touchY = nextTouchY;
-
-    if (Math.abs(deltaY) <= Math.abs(deltaX)) return;
-
-    const result = routeDelta(deltaY, event.target);
-    if (!result.consumed && !result.released) return;
-
-    event.preventDefault();
-    if (result.released) {
-      setDocumentScrollTop(window.scrollY + deltaY);
-    }
-  };
-
-  const resetTouch = () => {
-    touchX = null;
-    touchY = null;
-  };
-
-  const handleDocumentScroll = () => {
-    const currentScrollY = window.scrollY;
-    const direction = currentScrollY - lastDocumentScrollY;
-
-    if (isLocked()) {
-      keepDocumentLocked();
-      lastDocumentScrollY = lockedScrollY ?? window.scrollY;
-      return;
-    }
-
-    if (
-      state === states.before &&
-      direction > tolerance &&
-      currentScrollY >= gateScrollY - tolerance
-    ) {
-      enterGate(1);
-      return;
-    }
-
-    if (
-      state === states.after &&
-      direction < -tolerance &&
-      currentScrollY <= gateScrollY + tolerance
-    ) {
-      enterGate(-1);
-      return;
-    }
-
-    if (currentScrollY < gateScrollY - tolerance) {
-      setState(states.before);
-    } else if (currentScrollY > gateScrollY + tolerance) {
-      setState(states.after);
-    }
-
-    lastDocumentScrollY = currentScrollY;
-  };
-
-  measureGate();
-  if (window.scrollY > gateScrollY + tolerance) {
-    editorScroll.scrollTop = getMaximumEditorScroll();
-    setState(states.after);
-  } else {
-    setState(states.before);
+  if (typeof ResizeObserver === "function") {
+    const resizeObserver = new ResizeObserver(requestStageMeasure);
+    resizeObserver.observe(wrapper);
   }
-  wrapper.dataset.scrollGateReady = "true";
-
-  window.addEventListener("wheel", handleWheel, { capture: true, passive: false });
-  window.addEventListener("keydown", handleKeydown, true);
-  window.addEventListener("touchstart", handleTouchStart, {
-    capture: true,
-    passive: true,
-  });
-  window.addEventListener("touchmove", handleTouchMove, {
-    capture: true,
-    passive: false,
-  });
-  window.addEventListener("touchend", resetTouch, { capture: true, passive: true });
-  window.addEventListener("touchcancel", resetTouch, {
-    capture: true,
-    passive: true,
-  });
-  window.addEventListener("scroll", handleDocumentScroll, { passive: true });
-  window.addEventListener("resize", () => {
-    measureGate();
-    if (isLocked()) {
-      lockedScrollY = gateScrollY;
-      setDocumentScrollTop(lockedScrollY);
-    }
-  });
 }
 
 function initAboutVscodeWorkspace() {
@@ -641,7 +364,6 @@ function initAboutVscodeWorkspace() {
   editorScroll.className = "vscode-editor-scroll";
   editorScroll.setAttribute("role", "region");
   editorScroll.setAttribute("aria-label", labels.editor);
-  editorScroll.tabIndex = 0;
   editorScroll.append(pre);
 
   const editorViewport = document.createElement("div");
@@ -668,7 +390,7 @@ function initAboutVscodeWorkspace() {
   wrapper.replaceChildren();
   wrapper.insertAdjacentHTML("afterbegin", renderAboutVscodeTitlebar());
   wrapper.append(workbench);
-  initAboutVscodeScrollGate(wrapper, editorScroll);
+  initAboutVscodeScrollStage(wrapper, editorScroll);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
