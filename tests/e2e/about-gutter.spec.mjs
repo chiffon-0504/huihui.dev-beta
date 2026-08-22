@@ -81,18 +81,18 @@ test("desktop About code gutter preserves its geometry and line alignment", asyn
   const geometry = await getGutterGeometry(page);
   expect(geometry).toMatchObject({
     codeStartsAfterGutter: true,
-    gutterLeft: 6.4,
-    gutterPaddingRight: 8.8,
-    gutterTop: 12,
+    gutterLeft: 8,
+    gutterPaddingRight: 10,
+    gutterTop: 4,
     lineHeightsMatch: true,
     overflowX: "auto",
     wrapperPosition: "relative",
   });
   expectCssPixels(
     geometry.gutterWidth,
-    browserName === "firefox" ? 38.4 : 38.3906,
+    browserName === "firefox" ? 42.4 : 42.3906,
   );
-  expectCssPixels(geometry.prePaddingLeft, 57.6);
+  expectCssPixels(geometry.prePaddingLeft, 68);
   expect(geometry.lineCount).toBe(geometry.expectedLineCount);
 });
 

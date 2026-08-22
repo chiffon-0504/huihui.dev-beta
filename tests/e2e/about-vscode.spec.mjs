@@ -76,6 +76,8 @@ test("desktop workspace preserves complete VS Code chrome and panel geometry", a
 
     return {
       component: readRect(".vscode-window"),
+      activity: readRect(".vscode-activity-bar"),
+      activeTab: readRect(".vscode-tabbar .code-left"),
       breadcrumb: readRect(".vscode-breadcrumb"),
       copyButton: readRect(".copy-btn"),
       editor: {
@@ -87,30 +89,51 @@ test("desktop workspace preserves complete VS Code chrome and panel geometry", a
         scrollHeight: editor.scrollHeight,
       },
       explorer: readRect(".vscode-explorer"),
+      explorerFooterCount: document.querySelectorAll(".vscode-explorer-footer-row").length,
+      explorerFooterRow: readRect(".vscode-explorer-footer-row"),
+      explorerHeading: readRect(".vscode-explorer-heading"),
       minimap: readRect(".vscode-minimap"),
+      openedSection: readRect(".vscode-explorer-section .vscode-section-title"),
       position: getComputedStyle(document.querySelector(".vscode-window")).position,
+      repositorySection: readRect(
+        ".vscode-repository-tree > .vscode-section-title",
+      ),
       statusbar: readRect(".vscode-statusbar"),
       tabbar: readRect(".vscode-tabbar"),
       terminal: readRect(".vscode-terminal"),
       titlebar: readRect(".vscode-titlebar"),
-      toolbarItemCount: document.querySelectorAll(".vscode-tab-actions > *").length,
+      titleLayoutCount: document.querySelectorAll(".vscode-title-tools > *").length,
+      visibleToolbarItemCount: Array.from(
+        document.querySelectorAll(".vscode-tab-actions > *"),
+      ).filter((element) => {
+        const rect = element.getBoundingClientRect();
+        return getComputedStyle(element).display !== "none" && rect.width > 1 && rect.height > 1;
+      }).length,
       treeRow: readRect(".vscode-tree-row"),
     };
   });
 
   expect(layout.position).not.toBe("fixed");
   expect(layout.component.bottom).toBeLessThanOrEqual(900);
-  expect(layout.component.height).toBe(680);
-  expect(layout.titlebar.height).toBe(38);
+  expect(layout.component.height).toBe(673);
+  expect(layout.titlebar.height).toBe(34);
+  expect(layout.activity.width).toBe(48);
   expect(layout.explorer.width).toBe(196);
-  expect(layout.treeRow.height).toBe(19);
-  expect(layout.tabbar.height).toBe(36);
-  expect(layout.breadcrumb.height).toBe(29);
-  expect(layout.copyButton).toMatchObject({ height: 26, width: 26 });
-  expect(layout.toolbarItemCount).toBe(6);
-  expect(layout.minimap).toMatchObject({ height: 95, width: 62 });
-  expect(layout.terminal.height).toBeCloseTo(163.6, 1);
-  expect(layout.statusbar.height).toBe(23);
+  expect(layout.explorerHeading.height).toBe(29);
+  expect(layout.openedSection.height).toBe(26);
+  expect(layout.repositorySection.height).toBe(18);
+  expect(layout.treeRow.height).toBe(22);
+  expect(layout.explorerFooterCount).toBe(2);
+  expect(layout.explorerFooterRow.height).toBe(20);
+  expect(layout.tabbar.height).toBe(35);
+  expect(layout.activeTab.width).toBe(140);
+  expect(layout.breadcrumb.height).toBe(24);
+  expect(layout.copyButton).toMatchObject({ height: 0, width: 0 });
+  expect(layout.visibleToolbarItemCount).toBe(5);
+  expect(layout.titleLayoutCount).toBe(5);
+  expect(layout.minimap).toMatchObject({ height: 122, width: 60 });
+  expect(layout.terminal.height).toBe(166);
+  expect(layout.statusbar.height).toBe(20);
   expect(layout.editor.overflowY).toBe("auto");
   expect(layout.editor.overscrollBehaviorY).not.toBe("contain");
   expect(layout.editor.currentLineBackground).not.toBe("rgba(0, 0, 0, 0)");
