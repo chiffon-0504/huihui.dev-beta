@@ -3,6 +3,10 @@ window.HUIHUI_I18N = window.HUIHUI_I18N || {};
 window.HUIHUI_I18N.ja = {
   layout: {
     skipLink: "メインコンテンツへ移動",
+    scrollControls: {
+      top: "ページ上部へ移動",
+      bottom: "ページ下部へ移動"
+    },
     nav: {
       about: "自己紹介",
       works: "作品",

@@ -62,6 +62,34 @@ function getLayoutText(lang) {
   );
 }
 
+function initKeyboardNavigationModality() {
+  if (!document.querySelector(".skip-link")) return;
+
+  const root = document.documentElement;
+  const attribute = "data-keyboard-navigation";
+  const disableKeyboardNavigation = () => root.removeAttribute(attribute);
+
+  document.addEventListener(
+    "keydown",
+    (event) => {
+      if (event.key === "Tab") {
+        root.setAttribute(attribute, "true");
+      }
+    },
+    true,
+  );
+  document.addEventListener("pointerdown", disableKeyboardNavigation, {
+    capture: true,
+    passive: true,
+  });
+  document.addEventListener("touchstart", disableKeyboardNavigation, {
+    capture: true,
+    passive: true,
+  });
+  window.addEventListener("pageshow", disableKeyboardNavigation);
+  disableKeyboardNavigation();
+}
+
 function renderSkipLink() {
   const lang = getCurrentLang();
   const t = getLayoutText(lang);
@@ -80,6 +108,133 @@ function renderSkipLink() {
   skipLink.href = "#main-content";
   skipLink.textContent = t.skipLink;
   document.body.prepend(skipLink);
+}
+
+function renderScrollControls() {
+  const lang = getCurrentLang();
+  const t = getLayoutText(lang);
+  const main = document.querySelector("main.main");
+
+  if (
+    !main ||
+    !t?.scrollControls?.top ||
+    !t?.scrollControls?.bottom ||
+    document.querySelector(".scroll-controls")
+  ) {
+    return;
+  }
+
+  const controls = document.createElement("div");
+  controls.className = "scroll-controls";
+
+  const createButton = (className, label, symbol) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `scroll-controls__button ${className}`;
+    button.setAttribute("aria-label", label);
+    button.textContent = symbol;
+    return button;
+  };
+
+  const topButton = createButton(
+    "scroll-controls__button--top",
+    t.scrollControls.top,
+    "↑",
+  );
+  const bottomButton = createButton(
+    "scroll-controls__button--bottom",
+    t.scrollControls.bottom,
+    "↓",
+  );
+  const reducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)",
+  );
+  const activePointers = new Set();
+  const inactivityDelay = 3000;
+  let hideDeadline = 0;
+  let hideTimerId = null;
+
+  controls.append(topButton, bottomButton);
+  document.body.append(controls);
+
+  const clearHideTimer = () => {
+    if (hideTimerId === null) return;
+
+    clearTimeout(hideTimerId);
+    hideTimerId = null;
+  };
+
+  const shouldStayVisible = () =>
+    controls.contains(document.activeElement) || activePointers.size > 0;
+
+  const hideWhenInactive = () => {
+    hideTimerId = null;
+
+    if (shouldStayVisible()) return;
+
+    const remainingDelay = hideDeadline - Date.now();
+    if (remainingDelay > 0) {
+      hideTimerId = setTimeout(hideWhenInactive, remainingDelay);
+      return;
+    }
+
+    controls.classList.remove("is-visible");
+  };
+
+  const scheduleHide = () => {
+    hideDeadline = Date.now() + inactivityDelay;
+
+    if (shouldStayVisible()) {
+      clearHideTimer();
+      return;
+    }
+
+    if (hideTimerId === null) {
+      hideTimerId = setTimeout(hideWhenInactive, inactivityDelay);
+    }
+  };
+
+  const showTemporarily = () => {
+    controls.classList.add("is-visible");
+    scheduleHide();
+  };
+
+  const scrollTo = (position) => {
+    const scrollOwner = document.scrollingElement;
+    if (!scrollOwner) return;
+
+    const top =
+      position === "top"
+        ? 0
+        : Math.max(0, scrollOwner.scrollHeight - scrollOwner.clientHeight);
+
+    window.scrollTo({
+      top,
+      behavior: reducedMotion.matches ? "auto" : "smooth",
+    });
+  };
+
+  window.addEventListener("scroll", showTemporarily, { passive: true });
+  controls.addEventListener("focusin", () => {
+    controls.classList.add("is-visible");
+    clearHideTimer();
+  });
+  controls.addEventListener("focusout", scheduleHide);
+  controls.addEventListener("pointerdown", (event) => {
+    activePointers.add(event.pointerId);
+    controls.classList.add("is-visible");
+    clearHideTimer();
+  });
+
+  const endPointerInteraction = (event) => {
+    if (!activePointers.delete(event.pointerId)) return;
+    scheduleHide();
+  };
+
+  window.addEventListener("pointerup", endPointerInteraction);
+  window.addEventListener("pointercancel", endPointerInteraction);
+  topButton.addEventListener("click", () => scrollTo("top"));
+  bottomButton.addEventListener("click", () => scrollTo("bottom"));
 }
 
 function renderNavLink({
@@ -200,6 +355,8 @@ function setActiveSidebarLink() {
 
 document.addEventListener("DOMContentLoaded", () => {
   renderSkipLink();
+  initKeyboardNavigationModality();
+  renderScrollControls();
   renderSidebar();
   setActiveSidebarLink();
 });

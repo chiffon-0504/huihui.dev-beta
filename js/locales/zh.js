@@ -3,6 +3,10 @@ window.HUIHUI_I18N = window.HUIHUI_I18N || {};
 window.HUIHUI_I18N.zh = {
   layout: {
     skipLink: "跳至主要內容",
+    scrollControls: {
+      top: "回到頂端",
+      bottom: "前往底部"
+    },
     nav: {
       about: "關於我",
       works: "作品",

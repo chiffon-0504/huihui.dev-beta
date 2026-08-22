@@ -3,6 +3,10 @@ window.HUIHUI_I18N = window.HUIHUI_I18N || {};
 window.HUIHUI_I18N.en = {
   layout: {
     skipLink: "Skip to main content",
+    scrollControls: {
+      top: "Scroll to top",
+      bottom: "Scroll to bottom"
+    },
     nav: {
       about: "About",
       works: "Works",
