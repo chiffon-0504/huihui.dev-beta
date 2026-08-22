@@ -29,11 +29,31 @@ describe("About VS Code workspace contracts", () => {
     expect(codeBlocksSource).toContain('if (pre.closest(".code-block")) return;');
   });
 
-  test("uses native scroll chaining without wheel interception or forced jumps", () => {
-    expect(styles).not.toMatch(/overscroll-behavior:\s*contain/);
-    expect(source).not.toMatch(/addEventListener\(\s*["']wheel/);
-    expect(source).not.toContain("preventDefault()");
+  test("uses an explicit reversible global scroll-gate state machine", () => {
+    for (const state of [
+      "BEFORE_GATE",
+      "LOCKED_EDITOR_DOWN",
+      "AFTER_GATE",
+      "LOCKED_EDITOR_UP",
+    ]) {
+      expect(source).toContain(state);
+    }
+
+    expect(source).toContain('window.addEventListener("wheel", handleWheel');
+    expect(source).toContain('window.addEventListener("keydown", handleKeydown');
+    expect(source).toContain('window.addEventListener("touchmove", handleTouchMove');
+    expect(source).toContain("passive: false");
+    expect(source).toContain("getMaximumEditorScroll() - editorScroll.scrollTop");
+    expect(source).toContain("ABOUT_VSCODE_SCROLL_GATE_TOLERANCE = 1");
+    expect(source).toContain("isInteractiveKeyboardTarget(event.target)");
+    expect(source).toContain('event.key === "PageDown"');
+    expect(source).toContain('event.key === "PageUp"');
+    expect(source).toContain('event.key === "ArrowDown"');
+    expect(source).toContain('event.key === "ArrowUp"');
+    expect(source).toContain("event.shiftKey ? -pageDelta : pageDelta");
     expect(source).not.toContain("scrollIntoView");
+    expect(source).not.toMatch(/setTimeout|setInterval|line\s*64/i);
+    expect(styles).not.toMatch(/overflow:\s*hidden[^}]*html|html[^}]*overflow:\s*hidden/is);
   });
 
   test("preserves the established profile-specific color palette", () => {

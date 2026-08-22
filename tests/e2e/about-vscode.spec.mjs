@@ -12,6 +12,13 @@ const CUSTOM_PROFILE_COLORS = {
   "kw-togenashi-tog": "rgb(217, 14, 44)",
 };
 
+const GATE_STATES = {
+  before: "BEFORE_GATE",
+  lockedDown: "LOCKED_EDITOR_DOWN",
+  after: "AFTER_GATE",
+  lockedUp: "LOCKED_EDITOR_UP",
+};
+
 async function loadAbout(page, viewport = { width: 1440, height: 900 }) {
   await page.setViewportSize(viewport);
   await page.route(STEAM_API_URL, (route) =>
@@ -25,6 +32,7 @@ async function loadAbout(page, viewport = { width: 1440, height: 900 }) {
 
   expect(response?.status()).toBe(200);
   await expect(page.locator(".vscode-window[data-vscode-ready='true']")).toHaveCount(1);
+  await expect(page.locator(".vscode-window[data-scroll-gate-ready='true']")).toHaveCount(1);
   await expect(page.locator(".vscode-editor-scroll > .custom-line-numbers")).toBeVisible();
 }
 
@@ -45,6 +53,49 @@ async function getPanelPositions(page) {
       }),
     );
   });
+}
+
+async function expectDocumentAt(page, expectedY) {
+  await expect
+    .poll(() => page.evaluate((expected) => Math.abs(window.scrollY - expected), expectedY))
+    .toBeLessThanOrEqual(1);
+  expect(
+    await page.evaluate(() => ({
+      bodyScrollTop: document.body.scrollTop,
+      documentMatchesWindow:
+        document.documentElement.scrollTop === window.scrollY,
+      scrollingElement: document.scrollingElement?.tagName,
+    })),
+  ).toEqual({
+    bodyScrollTop: 0,
+    documentMatchesWindow: true,
+    scrollingElement: "HTML",
+  });
+}
+
+async function activateDownwardGate(page) {
+  await page.mouse.move(1300, 450);
+  await page.mouse.wheel(0, 200);
+  await expect(page.locator(".vscode-window")).toHaveAttribute(
+    "data-scroll-gate-state",
+    GATE_STATES.lockedDown,
+  );
+}
+
+async function dispatchKeyboardInput(locator, key, shiftKey = false) {
+  return locator.evaluate(
+    (element, input) =>
+      !element.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          bubbles: true,
+          cancelable: true,
+          code: input.key,
+          key: input.key,
+          shiftKey: input.shiftKey,
+        }),
+      ),
+    { key, shiftKey },
+  );
 }
 
 test("desktop workspace preserves complete VS Code chrome and panel geometry", async ({
@@ -175,54 +226,91 @@ test("profile-specific custom text colors remain unchanged", async ({ page }) =>
   expect(renderedColors).toEqual(CUSTOM_PROFILE_COLORS);
 });
 
-test("editor wheel scrolling stays local and keeps fixed panels still while range remains", async ({
+test("global wheel gate keeps the document and VS Code panels fixed while routing input", async ({
   page,
 }) => {
   await loadAbout(page);
   const editor = page.locator(".vscode-editor-scroll");
+  const gate = page.locator(".vscode-window");
+
+  await page.mouse.move(1300, 450);
+  await page.mouse.wheel(0, 20);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  await expect(gate).toHaveAttribute("data-scroll-gate-state", GATE_STATES.before);
+  expect(await editor.evaluate((element) => element.scrollTop)).toBe(0);
+
+  await page.mouse.wheel(0, 180);
+  await expect(gate).toHaveAttribute(
+    "data-scroll-gate-state",
+    GATE_STATES.lockedDown,
+  );
+  const lockedDocumentY = await page.evaluate(() => window.scrollY);
+  const panelPositions = await getPanelPositions(page);
+  const editorStart = await editor.evaluate((element) => element.scrollTop);
+
+  for (const selector of [
+    ".vscode-explorer",
+    ".vscode-terminal",
+    ".vscode-statusbar",
+    ".page-header",
+  ]) {
+    const box = await page.locator(selector).boundingBox();
+    expect(box).not.toBeNull();
+    await page.mouse.move(
+      Math.max(8, Math.min(1432, box.x + box.width / 2)),
+      Math.max(8, Math.min(892, box.y + box.height / 2)),
+    );
+    await page.mouse.wheel(0, 70);
+  }
+
+  await expect
+    .poll(() => editor.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(editorStart);
+  await expectDocumentAt(page, lockedDocumentY);
+  expect(await getPanelPositions(page)).toEqual(panelPositions);
+
+  const pre = page.locator(".vscode-editor-scroll pre[class*='language-']");
   const editorBox = await editor.boundingBox();
   expect(editorBox).not.toBeNull();
-
-  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
-  const initialWindowY = await page.evaluate(() => window.scrollY);
-  const panelPositions = await getPanelPositions(page);
-
+  const horizontalState = await pre.evaluate((element) => ({
+    maximumScrollLeft: Math.max(0, element.scrollWidth - element.clientWidth),
+    scrollLeft: element.scrollLeft,
+  }));
+  const expectedHorizontalScroll = Math.min(
+    horizontalState.scrollLeft + 80,
+    horizontalState.maximumScrollLeft,
+  );
   await page.mouse.move(
     editorBox.x + editorBox.width / 2,
     editorBox.y + editorBox.height / 2,
   );
-  await page.mouse.wheel(0, 420);
-  await expect.poll(() => editor.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
-  expect(await page.evaluate(() => window.scrollY)).toBe(initialWindowY);
-  expect(await getPanelPositions(page)).toEqual(panelPositions);
+  await page.mouse.wheel(80, 20);
+  await expect
+    .poll(() =>
+      pre.evaluate(
+        (element, expected) => Math.abs(element.scrollLeft - expected),
+        expectedHorizontalScroll,
+      ),
+    )
+    .toBeLessThanOrEqual(1);
+  await expectDocumentAt(page, lockedDocumentY);
+  await expect(page.locator(".vscode-terminal")).toBeVisible();
+  await expect(page.locator(".vscode-statusbar")).toBeVisible();
 });
 
-test("editor hands downward wheel scrolling to the document at its bottom", async ({
+test("wheel gate requires separate boundary inputs and reverses symmetrically", async ({
   page,
 }) => {
   await loadAbout(page);
   const editor = page.locator(".vscode-editor-scroll");
+  const gate = page.locator(".vscode-window");
+  await activateDownwardGate(page);
 
+  const lockedDocumentY = await page.evaluate(() => window.scrollY);
   await editor.evaluate((element) => {
-    element.scrollTop = element.scrollHeight;
+    element.scrollTop = element.scrollHeight - element.clientHeight - 80;
   });
-  const initialWindowY = await page.evaluate(() => window.scrollY);
-  expect(initialWindowY).toBe(0);
-  const bottomState = await editor.evaluate((element) => ({
-    maxScrollTop: element.scrollHeight - element.clientHeight,
-    scrollTop: element.scrollTop,
-  }));
-  expect(bottomState.maxScrollTop - bottomState.scrollTop).toBeLessThanOrEqual(1);
-
-  const editorBox = await editor.boundingBox();
-  expect(editorBox).not.toBeNull();
-  await page.mouse.move(
-    editorBox.x + editorBox.width / 2,
-    editorBox.y + editorBox.height / 2,
-  );
-  for (let index = 0; index < 3; index += 1) {
-    await page.mouse.wheel(0, 520);
-  }
+  await page.mouse.wheel(0, 160);
   await expect
     .poll(() =>
       editor.evaluate(
@@ -230,38 +318,119 @@ test("editor hands downward wheel scrolling to the document at its bottom", asyn
       ),
     )
     .toBeLessThanOrEqual(1);
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(initialWindowY);
-  await expect(page.getByRole("heading", { name: "Interests" })).toBeVisible();
+  await expect(gate).toHaveAttribute(
+    "data-scroll-gate-state",
+    GATE_STATES.lockedDown,
+  );
+  await expectDocumentAt(page, lockedDocumentY);
+
+  await page.mouse.wheel(0, 140);
+  await expect(gate).toHaveAttribute("data-scroll-gate-state", GATE_STATES.after);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(lockedDocumentY);
+
+  const belowGateY = await page.evaluate(() => window.scrollY);
+  const returnDelta = belowGateY - lockedDocumentY + 100;
+  await page.mouse.wheel(0, -returnDelta);
+  await expect(gate).toHaveAttribute(
+    "data-scroll-gate-state",
+    GATE_STATES.lockedUp,
+  );
+  await expectDocumentAt(page, lockedDocumentY);
+  expect(await editor.evaluate((element) => element.scrollTop)).toBeLessThan(
+    await editor.evaluate((element) => element.scrollHeight - element.clientHeight),
+  );
+
+  await editor.evaluate((element) => {
+    element.scrollTop = 60;
+  });
+  await page.mouse.wheel(0, -120);
+  await expect.poll(() => editor.evaluate((element) => element.scrollTop)).toBe(0);
+  await expect(gate).toHaveAttribute(
+    "data-scroll-gate-state",
+    GATE_STATES.lockedUp,
+  );
+  await expectDocumentAt(page, lockedDocumentY);
+
+  await page.mouse.wheel(0, -120);
+  await expect(gate).toHaveAttribute("data-scroll-gate-state", GATE_STATES.before);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(lockedDocumentY);
 });
 
-test("editor hands upward wheel scrolling to the document at its top", async ({
+test("keyboard traverses the gate without trapping Tab or interactive controls", async ({
   page,
 }) => {
   await loadAbout(page);
   const editor = page.locator(".vscode-editor-scroll");
+  const gate = page.locator(".vscode-window");
+  const body = page.locator("body");
 
-  const topBoundaryWindowY = await page.evaluate(() => {
-    const editorElement = document.querySelector(".vscode-editor-scroll");
-    const maxWindowY = document.documentElement.scrollHeight - window.innerHeight;
-
-    editorElement.scrollTop = 0;
-    window.scrollTo({ top: Math.min(240, maxWindowY), behavior: "instant" });
-    return window.scrollY;
-  });
-  expect(topBoundaryWindowY).toBeGreaterThan(0);
-  expect(await editor.evaluate((element) => element.scrollTop)).toBe(0);
-
-  const topEditorBox = await editor.boundingBox();
-  expect(topEditorBox).not.toBeNull();
-  await page.mouse.move(
-    topEditorBox.x + topEditorBox.width / 2,
-    Math.max(8, topEditorBox.y + topEditorBox.height / 2),
+  await body.press("PageDown");
+  await expect(gate).toHaveAttribute(
+    "data-scroll-gate-state",
+    GATE_STATES.lockedDown,
   );
-  await page.mouse.wheel(0, -520);
+  const lockedDocumentY = await page.evaluate(() => window.scrollY);
+  const editorStart = await editor.evaluate((element) => element.scrollTop);
+
+  await body.press("PageDown");
   await expect
-    .poll(() => page.evaluate(() => window.scrollY))
-    .toBeLessThan(topBoundaryWindowY);
-  expect(await editor.evaluate((element) => element.scrollTop)).toBe(0);
+    .poll(() => editor.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(editorStart);
+  await expectDocumentAt(page, lockedDocumentY);
+
+  await editor.focus();
+  await page.keyboard.press("Tab");
+  expect(await editor.evaluate((element) => document.activeElement === element)).toBe(false);
+  await expect(gate).toHaveAttribute("data-scroll-gate-locked", "true");
+  await expectDocumentAt(page, lockedDocumentY);
+
+  await page.locator(".sidebar nav a").first().focus();
+  const beforeInteractiveKey = await editor.evaluate((element) => element.scrollTop);
+  await page.keyboard.press("ArrowDown");
+  expect(await editor.evaluate((element) => element.scrollTop)).toBe(beforeInteractiveKey);
+  await expectDocumentAt(page, lockedDocumentY);
+
+  await editor.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  await editor.press("PageDown");
+  await expect(gate).toHaveAttribute("data-scroll-gate-state", GATE_STATES.after);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(lockedDocumentY);
+
+  const pageUpDelta = await editor.evaluate((element) => element.clientHeight * 0.9);
+  const pageUpCount = Math.ceil(
+    ((await page.evaluate(() => window.scrollY)) - lockedDocumentY) / pageUpDelta,
+  );
+  for (let input = 0; input < pageUpCount; input += 1) {
+    expect(await dispatchKeyboardInput(editor, "PageUp")).toBe(true);
+  }
+  await expect(gate).toHaveAttribute(
+    "data-scroll-gate-state",
+    GATE_STATES.lockedUp,
+  );
+  await editor.evaluate((element) => {
+    element.scrollTop = 0;
+  });
+  expect(await dispatchKeyboardInput(editor, "PageUp")).toBe(true);
+  await expect(gate).toHaveAttribute("data-scroll-gate-state", GATE_STATES.before);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(lockedDocumentY);
+});
+
+test("About content below the gate remains reachable after release", async ({ page }) => {
+  await loadAbout(page);
+  const editor = page.locator(".vscode-editor-scroll");
+  const gate = page.locator(".vscode-window");
+  await activateDownwardGate(page);
+
+  await editor.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  await page.mouse.wheel(0, 140);
+  await expect(gate).toHaveAttribute("data-scroll-gate-state", GATE_STATES.after);
+
+  await page.mouse.move(350, 450);
+  await page.mouse.wheel(0, 1200);
+  await expect(page.getByRole("heading", { name: "Interests" })).toBeVisible();
 });
 
 test("mobile workspace simplifies chrome without document overflow", async ({ page }) => {
@@ -271,6 +440,36 @@ test("mobile workspace simplifies chrome without document overflow", async ({ pa
   await expect(page.locator(".vscode-explorer")).toBeHidden();
   await expect(page.locator(".vscode-terminal")).toBeVisible();
   await expect(page.locator(".vscode-statusbar")).toBeVisible();
+
+  await page.mouse.move(360, 420);
+  await page.mouse.wheel(0, 180);
+  await expect(page.locator(".vscode-window")).toHaveAttribute(
+    "data-scroll-gate-state",
+    GATE_STATES.lockedDown,
+  );
+  const lockedDocumentY = await page.evaluate(() => window.scrollY);
+  const editorBeforeTouch = await page
+    .locator(".vscode-editor-scroll")
+    .evaluate((element) => element.scrollTop);
+  const touchWasPrevented = await page.locator("body").evaluate((body) => {
+    const createTouchEvent = (type, clientY) => {
+      const event = new Event(type, { bubbles: true, cancelable: true });
+      Object.defineProperty(event, "touches", {
+        value: [{ clientX: 195, clientY }],
+      });
+      return event;
+    };
+
+    body.dispatchEvent(createTouchEvent("touchstart", 620));
+    return !body.dispatchEvent(createTouchEvent("touchmove", 540));
+  });
+  expect(touchWasPrevented).toBe(true);
+  await expect
+    .poll(() =>
+      page.locator(".vscode-editor-scroll").evaluate((element) => element.scrollTop),
+    )
+    .toBeGreaterThan(editorBeforeTouch);
+  await expectDocumentAt(page, lockedDocumentY);
 
   const geometry = await page.evaluate(() => {
     const editor = document.querySelector(".vscode-editor-scroll");
