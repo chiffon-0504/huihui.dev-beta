@@ -36,6 +36,7 @@ const routeCases = [
       "/js/lightbox.js",
       "/js/profile-code.js",
       "/js/about-page.js",
+      "/js/about-vscode.js",
       "/js/about-code-line-numbers.js",
     ]),
   },

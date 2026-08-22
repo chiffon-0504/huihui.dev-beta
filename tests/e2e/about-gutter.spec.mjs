@@ -39,7 +39,9 @@ async function getGutterGeometry(page) {
   return page.locator(".code-block.code-block-with-gutter").evaluate((wrapper) => {
     const pre = wrapper.querySelector('pre[class*="language-"]');
     const code = pre?.querySelector('code[class*="language-"]');
-    const gutter = wrapper.querySelector(":scope > .custom-line-numbers");
+    const gutter = wrapper.querySelector(
+      ".vscode-editor-scroll > .custom-line-numbers",
+    );
     const preStyle = getComputedStyle(pre);
     const gutterStyle = getComputedStyle(gutter);
     const wrapperStyle = getComputedStyle(wrapper);
@@ -71,6 +73,7 @@ async function getGutterGeometry(page) {
 }
 
 test("desktop About code gutter preserves its geometry and line alignment", async ({
+  browserName,
   page,
 }) => {
   await loadAbout(page, 1440, 900);
@@ -78,19 +81,23 @@ test("desktop About code gutter preserves its geometry and line alignment", asyn
   const geometry = await getGutterGeometry(page);
   expect(geometry).toMatchObject({
     codeStartsAfterGutter: true,
-    gutterLeft: 21.6,
-    gutterPaddingRight: 13.6,
-    gutterTop: 100,
-    gutterWidth: 40,
+    gutterLeft: 8,
+    gutterPaddingRight: 10.4,
+    gutterTop: 13.6,
     lineHeightsMatch: true,
     overflowX: "auto",
     wrapperPosition: "relative",
   });
-  expectCssPixels(geometry.prePaddingLeft, 70.4);
+  expectCssPixels(
+    geometry.gutterWidth,
+    browserName === "firefox" ? 41.6 : 41.5938,
+  );
+  expectCssPixels(geometry.prePaddingLeft, 64);
   expect(geometry.lineCount).toBe(geometry.expectedLineCount);
 });
 
 test("mobile About code gutter preserves its compact geometry and line alignment", async ({
+  browserName,
   page,
 }) => {
   await loadAbout(page, 390, 844);
@@ -98,14 +105,17 @@ test("mobile About code gutter preserves its compact geometry and line alignment
   const geometry = await getGutterGeometry(page);
   expect(geometry).toMatchObject({
     codeStartsAfterGutter: true,
-    gutterLeft: 12.8,
+    gutterLeft: 5.6,
     gutterPaddingRight: 8,
-    gutterWidth: 28,
     lineHeightsMatch: true,
     overflowX: "auto",
     wrapperPosition: "relative",
   });
-  expectCssPixels(geometry.gutterTop, 80.8);
-  expectCssPixels(geometry.prePaddingLeft, 50.4);
+  expectCssPixels(
+    geometry.gutterWidth,
+    browserName === "firefox" ? 37.6 : 37.5938,
+  );
+  expectCssPixels(geometry.gutterTop, 12);
+  expectCssPixels(geometry.prePaddingLeft, 53.6);
   expect(geometry.lineCount).toBe(geometry.expectedLineCount);
 });

@@ -486,7 +486,7 @@ function renderAboutPage() {
 
     <div class="page-body">
 
-      <pre class="code-auto"><code id="profileCode" class="language-python"></code></pre>
+      <pre class="code-auto" data-code-presentation="vscode"><code id="profileCode" class="language-python"></code></pre>
 
       <section>
         <h2 data-i18n="about.interests"></h2>

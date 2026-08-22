@@ -286,7 +286,7 @@ function initCodeBlocks() {
   const blocks = document.querySelectorAll("pre.code-auto");
 
   blocks.forEach((pre) => {
-    if (pre.parentElement.classList.contains("code-block")) return;
+    if (pre.closest(".code-block")) return;
 
     const code = pre.querySelector("code");
     if (!code) return;
