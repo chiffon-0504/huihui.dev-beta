@@ -90,12 +90,19 @@ a {
   border: 2px solid #009aff;
   border-radius: 10px;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
-  transform: translate(-50%, calc(-100% - 24px));
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(
+    -50%,
+    calc(-100% - 24px - env(safe-area-inset-top, 0px))
+  );
 }
 
-.skip-link:focus-visible {
+html[data-keyboard-navigation="true"] .skip-link:focus {
   outline: 3px solid #fff;
   outline-offset: 3px;
+  opacity: 1;
+  pointer-events: auto;
   transform: translate(-50%, 0);
 }
 

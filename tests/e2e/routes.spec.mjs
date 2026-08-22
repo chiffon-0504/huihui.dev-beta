@@ -134,7 +134,13 @@ for (const route of primaryRoutes) {
 
     if (browserName === "webkit") {
       // Bundled WebKit excludes ordinary anchors from its plain-Tab sequence.
-      // Explicit focus verifies focusability; it does not emulate Safari Tab navigation.
+      // Signal keyboard modality before explicit focus; this does not emulate
+      // Safari's anchor navigation but preserves the visibility contract.
+      await page.evaluate(() =>
+        document.dispatchEvent(
+          new KeyboardEvent("keydown", { bubbles: true, key: "Tab" }),
+        ),
+      );
       await skipLink.focus();
     } else {
       // Chromium and Firefox retain native plain-Tab sequential navigation.

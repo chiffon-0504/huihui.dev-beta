@@ -62,6 +62,34 @@ function getLayoutText(lang) {
   );
 }
 
+function initKeyboardNavigationModality() {
+  if (!document.querySelector(".skip-link")) return;
+
+  const root = document.documentElement;
+  const attribute = "data-keyboard-navigation";
+  const disableKeyboardNavigation = () => root.removeAttribute(attribute);
+
+  document.addEventListener(
+    "keydown",
+    (event) => {
+      if (event.key === "Tab") {
+        root.setAttribute(attribute, "true");
+      }
+    },
+    true,
+  );
+  document.addEventListener("pointerdown", disableKeyboardNavigation, {
+    capture: true,
+    passive: true,
+  });
+  document.addEventListener("touchstart", disableKeyboardNavigation, {
+    capture: true,
+    passive: true,
+  });
+  window.addEventListener("pageshow", disableKeyboardNavigation);
+  disableKeyboardNavigation();
+}
+
 function renderSkipLink() {
   const lang = getCurrentLang();
   const t = getLayoutText(lang);
@@ -327,6 +355,7 @@ function setActiveSidebarLink() {
 
 document.addEventListener("DOMContentLoaded", () => {
   renderSkipLink();
+  initKeyboardNavigationModality();
   renderScrollControls();
   renderSidebar();
   setActiveSidebarLink();
