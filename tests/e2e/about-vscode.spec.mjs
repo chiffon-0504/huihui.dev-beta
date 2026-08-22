@@ -73,6 +73,9 @@ test("desktop workspace preserves complete VS Code chrome and panel geometry", a
     };
     const editor = document.querySelector(".vscode-editor-scroll");
     const pre = editor.querySelector('pre[class*="language-"]');
+    const explorer = document.querySelector(".vscode-explorer");
+    const activity = document.querySelector(".vscode-activity-bar");
+    const component = document.querySelector(".vscode-window");
 
     return {
       component: readRect(".vscode-window"),
@@ -88,11 +91,17 @@ test("desktop workspace preserves complete VS Code chrome and panel geometry", a
         overscrollBehaviorY: getComputedStyle(editor).overscrollBehaviorY,
         scrollHeight: editor.scrollHeight,
       },
-      explorer: readRect(".vscode-explorer"),
+      explorer: {
+        ...readRect(".vscode-explorer"),
+        backgroundColor: getComputedStyle(explorer).backgroundColor,
+      },
+      activityBackgroundColor: getComputedStyle(activity).backgroundColor,
+      componentBackdropFilter: getComputedStyle(component).backdropFilter,
+      componentBeforeContent: getComputedStyle(component, "::before").content,
       explorerFooterCount: document.querySelectorAll(".vscode-explorer-footer-row").length,
       explorerFooterRow: readRect(".vscode-explorer-footer-row"),
       explorerHeading: readRect(".vscode-explorer-heading"),
-      minimap: readRect(".vscode-minimap"),
+      minimapCount: document.querySelectorAll(".vscode-minimap").length,
       openedSection: readRect(".vscode-explorer-section .vscode-section-title"),
       position: getComputedStyle(document.querySelector(".vscode-window")).position,
       repositorySection: readRect(
@@ -119,6 +128,10 @@ test("desktop workspace preserves complete VS Code chrome and panel geometry", a
   expect(layout.titlebar.height).toBe(34);
   expect(layout.activity.width).toBe(48);
   expect(layout.explorer.width).toBe(196);
+  expect(layout.explorer.backgroundColor).toBe("rgb(21, 21, 21)");
+  expect(layout.activityBackgroundColor).toBe("rgb(24, 24, 24)");
+  expect(layout.componentBackdropFilter).toBe("none");
+  expect(layout.componentBeforeContent).toBe("none");
   expect(layout.explorerHeading.height).toBe(29);
   expect(layout.openedSection.height).toBe(26);
   expect(layout.repositorySection.height).toBe(18);
@@ -131,7 +144,7 @@ test("desktop workspace preserves complete VS Code chrome and panel geometry", a
   expect(layout.copyButton).toMatchObject({ height: 0, width: 0 });
   expect(layout.visibleToolbarItemCount).toBe(5);
   expect(layout.titleLayoutCount).toBe(5);
-  expect(layout.minimap).toMatchObject({ height: 122, width: 60 });
+  expect(layout.minimapCount).toBe(0);
   expect(layout.terminal.height).toBe(166);
   expect(layout.statusbar.height).toBe(20);
   expect(layout.editor.overflowY).toBe("auto");

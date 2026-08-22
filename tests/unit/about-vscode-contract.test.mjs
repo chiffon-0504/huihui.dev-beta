@@ -72,4 +72,17 @@ describe("About VS Code workspace contracts", () => {
     expect(source).not.toMatch(/<canvas\b|background-image|<img\b/i);
     expect(styles).not.toMatch(/position:\s*fixed/);
   });
+
+  test("uses solid dark left panes without an editor minimap", () => {
+    expect(styles).toMatch(
+      /\.about-page \.vscode-window\.code-block\s*\{[^}]*backdrop-filter:\s*none;/s,
+    );
+    expect(styles).toMatch(
+      /\.about-page \.vscode-window\.code-block::before\s*\{[^}]*content:\s*none\s*!important;/s,
+    );
+    expect(styles).toMatch(/\.vscode-explorer\s*\{[^}]*background:\s*#151515;/s);
+    expect(source).not.toContain("renderAboutVscodeMinimap");
+    expect(source).not.toContain("vscode-minimap");
+    expect(styles).not.toContain(".vscode-minimap");
+  });
 });

@@ -229,23 +229,6 @@ function renderAboutVscodeStatusbar() {
   `;
 }
 
-function renderAboutVscodeMinimap() {
-  const widths = [
-    68, 42, 76, 55, 84, 34, 72, 61, 48, 78, 52, 88, 39, 65, 74, 44,
-    82, 58, 71, 46, 86, 63, 37, 79, 53, 69, 41, 83, 57, 75,
-  ];
-  return `
-    <div class="vscode-minimap" aria-hidden="true">
-      ${widths
-        .map(
-          (width, index) =>
-            `<span style="--minimap-width:${width}%;--minimap-indent:${(index % 4) * 7}%"></span>`,
-        )
-        .join("")}
-    </div>
-  `;
-}
-
 function initAboutVscodeWorkspace() {
   const wrapper = document.querySelector(".about-page .code-block");
   const pre = wrapper?.querySelector(":scope > pre");
@@ -311,7 +294,6 @@ function initAboutVscodeWorkspace() {
   const editorViewport = document.createElement("div");
   editorViewport.className = "vscode-editor-viewport";
   editorViewport.append(editorScroll);
-  editorViewport.insertAdjacentHTML("beforeend", renderAboutVscodeMinimap());
 
   const breadcrumb = document.createElement("div");
   breadcrumb.className = "vscode-breadcrumb";
