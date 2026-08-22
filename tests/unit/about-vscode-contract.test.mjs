@@ -22,16 +22,16 @@ describe("About VS Code workspace contracts", () => {
     expect(source).toContain("editorScroll.tabIndex = 0");
     expect(source).toContain("editorScroll.append(pre)");
     expect(styles).toMatch(
-      /\.vscode-editor-scroll\s*\{[^}]*overflow-y:\s*auto;[^}]*overscroll-behavior:\s*contain;/s,
+      /\.vscode-editor-scroll\s*\{[^}]*overflow-y:\s*auto;/s,
     );
     expect(codeBlocksSource).toContain('if (pre.closest(".code-block")) return;');
   });
 
-  test("limits the unsupported-browser wheel fallback to editor boundaries", () => {
-    expect(source).toContain('CSS.supports("overscroll-behavior", "contain")');
-    expect(source).toContain('editorScroll.addEventListener(\n    "wheel"');
-    expect(source).toContain("if (reachedTop || reachedBottom) event.preventDefault()");
-    expect(source).not.toMatch(/(?:window|document)\.addEventListener\(\s*["']wheel/);
+  test("uses native scroll chaining without wheel interception or forced jumps", () => {
+    expect(styles).not.toMatch(/overscroll-behavior:\s*contain/);
+    expect(source).not.toMatch(/addEventListener\(\s*["']wheel/);
+    expect(source).not.toContain("preventDefault()");
+    expect(source).not.toContain("scrollIntoView");
   });
 
   test("uses DOM panels rather than image, canvas, or fixed-window simulation", () => {

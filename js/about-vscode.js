@@ -200,32 +200,6 @@ function renderAboutVscodeMinimap() {
   `;
 }
 
-function containAboutVscodeEditorWheel(editorScroll) {
-  const supportsNativeContainment =
-    typeof CSS !== "undefined" &&
-    typeof CSS.supports === "function" &&
-    CSS.supports("overscroll-behavior", "contain");
-
-  editorScroll.dataset.scrollContainment = supportsNativeContainment
-    ? "native"
-    : "wheel-fallback";
-
-  if (supportsNativeContainment) return;
-
-  editorScroll.addEventListener(
-    "wheel",
-    (event) => {
-      const maxScrollTop = editorScroll.scrollHeight - editorScroll.clientHeight;
-      const reachedTop = event.deltaY < 0 && editorScroll.scrollTop <= 0;
-      const reachedBottom =
-        event.deltaY > 0 && editorScroll.scrollTop >= maxScrollTop - 1;
-
-      if (reachedTop || reachedBottom) event.preventDefault();
-    },
-    { passive: false },
-  );
-}
-
 function initAboutVscodeWorkspace() {
   const wrapper = document.querySelector(".about-page .code-block");
   const pre = wrapper?.querySelector(":scope > pre");
@@ -273,7 +247,6 @@ function initAboutVscodeWorkspace() {
   editorScroll.setAttribute("aria-label", labels.editor);
   editorScroll.tabIndex = 0;
   editorScroll.append(pre);
-  containAboutVscodeEditorWheel(editorScroll);
 
   const editorViewport = document.createElement("div");
   editorViewport.className = "vscode-editor-viewport";

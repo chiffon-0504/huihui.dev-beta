@@ -66,7 +66,6 @@ test("desktop workspace preserves complete VS Code chrome and panel geometry", a
       editor: {
         ...readRect(".vscode-editor-scroll"),
         clientHeight: editor.clientHeight,
-        containment: editor.dataset.scrollContainment,
         overflowY: getComputedStyle(editor).overflowY,
         overscrollBehaviorY: getComputedStyle(editor).overscrollBehaviorY,
         scrollHeight: editor.scrollHeight,
@@ -80,10 +79,7 @@ test("desktop workspace preserves complete VS Code chrome and panel geometry", a
   expect(layout.position).not.toBe("fixed");
   expect(layout.component.bottom).toBeLessThanOrEqual(900);
   expect(layout.editor.overflowY).toBe("auto");
-  expect(["native", "wheel-fallback"]).toContain(layout.editor.containment);
-  if (layout.editor.containment === "native") {
-    expect(layout.editor.overscrollBehaviorY).toBe("contain");
-  }
+  expect(layout.editor.overscrollBehaviorY).not.toBe("contain");
   expect(layout.editor.scrollHeight).toBeGreaterThan(layout.editor.clientHeight);
   expect(layout.terminal.top).toBeGreaterThanOrEqual(layout.component.top);
   expect(layout.terminal.bottom).toBeLessThanOrEqual(layout.statusbar.top + 1);
@@ -92,7 +88,7 @@ test("desktop workspace preserves complete VS Code chrome and panel geometry", a
   expect(layout.terminal.right).toBeLessThanOrEqual(layout.component.right + 1);
 });
 
-test("editor wheel scrolling is independent, contained, and keeps fixed panels still", async ({
+test("editor wheel scrolling stays local and keeps fixed panels still while range remains", async ({
   page,
 }) => {
   await loadAbout(page);
@@ -112,30 +108,67 @@ test("editor wheel scrolling is independent, contained, and keeps fixed panels s
   await expect.poll(() => editor.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
   expect(await page.evaluate(() => window.scrollY)).toBe(initialWindowY);
   expect(await getPanelPositions(page)).toEqual(panelPositions);
+});
+
+test("editor hands downward wheel scrolling to the document at its bottom", async ({
+  page,
+}) => {
+  await loadAbout(page);
+  const editor = page.locator(".vscode-editor-scroll");
 
   await editor.evaluate((element) => {
     element.scrollTop = element.scrollHeight;
   });
+  const initialWindowY = await page.evaluate(() => window.scrollY);
+  expect(initialWindowY).toBe(0);
   const bottomState = await editor.evaluate((element) => ({
     maxScrollTop: element.scrollHeight - element.clientHeight,
     scrollTop: element.scrollTop,
   }));
   expect(bottomState.scrollTop).toBe(bottomState.maxScrollTop);
 
+  const editorBox = await editor.boundingBox();
+  expect(editorBox).not.toBeNull();
+  await page.mouse.move(
+    editorBox.x + editorBox.width / 2,
+    editorBox.y + editorBox.height / 2,
+  );
   await page.mouse.wheel(0, 520);
   await expect
     .poll(() => editor.evaluate((element) => element.scrollTop))
     .toBe(bottomState.maxScrollTop);
-  expect(await page.evaluate(() => window.scrollY)).toBe(initialWindowY);
-
-  const titlebar = await page.locator(".vscode-titlebar").boundingBox();
-  expect(titlebar).not.toBeNull();
-  await page.mouse.move(
-    titlebar.x + titlebar.width / 2,
-    titlebar.y + titlebar.height / 2,
-  );
-  await page.mouse.wheel(0, 420);
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(initialWindowY);
+  await expect(page.getByRole("heading", { name: "Interests" })).toBeVisible();
+});
+
+test("editor hands upward wheel scrolling to the document at its top", async ({
+  page,
+}) => {
+  await loadAbout(page);
+  const editor = page.locator(".vscode-editor-scroll");
+
+  const topBoundaryWindowY = await page.evaluate(() => {
+    const editorElement = document.querySelector(".vscode-editor-scroll");
+    const maxWindowY = document.documentElement.scrollHeight - window.innerHeight;
+
+    editorElement.scrollTop = 0;
+    window.scrollTo({ top: Math.min(240, maxWindowY), behavior: "instant" });
+    return window.scrollY;
+  });
+  expect(topBoundaryWindowY).toBeGreaterThan(0);
+  expect(await editor.evaluate((element) => element.scrollTop)).toBe(0);
+
+  const topEditorBox = await editor.boundingBox();
+  expect(topEditorBox).not.toBeNull();
+  await page.mouse.move(
+    topEditorBox.x + topEditorBox.width / 2,
+    Math.max(8, topEditorBox.y + topEditorBox.height / 2),
+  );
+  await page.mouse.wheel(0, -520);
+  await expect
+    .poll(() => page.evaluate(() => window.scrollY))
+    .toBeLessThan(topBoundaryWindowY);
+  expect(await editor.evaluate((element) => element.scrollTop)).toBe(0);
 });
 
 test("mobile workspace simplifies chrome without document overflow", async ({ page }) => {
