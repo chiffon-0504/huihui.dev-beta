@@ -6,12 +6,14 @@ const root = process.cwd();
 let source;
 let styles;
 let codeBlocksSource;
+let codeStyles;
 
 beforeAll(async () => {
-  [source, styles, codeBlocksSource] = await Promise.all([
+  [source, styles, codeBlocksSource, codeStyles] = await Promise.all([
     readFile(path.join(root, "js/about-vscode.js"), "utf8"),
     readFile(path.join(root, "css/about-vscode.css"), "utf8"),
     readFile(path.join(root, "js/code-blocks.js"), "utf8"),
+    readFile(path.join(root, "css/code.css"), "utf8"),
   ]);
 });
 
@@ -32,6 +34,27 @@ describe("About VS Code workspace contracts", () => {
     expect(source).not.toMatch(/addEventListener\(\s*["']wheel/);
     expect(source).not.toContain("preventDefault()");
     expect(source).not.toContain("scrollIntoView");
+  });
+
+  test("preserves the established profile-specific color palette", () => {
+    const expectedColors = {
+      "kw-blue": "#33AAFF",
+      "kw-red": "#ff5f56",
+      "kw-reddishpurple": "#881144",
+      "kw-togeari-eari": "#EEDA01",
+      "kw-togeari-tog": "#E34D8D",
+      "kw-togenashi-ena": "#85C9DC",
+      "kw-togenashi-shi": "#76BD53",
+      "kw-togenashi-tog": "#D90E2C",
+    };
+
+    for (const [className, color] of Object.entries(expectedColors)) {
+      expect(codeStyles).toMatch(
+        new RegExp(`\\.${className}\\s*\\{[^}]*color:\\s*${color}`, "i"),
+      );
+    }
+
+    expect(styles).not.toMatch(/\.(?:token|kw-[a-z-]+)\b/);
   });
 
   test("uses DOM panels rather than image, canvas, or fixed-window simulation", () => {

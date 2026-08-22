@@ -1,6 +1,16 @@
 import { expect, test } from "@playwright/test";
 
 const STEAM_API_URL = "https://api.huihui.dev/api/steam-library";
+const CUSTOM_PROFILE_COLORS = {
+  "kw-blue": "rgb(51, 170, 255)",
+  "kw-red": "rgb(255, 95, 86)",
+  "kw-reddishpurple": "rgb(136, 17, 68)",
+  "kw-togeari-eari": "rgb(238, 218, 1)",
+  "kw-togeari-tog": "rgb(227, 77, 141)",
+  "kw-togenashi-ena": "rgb(133, 201, 220)",
+  "kw-togenashi-shi": "rgb(118, 189, 83)",
+  "kw-togenashi-tog": "rgb(217, 14, 44)",
+};
 
 async function loadAbout(page, viewport = { width: 1440, height: 900 }) {
   await page.setViewportSize(viewport);
@@ -54,38 +64,79 @@ test("desktop workspace preserves complete VS Code chrome and panel geometry", a
       const rect = document.querySelector(selector).getBoundingClientRect();
       return {
         bottom: rect.bottom,
+        height: rect.height,
         left: rect.left,
         right: rect.right,
         top: rect.top,
+        width: rect.width,
       };
     };
     const editor = document.querySelector(".vscode-editor-scroll");
+    const pre = editor.querySelector('pre[class*="language-"]');
 
     return {
       component: readRect(".vscode-window"),
+      breadcrumb: readRect(".vscode-breadcrumb"),
+      copyButton: readRect(".copy-btn"),
       editor: {
         ...readRect(".vscode-editor-scroll"),
         clientHeight: editor.clientHeight,
+        currentLineBackground: getComputedStyle(pre, "::before").backgroundColor,
         overflowY: getComputedStyle(editor).overflowY,
         overscrollBehaviorY: getComputedStyle(editor).overscrollBehaviorY,
         scrollHeight: editor.scrollHeight,
       },
+      explorer: readRect(".vscode-explorer"),
+      minimap: readRect(".vscode-minimap"),
       position: getComputedStyle(document.querySelector(".vscode-window")).position,
       statusbar: readRect(".vscode-statusbar"),
+      tabbar: readRect(".vscode-tabbar"),
       terminal: readRect(".vscode-terminal"),
+      titlebar: readRect(".vscode-titlebar"),
+      toolbarItemCount: document.querySelectorAll(".vscode-tab-actions > *").length,
+      treeRow: readRect(".vscode-tree-row"),
     };
   });
 
   expect(layout.position).not.toBe("fixed");
   expect(layout.component.bottom).toBeLessThanOrEqual(900);
+  expect(layout.component.height).toBe(680);
+  expect(layout.titlebar.height).toBe(38);
+  expect(layout.explorer.width).toBe(196);
+  expect(layout.treeRow.height).toBe(19);
+  expect(layout.tabbar.height).toBe(36);
+  expect(layout.breadcrumb.height).toBe(29);
+  expect(layout.copyButton).toMatchObject({ height: 26, width: 26 });
+  expect(layout.toolbarItemCount).toBe(6);
+  expect(layout.minimap).toMatchObject({ height: 95, width: 62 });
+  expect(layout.terminal.height).toBeCloseTo(163.6, 1);
+  expect(layout.statusbar.height).toBe(23);
   expect(layout.editor.overflowY).toBe("auto");
   expect(layout.editor.overscrollBehaviorY).not.toBe("contain");
+  expect(layout.editor.currentLineBackground).not.toBe("rgba(0, 0, 0, 0)");
   expect(layout.editor.scrollHeight).toBeGreaterThan(layout.editor.clientHeight);
   expect(layout.terminal.top).toBeGreaterThanOrEqual(layout.component.top);
   expect(layout.terminal.bottom).toBeLessThanOrEqual(layout.statusbar.top + 1);
   expect(layout.statusbar.bottom).toBeLessThanOrEqual(layout.component.bottom + 1);
   expect(layout.terminal.left).toBeGreaterThanOrEqual(layout.component.left);
   expect(layout.terminal.right).toBeLessThanOrEqual(layout.component.right + 1);
+});
+
+test("profile-specific custom text colors remain unchanged", async ({ page }) => {
+  await loadAbout(page);
+
+  const renderedColors = await page.evaluate(
+    (expectedClassNames) =>
+      Object.fromEntries(
+        expectedClassNames.map((className) => {
+          const element = document.querySelector(`.${className}`);
+          return [className, element ? getComputedStyle(element).color : null];
+        }),
+      ),
+    Object.keys(CUSTOM_PROFILE_COLORS),
+  );
+
+  expect(renderedColors).toEqual(CUSTOM_PROFILE_COLORS);
 });
 
 test("editor wheel scrolling stays local and keeps fixed panels still while range remains", async ({
@@ -125,7 +176,7 @@ test("editor hands downward wheel scrolling to the document at its bottom", asyn
     maxScrollTop: element.scrollHeight - element.clientHeight,
     scrollTop: element.scrollTop,
   }));
-  expect(bottomState.scrollTop).toBe(bottomState.maxScrollTop);
+  expect(bottomState.maxScrollTop - bottomState.scrollTop).toBeLessThanOrEqual(1);
 
   const editorBox = await editor.boundingBox();
   expect(editorBox).not.toBeNull();
@@ -133,10 +184,16 @@ test("editor hands downward wheel scrolling to the document at its bottom", asyn
     editorBox.x + editorBox.width / 2,
     editorBox.y + editorBox.height / 2,
   );
-  await page.mouse.wheel(0, 520);
+  for (let index = 0; index < 3; index += 1) {
+    await page.mouse.wheel(0, 520);
+  }
   await expect
-    .poll(() => editor.evaluate((element) => element.scrollTop))
-    .toBe(bottomState.maxScrollTop);
+    .poll(() =>
+      editor.evaluate(
+        (element) => element.scrollHeight - element.clientHeight - element.scrollTop,
+      ),
+    )
+    .toBeLessThanOrEqual(1);
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(initialWindowY);
   await expect(page.getByRole("heading", { name: "Interests" })).toBeVisible();
 });

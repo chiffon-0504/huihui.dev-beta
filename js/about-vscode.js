@@ -187,7 +187,10 @@ function renderAboutVscodeStatusbar() {
 }
 
 function renderAboutVscodeMinimap() {
-  const widths = [68, 42, 76, 55, 84, 34, 72, 61, 48, 78, 52, 88, 39, 65, 74, 44, 82, 58];
+  const widths = [
+    68, 42, 76, 55, 84, 34, 72, 61, 48, 78, 52, 88, 39, 65, 74, 44,
+    82, 58, 71, 46, 86, 63, 37, 79, 53, 69, 41, 83, 57, 75,
+  ];
   return `
     <div class="vscode-minimap" aria-hidden="true">
       ${widths
@@ -237,7 +240,17 @@ function initAboutVscodeWorkspace() {
 
   const tabActions = document.createElement("div");
   tabActions.className = "vscode-tab-actions";
-  tabActions.append(copyButton, copyStatus);
+  tabActions.innerHTML = `
+    <span class="vscode-editor-tool">${renderAboutVscodeIcon("run")}</span>
+    <span class="vscode-editor-tool vscode-editor-tool-chevron" aria-hidden="true">⌄</span>
+    <span class="vscode-editor-tool vscode-editor-tool-assistant" aria-hidden="true">✺</span>
+  `;
+  tabActions.append(copyButton);
+  tabActions.insertAdjacentHTML(
+    "beforeend",
+    '<span class="vscode-editor-tool vscode-editor-tool-more" aria-hidden="true">•••</span>',
+  );
+  tabActions.append(copyStatus);
   header.classList.add("vscode-tabbar");
   header.replaceChildren(left, tabActions);
 
@@ -257,7 +270,7 @@ function initAboutVscodeWorkspace() {
   breadcrumb.className = "vscode-breadcrumb";
   breadcrumb.setAttribute("aria-hidden", "true");
   breadcrumb.innerHTML =
-    "<span>D:</span><b>›</b><span>VSCode</span><b>›</b><span class=\"vscode-python-mark\">●</span><span>huihuidev.py</span><b>›</b><span>HuiHui</span><b>›</b><span>__init__</span>";
+    "<span>D:</span><b>›</b><span>VSCode</span><b>›</b><span class=\"vscode-python-mark\">●</span><span>huihuidev.py</span><b>›</b><span>…</span>";
 
   const editor = document.createElement("div");
   editor.className = "vscode-editor-area";
