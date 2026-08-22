@@ -11,7 +11,7 @@ const CUSTOM_PROFILE_COLORS = {
   "kw-togenashi-shi": "rgb(118, 189, 83)",
   "kw-togenashi-tog": "rgb(217, 14, 44)",
 };
-const RESPONSIVE_STICKY_VIEWPORTS = [901, 900, 899, 720, 430, 390];
+const RESPONSIVE_STICKY_VIEWPORTS = [1201, 1200, 901, 900, 899, 721, 720, 430, 390];
 
 async function loadAbout(page, viewport = { width: 1440, height: 900 }) {
   await page.setViewportSize(viewport);
@@ -530,6 +530,9 @@ for (const width of RESPONSIVE_STICKY_VIEWPORTS) {
       bodyOverflowY: getComputedStyle(document.body).overflowY,
       clientWidth: document.documentElement.clientWidth,
       documentScrollWidth: document.documentElement.scrollWidth,
+      explorerDisplay: getComputedStyle(
+        document.querySelector(".vscode-explorer"),
+      ).display,
       scrollingElement: document.scrollingElement?.tagName,
     }));
 
@@ -537,6 +540,7 @@ for (const width of RESPONSIVE_STICKY_VIEWPORTS) {
     expect(initial.documentScrollWidth).toBeLessThanOrEqual(initial.clientWidth + 1);
     expect(initial.bodyOverflowX).toBe(width <= 900 ? "clip" : "visible");
     expect(initial.bodyOverflowY).toBe("visible");
+    expect(initial.explorerDisplay).toBe(width <= 900 ? "none" : "flex");
     expect(metrics.distance).toBe(metrics.maxEditorScroll);
     expect(
       Math.abs(metrics.stageHeight - metrics.workspaceHeight - metrics.distance),

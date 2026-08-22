@@ -702,7 +702,7 @@
   border-radius: 0 0 7px 7px;
 }
 
-@media (max-width: 1200px) and (min-width: 721px) {
+@media (min-width: 901px) and (max-width: 1200px) {
   .vscode-workbench {
     grid-template-columns: 46px 172px minmax(0, 1fr);
   }
@@ -724,7 +724,7 @@
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 900px) {
   .about-page .vscode-scroll-stage {
     margin: 18px 0 32px;
   }
