@@ -11,6 +11,7 @@ const CUSTOM_PROFILE_COLORS = {
   "kw-togenashi-shi": "rgb(118, 189, 83)",
   "kw-togenashi-tog": "rgb(217, 14, 44)",
 };
+const RESPONSIVE_STICKY_VIEWPORTS = [901, 900, 899, 720, 430, 390];
 
 async function loadAbout(page, viewport = { width: 1440, height: 900 }) {
   await page.setViewportSize(viewport);
@@ -29,6 +30,42 @@ async function loadAbout(page, viewport = { width: 1440, height: 900 }) {
     page.locator(".vscode-scroll-stage[data-scroll-stage-ready='true']"),
   ).toHaveCount(1);
   await expect(page.locator(".vscode-editor-scroll > .custom-line-numbers")).toBeVisible();
+}
+
+async function waitForStageGeometry(page) {
+  await page.locator(".vscode-scroll-stage").evaluate(
+    (stage) =>
+      new Promise((resolve) => {
+        const workspace = stage.querySelector(".vscode-window");
+        const editor = stage.querySelector(".vscode-editor-scroll");
+        let previousSignature = "";
+        let stableFrames = 0;
+
+        const check = () => {
+          const distance = Number(stage.dataset.scrollStageDistance);
+          const editorMax = editor.scrollHeight - editor.clientHeight;
+          const stageHeight = stage.getBoundingClientRect().height;
+          const workspaceHeight = workspace.getBoundingClientRect().height;
+          const signature = [distance, editorMax, stageHeight, workspaceHeight].join("|");
+          const geometryMatches =
+            distance === editorMax &&
+            Math.abs(stageHeight - workspaceHeight - distance) <= 1;
+
+          stableFrames =
+            geometryMatches && signature === previousSignature ? stableFrames + 1 : 0;
+          previousSignature = signature;
+
+          if (stableFrames >= 8) {
+            resolve();
+            return;
+          }
+
+          requestAnimationFrame(check);
+        };
+
+        requestAnimationFrame(check);
+      }),
+  );
 }
 
 async function getStageMetrics(page) {
@@ -65,6 +102,22 @@ async function expectEditorScroll(page, expected) {
       page
         .locator(".vscode-editor-scroll")
         .evaluate((element, target) => Math.abs(element.scrollTop - target), expected),
+    )
+    .toBeLessThanOrEqual(1.5);
+}
+
+async function expectEditorMatchesDocumentScroll(page, metrics) {
+  await expect
+    .poll(() =>
+      page.evaluate(({ maxEditorScroll, stageStart }) => {
+        const editor = document.querySelector(".vscode-editor-scroll");
+        const expected = Math.max(
+          0,
+          Math.min(window.scrollY - stageStart, maxEditorScroll),
+        );
+
+        return Math.abs(editor.scrollTop - expected);
+      }, metrics),
     )
     .toBeLessThanOrEqual(1.5);
 }
@@ -460,3 +513,90 @@ test("mobile sticky stage remains responsive without horizontal overflow", async
   expect(geometry.position).toBe("sticky");
   expect(geometry.scrollingElement).toBe("HTML");
 });
+
+for (const width of RESPONSIVE_STICKY_VIEWPORTS) {
+  test(`${width}px keeps the native sticky stage attached to the HTML scroller`, async ({
+    page,
+  }) => {
+    const viewport = { width, height: width <= 430 ? 844 : 900 };
+    await loadAbout(page, viewport);
+    await waitForStageGeometry(page);
+    const metrics = await getStageMetrics(page);
+    const stageEnd = metrics.stageStart + metrics.distance;
+    const interests = page.getByRole("heading", { name: "Interests" });
+
+    const initial = await page.evaluate(() => ({
+      bodyOverflowX: getComputedStyle(document.body).overflowX,
+      bodyOverflowY: getComputedStyle(document.body).overflowY,
+      clientWidth: document.documentElement.clientWidth,
+      documentScrollWidth: document.documentElement.scrollWidth,
+      scrollingElement: document.scrollingElement?.tagName,
+    }));
+
+    expect(initial.scrollingElement).toBe("HTML");
+    expect(initial.documentScrollWidth).toBeLessThanOrEqual(initial.clientWidth + 1);
+    expect(initial.bodyOverflowX).toBe(width <= 900 ? "clip" : "visible");
+    expect(initial.bodyOverflowY).toBe("visible");
+    expect(metrics.distance).toBe(metrics.maxEditorScroll);
+    expect(
+      Math.abs(metrics.stageHeight - metrics.workspaceHeight - metrics.distance),
+    ).toBeLessThanOrEqual(1);
+
+    await setDocumentScroll(page, metrics.stageStart + metrics.distance * 0.25);
+    await expectEditorMatchesDocumentScroll(page, metrics);
+    const firstWorkspaceTop = await page
+      .locator(".vscode-window")
+      .evaluate((element) => element.getBoundingClientRect().top);
+    const firstEditorTop = await page
+      .locator(".vscode-editor-scroll")
+      .evaluate((element) => element.scrollTop);
+
+    await setDocumentScroll(page, metrics.stageStart + metrics.distance * 0.65);
+    await expectEditorMatchesDocumentScroll(page, metrics);
+    const secondWorkspaceTop = await page
+      .locator(".vscode-window")
+      .evaluate((element) => element.getBoundingClientRect().top);
+    const secondEditorTop = await page
+      .locator(".vscode-editor-scroll")
+      .evaluate((element) => element.scrollTop);
+
+    expect(secondEditorTop).toBeGreaterThan(firstEditorTop);
+    expect(Math.abs(firstWorkspaceTop - metrics.stickyTop)).toBeLessThanOrEqual(1);
+    expect(Math.abs(secondWorkspaceTop - firstWorkspaceTop)).toBeLessThanOrEqual(1);
+
+    await setDocumentScroll(page, stageEnd);
+    await expectEditorScroll(page, metrics.maxEditorScroll);
+    await expect
+      .poll(() =>
+        page.locator(".vscode-window").evaluate(
+          (element, stickyTop) =>
+            Math.abs(element.getBoundingClientRect().top - stickyTop),
+          metrics.stickyTop,
+        ),
+      )
+      .toBeLessThanOrEqual(1);
+
+    await setDocumentScroll(page, stageEnd + 100);
+    await expectEditorScroll(page, metrics.maxEditorScroll);
+    expect(
+      await page.locator(".vscode-window").evaluate((element) => element.getBoundingClientRect().top),
+    ).toBeLessThan(metrics.stickyTop - 50);
+    expect(
+      await interests.evaluate((element) => element.getBoundingClientRect().top),
+    ).toBeLessThan(viewport.height);
+
+    await setDocumentScroll(page, metrics.stageStart + metrics.distance * 0.6);
+    await expectEditorMatchesDocumentScroll(page, metrics);
+    await setDocumentScroll(page, metrics.stageStart + metrics.distance * 0.15);
+    await expectEditorMatchesDocumentScroll(page, metrics);
+    expect(
+      await page.locator(".vscode-window").evaluate((element) => element.getBoundingClientRect().top),
+    ).toBeCloseTo(metrics.stickyTop, 0);
+
+    const interestsY = await interests.evaluate(
+      (element) => window.scrollY + element.getBoundingClientRect().top - 40,
+    );
+    await setDocumentScroll(page, interestsY);
+    await expect(interests).toBeVisible();
+  });
+}
