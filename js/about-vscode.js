@@ -262,7 +262,7 @@ function renderAboutVscodeStatusbar(labels) {
   `;
 }
 
-function initAboutVscodeScrollStage(wrapper, editorScroll) {
+function initAboutVscodeScrollStage(wrapper, verticalLayer) {
   const stage = document.createElement("div");
   let enabled = true;
   let stageStart = 0;
@@ -286,7 +286,7 @@ function initAboutVscodeScrollStage(wrapper, editorScroll) {
           )
         : 0;
 
-    editorScroll.scrollTop = progress * maxEditorScroll;
+    verticalLayer.scrollTop = progress * maxEditorScroll;
   };
 
   const requestScrollSync = () => {
@@ -306,7 +306,7 @@ function initAboutVscodeScrollStage(wrapper, editorScroll) {
 
     maxEditorScroll = Math.max(
       0,
-      editorScroll.scrollHeight - editorScroll.clientHeight,
+      verticalLayer.scrollHeight - verticalLayer.clientHeight,
     );
     stageScrollableDistance = maxEditorScroll;
 
@@ -362,9 +362,48 @@ function initAboutVscodeScrollStage(wrapper, editorScroll) {
   };
 }
 
-function initAboutVscodeMotionBehavior(wrapper, editorScroll) {
+function initAboutVscodeMotionBehavior(wrapper, editorScroll, verticalLayer) {
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   let stageController = null;
+
+  const handleEditorKeydown = (event) => {
+    if (!reducedMotion.matches) return;
+
+    const maxScroll = verticalLayer.scrollHeight - verticalLayer.clientHeight;
+    const code = verticalLayer.querySelector("code");
+    const lineHeight = Number.parseFloat(getComputedStyle(code).lineHeight) || 16;
+    const pageStep = verticalLayer.clientHeight * 0.9;
+    let nextScrollTop;
+
+    switch (event.key) {
+      case "ArrowDown":
+        nextScrollTop = verticalLayer.scrollTop + lineHeight;
+        break;
+      case "ArrowUp":
+        nextScrollTop = verticalLayer.scrollTop - lineHeight;
+        break;
+      case "PageDown":
+        nextScrollTop = verticalLayer.scrollTop + pageStep;
+        break;
+      case "PageUp":
+        nextScrollTop = verticalLayer.scrollTop - pageStep;
+        break;
+      case "Home":
+        nextScrollTop = 0;
+        break;
+      case "End":
+        nextScrollTop = maxScroll;
+        break;
+      default:
+        return;
+    }
+
+    const clampedScrollTop = Math.max(0, Math.min(nextScrollTop, maxScroll));
+    if (clampedScrollTop === verticalLayer.scrollTop) return;
+
+    event.preventDefault();
+    verticalLayer.scrollTop = clampedScrollTop;
+  };
 
   const applyMotionPreference = () => {
     if (reducedMotion.matches) {
@@ -375,12 +414,13 @@ function initAboutVscodeMotionBehavior(wrapper, editorScroll) {
     if (stageController) {
       stageController.setEnabled(true);
     } else {
-      stageController = initAboutVscodeScrollStage(wrapper, editorScroll);
+      stageController = initAboutVscodeScrollStage(wrapper, verticalLayer);
     }
   };
 
   applyMotionPreference();
   reducedMotion.addEventListener("change", applyMotionPreference);
+  editorScroll.addEventListener("keydown", handleEditorKeydown);
 }
 
 function initAboutVscodeWorkspace() {
@@ -444,7 +484,11 @@ function initAboutVscodeWorkspace() {
   editorScroll.setAttribute("aria-label", labels.editor);
   editorScroll.tabIndex = 0;
   pre.removeAttribute("tabindex");
-  editorScroll.append(pre);
+
+  const verticalLayer = document.createElement("div");
+  verticalLayer.className = "vscode-editor-vertical";
+  verticalLayer.append(pre);
+  editorScroll.append(verticalLayer);
 
   const editorViewport = document.createElement("div");
   editorViewport.className = "vscode-editor-viewport";
@@ -470,7 +514,7 @@ function initAboutVscodeWorkspace() {
   wrapper.replaceChildren();
   wrapper.insertAdjacentHTML("afterbegin", renderAboutVscodeTitlebar());
   wrapper.append(workbench);
-  initAboutVscodeMotionBehavior(wrapper, editorScroll);
+  initAboutVscodeMotionBehavior(wrapper, editorScroll, verticalLayer);
 }
 
 document.addEventListener("DOMContentLoaded", () => {

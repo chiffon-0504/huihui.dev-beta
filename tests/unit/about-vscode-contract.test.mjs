@@ -7,13 +7,15 @@ let source;
 let styles;
 let codeBlocksSource;
 let codeStyles;
+let lineNumbersSource;
 
 beforeAll(async () => {
-  [source, styles, codeBlocksSource, codeStyles] = await Promise.all([
+  [source, styles, codeBlocksSource, codeStyles, lineNumbersSource] = await Promise.all([
     readFile(path.join(root, "js/about-vscode.js"), "utf8"),
     readFile(path.join(root, "css/about-vscode.css"), "utf8"),
     readFile(path.join(root, "js/code-blocks.js"), "utf8"),
     readFile(path.join(root, "css/code.css"), "utf8"),
+    readFile(path.join(root, "js/about-code-line-numbers.js"), "utf8"),
   ]);
 });
 
@@ -23,9 +25,14 @@ describe("About VS Code workspace contracts", () => {
     expect(source).toContain('editorScroll.setAttribute("role", "region")');
     expect(source).toContain("editorScroll.tabIndex = 0");
     expect(source).toContain('pre.removeAttribute("tabindex")');
-    expect(source).toContain("editorScroll.append(pre)");
+    expect(source).toContain('verticalLayer.className = "vscode-editor-vertical"');
+    expect(source).toContain("verticalLayer.append(pre)");
+    expect(source).toContain("editorScroll.append(verticalLayer)");
     expect(styles).toMatch(
       /\.vscode-editor-scroll\s*\{[^}]*overflow-x:\s*auto;[^}]*overflow-y:\s*hidden;/s,
+    );
+    expect(styles).toMatch(
+      /\.vscode-editor-vertical\s*\{[^}]*width:\s*max-content;[^}]*min-width:\s*100%;[^}]*height:\s*100%;[^}]*overflow-x:\s*clip;[^}]*overflow-y:\s*hidden;/s,
     );
     expect(styles).toMatch(
       /\.vscode-editor-scroll pre\[class\*="language-"\]\s*\{[^}]*overflow-x:\s*visible\s*!important;[^}]*overflow-y:\s*visible\s*!important;/s,
@@ -34,6 +41,9 @@ describe("About VS Code workspace contracts", () => {
       /\.vscode-editor-scroll pre\[class\*="language-"\]\s*\{[^}]*overflow-x:\s*auto;/s,
     );
     expect(source).not.toContain("pre.tabIndex");
+    expect(source).not.toContain("editorScroll.scrollTop");
+    expect(lineNumbersSource).toContain("const gutterParent = pre.parentElement");
+    expect(lineNumbersSource).toContain("pre.before(gutter)");
     expect(codeBlocksSource).toContain('if (pre.closest(".code-block")) return;');
   });
 
@@ -47,7 +57,7 @@ describe("About VS Code workspace contracts", () => {
       /\.vscode-editor-scroll code\[class\*="language-"\]\s*\{[^}]*font-family:\s*ui-monospace,\s*"SFMono-Regular",\s*"SF Mono",\s*Menlo,\s*Monaco,\s*Consolas,\s*"Liberation Mono",\s*"Courier New",\s*monospace\s*!important;/s,
     );
     expect(styles).toMatch(
-      /\.vscode-editor-scroll > \.custom-line-numbers\s*\{[^}]*font-family:\s*ui-monospace,\s*"SFMono-Regular",\s*"SF Mono",\s*Menlo,\s*Monaco,\s*Consolas,\s*"Liberation Mono",\s*"Courier New",\s*monospace\s*!important;/s,
+      /\.vscode-editor-vertical\s*>\s*\.custom-line-numbers\s*\{[^}]*font-family:\s*ui-monospace,\s*"SFMono-Regular",\s*"SF Mono",\s*Menlo,\s*Monaco,\s*Consolas,\s*"Liberation Mono",\s*"Courier New",\s*monospace\s*!important;/s,
     );
     expect(styles).toMatch(
       /\.vscode-terminal-output\s*\{[^}]*font-family:\s*ui-monospace,\s*"SFMono-Regular",\s*"SF Mono",\s*Menlo,\s*Monaco,\s*Consolas,\s*"Liberation Mono",\s*"Courier New",\s*monospace\s*!important;/s,
@@ -62,7 +72,7 @@ describe("About VS Code workspace contracts", () => {
       /@media \(max-width: 900px\)[\s\S]*\.vscode-editor-scroll code\[class\*="language-"\]\s*\{[^}]*font-size:\s*11px\s*!important;[^}]*line-height:\s*1\.52\s*!important;/,
     );
     expect(styles).toMatch(
-      /@media \(max-width: 900px\)[\s\S]*\.vscode-editor-scroll > \.custom-line-numbers\s*\{[^}]*font-size:\s*11px;[^}]*line-height:\s*1\.52;/,
+      /@media \(max-width: 900px\)[\s\S]*\.vscode-editor-vertical\s*>\s*\.custom-line-numbers\s*\{[^}]*font-size:\s*11px;[^}]*line-height:\s*1\.52;/,
     );
     expect(styles).toMatch(
       /@media \(max-width: 900px\)[\s\S]*\.vscode-terminal-output\s*\{[^}]*font-size:\s*10\.5px;[^}]*line-height:\s*1\.42;/,
@@ -71,9 +81,9 @@ describe("About VS Code workspace contracts", () => {
 
   test("uses native document scrolling with a requestAnimationFrame sticky stage", () => {
     expect(source).toContain('stage.className = "vscode-scroll-stage"');
-    expect(source).toContain("editorScroll.scrollHeight - editorScroll.clientHeight");
+    expect(source).toContain("verticalLayer.scrollHeight - verticalLayer.clientHeight");
     expect(source).toContain("stageScrollableDistance = maxEditorScroll");
-    expect(source).toContain("editorScroll.scrollTop = progress * maxEditorScroll");
+    expect(source).toContain("verticalLayer.scrollTop = progress * maxEditorScroll");
     expect(source).toContain(
       'window.addEventListener("scroll", requestScrollSync, { passive: true })',
     );
@@ -88,11 +98,10 @@ describe("About VS Code workspace contracts", () => {
       "LOCKED_EDITOR_DOWN",
       "AFTER_GATE",
       "LOCKED_EDITOR_UP",
-      "preventDefault()",
       "window.scrollTo",
       'addEventListener("wheel"',
       'addEventListener("touchmove"',
-      'addEventListener("keydown"',
+      'window.addEventListener("keydown"',
       "passive: false",
     ]) {
       expect(source).not.toContain(rejectedPattern);
@@ -109,7 +118,9 @@ describe("About VS Code workspace contracts", () => {
     );
     expect(source).toContain("if (reducedMotion.matches)");
     expect(source).toContain("stageController?.setEnabled(false)");
-    expect(source).toContain("initAboutVscodeScrollStage(wrapper, editorScroll)");
+    expect(source).toContain("initAboutVscodeScrollStage(wrapper, verticalLayer)");
+    expect(source).toContain('editorScroll.addEventListener("keydown", handleEditorKeydown)');
+    expect(source).toContain("if (!reducedMotion.matches) return");
     expect(styles).toMatch(
       /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.vscode-scroll-stage\s*\{[^}]*height:\s*auto\s*!important;/,
     );
@@ -117,7 +128,7 @@ describe("About VS Code workspace contracts", () => {
       /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.vscode-scroll-stage\s*>\s*\.vscode-window\.code-block\s*\{[^}]*position:\s*static;/,
     );
     expect(styles).toMatch(
-      /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.vscode-editor-scroll\s*\{[^}]*overflow-y:\s*auto;/,
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.vscode-editor-vertical\s*\{[^}]*overflow-y:\s*auto;/,
     );
   });
 

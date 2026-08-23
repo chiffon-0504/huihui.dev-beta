@@ -38,7 +38,9 @@ async function loadAbout(
   } else {
     await expect(page.locator(".vscode-scroll-stage")).toHaveCount(0);
   }
-  await expect(page.locator(".vscode-editor-scroll > .custom-line-numbers")).toBeVisible();
+  await expect(
+    page.locator(".vscode-editor-vertical > .custom-line-numbers"),
+  ).toBeVisible();
 }
 
 async function waitForStageGeometry(page) {
@@ -46,13 +48,13 @@ async function waitForStageGeometry(page) {
     (stage) =>
       new Promise((resolve) => {
         const workspace = stage.querySelector(".vscode-window");
-        const editor = stage.querySelector(".vscode-editor-scroll");
+        const verticalLayer = stage.querySelector(".vscode-editor-vertical");
         let previousSignature = "";
         let stableFrames = 0;
 
         const check = () => {
           const distance = Number(stage.dataset.scrollStageDistance);
-          const editorMax = editor.scrollHeight - editor.clientHeight;
+          const editorMax = verticalLayer.scrollHeight - verticalLayer.clientHeight;
           const stageHeight = stage.getBoundingClientRect().height;
           const workspaceHeight = workspace.getBoundingClientRect().height;
           const signature = [distance, editorMax, stageHeight, workspaceHeight].join("|");
@@ -81,13 +83,13 @@ async function getStageMetrics(page) {
   return page.evaluate(() => {
     const stage = document.querySelector(".vscode-scroll-stage");
     const workspace = document.querySelector(".vscode-window");
-    const editor = document.querySelector(".vscode-editor-scroll");
+    const verticalLayer = document.querySelector(".vscode-editor-vertical");
 
     return {
       distance: Number(stage.dataset.scrollStageDistance),
-      editorClientHeight: editor.clientHeight,
-      editorScrollHeight: editor.scrollHeight,
-      maxEditorScroll: editor.scrollHeight - editor.clientHeight,
+      editorClientHeight: verticalLayer.clientHeight,
+      editorScrollHeight: verticalLayer.scrollHeight,
+      maxEditorScroll: verticalLayer.scrollHeight - verticalLayer.clientHeight,
       stageHeight: stage.getBoundingClientRect().height,
       stageStart: Number(stage.dataset.scrollStageStart),
       stickyTop: Number.parseFloat(getComputedStyle(workspace).top),
@@ -109,7 +111,7 @@ async function expectEditorScroll(page, expected) {
   await expect
     .poll(() =>
       page
-        .locator(".vscode-editor-scroll")
+        .locator(".vscode-editor-vertical")
         .evaluate((element, target) => Math.abs(element.scrollTop - target), expected),
     )
     .toBeLessThanOrEqual(1.5);
@@ -119,13 +121,13 @@ async function expectEditorMatchesDocumentScroll(page, metrics) {
   await expect
     .poll(() =>
       page.evaluate(({ maxEditorScroll, stageStart }) => {
-        const editor = document.querySelector(".vscode-editor-scroll");
+        const verticalLayer = document.querySelector(".vscode-editor-vertical");
         const expected = Math.max(
           0,
           Math.min(window.scrollY - stageStart, maxEditorScroll),
         );
 
-        return Math.abs(editor.scrollTop - expected);
+        return Math.abs(verticalLayer.scrollTop - expected);
       }, metrics),
     )
     .toBeLessThanOrEqual(1.5);
@@ -203,6 +205,7 @@ test("desktop workspace preserves complete VS Code chrome and sticky geometry", 
       };
     };
     const editor = document.querySelector(".vscode-editor-scroll");
+    const verticalLayer = document.querySelector(".vscode-editor-vertical");
     const pre = editor.querySelector('pre[class*="language-"]');
     const explorer = document.querySelector(".vscode-explorer");
     const activity = document.querySelector(".vscode-activity-bar");
@@ -221,6 +224,8 @@ test("desktop workspace preserves complete VS Code chrome and sticky geometry", 
         currentLineBackground: getComputedStyle(pre, "::before").backgroundColor,
         overflowY: getComputedStyle(editor).overflowY,
         scrollHeight: editor.scrollHeight,
+        verticalClientHeight: verticalLayer.clientHeight,
+        verticalScrollHeight: verticalLayer.scrollHeight,
       },
       explorer: {
         ...readRect(".vscode-explorer"),
@@ -282,7 +287,10 @@ test("desktop workspace preserves complete VS Code chrome and sticky geometry", 
   expect(layout.statusbar.height).toBe(20);
   expect(layout.editor.overflowY).toBe("hidden");
   expect(layout.editor.currentLineBackground).not.toBe("rgba(0, 0, 0, 0)");
-  expect(layout.editor.scrollHeight).toBeGreaterThan(layout.editor.clientHeight);
+  expect(layout.editor.scrollHeight).toBe(layout.editor.clientHeight);
+  expect(layout.editor.verticalScrollHeight).toBeGreaterThan(
+    layout.editor.verticalClientHeight,
+  );
   expect(layout.terminal.top).toBeGreaterThanOrEqual(layout.component.top);
   expect(layout.terminal.bottom).toBeLessThanOrEqual(layout.statusbar.top + 1);
   expect(layout.statusbar.bottom).toBeLessThanOrEqual(layout.component.bottom + 1);
@@ -401,6 +409,7 @@ test("mobile editor is the single keyboard-reachable horizontal scroller", async
 
   const overflow = await page.evaluate(() => {
     const editorElement = document.querySelector(".vscode-editor-scroll");
+    const verticalElement = document.querySelector(".vscode-editor-vertical");
     const preElement = editorElement.querySelector('pre[class*="language-"]');
 
     return {
@@ -408,14 +417,23 @@ test("mobile editor is the single keyboard-reachable horizontal scroller", async
       editorOverflowX: getComputedStyle(editorElement).overflowX,
       editorScrollWidth: editorElement.scrollWidth,
       preOverflowX: getComputedStyle(preElement).overflowX,
+      preParentClass: preElement.parentElement.className,
       preTabIndex: preElement.tabIndex,
+      verticalClientWidth: verticalElement.clientWidth,
+      verticalOverflowX: getComputedStyle(verticalElement).overflowX,
+      verticalScrollWidth: verticalElement.scrollWidth,
+      verticalTabIndex: verticalElement.tabIndex,
     };
   });
 
   expect(overflow.editorOverflowX).toBe("auto");
   expect(overflow.editorScrollWidth).toBeGreaterThan(overflow.editorClientWidth);
   expect(overflow.preOverflowX).toBe("visible");
+  expect(overflow.preParentClass).toBe("vscode-editor-vertical");
   expect(overflow.preTabIndex).toBe(-1);
+  expect(["clip", "hidden"]).toContain(overflow.verticalOverflowX);
+  expect(overflow.verticalScrollWidth).toBe(overflow.verticalClientWidth);
+  expect(overflow.verticalTabIndex).toBe(-1);
 
   let reachedEditor = false;
   for (let tabPress = 0; tabPress < 20; tabPress += 1) {
@@ -452,6 +470,74 @@ test("mobile editor is the single keyboard-reachable horizontal scroller", async
   expect(await pre.getAttribute("tabindex")).toBeNull();
 });
 
+test("mobile horizontal editor scrolling preserves sticky vertical progress", async ({
+  page,
+}) => {
+  await loadAbout(page, { width: 390, height: 844 });
+  await waitForStageGeometry(page);
+
+  const editor = page.locator(".vscode-editor-scroll");
+  const metrics = await getStageMetrics(page);
+  await setDocumentScroll(page, metrics.stageStart + metrics.distance * 0.5);
+  await expectEditorScroll(page, metrics.maxEditorScroll * 0.5);
+
+  const readScrollState = () =>
+    page.evaluate(() => {
+      const editorElement = document.querySelector(".vscode-editor-scroll");
+      const verticalElement = document.querySelector(".vscode-editor-vertical");
+      const firstLine = verticalElement.querySelector(".custom-line-numbers span");
+
+      return {
+        documentY: window.scrollY,
+        editorClientHeight: editorElement.clientHeight,
+        editorScrollHeight: editorElement.scrollHeight,
+        firstLineBottom: firstLine.getBoundingClientRect().bottom,
+        viewportTop: editorElement.getBoundingClientRect().top,
+        horizontal: editorElement.scrollLeft,
+        outerVertical: editorElement.scrollTop,
+        vertical: verticalElement.scrollTop,
+      };
+    });
+
+  const middle = await readScrollState();
+  expect(middle.vertical).toBeGreaterThan(0);
+  expect(middle.outerVertical).toBe(0);
+  expect(middle.editorScrollHeight).toBe(middle.editorClientHeight);
+  expect(middle.firstLineBottom).toBeLessThan(middle.viewportTop);
+
+  await editor.evaluate((element) => {
+    element.scrollLeft = Math.min(240, element.scrollWidth - element.clientWidth);
+  });
+  const shiftedRight = await readScrollState();
+  expect(shiftedRight.horizontal).toBeGreaterThan(0);
+  expect(shiftedRight.vertical).toBeCloseTo(middle.vertical, 5);
+  expect(shiftedRight.outerVertical).toBe(0);
+  expect(shiftedRight.documentY).toBeCloseTo(middle.documentY, 5);
+  expect(shiftedRight.firstLineBottom).toBeLessThan(shiftedRight.viewportTop);
+
+  await editor.evaluate((element) => {
+    element.scrollLeft = 0;
+  });
+  const shiftedLeft = await readScrollState();
+  expect(shiftedLeft.horizontal).toBe(0);
+  expect(shiftedLeft.vertical).toBeCloseTo(middle.vertical, 5);
+  expect(shiftedLeft.documentY).toBeCloseTo(middle.documentY, 5);
+
+  await setDocumentScroll(page, metrics.stageStart + metrics.distance * 0.7);
+  await expectEditorScroll(page, metrics.maxEditorScroll * 0.7);
+  await setDocumentScroll(page, metrics.stageStart + metrics.distance);
+  await expectEditorScroll(page, metrics.maxEditorScroll);
+  await setDocumentScroll(page, metrics.stageStart + metrics.distance + 100);
+  expect(
+    await page.locator(".vscode-window").evaluate((element) =>
+      element.getBoundingClientRect().top,
+    ),
+  ).toBeLessThan(metrics.stickyTop - 50);
+
+  await setDocumentScroll(page, metrics.stageStart + metrics.distance * 0.35);
+  await expectEditorScroll(page, metrics.maxEditorScroll * 0.35);
+});
+
 test("mobile editor and terminal use the legacy About font stack", async ({ page }) => {
   await loadAbout(page, { width: 390, height: 844 });
 
@@ -467,7 +553,9 @@ test("mobile editor and terminal use the legacy About font stack", async ({ page
 
     return {
       code: readTypography('.vscode-editor-scroll code[class*="language-"]'),
-      lineNumbers: readTypography(".vscode-editor-scroll > .custom-line-numbers"),
+      lineNumbers: readTypography(
+        ".vscode-editor-vertical > .custom-line-numbers",
+      ),
       terminalCommand: readTypography(".vscode-terminal-command"),
       terminalOutput: readTypography(".vscode-terminal-output"),
       terminalPrompt: readTypography(".vscode-terminal-prompt"),
@@ -534,16 +622,19 @@ test("reduced motion uses native editor scrolling without a sticky stage", async
   });
 
   const editor = page.locator(".vscode-editor-scroll");
+  const verticalLayer = page.locator(".vscode-editor-vertical");
   const workspace = page.locator(".vscode-window");
   const interests = page.getByRole("heading", { name: "Interests" });
   const initial = await page.evaluate(() => {
     const editorElement = document.querySelector(".vscode-editor-scroll");
+    const verticalElement = document.querySelector(".vscode-editor-vertical");
     const workspaceElement = document.querySelector(".vscode-window");
 
     return {
-      editorClientHeight: editorElement.clientHeight,
+      editorClientHeight: verticalElement.clientHeight,
       editorOverflowY: getComputedStyle(editorElement).overflowY,
-      editorScrollHeight: editorElement.scrollHeight,
+      editorScrollHeight: verticalElement.scrollHeight,
+      verticalOverflowY: getComputedStyle(verticalElement).overflowY,
       reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches,
       scrollingElement: document.scrollingElement?.tagName,
       workspacePosition: getComputedStyle(workspaceElement).position,
@@ -553,7 +644,8 @@ test("reduced motion uses native editor scrolling without a sticky stage", async
   expect(initial.reducedMotion).toBe(true);
   expect(initial.scrollingElement).toBe("HTML");
   expect(initial.workspacePosition).not.toBe("sticky");
-  expect(initial.editorOverflowY).toBe("auto");
+  expect(initial.editorOverflowY).toBe("hidden");
+  expect(initial.verticalOverflowY).toBe("auto");
   expect(initial.editorScrollHeight).toBeGreaterThan(initial.editorClientHeight);
   await expect(editor).toHaveAttribute("tabindex", "0");
   await expect(editor).toHaveAccessibleName("huihuidev.py source code");
@@ -563,17 +655,19 @@ test("reduced motion uses native editor scrolling without a sticky stage", async
   await editor.focus();
   await expect(editor).toBeFocused();
   await page.keyboard.press("PageDown");
-  await expect.poll(() => editor.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  await expect
+    .poll(() => verticalLayer.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(0);
   await page.keyboard.press("End");
   await expect
     .poll(() =>
-      editor.evaluate((element) =>
+      verticalLayer.evaluate((element) =>
         Math.abs(element.scrollTop - (element.scrollHeight - element.clientHeight)),
       ),
     )
     .toBeLessThanOrEqual(1.5);
 
-  const nativeEditorScroll = await editor.evaluate((element) => element.scrollTop);
+  const nativeEditorScroll = await verticalLayer.evaluate((element) => element.scrollTop);
   const interestsY = await interests.evaluate(
     (element) => window.scrollY + element.getBoundingClientRect().top - 40,
   );
@@ -597,10 +691,14 @@ test("runtime reduced-motion changes disable and restore one sticky stage", asyn
   ).toHaveCount(0);
   await expect(page.locator(".vscode-scroll-stage")).toHaveCount(1);
   await expect(page.locator(".vscode-window")).not.toHaveCSS("position", "sticky");
-  await expect(page.locator(".vscode-editor-scroll")).toHaveCSS("overflow-y", "auto");
+  await expect(page.locator(".vscode-editor-scroll")).toHaveCSS("overflow-y", "hidden");
+  await expect(page.locator(".vscode-editor-vertical")).toHaveCSS(
+    "overflow-y",
+    "auto",
+  );
 
   const editorScrollBeforeDocumentMove = await page
-    .locator(".vscode-editor-scroll")
+    .locator(".vscode-editor-vertical")
     .evaluate((element) => element.scrollTop);
   await setDocumentScroll(page, 0);
   await expectEditorScroll(page, editorScrollBeforeDocumentMove);
@@ -674,7 +772,7 @@ test("editor reaches its exact maximum before the sticky stage releases to Inter
     ),
   ).toBe(true);
   expect(
-    await page.locator(".vscode-editor-scroll").evaluate((element) => element.scrollTop),
+    await page.locator(".vscode-editor-vertical").evaluate((element) => element.scrollTop),
   ).toBeLessThan(metrics.maxEditorScroll);
 
   await setDocumentScroll(page, stageEnd);
@@ -738,7 +836,7 @@ test("mouse wheel uses native document scrolling without a preventDefault trap",
 
   let previousWindowY = await page.evaluate(() => window.scrollY);
   let previousEditorY = await page
-    .locator(".vscode-editor-scroll")
+    .locator(".vscode-editor-vertical")
     .evaluate((element) => element.scrollTop);
 
   for (let input = 0; input < 4; input += 1) {
@@ -750,13 +848,13 @@ test("mouse wheel uses native document scrolling without a preventDefault trap",
     await expect
       .poll(() =>
         page
-          .locator(".vscode-editor-scroll")
+          .locator(".vscode-editor-vertical")
           .evaluate((element) => element.scrollTop),
       )
       .toBeGreaterThan(previousEditorY);
     previousWindowY = nextWindowY;
     previousEditorY = await page
-      .locator(".vscode-editor-scroll")
+      .locator(".vscode-editor-vertical")
       .evaluate((element) => element.scrollTop);
   }
 
@@ -870,7 +968,7 @@ for (const width of RESPONSIVE_STICKY_VIEWPORTS) {
       .locator(".vscode-window")
       .evaluate((element) => element.getBoundingClientRect().top);
     const firstEditorTop = await page
-      .locator(".vscode-editor-scroll")
+      .locator(".vscode-editor-vertical")
       .evaluate((element) => element.scrollTop);
 
     await setDocumentScroll(page, metrics.stageStart + metrics.distance * 0.65);
@@ -879,7 +977,7 @@ for (const width of RESPONSIVE_STICKY_VIEWPORTS) {
       .locator(".vscode-window")
       .evaluate((element) => element.getBoundingClientRect().top);
     const secondEditorTop = await page
-      .locator(".vscode-editor-scroll")
+      .locator(".vscode-editor-vertical")
       .evaluate((element) => element.scrollTop);
 
     expect(secondEditorTop).toBeGreaterThan(firstEditorTop);
