@@ -13,7 +13,11 @@ const CUSTOM_PROFILE_COLORS = {
 };
 const RESPONSIVE_STICKY_VIEWPORTS = [1201, 1200, 901, 900, 899, 721, 720, 430, 390];
 
-async function loadAbout(page, viewport = { width: 1440, height: 900 }) {
+async function loadAbout(
+  page,
+  viewport = { width: 1440, height: 900 },
+  route = "/en/about/",
+) {
   await page.setViewportSize(viewport);
   await page.route(STEAM_API_URL, (route) =>
     route.fulfill({
@@ -22,7 +26,7 @@ async function loadAbout(page, viewport = { width: 1440, height: 900 }) {
       body: JSON.stringify({ ok: true, games: [] }),
     }),
   );
-  const response = await page.goto("/en/about/", { waitUntil: "load" });
+  const response = await page.goto(route, { waitUntil: "load" });
 
   expect(response?.status()).toBe(200);
   await expect(page.locator(".vscode-window[data-vscode-ready='true']")).toHaveCount(1);
@@ -296,6 +300,87 @@ test("profile-specific custom text colors remain unchanged", async ({ page }) =>
   );
 
   expect(renderedColors).toEqual(CUSTOM_PROFILE_COLORS);
+});
+
+for (const locale of [
+  {
+    name: "zh-Hant",
+    route: "/about/",
+    explorer: ["檔案總管", "已開啟的編輯器", "大綱", "時間表"],
+    terminal: ["問題", "輸出", "偵錯主控台", "終端機", "連接埠"],
+    status: ["第 3 行，第 1 欄", "空格: 4"],
+  },
+  {
+    name: "English",
+    route: "/en/about/",
+    explorer: ["Explorer", "Open Editors", "Outline", "Timeline"],
+    terminal: ["Problems", "Output", "Debug Console", "Terminal", "Ports"],
+    status: ["Ln 3, Col 1", "Spaces: 4"],
+  },
+  {
+    name: "Japanese",
+    route: "/ja/about/",
+    explorer: ["エクスプローラー", "開いているエディター", "アウトライン", "タイムライン"],
+    terminal: ["問題", "出力", "デバッグ コンソール", "ターミナル", "ポート"],
+    status: ["行 3、列 1", "スペース: 4"],
+  },
+]) {
+  test(`${locale.name} localizes the visible VS Code workspace chrome`, async ({
+    page,
+  }) => {
+    await loadAbout(page, undefined, locale.route);
+
+    for (const label of locale.explorer) {
+      await expect(page.locator(".vscode-explorer")).toContainText(label);
+    }
+    for (const label of locale.terminal) {
+      await expect(page.locator(".vscode-terminal-tabs")).toContainText(label);
+    }
+    for (const label of locale.status) {
+      await expect(page.locator(".vscode-statusbar")).toContainText(label);
+    }
+  });
+}
+
+test("forced colors remap editor text to readable system colors", async ({ page }) => {
+  await page.emulateMedia({ forcedColors: "active" });
+  await loadAbout(page);
+
+  const forcedColors = await page.evaluate((customClassNames) => {
+    const editor = document.querySelector(".vscode-editor-scroll");
+    const selectors = [
+      ".vscode-editor-scroll code",
+      ".vscode-editor-scroll .token.keyword",
+      ".vscode-editor-scroll .custom-line-numbers",
+      ...customClassNames.map((className) => `.vscode-editor-scroll .${className}`),
+    ];
+    const systemText = document.createElement("span");
+    systemText.style.color = "CanvasText";
+    editor.append(systemText);
+    const canvasText = getComputedStyle(systemText).color;
+    systemText.remove();
+
+    return {
+      active: matchMedia("(forced-colors: active)").matches,
+      canvasText,
+      editorAdjust: getComputedStyle(editor).getPropertyValue("forced-color-adjust"),
+      text: selectors.map((selector) => {
+        const element = document.querySelector(selector);
+        const style = getComputedStyle(element);
+        return {
+          color: style.color,
+          forcedColorAdjust: style.getPropertyValue("forced-color-adjust"),
+        };
+      }),
+    };
+  }, Object.keys(CUSTOM_PROFILE_COLORS));
+
+  expect(forcedColors.active).toBe(true);
+  expect(forcedColors.editorAdjust).not.toBe("none");
+  for (const text of forcedColors.text) {
+    expect(text.color).toBe(forcedColors.canvasText);
+    expect(text.forcedColorAdjust).not.toBe("none");
+  }
 });
 
 test("document scroll stays native and drives the sticky editor through its full range", async ({

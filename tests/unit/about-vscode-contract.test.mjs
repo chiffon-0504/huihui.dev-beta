@@ -84,6 +84,28 @@ describe("About VS Code workspace contracts", () => {
     expect(styles).not.toMatch(/\.(?:token|kw-[a-z-]+)\b/);
   });
 
+  test("localizes visible workspace chrome in all supported locales", () => {
+    const expectedLabels = {
+      zh: ["檔案總管", "已開啟的編輯器", "問題", "終端機", "第 3 行，第 1 欄", "空格: 4"],
+      en: ["Explorer", "Open Editors", "Problems", "Terminal", "Ln 3, Col 1", "Spaces: 4"],
+      ja: ["エクスプローラー", "開いているエディター", "問題", "ターミナル", "行 3、列 1", "スペース: 4"],
+    };
+
+    for (const labels of Object.values(expectedLabels)) {
+      for (const label of labels) expect(source).toContain(JSON.stringify(label));
+    }
+
+    expect(source).toContain("renderAboutVscodeExplorer(labels)");
+    expect(source).toContain("renderAboutVscodeTerminal(labels)");
+    expect(source).toContain("renderAboutVscodeStatusbar(labels)");
+  });
+
+  test("allows forced colors to remap the complete editor text subtree", () => {
+    expect(styles).toMatch(
+      /@media \(forced-colors: active\)[\s\S]*\.vscode-editor-scroll \*\s*\{[^}]*color:\s*CanvasText\s*!important;[^}]*forced-color-adjust:\s*auto;/,
+    );
+  });
+
   test("uses DOM panels rather than image, canvas, or fixed-window simulation", () => {
     for (const className of [
       "vscode-titlebar",

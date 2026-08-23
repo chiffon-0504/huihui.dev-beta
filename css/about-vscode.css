@@ -868,4 +868,11 @@
   .about-page .vscode-window .copy-btn:focus-visible {
     outline: 2px solid Highlight;
   }
+
+  .about-page .vscode-window .vscode-editor-scroll,
+  .about-page .vscode-window .vscode-editor-scroll code[class*="language-"],
+  .about-page .vscode-window .vscode-editor-scroll * {
+    color: CanvasText !important;
+    forced-color-adjust: auto;
+  }
 }

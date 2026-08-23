@@ -2,14 +2,47 @@ const ABOUT_VSCODE_LABELS = {
   zh: {
     workspace: "huihuidev.py 個人檔案程式碼工作區",
     editor: "huihuidev.py 原始碼",
+    explorer: "檔案總管",
+    openEditors: "已開啟的編輯器",
+    outline: "大綱",
+    timeline: "時間表",
+    problems: "問題",
+    output: "輸出",
+    debugConsole: "偵錯主控台",
+    terminal: "終端機",
+    ports: "連接埠",
+    lineColumn: "第 3 行，第 1 欄",
+    spaces: "空格: 4",
   },
   en: {
     workspace: "huihuidev.py profile code workspace",
     editor: "huihuidev.py source code",
+    explorer: "Explorer",
+    openEditors: "Open Editors",
+    outline: "Outline",
+    timeline: "Timeline",
+    problems: "Problems",
+    output: "Output",
+    debugConsole: "Debug Console",
+    terminal: "Terminal",
+    ports: "Ports",
+    lineColumn: "Ln 3, Col 1",
+    spaces: "Spaces: 4",
   },
   ja: {
     workspace: "huihuidev.py プロフィールコードのワークスペース",
     editor: "huihuidev.py ソースコード",
+    explorer: "エクスプローラー",
+    openEditors: "開いているエディター",
+    outline: "アウトライン",
+    timeline: "タイムライン",
+    problems: "問題",
+    output: "出力",
+    debugConsole: "デバッグ コンソール",
+    terminal: "ターミナル",
+    ports: "ポート",
+    lineColumn: "行 3、列 1",
+    spaces: "スペース: 4",
   },
 };
 
@@ -121,7 +154,7 @@ function renderAboutVscodeActivityBar() {
   `;
 }
 
-function renderAboutVscodeExplorer() {
+function renderAboutVscodeExplorer(labels) {
   const tree = ABOUT_VSCODE_TREE.map(([name, type]) => {
     const marker = type === "folder" ? "›" : "";
     const fileMarks = {
@@ -148,18 +181,18 @@ function renderAboutVscodeExplorer() {
   return `
     <aside class="vscode-explorer" aria-hidden="true">
       <div class="vscode-explorer-heading">
-        <span>檔案總管</span><span class="vscode-ellipsis">•••</span>
+        <span>${labels.explorer}</span><span class="vscode-ellipsis">•••</span>
       </div>
       <div class="vscode-explorer-section">
-        <div class="vscode-section-title"><span>⌄</span> 已開啟的編輯器</div>
+        <div class="vscode-section-title"><span>⌄</span> ${labels.openEditors}</div>
       </div>
       <div class="vscode-explorer-section vscode-repository-tree">
         <div class="vscode-section-title"><span>⌄</span> HUIHUI.DEV-BETA</div>
         <div class="vscode-tree">${tree}</div>
       </div>
       <div class="vscode-explorer-footer">
-        <div class="vscode-explorer-footer-row"><span>›</span> 大綱</div>
-        <div class="vscode-explorer-footer-row"><span>›</span> 時間表</div>
+        <div class="vscode-explorer-footer-row"><span>›</span> ${labels.outline}</div>
+        <div class="vscode-explorer-footer-row"><span>›</span> ${labels.timeline}</div>
       </div>
     </aside>
   `;
@@ -194,11 +227,11 @@ function renderAboutVscodeTitlebar() {
   `;
 }
 
-function renderAboutVscodeTerminal() {
+function renderAboutVscodeTerminal(labels) {
   return `
     <div class="vscode-terminal" aria-hidden="true">
       <div class="vscode-terminal-tabs">
-        <span>問題</span><span>輸出</span><span>偵錯主控台</span><span class="is-active">終端機</span><span>連接埠</span>
+        <span>${labels.problems}</span><span>${labels.output}</span><span>${labels.debugConsole}</span><span class="is-active">${labels.terminal}</span><span>${labels.ports}</span>
         <span class="vscode-terminal-spacer"></span>
         <span class="vscode-terminal-tools">
           <span class="vscode-terminal-add">＋</span><span class="vscode-terminal-chevron">⌄</span>
@@ -217,13 +250,13 @@ PS D:\\VSCode\\huihui.dev-beta&gt; <span class="vscode-terminal-caret"> </span><
   `;
 }
 
-function renderAboutVscodeStatusbar() {
+function renderAboutVscodeStatusbar(labels) {
   return `
     <footer class="vscode-statusbar" aria-hidden="true">
       <span>〉</span><span>⑂ main</span><span>↻</span><span>⑂</span><span>♢</span><span>♧ Launchpad</span>
       <span>ⓧ 0</span><span>△ 0</span>
       <span class="vscode-status-spacer"></span>
-      <span>第 3 行，第 1 欄</span><span>空格: 4</span><span>UTF-8</span><span>CRLF</span>
+      <span>${labels.lineColumn}</span><span>${labels.spaces}</span><span>UTF-8</span><span>CRLF</span>
       <span>{ } Python</span><span>♧&nbsp; Python 3.14 (64-bit)</span><span>◉ Go Live</span><span>✓ Prettier</span><span>♧</span>
     </footer>
   `;
@@ -379,13 +412,13 @@ function initAboutVscodeWorkspace() {
   const editor = document.createElement("div");
   editor.className = "vscode-editor-area";
   editor.append(header, breadcrumb, editorViewport);
-  editor.insertAdjacentHTML("beforeend", renderAboutVscodeTerminal());
+  editor.insertAdjacentHTML("beforeend", renderAboutVscodeTerminal(labels));
 
   const workbench = document.createElement("div");
   workbench.className = "vscode-workbench";
-  workbench.innerHTML = `${renderAboutVscodeActivityBar()}${renderAboutVscodeExplorer()}`;
+  workbench.innerHTML = `${renderAboutVscodeActivityBar()}${renderAboutVscodeExplorer(labels)}`;
   workbench.append(editor);
-  workbench.insertAdjacentHTML("beforeend", renderAboutVscodeStatusbar());
+  workbench.insertAdjacentHTML("beforeend", renderAboutVscodeStatusbar(labels));
 
   wrapper.replaceChildren();
   wrapper.insertAdjacentHTML("afterbegin", renderAboutVscodeTitlebar());
