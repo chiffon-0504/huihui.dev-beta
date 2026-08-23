@@ -53,6 +53,15 @@ describe("About VS Code workspace contracts", () => {
     expect(styles).not.toMatch(
       /vscode-terminal-output[^}]*font-family:[^;}]*Cascadia Code/s,
     );
+    expect(styles).toMatch(
+      /@media \(max-width: 900px\)[\s\S]*\.vscode-editor-scroll code\[class\*="language-"\]\s*\{[^}]*font-family:\s*Consolas, Monaco, "Courier New", monospace\s*!important;[^}]*font-size:\s*0\.92rem\s*!important;[^}]*line-height:\s*1\.6\s*!important;/,
+    );
+    expect(styles).toMatch(
+      /@media \(max-width: 900px\)[\s\S]*\.vscode-editor-scroll > \.custom-line-numbers\s*\{[^}]*font-family:\s*Consolas, Monaco, "Courier New", monospace;[^}]*font-size:\s*0\.92rem;[^}]*line-height:\s*1\.6;/,
+    );
+    expect(styles).toMatch(
+      /@media \(max-width: 900px\)[\s\S]*\.vscode-terminal-output\s*\{[^}]*font-family:\s*Consolas, Monaco, "Courier New", monospace;[^}]*font-size:\s*0\.92rem;[^}]*line-height:\s*1\.6;/,
+    );
   });
 
   test("uses native document scrolling with a requestAnimationFrame sticky stage", () => {

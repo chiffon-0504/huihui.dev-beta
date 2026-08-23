@@ -783,8 +783,9 @@
   }
 
   .about-page .vscode-window .vscode-editor-scroll code[class*="language-"] {
-    font-size: 11px !important;
-    line-height: 1.52 !important;
+    font-family: Consolas, Monaco, "Courier New", monospace !important;
+    font-size: 0.92rem !important;
+    line-height: 1.6 !important;
     letter-spacing: 0 !important;
   }
 
@@ -793,8 +794,9 @@
     left: 0.35rem;
     width: 2.35rem;
     padding-right: 0.5rem;
-    font-size: 11px;
-    line-height: 1.52;
+    font-family: Consolas, Monaco, "Courier New", monospace;
+    font-size: 0.92rem;
+    line-height: 1.6;
   }
 
   .vscode-terminal-tabs {
@@ -813,8 +815,9 @@
 
   .vscode-terminal-output {
     padding: 7px 10px;
-    font-size: 10.5px;
-    line-height: 1.42;
+    font-family: Consolas, Monaco, "Courier New", monospace;
+    font-size: 0.92rem;
+    line-height: 1.6;
   }
 
   .vscode-statusbar {

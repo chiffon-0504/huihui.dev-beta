@@ -455,34 +455,46 @@ test("mobile editor is the single keyboard-reachable horizontal scroller", async
 test("mobile editor and terminal use the legacy About font stack", async ({ page }) => {
   await loadAbout(page, { width: 390, height: 844 });
 
-  const typography = await page.evaluate(() => ({
-    code: getComputedStyle(
-      document.querySelector('.vscode-editor-scroll code[class*="language-"]'),
-    ).fontFamily,
-    lineNumbers: getComputedStyle(
-      document.querySelector(".vscode-editor-scroll > .custom-line-numbers"),
-    ).fontFamily,
-    terminalCommand: getComputedStyle(
-      document.querySelector(".vscode-terminal-command"),
-    ).fontFamily,
-    terminalOutput: getComputedStyle(
-      document.querySelector(".vscode-terminal-output"),
-    ).fontFamily,
-    terminalPrompt: getComputedStyle(
-      document.querySelector(".vscode-terminal-prompt"),
-    ).fontFamily,
-  }));
+  const typography = await page.evaluate(() => {
+    const readTypography = (selector) => {
+      const style = getComputedStyle(document.querySelector(selector));
+      return {
+        fontFamily: style.fontFamily,
+        fontSize: Number.parseFloat(style.fontSize),
+        lineHeight: Number.parseFloat(style.lineHeight),
+      };
+    };
+
+    return {
+      code: readTypography('.vscode-editor-scroll code[class*="language-"]'),
+      lineNumbers: readTypography(".vscode-editor-scroll > .custom-line-numbers"),
+      rootFontSize: Number.parseFloat(getComputedStyle(document.documentElement).fontSize),
+      terminalCommand: readTypography(".vscode-terminal-command"),
+      terminalOutput: readTypography(".vscode-terminal-output"),
+      terminalPrompt: readTypography(".vscode-terminal-prompt"),
+    };
+  });
   const normalizeFontStack = (fontFamily) =>
     fontFamily.split(",").map((family) => family.trim().replace(/^['"]|['"]$/g, ""));
   const legacyStack = ["Consolas", "Monaco", "Courier New", "monospace"];
+  const expectedFontSize = typography.rootFontSize * 0.92;
+  const expectedLineHeight = expectedFontSize * 1.6;
 
-  expect(normalizeFontStack(typography.code)).toEqual(legacyStack);
-  expect(normalizeFontStack(typography.lineNumbers)).toEqual(legacyStack);
-  expect(normalizeFontStack(typography.terminalOutput)).toEqual(legacyStack);
-  expect(normalizeFontStack(typography.terminalPrompt)).toEqual(legacyStack);
-  expect(normalizeFontStack(typography.terminalCommand)).toEqual(legacyStack);
-  expect(typography.code).not.toContain("Cascadia Code");
-  expect(typography.terminalOutput).not.toContain("Cascadia Code");
+  for (const value of [
+    typography.code,
+    typography.lineNumbers,
+    typography.terminalOutput,
+    typography.terminalPrompt,
+    typography.terminalCommand,
+  ]) {
+    expect(normalizeFontStack(value.fontFamily)).toEqual(legacyStack);
+    expect(value.fontSize).toBeCloseTo(expectedFontSize, 2);
+    expect(value.lineHeight).toBeCloseTo(expectedLineHeight, 2);
+    expect(value.fontFamily).not.toContain("Cascadia Code");
+  }
+
+  expect(typography.lineNumbers.fontSize).toBe(typography.code.fontSize);
+  expect(typography.lineNumbers.lineHeight).toBe(typography.code.lineHeight);
 });
 
 test("reduced motion uses native editor scrolling without a sticky stage", async ({
