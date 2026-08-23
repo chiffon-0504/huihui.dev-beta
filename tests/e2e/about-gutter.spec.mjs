@@ -39,10 +39,12 @@ async function getGutterGeometry(page) {
   return page.locator(".code-block.code-block-with-gutter").evaluate((wrapper) => {
     const pre = wrapper.querySelector('pre[class*="language-"]');
     const code = pre?.querySelector('code[class*="language-"]');
+    const editor = wrapper.querySelector(".vscode-editor-scroll");
     const gutter = wrapper.querySelector(
       ".vscode-editor-scroll > .custom-line-numbers",
     );
     const preStyle = getComputedStyle(pre);
+    const editorStyle = getComputedStyle(editor);
     const gutterStyle = getComputedStyle(gutter);
     const wrapperStyle = getComputedStyle(wrapper);
     const codeRect = code.getBoundingClientRect();
@@ -54,6 +56,7 @@ async function getGutterGeometry(page) {
 
     return {
       codeStartsAfterGutter: codeRect.left > gutterRect.right,
+      editorOverflowX: editorStyle.overflowX,
       expectedLineCount,
       gutterLeft: Number.parseFloat(gutterStyle.left),
       gutterPaddingRight: Number.parseFloat(gutterStyle.paddingRight),
@@ -65,7 +68,7 @@ async function getGutterGeometry(page) {
           Number.parseFloat(getComputedStyle(code).lineHeight) -
             Number.parseFloat(gutterStyle.lineHeight),
         ) < 0.05,
-      overflowX: preStyle.overflowX,
+      preOverflowX: preStyle.overflowX,
       prePaddingLeft: Number.parseFloat(preStyle.paddingLeft),
       wrapperPosition: wrapperStyle.position,
     };
@@ -81,11 +84,12 @@ test("desktop About code gutter preserves its geometry and line alignment", asyn
   const geometry = await getGutterGeometry(page);
   expect(geometry).toMatchObject({
     codeStartsAfterGutter: true,
+    editorOverflowX: "auto",
     gutterLeft: 8,
     gutterPaddingRight: 10,
     gutterTop: 4,
     lineHeightsMatch: true,
-    overflowX: "auto",
+    preOverflowX: "visible",
     wrapperPosition: "sticky",
   });
   expectCssPixels(
@@ -105,10 +109,11 @@ test("mobile About code gutter preserves its compact geometry and line alignment
   const geometry = await getGutterGeometry(page);
   expect(geometry).toMatchObject({
     codeStartsAfterGutter: true,
+    editorOverflowX: "auto",
     gutterLeft: 5.6,
     gutterPaddingRight: 8,
     lineHeightsMatch: true,
-    overflowX: "auto",
+    preOverflowX: "visible",
     wrapperPosition: "sticky",
   });
   expectCssPixels(

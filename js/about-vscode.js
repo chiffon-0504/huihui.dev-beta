@@ -397,6 +397,8 @@ function initAboutVscodeWorkspace() {
   editorScroll.className = "vscode-editor-scroll";
   editorScroll.setAttribute("role", "region");
   editorScroll.setAttribute("aria-label", labels.editor);
+  editorScroll.tabIndex = 0;
+  pre.removeAttribute("tabindex");
   editorScroll.append(pre);
 
   const editorViewport = document.createElement("div");

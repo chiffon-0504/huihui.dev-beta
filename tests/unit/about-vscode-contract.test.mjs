@@ -21,11 +21,19 @@ describe("About VS Code workspace contracts", () => {
   test("keeps the profile code as an accessible document-driven region", () => {
     expect(source).toContain('editorScroll.className = "vscode-editor-scroll"');
     expect(source).toContain('editorScroll.setAttribute("role", "region")');
+    expect(source).toContain("editorScroll.tabIndex = 0");
+    expect(source).toContain('pre.removeAttribute("tabindex")');
     expect(source).toContain("editorScroll.append(pre)");
     expect(styles).toMatch(
-      /\.vscode-editor-scroll\s*\{[^}]*overflow-y:\s*hidden;/s,
+      /\.vscode-editor-scroll\s*\{[^}]*overflow-x:\s*auto;[^}]*overflow-y:\s*hidden;/s,
     );
-    expect(source).not.toContain("editorScroll.tabIndex");
+    expect(styles).toMatch(
+      /\.vscode-editor-scroll pre\[class\*="language-"\]\s*\{[^}]*overflow-x:\s*visible\s*!important;[^}]*overflow-y:\s*visible\s*!important;/s,
+    );
+    expect(styles).not.toMatch(
+      /\.vscode-editor-scroll pre\[class\*="language-"\]\s*\{[^}]*overflow-x:\s*auto;/s,
+    );
+    expect(source).not.toContain("pre.tabIndex");
     expect(codeBlocksSource).toContain('if (pre.closest(".code-block")) return;');
   });
 

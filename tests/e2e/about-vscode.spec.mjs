@@ -383,6 +383,70 @@ test("forced colors remap editor text to readable system colors", async ({ page 
   }
 });
 
+test("mobile editor is the single keyboard-reachable horizontal scroller", async ({
+  page,
+}) => {
+  await loadAbout(page, { width: 390, height: 844 });
+
+  const editor = page.locator(".vscode-editor-scroll");
+  const pre = editor.locator('pre[class*="language-"]');
+  await expect(editor).toHaveAttribute("tabindex", "0");
+  await expect(editor).toHaveAttribute("role", "region");
+  await expect(editor).toHaveAccessibleName("huihuidev.py source code");
+
+  const overflow = await page.evaluate(() => {
+    const editorElement = document.querySelector(".vscode-editor-scroll");
+    const preElement = editorElement.querySelector('pre[class*="language-"]');
+
+    return {
+      editorClientWidth: editorElement.clientWidth,
+      editorOverflowX: getComputedStyle(editorElement).overflowX,
+      editorScrollWidth: editorElement.scrollWidth,
+      preOverflowX: getComputedStyle(preElement).overflowX,
+      preTabIndex: preElement.tabIndex,
+    };
+  });
+
+  expect(overflow.editorOverflowX).toBe("auto");
+  expect(overflow.editorScrollWidth).toBeGreaterThan(overflow.editorClientWidth);
+  expect(overflow.preOverflowX).toBe("visible");
+  expect(overflow.preTabIndex).toBe(-1);
+
+  let reachedEditor = false;
+  for (let tabPress = 0; tabPress < 20; tabPress += 1) {
+    await page.keyboard.press("Tab");
+    reachedEditor = await editor.evaluate((element) => document.activeElement === element);
+    if (reachedEditor) break;
+  }
+  expect(reachedEditor).toBe(true);
+  await expect(editor).toBeFocused();
+
+  const focusOutline = await editor.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { style: style.outlineStyle, width: style.outlineWidth };
+  });
+  expect(focusOutline.style).not.toBe("none");
+  expect(Number.parseFloat(focusOutline.width)).toBeGreaterThan(0);
+
+  for (let keyPress = 0; keyPress < 8; keyPress += 1) {
+    await page.keyboard.press("ArrowRight");
+  }
+  await expect.poll(() => editor.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+  const rightScroll = await editor.evaluate((element) => element.scrollLeft);
+
+  for (let keyPress = 0; keyPress < 8; keyPress += 1) {
+    await page.keyboard.press("ArrowLeft");
+  }
+  await expect
+    .poll(() => editor.evaluate((element) => element.scrollLeft))
+    .toBeLessThan(rightScroll);
+
+  const metrics = await getStageMetrics(page);
+  await setDocumentScroll(page, metrics.stageStart + metrics.distance * 0.5);
+  await expectEditorMatchesDocumentScroll(page, metrics);
+  expect(await pre.getAttribute("tabindex")).toBeNull();
+});
+
 test("document scroll stays native and drives the sticky editor through its full range", async ({
   page,
 }) => {

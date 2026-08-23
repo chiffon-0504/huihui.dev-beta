@@ -538,19 +538,17 @@
 }
 
 .about-page .vscode-window .vscode-editor-scroll pre[class*="language-"] {
-  width: 100%;
+  width: max-content;
   min-width: 100%;
   max-width: none;
   min-height: max-content;
   margin: 0;
   padding: 0.25rem 5.25rem 1rem 4.25rem !important;
-  overflow-x: auto;
-  overflow-y: visible;
+  overflow-x: visible !important;
+  overflow-y: visible !important;
   color: #d4d4d4;
   background: transparent !important;
   border-radius: 0;
-  scrollbar-color: #5a5a5a transparent;
-  scrollbar-width: thin;
 }
 
 .about-page .vscode-window .vscode-editor-scroll code[class*="language-"] {
