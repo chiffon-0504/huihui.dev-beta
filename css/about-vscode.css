@@ -840,6 +840,19 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .about-page .vscode-scroll-stage {
+    height: auto !important;
+  }
+
+  .about-page .vscode-scroll-stage > .vscode-window.code-block {
+    position: static;
+    top: auto;
+  }
+
+  .about-page .vscode-window .vscode-editor-scroll {
+    overflow-y: auto;
+  }
+
   .about-page .vscode-window .copy-btn,
   .about-page .vscode-window .vscode-editor-scroll code[class*="language-"],
   .about-page .vscode-window .vscode-editor-scroll > .custom-line-numbers {

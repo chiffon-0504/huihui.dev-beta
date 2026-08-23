@@ -71,6 +71,24 @@ describe("About VS Code workspace contracts", () => {
     expect(styles).not.toMatch(/overflow:\s*hidden[^}]*html|html[^}]*overflow:\s*hidden/is);
   });
 
+  test("uses a native editor scroller instead of the sticky stage for reduced motion", () => {
+    expect(source).toContain(
+      'window.matchMedia("(prefers-reduced-motion: reduce)")',
+    );
+    expect(source).toContain("if (reducedMotion.matches)");
+    expect(source).toContain("stageController?.setEnabled(false)");
+    expect(source).toContain("initAboutVscodeScrollStage(wrapper, editorScroll)");
+    expect(styles).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.vscode-scroll-stage\s*\{[^}]*height:\s*auto\s*!important;/,
+    );
+    expect(styles).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.vscode-scroll-stage\s*>\s*\.vscode-window\.code-block\s*\{[^}]*position:\s*static;/,
+    );
+    expect(styles).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.vscode-editor-scroll\s*\{[^}]*overflow-y:\s*auto;/,
+    );
+  });
+
   test("preserves the established profile-specific color palette", () => {
     const expectedColors = {
       "kw-blue": "#33AAFF",

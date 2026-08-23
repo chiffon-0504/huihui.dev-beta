@@ -264,6 +264,7 @@ function renderAboutVscodeStatusbar(labels) {
 
 function initAboutVscodeScrollStage(wrapper, editorScroll) {
   const stage = document.createElement("div");
+  let enabled = true;
   let stageStart = 0;
   let stageScrollableDistance = 0;
   let maxEditorScroll = 0;
@@ -276,6 +277,7 @@ function initAboutVscodeScrollStage(wrapper, editorScroll) {
 
   const syncEditorScroll = () => {
     scrollFrame = null;
+    if (!enabled) return;
     const progress =
       stageScrollableDistance > 0
         ? Math.min(
@@ -288,12 +290,14 @@ function initAboutVscodeScrollStage(wrapper, editorScroll) {
   };
 
   const requestScrollSync = () => {
+    if (!enabled) return;
     if (scrollFrame !== null) return;
     scrollFrame = requestAnimationFrame(syncEditorScroll);
   };
 
   const measureStage = () => {
     measureFrame = null;
+    if (!enabled) return;
     const workspaceHeight = wrapper.offsetHeight;
     const stickyTop = Math.max(
       0,
@@ -323,6 +327,7 @@ function initAboutVscodeScrollStage(wrapper, editorScroll) {
   };
 
   const requestStageMeasure = () => {
+    if (!enabled) return;
     if (measureFrame !== null) return;
     measureFrame = requestAnimationFrame(measureStage);
   };
@@ -336,6 +341,46 @@ function initAboutVscodeScrollStage(wrapper, editorScroll) {
     const resizeObserver = new ResizeObserver(requestStageMeasure);
     resizeObserver.observe(wrapper);
   }
+
+  return {
+    setEnabled(nextEnabled) {
+      if (enabled === nextEnabled) return;
+      enabled = nextEnabled;
+
+      if (!enabled) {
+        if (scrollFrame !== null) cancelAnimationFrame(scrollFrame);
+        if (measureFrame !== null) cancelAnimationFrame(measureFrame);
+        scrollFrame = null;
+        measureFrame = null;
+        delete stage.dataset.scrollStageReady;
+        return;
+      }
+
+      measureStage();
+      requestStageMeasure();
+    },
+  };
+}
+
+function initAboutVscodeMotionBehavior(wrapper, editorScroll) {
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  let stageController = null;
+
+  const applyMotionPreference = () => {
+    if (reducedMotion.matches) {
+      stageController?.setEnabled(false);
+      return;
+    }
+
+    if (stageController) {
+      stageController.setEnabled(true);
+    } else {
+      stageController = initAboutVscodeScrollStage(wrapper, editorScroll);
+    }
+  };
+
+  applyMotionPreference();
+  reducedMotion.addEventListener("change", applyMotionPreference);
 }
 
 function initAboutVscodeWorkspace() {
@@ -425,7 +470,7 @@ function initAboutVscodeWorkspace() {
   wrapper.replaceChildren();
   wrapper.insertAdjacentHTML("afterbegin", renderAboutVscodeTitlebar());
   wrapper.append(workbench);
-  initAboutVscodeScrollStage(wrapper, editorScroll);
+  initAboutVscodeMotionBehavior(wrapper, editorScroll);
 }
 
 document.addEventListener("DOMContentLoaded", () => {

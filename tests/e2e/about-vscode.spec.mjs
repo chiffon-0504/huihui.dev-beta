@@ -17,6 +17,7 @@ async function loadAbout(
   page,
   viewport = { width: 1440, height: 900 },
   route = "/en/about/",
+  { expectStickyStage = true } = {},
 ) {
   await page.setViewportSize(viewport);
   await page.route(STEAM_API_URL, (route) =>
@@ -30,9 +31,13 @@ async function loadAbout(
 
   expect(response?.status()).toBe(200);
   await expect(page.locator(".vscode-window[data-vscode-ready='true']")).toHaveCount(1);
-  await expect(
-    page.locator(".vscode-scroll-stage[data-scroll-stage-ready='true']"),
-  ).toHaveCount(1);
+  if (expectStickyStage) {
+    await expect(
+      page.locator(".vscode-scroll-stage[data-scroll-stage-ready='true']"),
+    ).toHaveCount(1);
+  } else {
+    await expect(page.locator(".vscode-scroll-stage")).toHaveCount(0);
+  }
   await expect(page.locator(".vscode-editor-scroll > .custom-line-numbers")).toBeVisible();
 }
 
@@ -445,6 +450,97 @@ test("mobile editor is the single keyboard-reachable horizontal scroller", async
   await setDocumentScroll(page, metrics.stageStart + metrics.distance * 0.5);
   await expectEditorMatchesDocumentScroll(page, metrics);
   expect(await pre.getAttribute("tabindex")).toBeNull();
+});
+
+test("reduced motion uses native editor scrolling without a sticky stage", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await loadAbout(page, { width: 390, height: 844 }, "/en/about/", {
+    expectStickyStage: false,
+  });
+
+  const editor = page.locator(".vscode-editor-scroll");
+  const workspace = page.locator(".vscode-window");
+  const interests = page.getByRole("heading", { name: "Interests" });
+  const initial = await page.evaluate(() => {
+    const editorElement = document.querySelector(".vscode-editor-scroll");
+    const workspaceElement = document.querySelector(".vscode-window");
+
+    return {
+      editorClientHeight: editorElement.clientHeight,
+      editorOverflowY: getComputedStyle(editorElement).overflowY,
+      editorScrollHeight: editorElement.scrollHeight,
+      reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches,
+      scrollingElement: document.scrollingElement?.tagName,
+      workspacePosition: getComputedStyle(workspaceElement).position,
+    };
+  });
+
+  expect(initial.reducedMotion).toBe(true);
+  expect(initial.scrollingElement).toBe("HTML");
+  expect(initial.workspacePosition).not.toBe("sticky");
+  expect(initial.editorOverflowY).toBe("auto");
+  expect(initial.editorScrollHeight).toBeGreaterThan(initial.editorClientHeight);
+  await expect(editor).toHaveAttribute("tabindex", "0");
+  await expect(editor).toHaveAccessibleName("huihuidev.py source code");
+  await expect(page.locator(".vscode-terminal")).toBeVisible();
+  await expect(page.locator(".vscode-statusbar")).toBeVisible();
+
+  await editor.focus();
+  await expect(editor).toBeFocused();
+  await page.keyboard.press("PageDown");
+  await expect.poll(() => editor.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  await page.keyboard.press("End");
+  await expect
+    .poll(() =>
+      editor.evaluate((element) =>
+        Math.abs(element.scrollTop - (element.scrollHeight - element.clientHeight)),
+      ),
+    )
+    .toBeLessThanOrEqual(1.5);
+
+  const nativeEditorScroll = await editor.evaluate((element) => element.scrollTop);
+  const interestsY = await interests.evaluate(
+    (element) => window.scrollY + element.getBoundingClientRect().top - 40,
+  );
+  await setDocumentScroll(page, interestsY);
+  await expect(interests).toBeVisible();
+  await expectEditorScroll(page, nativeEditorScroll);
+  await expect(workspace).not.toHaveCSS("position", "sticky");
+});
+
+test("runtime reduced-motion changes disable and restore one sticky stage", async ({
+  page,
+}) => {
+  await loadAbout(page);
+  const initialMetrics = await getStageMetrics(page);
+  await setDocumentScroll(page, initialMetrics.stageStart + initialMetrics.distance * 0.25);
+  await expectEditorScroll(page, initialMetrics.maxEditorScroll * 0.25);
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(
+    page.locator(".vscode-scroll-stage[data-scroll-stage-ready='true']"),
+  ).toHaveCount(0);
+  await expect(page.locator(".vscode-scroll-stage")).toHaveCount(1);
+  await expect(page.locator(".vscode-window")).not.toHaveCSS("position", "sticky");
+  await expect(page.locator(".vscode-editor-scroll")).toHaveCSS("overflow-y", "auto");
+
+  const editorScrollBeforeDocumentMove = await page
+    .locator(".vscode-editor-scroll")
+    .evaluate((element) => element.scrollTop);
+  await setDocumentScroll(page, 0);
+  await expectEditorScroll(page, editorScrollBeforeDocumentMove);
+
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await expect(
+    page.locator(".vscode-scroll-stage[data-scroll-stage-ready='true']"),
+  ).toHaveCount(1);
+  await expect(page.locator(".vscode-scroll-stage")).toHaveCount(1);
+  const restoredMetrics = await getStageMetrics(page);
+  await setDocumentScroll(page, restoredMetrics.stageStart + restoredMetrics.distance * 0.5);
+  await expectEditorScroll(page, restoredMetrics.maxEditorScroll * 0.5);
+  await expect(page.locator(".vscode-window")).toHaveCSS("position", "sticky");
 });
 
 test("document scroll stays native and drives the sticky editor through its full range", async ({
