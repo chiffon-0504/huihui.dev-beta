@@ -558,7 +558,16 @@
   color: #d4d4d4 !important;
   background: transparent !important;
   text-shadow: none !important;
-  font-family: Consolas, Monaco, "Courier New", monospace !important;
+  font-family:
+    ui-monospace,
+    "SFMono-Regular",
+    "SF Mono",
+    Menlo,
+    Monaco,
+    Consolas,
+    "Liberation Mono",
+    "Courier New",
+    monospace !important;
   font-size: 13px;
   line-height: 1.48;
   clip-path: none !important;
@@ -574,7 +583,16 @@
   padding: 0 0.625rem 0 0;
   color: #858585;
   border: 0;
-  font-family: Consolas, Monaco, "Courier New", monospace;
+  font-family:
+    ui-monospace,
+    "SFMono-Regular",
+    "SF Mono",
+    Menlo,
+    Monaco,
+    Consolas,
+    "Liberation Mono",
+    "Courier New",
+    monospace !important;
   font-size: 13px;
   line-height: 1.48;
   text-align: right;
@@ -659,7 +677,16 @@
   color: #d7d7d7;
   background: transparent;
   border-radius: 0;
-  font-family: Consolas, Monaco, "Courier New", monospace;
+  font-family:
+    ui-monospace,
+    "SFMono-Regular",
+    "SF Mono",
+    Menlo,
+    Monaco,
+    Consolas,
+    "Liberation Mono",
+    "Courier New",
+    monospace !important;
   font-size: 12px;
   line-height: 1.52;
   white-space: pre-wrap;
@@ -783,9 +810,18 @@
   }
 
   .about-page .vscode-window .vscode-editor-scroll code[class*="language-"] {
-    font-family: Consolas, Monaco, "Courier New", monospace !important;
-    font-size: 0.92rem !important;
-    line-height: 1.6 !important;
+    font-family:
+      ui-monospace,
+      "SFMono-Regular",
+      "SF Mono",
+      Menlo,
+      Monaco,
+      Consolas,
+      "Liberation Mono",
+      "Courier New",
+      monospace !important;
+    font-size: 11px !important;
+    line-height: 1.52 !important;
     letter-spacing: 0 !important;
   }
 
@@ -794,9 +830,18 @@
     left: 0.35rem;
     width: 2.35rem;
     padding-right: 0.5rem;
-    font-family: Consolas, Monaco, "Courier New", monospace;
-    font-size: 0.92rem;
-    line-height: 1.6;
+    font-family:
+      ui-monospace,
+      "SFMono-Regular",
+      "SF Mono",
+      Menlo,
+      Monaco,
+      Consolas,
+      "Liberation Mono",
+      "Courier New",
+      monospace !important;
+    font-size: 11px;
+    line-height: 1.52;
   }
 
   .vscode-terminal-tabs {
@@ -815,9 +860,18 @@
 
   .vscode-terminal-output {
     padding: 7px 10px;
-    font-family: Consolas, Monaco, "Courier New", monospace;
-    font-size: 0.92rem;
-    line-height: 1.6;
+    font-family:
+      ui-monospace,
+      "SFMono-Regular",
+      "SF Mono",
+      Menlo,
+      Monaco,
+      Consolas,
+      "Liberation Mono",
+      "Courier New",
+      monospace !important;
+    font-size: 10.5px;
+    line-height: 1.42;
   }
 
   .vscode-statusbar {

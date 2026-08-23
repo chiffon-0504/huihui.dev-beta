@@ -38,14 +38,19 @@ describe("About VS Code workspace contracts", () => {
   });
 
   test("restores the legacy About monospace stack for editor and terminal text", () => {
+    const legacyStack =
+      'font-family: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;';
+    const normalizedStyles = styles.replace(/\s+/g, " ");
+
+    expect(normalizedStyles.match(new RegExp(legacyStack, "g"))).toHaveLength(6);
     expect(styles).toMatch(
-      /\.vscode-editor-scroll code\[class\*="language-"\]\s*\{[^}]*font-family:\s*Consolas, Monaco, "Courier New", monospace\s*!important;/s,
+      /\.vscode-editor-scroll code\[class\*="language-"\]\s*\{[^}]*font-family:\s*ui-monospace,\s*"SFMono-Regular",\s*"SF Mono",\s*Menlo,\s*Monaco,\s*Consolas,\s*"Liberation Mono",\s*"Courier New",\s*monospace\s*!important;/s,
     );
     expect(styles).toMatch(
-      /\.vscode-editor-scroll > \.custom-line-numbers\s*\{[^}]*font-family:\s*Consolas, Monaco, "Courier New", monospace;/s,
+      /\.vscode-editor-scroll > \.custom-line-numbers\s*\{[^}]*font-family:\s*ui-monospace,\s*"SFMono-Regular",\s*"SF Mono",\s*Menlo,\s*Monaco,\s*Consolas,\s*"Liberation Mono",\s*"Courier New",\s*monospace\s*!important;/s,
     );
     expect(styles).toMatch(
-      /\.vscode-terminal-output\s*\{[^}]*font-family:\s*Consolas, Monaco, "Courier New", monospace;/s,
+      /\.vscode-terminal-output\s*\{[^}]*font-family:\s*ui-monospace,\s*"SFMono-Regular",\s*"SF Mono",\s*Menlo,\s*Monaco,\s*Consolas,\s*"Liberation Mono",\s*"Courier New",\s*monospace\s*!important;/s,
     );
     expect(styles).not.toMatch(
       /vscode-editor-scroll[^}]*font-family:[^;}]*Cascadia Code/s,
@@ -54,13 +59,13 @@ describe("About VS Code workspace contracts", () => {
       /vscode-terminal-output[^}]*font-family:[^;}]*Cascadia Code/s,
     );
     expect(styles).toMatch(
-      /@media \(max-width: 900px\)[\s\S]*\.vscode-editor-scroll code\[class\*="language-"\]\s*\{[^}]*font-family:\s*Consolas, Monaco, "Courier New", monospace\s*!important;[^}]*font-size:\s*0\.92rem\s*!important;[^}]*line-height:\s*1\.6\s*!important;/,
+      /@media \(max-width: 900px\)[\s\S]*\.vscode-editor-scroll code\[class\*="language-"\]\s*\{[^}]*font-size:\s*11px\s*!important;[^}]*line-height:\s*1\.52\s*!important;/,
     );
     expect(styles).toMatch(
-      /@media \(max-width: 900px\)[\s\S]*\.vscode-editor-scroll > \.custom-line-numbers\s*\{[^}]*font-family:\s*Consolas, Monaco, "Courier New", monospace;[^}]*font-size:\s*0\.92rem;[^}]*line-height:\s*1\.6;/,
+      /@media \(max-width: 900px\)[\s\S]*\.vscode-editor-scroll > \.custom-line-numbers\s*\{[^}]*font-size:\s*11px;[^}]*line-height:\s*1\.52;/,
     );
     expect(styles).toMatch(
-      /@media \(max-width: 900px\)[\s\S]*\.vscode-terminal-output\s*\{[^}]*font-family:\s*Consolas, Monaco, "Courier New", monospace;[^}]*font-size:\s*0\.92rem;[^}]*line-height:\s*1\.6;/,
+      /@media \(max-width: 900px\)[\s\S]*\.vscode-terminal-output\s*\{[^}]*font-size:\s*10\.5px;[^}]*line-height:\s*1\.42;/,
     );
   });
 

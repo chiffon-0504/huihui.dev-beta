@@ -468,7 +468,6 @@ test("mobile editor and terminal use the legacy About font stack", async ({ page
     return {
       code: readTypography('.vscode-editor-scroll code[class*="language-"]'),
       lineNumbers: readTypography(".vscode-editor-scroll > .custom-line-numbers"),
-      rootFontSize: Number.parseFloat(getComputedStyle(document.documentElement).fontSize),
       terminalCommand: readTypography(".vscode-terminal-command"),
       terminalOutput: readTypography(".vscode-terminal-output"),
       terminalPrompt: readTypography(".vscode-terminal-prompt"),
@@ -476,9 +475,24 @@ test("mobile editor and terminal use the legacy About font stack", async ({ page
   });
   const normalizeFontStack = (fontFamily) =>
     fontFamily.split(",").map((family) => family.trim().replace(/^['"]|['"]$/g, ""));
-  const legacyStack = ["Consolas", "Monaco", "Courier New", "monospace"];
-  const expectedFontSize = typography.rootFontSize * 0.92;
-  const expectedLineHeight = expectedFontSize * 1.6;
+  const expectComputedPixels = (actual, expected, tolerance) => {
+    const floatingPointSlack =
+      Number.EPSILON * Math.max(1, Math.abs(actual), Math.abs(expected));
+    expect(Math.abs(actual - expected)).toBeLessThanOrEqual(
+      tolerance + floatingPointSlack,
+    );
+  };
+  const legacyStack = [
+    "ui-monospace",
+    "SFMono-Regular",
+    "SF Mono",
+    "Menlo",
+    "Monaco",
+    "Consolas",
+    "Liberation Mono",
+    "Courier New",
+    "monospace",
+  ];
 
   for (const value of [
     typography.code,
@@ -488,13 +502,27 @@ test("mobile editor and terminal use the legacy About font stack", async ({ page
     typography.terminalCommand,
   ]) {
     expect(normalizeFontStack(value.fontFamily)).toEqual(legacyStack);
-    expect(value.fontSize).toBeCloseTo(expectedFontSize, 2);
-    expect(value.lineHeight).toBeCloseTo(expectedLineHeight, 2);
+    expect(normalizeFontStack(value.fontFamily).slice(0, 4)).toEqual([
+      "ui-monospace",
+      "SFMono-Regular",
+      "SF Mono",
+      "Menlo",
+    ]);
     expect(value.fontFamily).not.toContain("Cascadia Code");
   }
 
+  expectComputedPixels(typography.code.fontSize, 11, 0.001);
+  expectComputedPixels(typography.code.lineHeight, 11 * 1.52, 0.01);
   expect(typography.lineNumbers.fontSize).toBe(typography.code.fontSize);
   expect(typography.lineNumbers.lineHeight).toBe(typography.code.lineHeight);
+  for (const value of [
+    typography.terminalOutput,
+    typography.terminalPrompt,
+    typography.terminalCommand,
+  ]) {
+    expectComputedPixels(value.fontSize, 10.5, 0.001);
+    expectComputedPixels(value.lineHeight, 10.5 * 1.42, 0.01);
+  }
 });
 
 test("reduced motion uses native editor scrolling without a sticky stage", async ({
