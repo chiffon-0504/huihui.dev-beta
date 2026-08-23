@@ -452,6 +452,39 @@ test("mobile editor is the single keyboard-reachable horizontal scroller", async
   expect(await pre.getAttribute("tabindex")).toBeNull();
 });
 
+test("mobile editor and terminal use the legacy About font stack", async ({ page }) => {
+  await loadAbout(page, { width: 390, height: 844 });
+
+  const typography = await page.evaluate(() => ({
+    code: getComputedStyle(
+      document.querySelector('.vscode-editor-scroll code[class*="language-"]'),
+    ).fontFamily,
+    lineNumbers: getComputedStyle(
+      document.querySelector(".vscode-editor-scroll > .custom-line-numbers"),
+    ).fontFamily,
+    terminalCommand: getComputedStyle(
+      document.querySelector(".vscode-terminal-command"),
+    ).fontFamily,
+    terminalOutput: getComputedStyle(
+      document.querySelector(".vscode-terminal-output"),
+    ).fontFamily,
+    terminalPrompt: getComputedStyle(
+      document.querySelector(".vscode-terminal-prompt"),
+    ).fontFamily,
+  }));
+  const normalizeFontStack = (fontFamily) =>
+    fontFamily.split(",").map((family) => family.trim().replace(/^['"]|['"]$/g, ""));
+  const legacyStack = ["Consolas", "Monaco", "Courier New", "monospace"];
+
+  expect(normalizeFontStack(typography.code)).toEqual(legacyStack);
+  expect(normalizeFontStack(typography.lineNumbers)).toEqual(legacyStack);
+  expect(normalizeFontStack(typography.terminalOutput)).toEqual(legacyStack);
+  expect(normalizeFontStack(typography.terminalPrompt)).toEqual(legacyStack);
+  expect(normalizeFontStack(typography.terminalCommand)).toEqual(legacyStack);
+  expect(typography.code).not.toContain("Cascadia Code");
+  expect(typography.terminalOutput).not.toContain("Cascadia Code");
+});
+
 test("reduced motion uses native editor scrolling without a sticky stage", async ({
   page,
 }) => {

@@ -37,6 +37,24 @@ describe("About VS Code workspace contracts", () => {
     expect(codeBlocksSource).toContain('if (pre.closest(".code-block")) return;');
   });
 
+  test("restores the legacy About monospace stack for editor and terminal text", () => {
+    expect(styles).toMatch(
+      /\.vscode-editor-scroll code\[class\*="language-"\]\s*\{[^}]*font-family:\s*Consolas, Monaco, "Courier New", monospace\s*!important;/s,
+    );
+    expect(styles).toMatch(
+      /\.vscode-editor-scroll > \.custom-line-numbers\s*\{[^}]*font-family:\s*Consolas, Monaco, "Courier New", monospace;/s,
+    );
+    expect(styles).toMatch(
+      /\.vscode-terminal-output\s*\{[^}]*font-family:\s*Consolas, Monaco, "Courier New", monospace;/s,
+    );
+    expect(styles).not.toMatch(
+      /vscode-editor-scroll[^}]*font-family:[^;}]*Cascadia Code/s,
+    );
+    expect(styles).not.toMatch(
+      /vscode-terminal-output[^}]*font-family:[^;}]*Cascadia Code/s,
+    );
+  });
+
   test("uses native document scrolling with a requestAnimationFrame sticky stage", () => {
     expect(source).toContain('stage.className = "vscode-scroll-stage"');
     expect(source).toContain("editorScroll.scrollHeight - editorScroll.clientHeight");
