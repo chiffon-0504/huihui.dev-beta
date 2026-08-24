@@ -800,6 +800,81 @@ test("reduced motion uses native editor scrolling without a sticky stage", async
   await expect(workspace).not.toHaveCSS("position", "sticky");
 });
 
+test("reduced motion redirects Space only while the editor can move", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await loadAbout(page, { width: 390, height: 844 }, "/en/about/", {
+    expectStickyStage: false,
+  });
+
+  const editor = page.locator(".vscode-editor-scroll");
+  await editor.focus();
+  await expect(editor).toBeFocused();
+
+  const results = await page.evaluate(() => {
+    const editorElement = document.querySelector(".vscode-editor-scroll");
+    const verticalElement = document.querySelector(".vscode-editor-vertical");
+    const maxScroll = verticalElement.scrollHeight - verticalElement.clientHeight;
+    const pageStep = verticalElement.clientHeight * 0.9;
+    const dispatchSpaceAt = (scrollTop, shiftKey) => {
+      verticalElement.scrollTop = scrollTop;
+      const before = verticalElement.scrollTop;
+      const event = new KeyboardEvent("keydown", {
+        bubbles: true,
+        cancelable: true,
+        code: "Space",
+        key: " ",
+        shiftKey,
+      });
+      const dispatchResult = editorElement.dispatchEvent(event);
+
+      return {
+        after: verticalElement.scrollTop,
+        before,
+        defaultPrevented: event.defaultPrevented,
+        dispatchResult,
+      };
+    };
+
+    return {
+      backward: dispatchSpaceAt(maxScroll, true),
+      bottomBoundary: dispatchSpaceAt(maxScroll, false),
+      forward: dispatchSpaceAt(0, false),
+      maxScroll,
+      pageStep,
+      topBoundary: dispatchSpaceAt(0, true),
+    };
+  });
+
+  expect(results.forward).toMatchObject({
+    before: 0,
+    defaultPrevented: true,
+    dispatchResult: false,
+  });
+  expect(Math.abs(results.forward.after - results.pageStep)).toBeLessThanOrEqual(1.5);
+
+  expect(results.backward).toMatchObject({
+    before: results.maxScroll,
+    defaultPrevented: true,
+    dispatchResult: false,
+  });
+  expect(
+    Math.abs(results.backward.after - (results.maxScroll - results.pageStep)),
+  ).toBeLessThanOrEqual(1.5);
+
+  expect(results.bottomBoundary).toMatchObject({
+    after: results.maxScroll,
+    before: results.maxScroll,
+    defaultPrevented: false,
+    dispatchResult: true,
+  });
+  expect(results.topBoundary).toMatchObject({
+    after: 0,
+    before: 0,
+    defaultPrevented: false,
+    dispatchResult: true,
+  });
+});
+
 test("runtime reduced-motion changes disable and restore one sticky stage", async ({
   page,
 }) => {

@@ -389,6 +389,10 @@ function initAboutVscodeMotionBehavior(wrapper, editorScroll, verticalLayer) {
       case "PageUp":
         nextScrollTop = verticalLayer.scrollTop - pageStep;
         break;
+      case " ":
+        nextScrollTop =
+          verticalLayer.scrollTop + (event.shiftKey ? -pageStep : pageStep);
+        break;
       case "Home":
         nextScrollTop = 0;
         break;
