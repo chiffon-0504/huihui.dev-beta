@@ -250,28 +250,41 @@ async function expectContainedLayout(page, viewport) {
   );
 
   if (viewport.width === 390) {
-    const codeScroll = await page
-      .locator('.about-content .code-block pre[class*="language-"]')
-      .evaluate((pre) => {
+    const editorScroll = await page
+      .locator(".about-content .vscode-editor-scroll")
+      .evaluate((editor) => {
+        const verticalLayer = editor.querySelector(".vscode-editor-vertical");
+        const pre = editor.querySelector('pre[class*="language-"]');
+
         window.scrollTo(0, 0);
-        pre.scrollLeft = 0;
-        const canScroll = pre.scrollWidth > pre.clientWidth + 1;
-        pre.scrollLeft = pre.scrollWidth;
+        editor.scrollLeft = 0;
+        const hasHorizontalScroll =
+          editor.scrollWidth > editor.clientWidth + 1;
+        const verticalLayerHasHorizontalScroll =
+          verticalLayer.scrollWidth > verticalLayer.clientWidth + 1;
+        editor.scrollLeft = editor.scrollWidth;
+        verticalLayer.scrollLeft = verticalLayer.scrollWidth;
 
         return {
-          canScroll,
           documentScrollX: window.scrollX,
-          overflowX: getComputedStyle(pre).overflowX,
-          preScrollLeft: pre.scrollLeft,
+          editorOverflowX: getComputedStyle(editor).overflowX,
+          editorScrollLeft: editor.scrollLeft,
+          hasHorizontalScroll,
+          preOverflowX: getComputedStyle(pre).overflowX,
+          verticalLayerHasHorizontalScroll,
+          verticalLayerScrollLeft: verticalLayer.scrollLeft,
         };
       });
 
-    expect(codeScroll).toMatchObject({
-      canScroll: true,
+    expect(editorScroll).toMatchObject({
       documentScrollX: 0,
-      overflowX: "auto",
+      editorOverflowX: "auto",
+      hasHorizontalScroll: true,
+      preOverflowX: "visible",
+      verticalLayerHasHorizontalScroll: false,
+      verticalLayerScrollLeft: 0,
     });
-    expect(codeScroll.preScrollLeft).toBeGreaterThan(0);
+    expect(editorScroll.editorScrollLeft).toBeGreaterThan(0);
   }
 
   const scrollX = await page.evaluate(() => {
