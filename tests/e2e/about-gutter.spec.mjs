@@ -41,7 +41,7 @@ async function getGutterGeometry(page) {
     const code = pre?.querySelector('code[class*="language-"]');
     const editor = wrapper.querySelector(".vscode-editor-scroll");
     const gutter = wrapper.querySelector(
-      ".vscode-editor-scroll > .custom-line-numbers",
+      ".vscode-editor-vertical > .custom-line-numbers",
     );
     const preStyle = getComputedStyle(pre);
     const editorStyle = getComputedStyle(editor);
