@@ -170,7 +170,10 @@ describe("About VS Code workspace contracts", () => {
     expect(source).toContain("renderAboutVscodeStatusbar(labels)");
   });
 
-  test("allows forced colors to remap the complete editor text subtree", () => {
+  test("allows forced colors to remap the complete workspace", () => {
+    const forcedColorsStyles = styles.slice(styles.indexOf("@media (forced-colors: active)"));
+
+    expect(forcedColorsStyles).not.toContain("forced-color-adjust: none");
     expect(styles).toMatch(
       /@media \(forced-colors: active\)[\s\S]*\.vscode-editor-scroll \*\s*\{[^}]*color:\s*CanvasText\s*!important;[^}]*forced-color-adjust:\s*auto;/,
     );

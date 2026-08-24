@@ -301,18 +301,30 @@ test("desktop workspace preserves complete VS Code chrome and sticky geometry", 
 test("profile-specific custom text colors remain unchanged", async ({ page }) => {
   await loadAbout(page);
 
-  const renderedColors = await page.evaluate(
+  const normalColors = await page.evaluate(
     (expectedClassNames) =>
-      Object.fromEntries(
-        expectedClassNames.map((className) => {
-          const element = document.querySelector(`.${className}`);
-          return [className, element ? getComputedStyle(element).color : null];
-        }),
-      ),
+      ({
+        profile: Object.fromEntries(
+          expectedClassNames.map((className) => {
+            const element = document.querySelector(`.${className}`);
+            return [className, element ? getComputedStyle(element).color : null];
+          }),
+        ),
+        terminal: {
+          command: getComputedStyle(document.querySelector(".vscode-terminal-command")).color,
+          output: getComputedStyle(document.querySelector(".vscode-terminal-output")).color,
+          prompt: getComputedStyle(document.querySelector(".vscode-terminal-prompt")).color,
+        },
+      }),
     Object.keys(CUSTOM_PROFILE_COLORS),
   );
 
-  expect(renderedColors).toEqual(CUSTOM_PROFILE_COLORS);
+  expect(normalColors.profile).toEqual(CUSTOM_PROFILE_COLORS);
+  expect(normalColors.terminal).toEqual({
+    command: "rgb(230, 227, 106)",
+    output: "rgb(215, 215, 215)",
+    prompt: "rgb(40, 168, 216)",
+  });
 });
 
 for (const locale of [
@@ -355,29 +367,59 @@ for (const locale of [
   });
 }
 
-test("forced colors remap editor text to readable system colors", async ({ page }) => {
+test("forced colors remap the complete workspace to readable system colors", async ({
+  page,
+}) => {
   await page.emulateMedia({ forcedColors: "active" });
   await loadAbout(page);
+  const editor = page.locator(".vscode-editor-scroll");
+  await editor.focus();
+  await expect(editor).toBeFocused();
 
   const forcedColors = await page.evaluate((customClassNames) => {
-    const editor = document.querySelector(".vscode-editor-scroll");
-    const selectors = [
+    const editorElement = document.querySelector(".vscode-editor-scroll");
+    const editorTextSelectors = [
       ".vscode-editor-scroll code",
       ".vscode-editor-scroll .token.keyword",
       ".vscode-editor-scroll .custom-line-numbers",
       ...customClassNames.map((className) => `.vscode-editor-scroll .${className}`),
     ];
+    const representativeSelectors = {
+      editorContent: ".vscode-editor-scroll code",
+      explorerChrome: ".vscode-explorer-heading",
+      statusChrome: ".vscode-statusbar",
+      terminalCommand: ".vscode-terminal-command",
+      terminalOutput: ".vscode-terminal-output",
+      terminalPrompt: ".vscode-terminal-prompt",
+      titleChrome: ".vscode-titlebar",
+    };
     const systemText = document.createElement("span");
     systemText.style.color = "CanvasText";
-    editor.append(systemText);
+    document.body.append(systemText);
     const canvasText = getComputedStyle(systemText).color;
+    systemText.style.color = "Highlight";
+    const highlight = getComputedStyle(systemText).color;
     systemText.remove();
 
     return {
       active: matchMedia("(forced-colors: active)").matches,
       canvasText,
-      editorAdjust: getComputedStyle(editor).getPropertyValue("forced-color-adjust"),
-      text: selectors.map((selector) => {
+      editorOutlineColor: getComputedStyle(editorElement).outlineColor,
+      forcedColorAdjustSupported: CSS.supports("forced-color-adjust", "auto"),
+      highlight,
+      representatives: Object.fromEntries(
+        Object.entries(representativeSelectors).map(([name, selector]) => {
+          const style = getComputedStyle(document.querySelector(selector));
+          return [
+            name,
+            {
+              color: style.color,
+              forcedColorAdjust: style.getPropertyValue("forced-color-adjust"),
+            },
+          ];
+        }),
+      ),
+      text: editorTextSelectors.map((selector) => {
         const element = document.querySelector(selector);
         const style = getComputedStyle(element);
         return {
@@ -389,10 +431,25 @@ test("forced colors remap editor text to readable system colors", async ({ page 
   }, Object.keys(CUSTOM_PROFILE_COLORS));
 
   expect(forcedColors.active).toBe(true);
-  expect(forcedColors.editorAdjust).not.toBe("none");
+  expect(forcedColors.editorOutlineColor).toBe(forcedColors.highlight);
+  const expectSystemRemappingEligible = (forcedColorAdjust) => {
+    if (forcedColors.forcedColorAdjustSupported) {
+      expect(forcedColorAdjust).toBe("auto");
+    } else {
+      expect(forcedColorAdjust).not.toBe("none");
+    }
+  };
+  for (const representative of Object.values(forcedColors.representatives)) {
+    expectSystemRemappingEligible(representative.forcedColorAdjust);
+  }
+  if (forcedColors.forcedColorAdjustSupported) {
+    for (const name of ["terminalCommand", "terminalOutput", "terminalPrompt"]) {
+      expect(forcedColors.representatives[name].color).toBe(forcedColors.canvasText);
+    }
+  }
   for (const text of forcedColors.text) {
     expect(text.color).toBe(forcedColors.canvasText);
-    expect(text.forcedColorAdjust).not.toBe("none");
+    expectSystemRemappingEligible(text.forcedColorAdjust);
   }
 });
 

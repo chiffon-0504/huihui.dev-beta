@@ -948,7 +948,6 @@
     color: CanvasText;
     background: Canvas;
     border-color: CanvasText;
-    forced-color-adjust: none;
   }
 
   .vscode-editor-scroll:focus-visible,
