@@ -4,7 +4,8 @@ function rebuildAboutCodeLineNumbers() {
   blocks.forEach((pre) => {
     const code = pre.querySelector("code");
     const wrapper = pre.closest(".code-block");
-    if (!code || !wrapper) return;
+    const gutterParent = pre.parentElement;
+    if (!code || !wrapper || !gutterParent) return;
 
     pre.classList.remove("line-numbers");
     wrapper.classList.add("code-block-with-gutter");
@@ -16,6 +17,11 @@ function rebuildAboutCodeLineNumbers() {
     wrapper.querySelectorAll(":scope > .custom-line-numbers").forEach((gutter) => {
       gutter.remove();
     });
+    gutterParent
+      .querySelectorAll(":scope > .custom-line-numbers")
+      .forEach((gutter) => {
+        gutter.remove();
+      });
 
     const lineCount = Math.max(
       code.textContent.replace(/\n$/, "").split("\n").length,
@@ -30,7 +36,7 @@ function rebuildAboutCodeLineNumbers() {
       (_, index) => `<span>${index + 1}</span>`
     ).join("");
 
-    wrapper.insertBefore(gutter, pre);
+    pre.before(gutter);
   });
 
   if (typeof requestScrollRevealUpdate === "function") {

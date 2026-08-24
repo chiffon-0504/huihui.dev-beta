@@ -36,6 +36,7 @@ const routeCases = [
       "/js/lightbox.js",
       "/js/profile-code.js",
       "/js/about-page.js",
+      "/js/about-vscode.js",
       "/js/about-code-line-numbers.js",
     ]),
   },
@@ -133,15 +134,16 @@ async function verifyHome(page) {
 
 async function verifyAbout(page) {
   await expect(page.locator("#aboutPage.about-page")).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "huihuidev.py 個人檔案程式碼工作區" }),
+  ).toHaveAttribute("data-vscode-ready", "true");
+  await expect(
+    page.getByRole("region", { name: "huihuidev.py 原始碼" }),
+  ).toHaveCount(1);
   await expect(page.locator("#profileCode .token.keyword").first()).toBeVisible();
   await expect(page.locator(".custom-line-numbers")).toBeVisible();
-
-  const copyButton = page.locator(".copy-btn");
-  await expect(copyButton).toBeVisible();
-  await copyButton.click();
-  await expect
-    .poll(() => page.evaluate(() => window.__c3ClipboardWrites.length))
-    .toBe(1);
+  await expect(page.locator("#profileCode")).toContainText("class HuiHui");
+  await expect(page.getByRole("button", { name: "複製程式碼" })).toHaveCount(0);
 
   await openLightboxWithKeyboard(
     page,
@@ -202,20 +204,6 @@ for (const routeCase of routeCases) {
   test(`${routeCase.name} requests only its owned scripts and remains functional`, async ({
     page,
   }) => {
-    await page.addInitScript(() => {
-      const writes = [];
-
-      Object.defineProperty(window, "__c3ClipboardWrites", { value: writes });
-      Object.defineProperty(navigator, "clipboard", {
-        configurable: true,
-        value: {
-          writeText(text) {
-            writes.push(text);
-            return Promise.resolve();
-          },
-        },
-      });
-    });
     await stubExternalDependencies(page);
 
     const diagnostics = watchRuntime(page);

@@ -6,6 +6,7 @@ const root = process.cwd();
 const authoredStylesheets = [
   "style.css",
   "css/about-code-mobile.css",
+  "css/about-vscode.css",
   "css/code.css",
   "css/contact.css",
   "css/posts.css",

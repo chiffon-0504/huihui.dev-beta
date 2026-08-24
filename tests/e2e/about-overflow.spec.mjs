@@ -94,7 +94,10 @@ async function expectAboutStructure(page, locale) {
   ).toHaveCount(1);
   await expect(page.locator("#aboutPage .page-body")).toHaveCount(1);
   await expect(
-    page.locator("#aboutPage .code-block.code-block-with-gutter .copy-btn"),
+    page.locator("#aboutPage .vscode-window[data-vscode-ready='true']"),
+  ).toHaveCount(1);
+  await expect(
+    page.locator("#aboutPage .vscode-editor-scroll[role='region']"),
   ).toHaveCount(1);
   await expect(page.locator("#aboutPage .interest-cards > .interest-card")).toHaveCount(
     3,

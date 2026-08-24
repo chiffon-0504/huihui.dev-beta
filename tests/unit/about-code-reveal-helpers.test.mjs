@@ -39,7 +39,7 @@ describe("About code reveal helper ownership", () => {
 
   test("requests a reveal update after rebuilding the custom gutter", () => {
     expect(aboutLineNumbersSource).toMatch(
-      /wrapper\.insertBefore\(gutter, pre\);[\s\S]*if \(typeof requestScrollRevealUpdate === "function"\) \{\s*requestScrollRevealUpdate\(\);/,
+      /pre\.before\(gutter\);[\s\S]*if \(typeof requestScrollRevealUpdate === "function"\) \{\s*requestScrollRevealUpdate\(\);/,
     );
   });
 });

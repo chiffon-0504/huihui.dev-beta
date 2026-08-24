@@ -26,6 +26,7 @@ const featureScripts = [
   "/js/posts-render.js",
   "/js/profile-code.js",
   "/js/about-page.js",
+  "/js/about-vscode.js",
   "/js/about-code-line-numbers.js",
   "/js/contact.js",
 ];
@@ -57,6 +58,7 @@ const routeFamilies = [
       "/js/lightbox.js",
       "/js/profile-code.js",
       "/js/about-page.js",
+      "/js/about-vscode.js",
       "/js/about-code-line-numbers.js",
       ...prismScripts,
     ],
@@ -248,6 +250,12 @@ describe("route-specific JavaScript manifests", () => {
           expectBefore(
             scripts,
             "/js/about-page.js",
+            "/js/about-vscode.js",
+            relativePath,
+          );
+          expectBefore(
+            scripts,
+            "/js/about-vscode.js",
             "/js/about-code-line-numbers.js",
             relativePath,
           );
