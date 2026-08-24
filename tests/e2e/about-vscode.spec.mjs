@@ -654,10 +654,18 @@ test("reduced motion uses native editor scrolling without a sticky stage", async
 
   await editor.focus();
   await expect(editor).toBeFocused();
+  await page.keyboard.press("Home");
+  await expectEditorScroll(page, 0);
+  await page.keyboard.press("ArrowDown");
+  const afterArrowDown = await verticalLayer.evaluate((element) => element.scrollTop);
+  expect(afterArrowDown).toBeGreaterThan(0);
   await page.keyboard.press("PageDown");
+  const afterPageDown = await verticalLayer.evaluate((element) => element.scrollTop);
+  expect(afterPageDown).toBeGreaterThan(afterArrowDown);
+  await page.keyboard.press("PageUp");
   await expect
     .poll(() => verticalLayer.evaluate((element) => element.scrollTop))
-    .toBeGreaterThan(0);
+    .toBeLessThan(afterPageDown);
   await page.keyboard.press("End");
   await expect
     .poll(() =>
@@ -666,6 +674,64 @@ test("reduced motion uses native editor scrolling without a sticky stage", async
       ),
     )
     .toBeLessThanOrEqual(1.5);
+  const maxEditorScroll = await verticalLayer.evaluate(
+    (element) => element.scrollHeight - element.clientHeight,
+  );
+  await page.keyboard.press("ArrowUp");
+  await expect
+    .poll(() => verticalLayer.evaluate((element) => element.scrollTop))
+    .toBeLessThan(maxEditorScroll);
+  await page.keyboard.press("Home");
+  await expectEditorScroll(page, 0);
+  await page.keyboard.press("End");
+  await expectEditorScroll(page, maxEditorScroll);
+
+  const modifiedNavigationResults = await page.evaluate(() => {
+    const editorElement = document.querySelector(".vscode-editor-scroll");
+    const verticalElement = document.querySelector(".vscode-editor-vertical");
+    const middleScrollTop =
+      (verticalElement.scrollHeight - verticalElement.clientHeight) / 2;
+    const cases = [
+      { key: "Home", ctrlKey: true },
+      { key: "End", ctrlKey: true },
+      { key: "ArrowUp", metaKey: true },
+      { key: "ArrowDown", metaKey: true },
+      { key: "ArrowUp", altKey: true },
+      { key: "ArrowDown", altKey: true },
+      { key: "PageUp", altKey: true },
+      { key: "PageDown", altKey: true },
+      { key: "Home", altKey: true },
+      { key: "End", altKey: true },
+    ];
+
+    return cases.map((options) => {
+      verticalElement.scrollTop = middleScrollTop;
+      const before = verticalElement.scrollTop;
+      const event = new KeyboardEvent("keydown", {
+        ...options,
+        bubbles: true,
+        cancelable: true,
+      });
+      const dispatchResult = editorElement.dispatchEvent(event);
+
+      return {
+        after: verticalElement.scrollTop,
+        before,
+        defaultPrevented: event.defaultPrevented,
+        dispatchResult,
+        key: options.key,
+        modifier: options.ctrlKey ? "ctrl" : options.metaKey ? "meta" : "alt",
+      };
+    });
+  });
+
+  for (const result of modifiedNavigationResults) {
+    expect(result, `${result.modifier}+${result.key}`).toMatchObject({
+      after: result.before,
+      defaultPrevented: false,
+      dispatchResult: true,
+    });
+  }
 
   const nativeEditorScroll = await verticalLayer.evaluate((element) => element.scrollTop);
   const interestsY = await interests.evaluate(

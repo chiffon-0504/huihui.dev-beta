@@ -368,6 +368,7 @@ function initAboutVscodeMotionBehavior(wrapper, editorScroll, verticalLayer) {
 
   const handleEditorKeydown = (event) => {
     if (!reducedMotion.matches) return;
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
 
     const maxScroll = verticalLayer.scrollHeight - verticalLayer.clientHeight;
     const code = verticalLayer.querySelector("code");

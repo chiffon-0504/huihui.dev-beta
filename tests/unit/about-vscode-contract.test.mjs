@@ -121,6 +121,7 @@ describe("About VS Code workspace contracts", () => {
     expect(source).toContain("initAboutVscodeScrollStage(wrapper, verticalLayer)");
     expect(source).toContain('editorScroll.addEventListener("keydown", handleEditorKeydown)');
     expect(source).toContain("if (!reducedMotion.matches) return");
+    expect(source).toContain("if (event.ctrlKey || event.metaKey || event.altKey) return");
     expect(styles).toMatch(
       /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.vscode-scroll-stage\s*\{[^}]*height:\s*auto\s*!important;/,
     );
