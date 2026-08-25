@@ -11,10 +11,10 @@ const homeRoutes = [
     status: "🟢 更新中",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
-      "強化 Cloudflare Worker API 的 HTTP、安全性與請求／回應大小限制",
-      "改善 Works 與 Milestones 的響應式圖片載入，並精簡各頁腳本與語系資源",
-      "完善三語介面、導覽、狀態訊息與鍵盤操作的無障礙支援",
-      "升級 CI／Nightly regression 與跨瀏覽器測試，Chromium、Firefox 與 Playwright WebKit 全面通過",
+      "導入根頁面 OverlayScrollbars，並維持原生鍵盤、歷史紀錄與重新載入捲動還原",
+      "新增行動版頁首／頁尾捲動控制，改善 skip link、安全區域與鍵盤導覽體驗",
+      "重製 About 的 VS Code 個人檔案互動，完善響應式版面、鍵盤操作與減少動態效果支援",
+      "新增全站 favicon 與首頁靜態識別，並強化 Cloudflare Pages 精確 SHA 同步及分層 smoke 驗證",
     ],
   },
   {
@@ -23,10 +23,10 @@ const homeRoutes = [
     status: "🟢 Active",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
-      "Hardened Cloudflare Worker API HTTP contracts, security checks, and request/response size limits",
-      "Improved responsive image delivery for Works and Milestones while reducing route-specific scripts and locale payloads",
-      "Expanded multilingual accessibility across navigation, status messaging, and keyboard interaction",
-      "Upgraded CI, nightly regression, and cross-browser coverage with Chromium, Firefox, and Playwright WebKit fully passing",
+      "Added root-page OverlayScrollbars while preserving native keyboard, history, and reload scroll restoration",
+      "Added mobile top/bottom scroll controls with improved skip-link, safe-area, and keyboard navigation behavior",
+      "Rebuilt the About VS Code profile interaction with responsive layout, keyboard support, and reduced-motion behavior",
+      "Added site-wide favicons and static Home identity while strengthening exact-SHA Cloudflare Pages synchronization and layered smoke verification",
     ],
   },
   {
@@ -35,10 +35,10 @@ const homeRoutes = [
     status: "🟢 更新中",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
-      "Cloudflare Worker API の HTTP 契約、セキュリティ検証、リクエスト／レスポンスのサイズ制限を強化",
-      "Works と Milestones のレスポンシブ画像配信を改善し、ページ別スクリプトとロケール資源を軽量化",
-      "ナビゲーション、状態表示、キーボード操作を含む多言語アクセシビリティを改善",
-      "CI／Nightly regression とクロスブラウザ検証を強化し、Chromium、Firefox、Playwright WebKit ですべて通過",
+      "ルートページに OverlayScrollbars を導入し、ネイティブのキーボード操作、履歴、再読み込み時のスクロール復元を維持",
+      "モバイル向けのページ先頭／末尾スクロール操作を追加し、スキップリンク、セーフエリア、キーボードナビゲーションを改善",
+      "About の VS Code プロフィール操作を刷新し、レスポンシブ表示、キーボード操作、視差効果を減らす設定に対応",
+      "サイト全体の favicon と Home の静的識別表示を追加し、Cloudflare Pages の正確な SHA 同期と段階別 smoke 検証を強化",
     ],
   },
 ];
@@ -155,7 +155,7 @@ for (const route of homeRoutes) {
     await expect(main.locator(".project-update-card h2")).toHaveText(
       route.status,
     );
-    await expect(releaseCard.locator("h2")).toHaveText("v1.4.0");
+    await expect(releaseCard.locator("h2")).toHaveText("v1.5.0");
     await expect(releaseCard.locator(".version-badge")).toHaveText(
       "Stable release",
     );
