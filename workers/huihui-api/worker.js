@@ -39,7 +39,7 @@ function getEntryBlock(xml) {
   return (
     xml.match(/<item[\s\S]*?<\/item>/)?.[0] ||
     xml.match(/<entry[\s\S]*?<\/entry>/)?.[0] ||
-    xml
+    ""
   );
 }
 
@@ -559,6 +559,11 @@ async function getTechNews() {
           }
         );
         const entry = getEntryBlock(xml);
+
+        if (!entry) {
+          throw new UpstreamInvalidResponseError();
+        }
+
         const link = getLink(entry, source.fallbackLink);
         const pubDate = getFirstMatch(entry, [
           /<pubDate>(.*?)<\/pubDate>/,
@@ -817,7 +822,16 @@ async function getSteamLibrary(env) {
     throw new UpstreamInvalidResponseError();
   }
 
-  if (!Array.isArray(games)) {
+  if (
+    !Array.isArray(games) ||
+    games.some(
+      (game) =>
+        game === null ||
+        typeof game !== "object" ||
+        Array.isArray(game) ||
+        !Number.isInteger(game.appid)
+    )
+  ) {
     throw new UpstreamInvalidResponseError();
   }
 

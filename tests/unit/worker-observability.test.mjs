@@ -315,6 +315,39 @@ describe("Worker structured observability", () => {
     });
   });
 
+  test.each([
+    ["empty", ""],
+    ["HTML", "<html><body>upstream error</body></html>"],
+  ])(
+    "logs a Tech News %s body as an invalid response",
+    async (_label, body) => {
+      const fetchMock = vi.fn((url) =>
+        Promise.resolve(
+          url === techNewsSourceUrls[0]
+            ? new Response(body)
+            : rssResponse("Healthy"),
+        ),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+
+      const response = await finishWorker(startWorker("/api/tech-news"));
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.techNews[0]).toMatchObject({
+        source: "OpenAI News",
+        title: "OpenAI News",
+        description: "來源暫時無法讀取",
+      });
+      expectSingleLog("warn", {
+        event: "worker_upstream_failure",
+        route: "/api/tech-news",
+        upstream: "openai_rss",
+        category: "invalid_response",
+      });
+    },
+  );
+
   test("logs an APOD upstream exception with its bounded attempt offset", async () => {
     vi.stubGlobal(
       "fetch",
@@ -436,6 +469,23 @@ describe("Worker structured observability", () => {
       route: "/api/steam-library",
       upstream: "steam",
       category,
+    });
+  });
+
+  test("logs a malformed Steam game entry as an invalid response", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(steamResponse([null])));
+
+    const response = await finishWorker(
+      startWorker("/api/steam-library", steamEnv),
+    );
+
+    expect(response.status).toBe(500);
+    expect(response.headers.get("X-Cache")).toBe("FALLBACK");
+    expectSingleLog("warn", {
+      event: "worker_upstream_failure",
+      route: "/api/steam-library",
+      upstream: "steam",
+      category: "invalid_response",
     });
   });
 
