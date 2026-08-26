@@ -818,8 +818,9 @@ async function handleContact(request, env) {
   }
 
   if (request.method !== "POST") {
-    return contactJsonResponse(
+    return jsonResponse(
       { ok: false, message: "Method Not Allowed" },
+      { ...contactCorsHeaders(), Allow: "POST, OPTIONS" },
       405
     );
   }
