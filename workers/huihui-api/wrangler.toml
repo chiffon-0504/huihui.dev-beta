@@ -2,6 +2,13 @@ name = "huihui-api"
 main = "worker.js"
 compatibility_date = "2026-05-04"
 
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+invocation_logs = false
+
 [vars]
 WORKER_ENV = "production"
 
@@ -11,6 +18,13 @@ workers_dev = true
 
 [env.beta.vars]
 WORKER_ENV = "beta"
+
+[env.beta.observability]
+enabled = true
+head_sampling_rate = 1
+
+[env.beta.observability.logs]
+invocation_logs = false
 
 # Secrets / variables should be configured in Cloudflare Dashboard or via Wrangler.
 # Do not commit real API keys to GitHub.
