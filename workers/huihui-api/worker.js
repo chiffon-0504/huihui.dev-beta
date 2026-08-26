@@ -198,6 +198,28 @@ export class BodySizeLimitError extends Error {
   }
 }
 
+class UpstreamHttpStatusError extends Error {
+  constructor(httpStatus) {
+    super("Upstream HTTP status failure");
+    this.name = "UpstreamHttpStatusError";
+    this.httpStatus = httpStatus;
+  }
+}
+
+class UpstreamInvalidResponseError extends Error {
+  constructor() {
+    super("Invalid upstream response");
+    this.name = "UpstreamInvalidResponseError";
+  }
+}
+
+class WorkerConfigurationError extends Error {
+  constructor() {
+    super("Worker configuration failure");
+    this.name = "WorkerConfigurationError";
+  }
+}
+
 function contentLengthExceedsLimit(headers, maxBytes) {
   const value = headers.get("Content-Length");
 
@@ -317,6 +339,121 @@ export class UpstreamDeadlineError extends Error {
   }
 }
 
+function classifyUpstreamFailure(error) {
+  if (error instanceof UpstreamHttpStatusError) {
+    return { category: "http_status", httpStatus: error.httpStatus };
+  }
+
+  if (error instanceof UpstreamDeadlineError) {
+    return { category: "timeout" };
+  }
+
+  if (error instanceof BodySizeLimitError) {
+    return { category: "size_limit" };
+  }
+
+  if (error instanceof SyntaxError) {
+    return { category: "parse" };
+  }
+
+  if (error instanceof UpstreamInvalidResponseError) {
+    return { category: "invalid_response" };
+  }
+
+  return { category: "network" };
+}
+
+function createWorkerDiagnostic(
+  event,
+  route,
+  upstream,
+  category,
+  httpStatus,
+  attemptDayOffset
+) {
+  const diagnostic = { event, route, upstream, category };
+
+  if (
+    Number.isInteger(httpStatus) &&
+    httpStatus >= 100 &&
+    httpStatus <= 599
+  ) {
+    diagnostic.httpStatus = httpStatus;
+  }
+
+  if (
+    upstream === "nasa_apod" &&
+    Number.isInteger(attemptDayOffset) &&
+    attemptDayOffset >= 0 &&
+    attemptDayOffset <= APOD_LOOKBACK_DAYS
+  ) {
+    diagnostic.attemptDayOffset = attemptDayOffset;
+  }
+
+  return diagnostic;
+}
+
+function warnUpstreamFailure(route, upstream, error, attemptDayOffset) {
+  const { category, httpStatus } = classifyUpstreamFailure(error);
+  console.warn(
+    createWorkerDiagnostic(
+      "worker_upstream_failure",
+      route,
+      upstream,
+      category,
+      httpStatus,
+      attemptDayOffset
+    )
+  );
+}
+
+function errorUpstreamFailure(route, upstream, error) {
+  const { category, httpStatus } = classifyUpstreamFailure(error);
+  console.error(
+    createWorkerDiagnostic(
+      "worker_upstream_failure",
+      route,
+      upstream,
+      category,
+      httpStatus
+    )
+  );
+}
+
+function errorConfigurationFailure(route, upstream) {
+  console.error(
+    createWorkerDiagnostic(
+      "worker_configuration_failure",
+      route,
+      upstream,
+      "missing_config"
+    )
+  );
+}
+
+function errorUnhandledFailure(route) {
+  console.error(
+    createWorkerDiagnostic(
+      "worker_unhandled_failure",
+      route,
+      "worker",
+      "unhandled"
+    )
+  );
+}
+
+function getDiagnosticRoute(pathname) {
+  switch (pathname) {
+    case "/api/tech-news":
+    case "/api/apod":
+    case "/api/steam-library":
+    case "/api/contact":
+      return pathname;
+    default:
+      return "/api/unknown";
+  }
+}
+
 export async function withUpstreamDeadline(timeoutMs, operation) {
   const controller = new AbortController();
   let didTimeout = false;
@@ -352,6 +489,7 @@ export async function withUpstreamDeadline(timeoutMs, operation) {
 
 const SOURCES = [
   {
+    upstream: "openai_rss",
     category: "AI",
     tag: "OpenAI",
     source: "OpenAI News",
@@ -359,6 +497,7 @@ const SOURCES = [
     fallbackLink: "https://openai.com/news",
   },
   {
+    upstream: "apple_rss",
     category: "iOS",
     tag: "Apple",
     source: "Apple Developer News",
@@ -366,6 +505,7 @@ const SOURCES = [
     fallbackLink: "https://developer.apple.com/news/",
   },
   {
+    upstream: "android_rss",
     category: "Android",
     tag: "Google",
     source: "Android Developers Blog",
@@ -409,7 +549,7 @@ async function getTechNews() {
             });
 
             if (!res.ok) {
-              throw new Error(`Failed to fetch ${source.source}`);
+              throw new UpstreamHttpStatusError(res.status);
             }
 
             return readResponseTextWithLimit(
@@ -435,6 +575,7 @@ async function getTechNews() {
           link,
         };
       } catch (error) {
+        warnUpstreamFailure("/api/tech-news", source.upstream, error);
         return {
           category: source.category,
           title: source.source,
@@ -509,7 +650,7 @@ async function fetchApodByDate(apiKey, dateString, deadlineMs) {
     );
 
     if (!res.ok) {
-      throw new Error(`NASA APOD failed: ${res.status}`);
+      throw new UpstreamHttpStatusError(res.status);
     }
 
     return readResponseJsonWithLimit(res, APOD_RESPONSE_MAX_BYTES);
@@ -537,8 +678,16 @@ async function getApod(env) {
         APOD_ATTEMPT_DEADLINE_MS
       );
 
-      if (data.media_type !== "image" || !data.url) {
+      if (!data || typeof data !== "object") {
+        throw new UpstreamInvalidResponseError();
+      }
+
+      if (data.media_type !== "image") {
         continue;
+      }
+
+      if (!data.url) {
+        throw new UpstreamInvalidResponseError();
       }
 
       return {
@@ -556,6 +705,7 @@ async function getApod(env) {
         daysBack,
       };
     } catch (error) {
+      warnUpstreamFailure("/api/apod", "nasa_apod", error, daysBack);
       continue;
     }
   }
@@ -624,11 +774,13 @@ function getSteamCoverUrl(appid) {
 
 async function getSteamLibrary(env) {
   if (!env.STEAM_API_KEY) {
-    throw new Error("Missing STEAM_API_KEY");
+    errorConfigurationFailure("/api/steam-library", "steam");
+    throw new WorkerConfigurationError();
   }
 
   if (!env.STEAM_ID) {
-    throw new Error("Missing STEAM_ID");
+    errorConfigurationFailure("/api/steam-library", "steam");
+    throw new WorkerConfigurationError();
   }
 
   const apiUrl =
@@ -651,13 +803,23 @@ async function getSteamLibrary(env) {
       });
 
       if (!res.ok) {
-        throw new Error(`Steam API failed: ${res.status}`);
+        throw new UpstreamHttpStatusError(res.status);
       }
 
       return readResponseJsonWithLimit(res, STEAM_RESPONSE_MAX_BYTES);
     }
   );
-  const games = data.response?.games || [];
+  let games;
+
+  try {
+    games = data.response?.games || [];
+  } catch {
+    throw new UpstreamInvalidResponseError();
+  }
+
+  if (!Array.isArray(games)) {
+    throw new UpstreamInvalidResponseError();
+  }
 
   return STEAM_PUBLIC_APPIDS
     .map((appid) => games.find((game) => game.appid === appid))
@@ -706,6 +868,10 @@ async function handleSteamLibrary(request, env, ctx) {
 
     return response;
   } catch (error) {
+    if (!(error instanceof WorkerConfigurationError)) {
+      warnUpstreamFailure("/api/steam-library", "steam", error);
+    }
+
     return jsonResponse(
       {
         ok: false,
@@ -745,6 +911,14 @@ const TURNSTILE_ERROR_CODES = new Set([
   "invalid-input-response",
   "bad-request",
   "timeout-or-duplicate",
+  "internal-error",
+]);
+const TURNSTILE_CONFIGURATION_ERROR_CODES = new Set([
+  "missing-input-secret",
+  "invalid-input-secret",
+]);
+const TURNSTILE_UPSTREAM_ERROR_CODES = new Set([
+  "bad-request",
   "internal-error",
 ]);
 
@@ -910,7 +1084,18 @@ async function handleContact(request, env) {
     );
   }
 
-  if (!env.TURNSTILE_SECRET_KEY || !env.FORMSPREE_ENDPOINT) {
+  const missingTurnstileConfiguration = !env.TURNSTILE_SECRET_KEY;
+  const missingFormspreeConfiguration = !env.FORMSPREE_ENDPOINT;
+
+  if (missingTurnstileConfiguration || missingFormspreeConfiguration) {
+    if (missingTurnstileConfiguration) {
+      errorConfigurationFailure("/api/contact", "turnstile");
+    }
+
+    if (missingFormspreeConfiguration) {
+      errorConfigurationFailure("/api/contact", "formspree");
+    }
+
     return contactJsonResponse(
       { ok: false, message: "Contact service unavailable" },
       500
@@ -936,7 +1121,7 @@ async function handleContact(request, env) {
         );
 
         if (!verifyRes.ok) {
-          throw new Error("Turnstile upstream response failed");
+          throw new UpstreamHttpStatusError(verifyRes.status);
         }
 
         return readResponseJsonWithLimit(
@@ -946,6 +1131,12 @@ async function handleContact(request, env) {
       }
     );
   } catch (error) {
+    const failure =
+      error instanceof ContactUpstreamTimeoutError
+        ? new UpstreamDeadlineError()
+        : error;
+    warnUpstreamFailure("/api/contact", "turnstile", failure);
+
     return contactJsonResponse(
       {
         ok: false,
@@ -963,6 +1154,11 @@ async function handleContact(request, env) {
     typeof verifyData !== "object" ||
     typeof verifyData.success !== "boolean"
   ) {
+    warnUpstreamFailure(
+      "/api/contact",
+      "turnstile",
+      new UpstreamInvalidResponseError()
+    );
     return contactJsonResponse(
       { ok: false, message: "Turnstile verification unavailable" },
       502
@@ -975,11 +1171,31 @@ async function handleContact(request, env) {
     typeof verifyData.hostname !== "string" ||
     verifyData.hostname.toLowerCase() !== expectedTurnstileHostname
   ) {
+    const errorCodes = sanitizeTurnstileErrorCodes(
+      verifyData["error-codes"]
+    );
+
+    if (
+      errorCodes.some((code) =>
+        TURNSTILE_CONFIGURATION_ERROR_CODES.has(code)
+      )
+    ) {
+      errorConfigurationFailure("/api/contact", "turnstile");
+    } else if (
+      errorCodes.some((code) => TURNSTILE_UPSTREAM_ERROR_CODES.has(code))
+    ) {
+      warnUpstreamFailure(
+        "/api/contact",
+        "turnstile",
+        new UpstreamInvalidResponseError()
+      );
+    }
+
     return contactJsonResponse(
       {
         ok: false,
         message: "Turnstile verification failed",
-        errorCodes: sanitizeTurnstileErrorCodes(verifyData["error-codes"]),
+        errorCodes,
       },
       403
     );
@@ -1006,6 +1222,12 @@ async function handleContact(request, env) {
         })
     );
   } catch (error) {
+    const failure =
+      error instanceof ContactUpstreamTimeoutError
+        ? new UpstreamDeadlineError()
+        : error;
+    errorUpstreamFailure("/api/contact", "formspree", failure);
+
     return contactJsonResponse(
       {
         ok: false,
@@ -1019,6 +1241,11 @@ async function handleContact(request, env) {
   }
 
   if (!forwardRes.ok) {
+    errorUpstreamFailure(
+      "/api/contact",
+      "formspree",
+      new UpstreamHttpStatusError(forwardRes.status)
+    );
     return contactJsonResponse(
       { ok: false, message: "Failed to forward contact form" },
       502
@@ -1092,6 +1319,8 @@ export default {
     } catch (error) {
       const url = new URL(request.url);
       const errorData = { ok: false, error: "Internal server error" };
+
+      errorUnhandledFailure(getDiagnosticRoute(url.pathname));
 
       response =
         url.pathname === "/api/contact"
