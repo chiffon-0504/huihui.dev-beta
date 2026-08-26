@@ -1179,10 +1179,23 @@ async function handleContact(request, env) {
     );
   }
 
+  const malformedSuccessfulVerification =
+    verifyData.success &&
+    (typeof verifyData.action !== "string" ||
+      typeof verifyData.hostname !== "string");
+
+  if (malformedSuccessfulVerification) {
+    warnUpstreamFailure(
+      "/api/contact",
+      "turnstile",
+      new UpstreamInvalidResponseError()
+    );
+  }
+
   if (
     !verifyData.success ||
+    malformedSuccessfulVerification ||
     verifyData.action !== CONTACT_TURNSTILE_ACTION ||
-    typeof verifyData.hostname !== "string" ||
     verifyData.hostname.toLowerCase() !== expectedTurnstileHostname
   ) {
     const errorCodes = sanitizeTurnstileErrorCodes(
@@ -1190,12 +1203,14 @@ async function handleContact(request, env) {
     );
 
     if (
+      !malformedSuccessfulVerification &&
       errorCodes.some((code) =>
         TURNSTILE_CONFIGURATION_ERROR_CODES.has(code)
       )
     ) {
       errorConfigurationFailure("/api/contact", "turnstile");
     } else if (
+      !malformedSuccessfulVerification &&
       errorCodes.some((code) => TURNSTILE_UPSTREAM_ERROR_CODES.has(code))
     ) {
       warnUpstreamFailure(

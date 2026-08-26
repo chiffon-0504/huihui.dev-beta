@@ -584,6 +584,39 @@ describe("Worker structured observability", () => {
     expectNoLogs();
   });
 
+  test.each([
+    ["missing action", { action: undefined }],
+    ["missing hostname", { hostname: undefined }],
+    ["non-string action", { action: { value: "contact" } }],
+    ["non-string hostname", { hostname: ["huihui.dev"] }],
+  ])(
+    "logs a Turnstile success response with %s",
+    async (_label, overrides) => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(successfulTurnstileResponse(overrides));
+      vi.stubGlobal("fetch", fetchMock);
+
+      const response = await finishWorker(
+        startWorker(contactRequest(), contactEnv),
+      );
+
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({
+        ok: false,
+        message: "Turnstile verification failed",
+        errorCodes: [],
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expectSingleLog("warn", {
+        event: "worker_upstream_failure",
+        route: "/api/contact",
+        upstream: "turnstile",
+        category: "invalid_response",
+      });
+    },
+  );
+
   test("logs an invalid Turnstile secret as a configuration failure", async () => {
     vi.stubGlobal(
       "fetch",
@@ -640,16 +673,22 @@ describe("Worker structured observability", () => {
     ["action mismatch", { action: "newsletter" }],
     ["hostname mismatch", { hostname: "attacker.example" }],
   ])("keeps Turnstile %s rejection silent", async (_label, overrides) => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(successfulTurnstileResponse(overrides)),
-    );
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(successfulTurnstileResponse(overrides));
+    vi.stubGlobal("fetch", fetchMock);
 
     const response = await finishWorker(
       startWorker(contactRequest(), contactEnv),
     );
 
     expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      ok: false,
+      message: "Turnstile verification failed",
+      errorCodes: [],
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
     expectNoLogs();
   });
 
