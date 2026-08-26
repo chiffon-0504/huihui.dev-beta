@@ -359,6 +359,43 @@ describe("Worker structured observability", () => {
     expectNoLogs();
   });
 
+  test.each([
+    ["missing", { url: "https://images.example.test/missing-type.jpg" }],
+    [
+      "unknown",
+      {
+        media_type: "unexpected",
+        url: "https://images.example.test/unknown-type.jpg",
+      },
+    ],
+  ])(
+    "logs an APOD %s media type as an invalid response",
+    async (_label, data) => {
+      vi.stubGlobal(
+        "fetch",
+        vi
+          .fn()
+          .mockResolvedValueOnce(jsonResponse(data))
+          .mockResolvedValueOnce(apodResponse("2026-08-25")),
+      );
+
+      const response = await finishWorker(startWorker("/api/apod"));
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toMatchObject({
+        fallback: true,
+        daysBack: 1,
+      });
+      expectSingleLog("warn", {
+        event: "worker_upstream_failure",
+        route: "/api/apod",
+        upstream: "nasa_apod",
+        category: "invalid_response",
+        attemptDayOffset: 0,
+      });
+    },
+  );
+
   test("logs a Steam timeout while preserving its fallback response", async () => {
     vi.useFakeTimers();
     vi.stubGlobal("fetch", vi.fn(() => new Promise(() => {})));

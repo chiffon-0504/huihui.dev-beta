@@ -682,11 +682,11 @@ async function getApod(env) {
         throw new UpstreamInvalidResponseError();
       }
 
-      if (data.media_type !== "image") {
+      if (data.media_type === "video") {
         continue;
       }
 
-      if (!data.url) {
+      if (data.media_type !== "image" || !data.url) {
         throw new UpstreamInvalidResponseError();
       }
 
