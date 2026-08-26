@@ -184,12 +184,10 @@ async function handleReadOnlyRoute(request, handler) {
 export const TECH_NEWS_SOURCE_DEADLINE_MS = 5000;
 export const APOD_ATTEMPT_DEADLINE_MS = 3000;
 export const APOD_TOTAL_BUDGET_MS = 6000;
-export const GITHUB_UPSTREAM_DEADLINE_MS = 5000;
 export const STEAM_UPSTREAM_DEADLINE_MS = 5000;
 export const CONTACT_REQUEST_MAX_BYTES = 64 * 1024;
 export const TECH_NEWS_RESPONSE_MAX_BYTES = 2 * 1024 * 1024;
 export const APOD_RESPONSE_MAX_BYTES = 256 * 1024;
-export const GITHUB_RESPONSE_MAX_BYTES = 256 * 1024;
 export const STEAM_RESPONSE_MAX_BYTES = 2 * 1024 * 1024;
 export const TURNSTILE_RESPONSE_MAX_BYTES = 64 * 1024;
 
@@ -610,126 +608,6 @@ async function handleApod(request, env, ctx) {
       "Cache-Control": "public, max-age=3600",
       "X-Cache": "FALLBACK",
     });
-  }
-}
-
-/* =========================
-   GitHub Project Updates
-========================= */
-
-const GITHUB_REPO_OWNER = "chiffon-0504";
-const GITHUB_REPO_NAME = "huihui.dev-stable";
-const GITHUB_REPO_API_URL =
-  `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/commits?per_page=1`;
-
-function formatGitHubTime(dateString) {
-  if (!dateString) return "";
-
-  const date = new Date(dateString);
-  const diffMs = Date.now() - date.getTime();
-  const diffMinutes = Math.max(0, Math.floor(diffMs / 60000));
-
-  if (diffMinutes < 1) return "just now";
-  if (diffMinutes < 60) return `${diffMinutes} mins ago`;
-
-  const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return `${diffHours} hrs ago`;
-
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 30) return `${diffDays} days ago`;
-
-  return date.toISOString().slice(0, 10);
-}
-
-async function getGitHubProjectUpdate(env) {
-  if (!env.GITHUB_TOKEN) {
-    throw new Error("Missing GITHUB_TOKEN");
-  }
-
-  const commits = await withUpstreamDeadline(
-    GITHUB_UPSTREAM_DEADLINE_MS,
-    async (signal) => {
-      const res = await fetch(GITHUB_REPO_API_URL, {
-        headers: {
-          Accept: "application/vnd.github+json",
-          Authorization: `Bearer ${env.GITHUB_TOKEN}`,
-          "User-Agent": "huihui.dev github updates worker",
-        },
-        signal,
-      });
-
-      if (!res.ok) {
-        throw new Error(`GitHub API failed: ${res.status}`);
-      }
-
-      return readResponseJsonWithLimit(res, GITHUB_RESPONSE_MAX_BYTES);
-    }
-  );
-  const latest = commits?.[0];
-
-  if (!latest) {
-    throw new Error("No commits found");
-  }
-
-  const updatedAt =
-    latest.commit?.committer?.date || latest.commit?.author?.date || "";
-
-  return {
-    ok: true,
-    source: "GitHub",
-    title: "新增 GitHub 專案更新卡片",
-    description: "首頁改為顯示最近網站開發進度。",
-    repo: GITHUB_REPO_NAME,
-    updatedAt,
-    updatedText: formatGitHubTime(updatedAt),
-    link:
-      latest.html_url ||
-      `https://github.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}`,
-  };
-}
-
-async function handleGitHubUpdates(request, env, ctx) {
-  const cache = caches.default;
-  const cacheKey = new Request(
-    new URL(request.url).origin + "/api/github-updates"
-  );
-
-  const cachedResponse = await cache.match(cacheKey);
-
-  if (cachedResponse) {
-    const response = new Response(cachedResponse.body, cachedResponse);
-    response.headers.set("X-Cache", "HIT");
-    return response;
-  }
-
-  try {
-    const projectUpdate = await getGitHubProjectUpdate(env);
-
-    const response = jsonResponse(projectUpdate, {
-      "Cache-Control": "public, max-age=300",
-      "X-Cache": "MISS",
-    });
-
-    ctx.waitUntil(cache.put(cacheKey, response.clone()));
-
-    return response;
-  } catch (error) {
-    return jsonResponse(
-      {
-        ok: false,
-        source: "GitHub",
-        title: "GitHub 專案更新暫時無法讀取",
-        description: "請稍後再試。",
-        repo: GITHUB_REPO_NAME,
-        updatedAt: "",
-        updatedText: "",
-        link: `https://github.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}`,
-      },
-      {
-        "Cache-Control": "public, max-age=60",
-        "X-Cache": "FALLBACK",
-      }
-    );
   }
 }
 
@@ -1169,12 +1047,6 @@ async function routeRequest(request, env, ctx) {
     return handleReadOnlyRoute(request, () => handleApod(request, env, ctx));
   }
 
-  if (url.pathname === "/api/github-updates") {
-    return handleReadOnlyRoute(request, () =>
-      handleGitHubUpdates(request, env, ctx)
-    );
-  }
-
   if (url.pathname === "/api/steam-library") {
     return handleReadOnlyRoute(request, () =>
       handleSteamLibrary(request, env, ctx)
@@ -1200,7 +1072,6 @@ async function routeRequest(request, env, ctx) {
       endpoints: [
         "/api/tech-news",
         "/api/apod",
-        "/api/github-updates",
         "/api/steam-library",
         "/api/contact",
       ],

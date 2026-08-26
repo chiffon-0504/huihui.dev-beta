@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import worker, {
   APOD_RESPONSE_MAX_BYTES,
   BodySizeLimitError,
-  GITHUB_RESPONSE_MAX_BYTES,
   STEAM_RESPONSE_MAX_BYTES,
   TECH_NEWS_RESPONSE_MAX_BYTES,
   readResponseJsonWithLimit,
@@ -10,7 +9,6 @@ import worker, {
 } from "../../workers/huihui-api/worker.js";
 
 const encoder = new TextEncoder();
-const githubEnv = { GITHUB_TOKEN: "test-github-token" };
 const steamEnv = {
   STEAM_API_KEY: "test-steam-api-key",
   STEAM_ID: "test-steam-id",
@@ -213,45 +211,6 @@ describe("bounded upstream route fallbacks", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(oversized.cancel).toHaveBeenCalledOnce();
     expect(vi.getTimerCount()).toBe(0);
-  });
-
-  test("uses the GitHub fallback for a misleading oversized JSON body", async () => {
-    const oversized = oversizedResponse(GITHUB_RESPONSE_MAX_BYTES, {
-      "Content-Length": "1",
-      "Content-Type": "application/json",
-    });
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(oversized.response));
-
-    const response = await finishWorker(
-      startWorker("/api/github-updates", githubEnv),
-    );
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(response.headers.get("X-Cache")).toBe("FALLBACK");
-    expect(data).toMatchObject({ ok: false, source: "GitHub" });
-    expect(oversized.cancel).toHaveBeenCalledOnce();
-    expect(vi.getTimerCount()).toBe(0);
-  });
-
-  test("keeps malformed GitHub JSON on the existing fallback contract", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(
-        new Response("{not-json", {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        }),
-      ),
-    );
-
-    const response = await finishWorker(
-      startWorker("/api/github-updates", githubEnv),
-    );
-
-    expect(response.status).toBe(200);
-    expect(response.headers.get("X-Cache")).toBe("FALLBACK");
-    expect((await response.json()).ok).toBe(false);
   });
 
   test("uses the Steam fallback for an oversized body without Content-Length", async () => {

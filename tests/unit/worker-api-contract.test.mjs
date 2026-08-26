@@ -16,11 +16,6 @@ const readRoutes = [
     payload: { ok: true, title: "APOD route" },
   },
   {
-    path: "/api/github-updates",
-    cachePath: "/api/github-updates",
-    payload: { ok: true, source: "GitHub route" },
-  },
-  {
     path: "/api/steam-library",
     cachePath: "/api/steam-library-v6",
     payload: { ok: true, source: "Steam route", games: [] },
@@ -226,26 +221,29 @@ describe("Worker public API contract", () => {
     },
   );
 
-  test("returns JSON 404 for an unknown API path", async () => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal("fetch", fetchMock);
-    const cache = stubCache();
+  test.each(["/api/github-updates", "/api/does-not-exist"])(
+    "%s uses the normal unknown-route response",
+    async (path) => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal("fetch", fetchMock);
+      const cache = stubCache();
 
-    const response = await worker.fetch(
-      request("/api/does-not-exist"),
-      {},
-      context(),
-    );
+      const response = await worker.fetch(
+        request(path),
+        {},
+        context(),
+      );
 
-    expect(response.status).toBe(404);
-    expect(response.headers.get("Content-Type")).toBe(
-      "application/json; charset=utf-8",
-    );
-    expect(response.headers.get("Cache-Control")).toBe("no-store");
-    expect(await response.json()).toEqual({ ok: false, error: "Not found" });
-    expect(cache.match).not.toHaveBeenCalled();
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(404);
+      expect(response.headers.get("Content-Type")).toBe(
+        "application/json; charset=utf-8",
+      );
+      expect(response.headers.get("Cache-Control")).toBe("no-store");
+      expect(await response.json()).toEqual({ ok: false, error: "Not found" });
+      expect(cache.match).not.toHaveBeenCalled();
+      expect(fetchMock).not.toHaveBeenCalled();
+    },
+  );
 
   test("preserves the API index at the Worker root", async () => {
     vi.stubGlobal("fetch", vi.fn());
@@ -261,7 +259,6 @@ describe("Worker public API contract", () => {
       endpoints: [
         "/api/tech-news",
         "/api/apod",
-        "/api/github-updates",
         "/api/steam-library",
         "/api/contact",
       ],
