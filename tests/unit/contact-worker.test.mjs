@@ -667,6 +667,23 @@ describe("Contact Worker request and upstream error handling", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  test.each(["GET", "HEAD", "PUT", "PATCH", "DELETE"])(
+    "returns the Contact method contract for unsupported %s requests",
+    async (method) => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal("fetch", fetchMock);
+
+      const response = await callContact({ method });
+
+      expect(response.headers.get("Allow")).toBe("POST, OPTIONS");
+      await expectContactResponse(response, 405, {
+        ok: false,
+        message: "Method Not Allowed",
+      });
+      expect(fetchMock).not.toHaveBeenCalled();
+    },
+  );
+
   test("keeps the existing Contact OPTIONS response unchanged", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
