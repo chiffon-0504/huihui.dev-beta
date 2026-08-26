@@ -26,7 +26,6 @@ The workflow uses the existing `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID
 
 Provision the following runtime secrets separately for beta and production in Cloudflare:
 
-- `GITHUB_TOKEN`
 - `STEAM_API_KEY`
 - `STEAM_ID`
 - `TURNSTILE_SECRET_KEY`

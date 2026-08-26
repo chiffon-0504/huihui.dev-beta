@@ -15,7 +15,6 @@ WORKER_ENV = "beta"
 # Secrets / variables should be configured in Cloudflare Dashboard or via Wrangler.
 # Do not commit real API keys to GitHub.
 # Required bindings used by worker.js:
-# GITHUB_TOKEN
 # STEAM_API_KEY
 # STEAM_ID
 # TURNSTILE_SECRET_KEY

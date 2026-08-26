@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import worker, {
   APOD_ATTEMPT_DEADLINE_MS,
   APOD_TOTAL_BUDGET_MS,
-  GITHUB_UPSTREAM_DEADLINE_MS,
   STEAM_UPSTREAM_DEADLINE_MS,
   TECH_NEWS_SOURCE_DEADLINE_MS,
   UpstreamDeadlineError,
@@ -20,7 +19,6 @@ const techNewsSources = [
   "Apple Developer News",
   "Android Developers Blog",
 ];
-const githubEnv = { GITHUB_TOKEN: "test-github-token" };
 const steamEnv = {
   STEAM_API_KEY: "test-steam-api-key",
   STEAM_ID: "test-steam-id",
@@ -67,20 +65,6 @@ function apodResponse(date, overrides = {}) {
       explanation: `Explanation ${date}`,
       ...overrides,
     }),
-    { status: 200, headers: { "Content-Type": "application/json" } },
-  );
-}
-
-function githubResponse() {
-  return new Response(
-    JSON.stringify([
-      {
-        html_url: "https://github.com/chiffon-0504/huihui.dev-stable/commit/abc",
-        commit: {
-          committer: { date: "2026-08-03T11:30:00.000Z" },
-        },
-      },
-    ]),
     { status: 200, headers: { "Content-Type": "application/json" } },
   );
 }
@@ -473,91 +457,6 @@ describe("APOD upstream deadlines", () => {
       daysBack: null,
     });
     expect(fetchMock).toHaveBeenCalledTimes(8);
-  });
-});
-
-describe("GitHub upstream deadlines", () => {
-  test("keeps the successful GitHub response unchanged", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(githubResponse());
-    vi.stubGlobal("fetch", fetchMock);
-
-    const response = await finishWorker(
-      startWorker("/api/github-updates", githubEnv),
-    );
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(response.headers.get("Cache-Control")).toBe("public, max-age=300");
-    expect(data).toMatchObject({
-      ok: true,
-      source: "GitHub",
-      repo: "huihui.dev-stable",
-      updatedAt: "2026-08-03T11:30:00.000Z",
-      updatedText: "30 mins ago",
-      link: "https://github.com/chiffon-0504/huihui.dev-stable/commit/abc",
-    });
-    expect(fetchMock.mock.calls[0][0]).toBe(
-      "https://api.github.com/repos/chiffon-0504/huihui.dev-stable/commits?per_page=1",
-    );
-    expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
-  });
-
-  test("falls back after a never-resolving GitHub fetch", async () => {
-    let signal;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn((_url, options) => {
-        signal = options.signal;
-        return new Promise(() => {});
-      }),
-    );
-
-    const pending = startWorker("/api/github-updates", githubEnv);
-    await vi.advanceTimersByTimeAsync(GITHUB_UPSTREAM_DEADLINE_MS);
-    const response = await finishWorker(pending);
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expectFallbackHeaders(response, "public, max-age=60");
-    expect(data).toMatchObject({
-      ok: false,
-      source: "GitHub",
-      repo: "huihui.dev-stable",
-      updatedAt: "",
-      updatedText: "",
-      link: "https://github.com/chiffon-0504/huihui.dev-stable",
-    });
-    expect(Object.keys(data)).toEqual([
-      "ok",
-      "source",
-      "title",
-      "description",
-      "repo",
-      "updatedAt",
-      "updatedText",
-      "link",
-    ]);
-    expect(signal.aborted).toBe(true);
-  });
-
-  test("falls back when the GitHub response body never resolves", async () => {
-    let signal;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn((_url, options) => {
-        signal = options.signal;
-        return Promise.resolve(pendingJsonResponse(signal));
-      }),
-    );
-
-    const pending = startWorker("/api/github-updates", githubEnv);
-    await vi.advanceTimersByTimeAsync(GITHUB_UPSTREAM_DEADLINE_MS);
-    const response = await finishWorker(pending);
-
-    expect(response.status).toBe(200);
-    expectFallbackHeaders(response, "public, max-age=60");
-    expect((await response.json()).ok).toBe(false);
-    expect(signal.aborted).toBe(true);
   });
 });
 
