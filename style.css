@@ -690,6 +690,9 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   min-width: 0;
   align-items: center;
   gap: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background-color: #101828;
 }
 
 .infrastructure-status-symbol {
@@ -754,7 +757,10 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 .infrastructure-status-link {
   width: fit-content;
   margin-top: auto;
+  padding: 4px 8px;
+  border-radius: 8px;
   color: #7dd3fc;
+  background-color: #101828;
   font-weight: 700;
   text-decoration: underline;
   text-decoration-thickness: 1px;
@@ -782,6 +788,7 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   .infrastructure-component-status,
   .infrastructure-status-link {
     color: CanvasText;
+    background-color: Canvas;
   }
 
   .infrastructure-status-link:focus-visible {

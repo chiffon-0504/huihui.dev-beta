@@ -385,16 +385,6 @@ test("default status and provider-link colors meet WCAG AA contrast", async ({
           alpha: channels[3] ?? 1,
         };
       };
-      const composite = (foreground, background) => ({
-        red: foreground.red * foreground.alpha + background.red * (1 - foreground.alpha),
-        green:
-          foreground.green * foreground.alpha +
-          background.green * (1 - foreground.alpha),
-        blue:
-          foreground.blue * foreground.alpha +
-          background.blue * (1 - foreground.alpha),
-        alpha: 1,
-      });
       const luminance = (color) => {
         const linearize = (channel) => {
           const value = channel / 255;
@@ -416,29 +406,26 @@ test("default status and provider-link colors meet WCAG AA contrast", async ({
           (Math.min(foregroundLuminance, backgroundLuminance) + 0.05)
         );
       };
-      const bodyBackground = parseColor(getComputedStyle(document.body).backgroundColor);
-
       return [
         ...section.querySelectorAll(
           ".infrastructure-status-text, .infrastructure-component-status, .infrastructure-status-link",
         ),
       ].map((element) => {
-        const card = element.closest(".infrastructure-status-card");
-        const cardBackground = parseColor(getComputedStyle(card).backgroundColor);
-        const effectiveBackground = composite(cardBackground, bodyBackground);
-        const foreground = composite(
-          parseColor(getComputedStyle(element).color),
-          effectiveBackground,
-        );
+        const foreground = parseColor(getComputedStyle(element).color);
+        const background = parseColor(getComputedStyle(element).backgroundColor);
 
         return {
+          backgroundAlpha: background.alpha,
           label: element.textContent.trim(),
-          ratio: contrastRatio(foreground, effectiveBackground),
+          ratio: contrastRatio(foreground, background),
         };
       });
     });
 
   expect(contrastResults.length).toBeGreaterThan(0);
+  expect(contrastResults.every(({ backgroundAlpha }) => backgroundAlpha === 1)).toBe(
+    true,
+  );
   expect(contrastResults.every(({ ratio }) => ratio >= 4.5)).toBe(true);
 });
 
@@ -494,6 +481,17 @@ test("forced-colors keeps status text, card boundaries, and links understandable
           ".infrastructure-status-text, .infrastructure-component-status, .infrastructure-status-link",
         ),
       ].map((element) => getComputedStyle(element).color);
+      const statusBackgrounds = [
+        ...section.querySelectorAll(
+          ".infrastructure-status-text, .infrastructure-component-status, .infrastructure-status-link",
+        ),
+      ].map((element) => getComputedStyle(element).backgroundColor);
+
+      const canvas = document.createElement("span");
+      canvas.style.backgroundColor = "Canvas";
+      document.body.append(canvas);
+      const canvasBackground = getComputedStyle(canvas).backgroundColor;
+      canvas.remove();
 
       return {
         active: matchMedia("(forced-colors: active)").matches,
@@ -502,7 +500,9 @@ test("forced-colors keeps status text, card boundaries, and links understandable
         statusColor: getComputedStyle(status).color,
         statusText: status.textContent.trim(),
         canvasText,
+        canvasBackground,
         statusColors,
+        statusBackgrounds,
       };
     },
   );
@@ -511,6 +511,11 @@ test("forced-colors keeps status text, card boundaries, and links understandable
   expect(forcedColors.borderStyle).not.toBe("none");
   expect(forcedColors.statusColor).toBe(forcedColors.canvasText);
   expect(forcedColors.statusColors.every((color) => color === forcedColors.canvasText)).toBe(true);
+  expect(
+    forcedColors.statusBackgrounds.every(
+      (background) => background === forcedColors.canvasBackground,
+    ),
+  ).toBe(true);
   expect(forcedColors.statusText).toContain("Operational");
   expect(forcedColors.linkText).toContain("Cloudflare Status");
 });
