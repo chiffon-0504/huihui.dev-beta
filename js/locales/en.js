@@ -58,6 +58,7 @@ window.HUIHUI_I18N.en = {
       githubLink: "View GitHub Status →",
       statuses: {
         operational: "Operational",
+        underMaintenance: "Under Maintenance",
         degradedPerformance: "Degraded Performance",
         partialOutage: "Partial Outage",
         majorOutage: "Major Outage",

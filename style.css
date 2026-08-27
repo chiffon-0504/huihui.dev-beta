@@ -723,33 +723,38 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 
 .infrastructure-status-text[data-status="operational"],
 .infrastructure-component-status[data-status="operational"] {
-  color: #0b6f50;
+  color: #6ee7b7;
+}
+
+.infrastructure-status-text[data-status="under_maintenance"],
+.infrastructure-component-status[data-status="under_maintenance"] {
+  color: #c4b5fd;
 }
 
 .infrastructure-status-text[data-status="degraded_performance"],
 .infrastructure-component-status[data-status="degraded_performance"] {
-  color: #8a5a00;
+  color: #fde68a;
 }
 
 .infrastructure-status-text[data-status="partial_outage"],
 .infrastructure-component-status[data-status="partial_outage"] {
-  color: #a54700;
+  color: #fdba74;
 }
 
 .infrastructure-status-text[data-status="major_outage"],
 .infrastructure-component-status[data-status="major_outage"] {
-  color: #b42318;
+  color: #fca5a5;
 }
 
 .infrastructure-status-text[data-status="unknown"],
 .infrastructure-component-status[data-status="unknown"] {
-  color: #475467;
+  color: #cbd5e1;
 }
 
 .infrastructure-status-link {
   width: fit-content;
   margin-top: auto;
-  color: #005ea8;
+  color: #7dd3fc;
   font-weight: 700;
   text-decoration: underline;
   text-decoration-thickness: 1px;

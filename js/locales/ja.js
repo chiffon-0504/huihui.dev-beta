@@ -58,6 +58,7 @@ window.HUIHUI_I18N.ja = {
       githubLink: "GitHub ステータスを見る →",
       statuses: {
         operational: "正常稼働",
+        underMaintenance: "メンテナンス中",
         degradedPerformance: "パフォーマンス低下",
         partialOutage: "一部停止",
         majorOutage: "重大な障害",

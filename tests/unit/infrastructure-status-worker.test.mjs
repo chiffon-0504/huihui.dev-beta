@@ -199,11 +199,47 @@ describe("Infrastructure Status Worker", () => {
     },
   );
 
-  test("uses major > partial > degraded > operational aggregation precedence", async () => {
+  test("normalizes maintenance as a complete cacheable provider state", async () => {
+    const { cache, response } = await requestInfrastructure({
+      fetchMock: createFetch({
+        cloudflare: cloudflareSummary({ workers: "under_maintenance" }),
+      }),
+    });
+    const data = await response.json();
+    const cloudflare = provider(data, "cloudflare");
+
+    expect(cloudflare.status).toBe("under_maintenance");
+    expect(cloudflare.components).toContainEqual({
+      id: "workers",
+      name: "Workers",
+      status: "under_maintenance",
+    });
+    expect(response.headers.get("Cache-Control")).toBe("public, max-age=60");
+    expect(response.headers.get("X-Cache")).toBe("MISS");
+    expect(cache.put).toHaveBeenCalledOnce();
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  test("ranks degraded performance above maintenance in a mixed provider", async () => {
     const { response } = await requestInfrastructure({
       fetchMock: createFetch({
         cloudflare: cloudflareSummary({
-          pages: "degraded_performance",
+          pages: "under_maintenance",
+          workers: "degraded_performance",
+        }),
+      }),
+    });
+    const data = await response.json();
+
+    expect(provider(data, "cloudflare").status).toBe("degraded_performance");
+    expect(response.headers.get("Cache-Control")).toBe("public, max-age=60");
+  });
+
+  test("uses major > partial > degraded > maintenance > operational aggregation precedence", async () => {
+    const { response } = await requestInfrastructure({
+      fetchMock: createFetch({
+        cloudflare: cloudflareSummary({
+          pages: "under_maintenance",
           workers: "partial_outage",
           dns: "major_outage",
         }),

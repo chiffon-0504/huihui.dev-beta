@@ -12,7 +12,7 @@ const locales = [
     loadError: "無法載入基礎設施狀態。",
     cloudflareTitle: "Cloudflare 狀態",
     githubTitle: "GitHub 狀態",
-    statuses: ["營運正常", "效能下降", "部分中斷", "重大中斷", "未知"],
+    statuses: ["營運正常", "維護中", "效能下降", "部分中斷", "重大中斷", "未知"],
   },
   {
     name: "EN",
@@ -24,6 +24,7 @@ const locales = [
     githubTitle: "GitHub Status",
     statuses: [
       "Operational",
+      "Under Maintenance",
       "Degraded Performance",
       "Partial Outage",
       "Major Outage",
@@ -38,7 +39,7 @@ const locales = [
     loadError: "インフラストラクチャ状況を読み込めませんでした。",
     cloudflareTitle: "Cloudflare ステータス",
     githubTitle: "GitHub ステータス",
-    statuses: ["正常稼働", "パフォーマンス低下", "一部停止", "重大な障害", "不明"],
+    statuses: ["正常稼働", "メンテナンス中", "パフォーマンス低下", "一部停止", "重大な障害", "不明"],
   },
 ];
 
@@ -76,9 +77,9 @@ function allStatesFixture() {
       name: '<img src=x onerror="window.__statusPayloadRan=true">',
       status: "major_outage",
       pages: "operational",
-      workers: "degraded_performance",
-      dns: "partial_outage",
-      cdn: "major_outage",
+      workers: "under_maintenance",
+      dns: "degraded_performance",
+      cdn: "partial_outage",
     },
     github: {
       name: "<script>window.__statusPayloadRan=true</script>",
@@ -233,6 +234,7 @@ for (const locale of locales) {
         elements.map((element) => ({
           state: element.dataset.status,
           text: element.textContent.trim(),
+          symbol: element.querySelector(".infrastructure-status-symbol")?.textContent,
           symbolHidden:
             element.querySelector(".infrastructure-status-symbol")?.getAttribute(
               "aria-hidden",
@@ -245,6 +247,12 @@ for (const locale of locales) {
           contract.state && contract.text && contract.symbolHidden === "true",
       ),
     ).toBe(true);
+    expect(statusContracts).toContainEqual(
+      expect.objectContaining({
+        state: "under_maintenance",
+        symbol: "◆",
+      }),
+    );
 
     const links = cards.locator(".infrastructure-status-link");
     await expect(links).toHaveCount(2);
@@ -333,6 +341,107 @@ test("one missing provider becomes Unknown without hiding the healthy provider",
   );
 });
 
+test("maintenance renders explicitly while degraded remains the mixed worst state", async ({
+  page,
+}) => {
+  await stubHomeDependencies(page, {
+    providers: providerFixtures({
+      cloudflare: {
+        status: "degraded_performance",
+        pages: "under_maintenance",
+        workers: "degraded_performance",
+      },
+    }),
+  });
+  await page.goto("/en/", { waitUntil: "load" });
+
+  const cloudflare = page.locator(
+    '.infrastructure-status-card[data-provider="cloudflare"]',
+  );
+  await expect(cloudflare).toHaveAttribute("data-status", "degraded_performance");
+  await expect(cloudflare.locator(".infrastructure-provider-summary")).toContainText(
+    "Degraded Performance",
+  );
+  await expect(
+    cloudflare.locator('.infrastructure-component-status[data-status="under_maintenance"]'),
+  ).toContainText("Under Maintenance");
+});
+
+test("default status and provider-link colors meet WCAG AA contrast", async ({
+  page,
+}) => {
+  await stubHomeDependencies(page, { providers: allStatesFixture() });
+  await page.goto("/en/", { waitUntil: "load" });
+
+  const contrastResults = await page
+    .locator(".infrastructure-status-section")
+    .evaluate((section) => {
+      const parseColor = (value) => {
+        const channels = value.match(/[\d.]+/g).map(Number);
+        return {
+          red: channels[0],
+          green: channels[1],
+          blue: channels[2],
+          alpha: channels[3] ?? 1,
+        };
+      };
+      const composite = (foreground, background) => ({
+        red: foreground.red * foreground.alpha + background.red * (1 - foreground.alpha),
+        green:
+          foreground.green * foreground.alpha +
+          background.green * (1 - foreground.alpha),
+        blue:
+          foreground.blue * foreground.alpha +
+          background.blue * (1 - foreground.alpha),
+        alpha: 1,
+      });
+      const luminance = (color) => {
+        const linearize = (channel) => {
+          const value = channel / 255;
+          return value <= 0.04045
+            ? value / 12.92
+            : ((value + 0.055) / 1.055) ** 2.4;
+        };
+        return (
+          0.2126 * linearize(color.red) +
+          0.7152 * linearize(color.green) +
+          0.0722 * linearize(color.blue)
+        );
+      };
+      const contrastRatio = (foreground, background) => {
+        const foregroundLuminance = luminance(foreground);
+        const backgroundLuminance = luminance(background);
+        return (
+          (Math.max(foregroundLuminance, backgroundLuminance) + 0.05) /
+          (Math.min(foregroundLuminance, backgroundLuminance) + 0.05)
+        );
+      };
+      const bodyBackground = parseColor(getComputedStyle(document.body).backgroundColor);
+
+      return [
+        ...section.querySelectorAll(
+          ".infrastructure-status-text, .infrastructure-component-status, .infrastructure-status-link",
+        ),
+      ].map((element) => {
+        const card = element.closest(".infrastructure-status-card");
+        const cardBackground = parseColor(getComputedStyle(card).backgroundColor);
+        const effectiveBackground = composite(cardBackground, bodyBackground);
+        const foreground = composite(
+          parseColor(getComputedStyle(element).color),
+          effectiveBackground,
+        );
+
+        return {
+          label: element.textContent.trim(),
+          ratio: contrastRatio(foreground, effectiveBackground),
+        };
+      });
+    });
+
+  expect(contrastResults.length).toBeGreaterThan(0);
+  expect(contrastResults.every(({ ratio }) => ratio >= 4.5)).toBe(true);
+});
+
 test("a request failure replaces loading with an accessible error and two Unknown cards", async ({
   page,
 }) => {
@@ -380,6 +489,12 @@ test("forced-colors keeps status text, card boundaries, and links understandable
       const status = section.querySelector(".infrastructure-status-text");
       const link = section.querySelector(".infrastructure-status-link");
 
+      const statusColors = [
+        ...section.querySelectorAll(
+          ".infrastructure-status-text, .infrastructure-component-status, .infrastructure-status-link",
+        ),
+      ].map((element) => getComputedStyle(element).color);
+
       return {
         active: matchMedia("(forced-colors: active)").matches,
         borderStyle: getComputedStyle(card).borderStyle,
@@ -387,6 +502,7 @@ test("forced-colors keeps status text, card boundaries, and links understandable
         statusColor: getComputedStyle(status).color,
         statusText: status.textContent.trim(),
         canvasText,
+        statusColors,
       };
     },
   );
@@ -394,6 +510,7 @@ test("forced-colors keeps status text, card boundaries, and links understandable
   expect(forcedColors.active).toBe(true);
   expect(forcedColors.borderStyle).not.toBe("none");
   expect(forcedColors.statusColor).toBe(forcedColors.canvasText);
+  expect(forcedColors.statusColors.every((color) => color === forcedColors.canvasText)).toBe(true);
   expect(forcedColors.statusText).toContain("Operational");
   expect(forcedColors.linkText).toContain("Cloudflare Status");
 });

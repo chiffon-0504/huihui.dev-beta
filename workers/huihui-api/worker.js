@@ -735,9 +735,10 @@ const INFRASTRUCTURE_STATUS_DEFINITIONS = Object.freeze([
 ]);
 const INFRASTRUCTURE_STATUS_RANK = Object.freeze({
   operational: 0,
-  degraded_performance: 1,
-  partial_outage: 2,
-  major_outage: 3,
+  under_maintenance: 1,
+  degraded_performance: 2,
+  partial_outage: 3,
+  major_outage: 4,
 });
 
 function normalizeInfrastructureComponentStatus(value) {
@@ -872,7 +873,7 @@ async function getInfrastructureProvider(definition) {
 async function handleInfrastructureStatus(request, env, ctx) {
   const cache = caches.default;
   const cacheKey = new Request(
-    new URL(request.url).origin + "/api/infrastructure-status?v1"
+    new URL(request.url).origin + "/api/infrastructure-status?v2"
   );
   const cachedResponse = await cache.match(cacheKey);
 

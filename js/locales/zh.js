@@ -58,6 +58,7 @@ window.HUIHUI_I18N.zh = {
       githubLink: "查看 GitHub 狀態 →",
       statuses: {
         operational: "營運正常",
+        underMaintenance: "維護中",
         degradedPerformance: "效能下降",
         partialOutage: "部分中斷",
         majorOutage: "重大中斷",

@@ -12,7 +12,7 @@ const readRoutes = [
   },
   {
     path: "/api/infrastructure-status",
-    cachePath: "/api/infrastructure-status?v1",
+    cachePath: "/api/infrastructure-status?v2",
     payload: { ok: true, providers: [] },
   },
   {

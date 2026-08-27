@@ -11,6 +11,7 @@ let infrastructureStatusRequestSequence = 0;
 let activeInfrastructureStatusRequestController;
 const INFRASTRUCTURE_STATUS_VALUES = new Set([
   "operational",
+  "under_maintenance",
   "degraded_performance",
   "partial_outage",
   "major_outage",
@@ -43,6 +44,7 @@ const INFRASTRUCTURE_PROVIDER_DEFINITIONS = Object.freeze([
 ]);
 const INFRASTRUCTURE_STATUS_SYMBOLS = Object.freeze({
   operational: "●",
+  under_maintenance: "◆",
   degraded_performance: "▲",
   partial_outage: "◐",
   major_outage: "✕",
@@ -167,6 +169,7 @@ function renderTechNewsCards(container, items) {
 function getInfrastructureStatusText(status) {
   const statusKeys = {
     operational: "statuses.operational",
+    under_maintenance: "statuses.underMaintenance",
     degraded_performance: "statuses.degradedPerformance",
     partial_outage: "statuses.partialOutage",
     major_outage: "statuses.majorOutage",
