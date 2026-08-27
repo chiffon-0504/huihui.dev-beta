@@ -17,7 +17,9 @@ async function stubExternalDependencies(page) {
       ? { ok: true, techNews: [] }
       : pathname === "/api/steam-library"
         ? { ok: true, games: [] }
-        : null;
+        : pathname === "/api/infrastructure-status"
+          ? { ok: true, providers: [] }
+          : null;
 
     return route.fulfill({
       status: response ? 200 : 500,
