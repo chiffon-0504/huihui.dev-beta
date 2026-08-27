@@ -85,6 +85,8 @@ async function stubHomeApis(page) {
               },
             ],
           }
+        : pathname === "/api/infrastructure-status"
+          ? { ok: true, providers: [] }
         : null;
 
     return route.fulfill({
@@ -148,6 +150,9 @@ for (const route of homeRoutes) {
     const main = page.locator("main.main");
     const releaseCard = main.locator(".website-version-section .apod-card");
     const techCard = main.locator("#techNewsCards > .tech-news-card");
+    const infrastructureCards = main.locator(
+      ".infrastructure-status-card",
+    );
 
     expect(response?.status()).toBe(200);
     await expect(page.locator("html")).toHaveAttribute("lang", route.lang);
@@ -171,6 +176,7 @@ for (const route of homeRoutes) {
       "https://example.test/home-regression",
     );
     await expect(techCard).toHaveAttribute("rel", "noopener noreferrer");
+    await expect(infrastructureCards).toHaveCount(2);
 
     const languageLinks = page.locator("#site-sidebar .lang-switch a");
     await expect(languageLinks).toHaveCount(route.languagePaths.length);
@@ -193,7 +199,10 @@ for (const route of homeRoutes) {
 
     expect(overflow.body).toBeLessThanOrEqual(0);
     expect(overflow.document).toBeLessThanOrEqual(0);
-    expect(apiRequests).toEqual(["/api/tech-news"]);
+    expect(apiRequests).toEqual([
+      "/api/tech-news",
+      "/api/infrastructure-status",
+    ]);
     expect(
       intervalObservations.filter(({ delay }) => delay === 300000),
     ).toHaveLength(0);

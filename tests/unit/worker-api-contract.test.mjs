@@ -11,6 +11,11 @@ const readRoutes = [
     payload: { ok: true, techNews: [{ source: "Tech News route" }] },
   },
   {
+    path: "/api/infrastructure-status",
+    cachePath: "/api/infrastructure-status?v1",
+    payload: { ok: true, providers: [] },
+  },
+  {
     path: "/api/apod",
     cachePath: "/api/apod-v2",
     payload: { ok: true, title: "APOD route" },
@@ -258,6 +263,7 @@ describe("Worker public API contract", () => {
       message: "huihui.dev API",
       endpoints: [
         "/api/tech-news",
+        "/api/infrastructure-status",
         "/api/apod",
         "/api/steam-library",
         "/api/contact",

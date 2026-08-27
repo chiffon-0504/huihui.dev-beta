@@ -196,11 +196,13 @@ async function handleReadOnlyRoute(request, handler) {
 }
 
 export const TECH_NEWS_SOURCE_DEADLINE_MS = 5000;
+export const INFRASTRUCTURE_STATUS_PROVIDER_DEADLINE_MS = 3500;
 export const APOD_ATTEMPT_DEADLINE_MS = 3000;
 export const APOD_TOTAL_BUDGET_MS = 6000;
 export const STEAM_UPSTREAM_DEADLINE_MS = 5000;
 export const CONTACT_REQUEST_MAX_BYTES = 64 * 1024;
 export const TECH_NEWS_RESPONSE_MAX_BYTES = 2 * 1024 * 1024;
+export const INFRASTRUCTURE_STATUS_RESPONSE_MAX_BYTES = 1024 * 1024;
 export const APOD_RESPONSE_MAX_BYTES = 256 * 1024;
 export const STEAM_RESPONSE_MAX_BYTES = 2 * 1024 * 1024;
 export const TURNSTILE_RESPONSE_MAX_BYTES = 64 * 1024;
@@ -459,6 +461,7 @@ function errorUnhandledFailure(route) {
 function getDiagnosticRoute(pathname) {
   switch (pathname) {
     case "/api/tech-news":
+    case "/api/infrastructure-status":
     case "/api/apod":
     case "/api/steam-library":
     case "/api/contact":
@@ -686,6 +689,218 @@ async function handleTechNews(request, env, ctx) {
   );
 
   ctx.waitUntil(cache.put(cacheKey, response.clone()));
+
+  return response;
+}
+
+/* =========================
+   Infrastructure Status
+========================= */
+
+const INFRASTRUCTURE_STATUS_CACHE_TTL_SECONDS = 60;
+const INFRASTRUCTURE_STATUS_DEFINITIONS = Object.freeze([
+  {
+    id: "cloudflare",
+    name: "Cloudflare",
+    upstream: "cloudflare_status",
+    apiUrl: "https://www.cloudflarestatus.com/api/v2/summary.json",
+    statusUrl: "https://www.cloudflarestatus.com/",
+    components: [
+      { id: "pages", name: "Pages", upstreamName: "Pages" },
+      { id: "workers", name: "Workers", upstreamName: "Workers" },
+      { id: "dns", name: "DNS", upstreamName: "Authoritative DNS" },
+      { id: "cdn", name: "CDN", upstreamName: "CDN/Cache" },
+    ],
+  },
+  {
+    id: "github",
+    name: "GitHub",
+    upstream: "github_status",
+    apiUrl: "https://www.githubstatus.com/api/v2/summary.json",
+    statusUrl: "https://www.githubstatus.com/",
+    components: [
+      { id: "actions", name: "Actions", upstreamName: "Actions" },
+      {
+        id: "api_requests",
+        name: "API Requests",
+        upstreamName: "API Requests",
+      },
+      {
+        id: "git_operations",
+        name: "Git Operations",
+        upstreamName: "Git Operations",
+      },
+    ],
+  },
+]);
+const INFRASTRUCTURE_STATUS_RANK = Object.freeze({
+  operational: 0,
+  degraded_performance: 1,
+  partial_outage: 2,
+  major_outage: 3,
+});
+
+function normalizeInfrastructureComponentStatus(value) {
+  return Object.hasOwn(INFRASTRUCTURE_STATUS_RANK, value)
+    ? value
+    : "unknown";
+}
+
+function aggregateInfrastructureStatus(components) {
+  if (components.some((component) => component.status === "unknown")) {
+    return "unknown";
+  }
+
+  return components.reduce(
+    (worst, component) =>
+      INFRASTRUCTURE_STATUS_RANK[component.status] >
+      INFRASTRUCTURE_STATUS_RANK[worst]
+        ? component.status
+        : worst,
+    "operational"
+  );
+}
+
+function unknownInfrastructureProvider(definition) {
+  const components = definition.components.map((component) => ({
+    id: component.id,
+    name: component.name,
+    status: "unknown",
+  }));
+
+  return {
+    id: definition.id,
+    name: definition.name,
+    status: "unknown",
+    url: definition.statusUrl,
+    components,
+  };
+}
+
+function normalizeInfrastructureProvider(definition, data) {
+  if (
+    !data ||
+    typeof data !== "object" ||
+    Array.isArray(data) ||
+    data.page?.name !== definition.name ||
+    !Array.isArray(data.components)
+  ) {
+    throw new UpstreamInvalidResponseError();
+  }
+
+  let hasInvalidComponent = false;
+  const components = definition.components.map((component) => {
+    const matches = data.components.filter(
+      (candidate) =>
+        candidate &&
+        typeof candidate === "object" &&
+        !Array.isArray(candidate) &&
+        candidate.name === component.upstreamName
+    );
+    const status =
+      matches.length === 1
+        ? normalizeInfrastructureComponentStatus(matches[0].status)
+        : "unknown";
+
+    if (matches.length !== 1 || status === "unknown") {
+      hasInvalidComponent = true;
+    }
+
+    return {
+      id: component.id,
+      name: component.name,
+      status,
+    };
+  });
+
+  return {
+    hasInvalidComponent,
+    provider: {
+      id: definition.id,
+      name: definition.name,
+      status: aggregateInfrastructureStatus(components),
+      url: definition.statusUrl,
+      components,
+    },
+  };
+}
+
+async function getInfrastructureProvider(definition) {
+  try {
+    const data = await withUpstreamDeadline(
+      INFRASTRUCTURE_STATUS_PROVIDER_DEADLINE_MS,
+      async (signal) => {
+        const response = await fetch(definition.apiUrl, {
+          headers: {
+            Accept: "application/json",
+            "User-Agent": "huihui.dev infrastructure-status worker",
+          },
+          signal,
+        });
+
+        if (!response.ok) {
+          throw new UpstreamHttpStatusError(response.status);
+        }
+
+        return readResponseJsonWithLimit(
+          response,
+          INFRASTRUCTURE_STATUS_RESPONSE_MAX_BYTES
+        );
+      }
+    );
+    const normalized = normalizeInfrastructureProvider(definition, data);
+
+    if (normalized.hasInvalidComponent) {
+      warnUpstreamFailure(
+        "/api/infrastructure-status",
+        definition.upstream,
+        new UpstreamInvalidResponseError()
+      );
+    }
+
+    return normalized.provider;
+  } catch (error) {
+    warnUpstreamFailure(
+      "/api/infrastructure-status",
+      definition.upstream,
+      error
+    );
+    return unknownInfrastructureProvider(definition);
+  }
+}
+
+async function handleInfrastructureStatus(request, env, ctx) {
+  const cache = caches.default;
+  const cacheKey = new Request(
+    new URL(request.url).origin + "/api/infrastructure-status?v1"
+  );
+  const cachedResponse = await cache.match(cacheKey);
+
+  if (cachedResponse) {
+    const response = new Response(cachedResponse.body, cachedResponse);
+    response.headers.set("X-Cache", "HIT");
+    return response;
+  }
+
+  const providers = await Promise.all(
+    INFRASTRUCTURE_STATUS_DEFINITIONS.map(getInfrastructureProvider)
+  );
+  const isComplete = providers.every(
+    (provider) => provider.status !== "unknown"
+  );
+  const response = jsonResponse(
+    { ok: true, providers },
+    {
+      "Cache-Control": isComplete
+        ? `public, max-age=${INFRASTRUCTURE_STATUS_CACHE_TTL_SECONDS}`
+        : "no-store",
+      "X-Cache": isComplete ? "MISS" : "BYPASS",
+    }
+  );
+
+  if (isComplete) {
+    ctx.waitUntil(cache.put(cacheKey, response.clone()));
+  }
 
   return response;
 }
@@ -1368,6 +1583,12 @@ async function routeRequest(request, env, ctx) {
     );
   }
 
+  if (url.pathname === "/api/infrastructure-status") {
+    return handleReadOnlyRoute(request, () =>
+      handleInfrastructureStatus(request, env, ctx)
+    );
+  }
+
   if (url.pathname === "/api/apod") {
     return handleReadOnlyRoute(request, () => handleApod(request, env, ctx));
   }
@@ -1396,6 +1617,7 @@ async function routeRequest(request, env, ctx) {
       message: "huihui.dev API",
       endpoints: [
         "/api/tech-news",
+        "/api/infrastructure-status",
         "/api/apod",
         "/api/steam-library",
         "/api/contact",

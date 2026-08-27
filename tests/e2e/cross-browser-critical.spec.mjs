@@ -85,6 +85,9 @@ async function preparePage(page) {
 
   const apiResponse = (pathname) => {
     if (pathname === "/api/tech-news") return { ok: true, techNews: [] };
+    if (pathname === "/api/infrastructure-status") {
+      return { ok: true, providers: [] };
+    }
     if (pathname === "/api/steam-library") return { ok: true, games: [] };
     return null;
   };
@@ -166,7 +169,11 @@ test.describe("localized route shell", () => {
       await expect(page.locator("#techNewsCards > .tech-news-status")).toHaveCount(
         1,
       );
-      expect(state.apiRequests).toEqual(["/api/tech-news"]);
+      await expect(page.locator(".infrastructure-status-card")).toHaveCount(2);
+      expect(state.apiRequests).toEqual([
+        "/api/tech-news",
+        "/api/infrastructure-status",
+      ]);
       await expectNoHorizontalOverflow(page);
       expectNoDiagnostics(state);
     });
@@ -188,6 +195,7 @@ test("mobile drawer keeps focus and inert state through both close paths", async
 
   expect(response?.status()).toBe(200);
   await expect(page.locator("#techNewsCards > .tech-news-status")).toHaveCount(1);
+  await expect(page.locator(".infrastructure-status-card")).toHaveCount(2);
   await expect(sidebar).not.toHaveClass(/\bopen\b/);
   await expect(sidebar).toHaveAttribute("aria-hidden", "true");
   expect(await sidebar.evaluate((element) => element.inert)).toBe(true);

@@ -46,6 +46,32 @@ window.HUIHUI_I18N.zh = {
       loadError: "無法載入科技動態。",
       timeout: "科技動態載入逾時。",
       sourceLabel: "來源："
+    },
+    infrastructure: {
+      title: "基礎設施狀態",
+      desc: "Cloudflare 與 GitHub 的官方上游服務狀態。",
+      loading: "正在載入基礎設施狀態……",
+      loadError: "無法載入基礎設施狀態。",
+      cloudflareTitle: "Cloudflare 狀態",
+      githubTitle: "GitHub 狀態",
+      cloudflareLink: "查看 Cloudflare 狀態 →",
+      githubLink: "查看 GitHub 狀態 →",
+      statuses: {
+        operational: "營運正常",
+        degradedPerformance: "效能下降",
+        partialOutage: "部分中斷",
+        majorOutage: "重大中斷",
+        unknown: "未知"
+      },
+      components: {
+        pages: "Pages",
+        workers: "Workers",
+        dns: "DNS",
+        cdn: "CDN",
+        actions: "Actions",
+        apiRequests: "API 請求",
+        gitOperations: "Git 操作"
+      }
     }
   },
   contact: {

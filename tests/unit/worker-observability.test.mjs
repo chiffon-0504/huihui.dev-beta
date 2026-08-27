@@ -42,6 +42,7 @@ const approvedEvents = new Set([
 ]);
 const approvedRoutes = new Set([
   "/api/tech-news",
+  "/api/infrastructure-status",
   "/api/apod",
   "/api/steam-library",
   "/api/contact",
@@ -51,6 +52,8 @@ const approvedUpstreams = new Set([
   "openai_rss",
   "anthropic_newsroom",
   "apple_rss",
+  "cloudflare_status",
+  "github_status",
   "nasa_apod",
   "steam",
   "turnstile",

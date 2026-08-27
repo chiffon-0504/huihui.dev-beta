@@ -23,6 +23,7 @@ const realSectionHeadingIds = [
   "projectUpdateTitle",
   "websiteVersionTitle",
   "techNewsTitle",
+  "infrastructureStatusTitle",
 ];
 
 describe("Home heading semantics", () => {
@@ -48,7 +49,11 @@ describe("Home heading semantics", () => {
       expect(subtitleElements[0].index, document.file).toBeLessThan(
         html.indexOf('<h2 id="websiteVersionTitle">'),
       );
-      expect(headingLevels, document.file).toEqual([1, 2, 2, 2]);
+      expect(headingLevels, document.file).toEqual([1, 2, 2, 2, 2]);
+      expect(
+        html.indexOf('id="infrastructureStatusTitle"'),
+        document.file,
+      ).toBeGreaterThan(html.indexOf('id="techNewsCards"'));
       expect(
         headingLevels.every(
           (level, index) =>

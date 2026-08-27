@@ -46,6 +46,32 @@ window.HUIHUI_I18N.ja = {
       loadError: "テクノロジー情報を読み込めませんでした。",
       timeout: "テクノロジー情報の読み込みがタイムアウトしました。",
       sourceLabel: "出典："
+    },
+    infrastructure: {
+      title: "インフラストラクチャ状況",
+      desc: "Cloudflare と GitHub が公開する公式の上流サービス状況です。",
+      loading: "インフラストラクチャ状況を読み込んでいます……",
+      loadError: "インフラストラクチャ状況を読み込めませんでした。",
+      cloudflareTitle: "Cloudflare ステータス",
+      githubTitle: "GitHub ステータス",
+      cloudflareLink: "Cloudflare ステータスを見る →",
+      githubLink: "GitHub ステータスを見る →",
+      statuses: {
+        operational: "正常稼働",
+        degradedPerformance: "パフォーマンス低下",
+        partialOutage: "一部停止",
+        majorOutage: "重大な障害",
+        unknown: "不明"
+      },
+      components: {
+        pages: "Pages",
+        workers: "Workers",
+        dns: "DNS",
+        cdn: "CDN",
+        actions: "Actions",
+        apiRequests: "APIリクエスト",
+        gitOperations: "Git操作"
+      }
     }
   },
   contact: {

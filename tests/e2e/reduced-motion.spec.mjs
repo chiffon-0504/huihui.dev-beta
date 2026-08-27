@@ -18,6 +18,8 @@ async function stubHomepageApis(page) {
               },
             ],
           }
+        : pathname === "/api/infrastructure-status"
+          ? { ok: true, providers: [] }
         : null;
 
     await route.fulfill({
@@ -100,7 +102,8 @@ test("reduced motion disables homepage entrance and card movement", async ({
   for (const selector of [
     ".home-hero.fade-in",
     ".website-version-section.fade-in",
-    ".tech-news-section.fade-in",
+    ".tech-news-section:not(.infrastructure-status-section).fade-in",
+    ".infrastructure-status-section.fade-in",
   ]) {
     expect(await getMotionStyle(page.locator(selector)), selector).toMatchObject({
       animationName: "none",
@@ -112,7 +115,9 @@ test("reduced motion disables homepage entrance and card movement", async ({
   for (const selector of [
     ".home-hero .project-update-card",
     ".website-version-section .apod-card",
-    ".tech-news-section .tech-news-card",
+    "#techNewsCards .tech-news-card",
+    '.infrastructure-status-card[data-provider="cloudflare"]',
+    '.infrastructure-status-card[data-provider="github"]',
   ]) {
     const card = page.locator(selector);
     expectZeroDuration((await getMotionStyle(card)).transitionDuration);

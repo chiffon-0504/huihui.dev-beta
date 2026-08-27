@@ -16,10 +16,18 @@ const obsoleteElementIds = [
 const liveHomeFunctionNames = [
   "getSafeTechNewsUrl",
   "getHomeTechNewsText",
+  "getHomeInfrastructureText",
   "setTechNewsStatus",
   "getValidTechNewsItem",
   "renderTechNewsCards",
+  "getInfrastructureStatusText",
+  "getValidInfrastructureProvider",
+  "createInfrastructureStatusText",
+  "createInfrastructureCard",
+  "renderInfrastructureStatus",
+  "setInfrastructureStatusLoading",
   "loadTechNews",
+  "loadInfrastructureStatus",
   "initHomeCards",
 ];
 
@@ -51,6 +59,10 @@ describe("Home loader contract", () => {
       expect(html, document).toContain('id="projectUpdateTitle"');
       expect(html, document).toContain('id="websiteVersionTitle"');
       expect(html, document).toContain('id="techNewsCards"');
+      expect(html, document).toContain('id="infrastructureStatusCards"');
+      expect(html.indexOf('id="infrastructureStatusTitle"')).toBeGreaterThan(
+        html.indexOf('id="techNewsCards"'),
+      );
     }
   });
 
@@ -74,7 +86,10 @@ describe("Home loader contract", () => {
     vm.runInContext(homeCardsSource, context, { filename: "js/home-cards.js" });
     vm.runInContext("initHomeCards(); initHomeCards();", context);
 
-    expect(elementLookups).toEqual(["techNewsCards"]);
+    expect(elementLookups).toEqual([
+      "techNewsCards",
+      "infrastructureStatusCards",
+    ]);
     expect(fetchMock).not.toHaveBeenCalled();
     expect(setIntervalMock).not.toHaveBeenCalled();
     expect(vm.runInContext("typeof loadTechNews", context)).toBe("function");
@@ -113,6 +128,30 @@ describe("Home loader contract", () => {
     );
     expect(homeCardsSource).not.toMatch(
       /container\.setAttribute\("(?:role|aria-live|aria-atomic)"/,
+    );
+  });
+
+  test("Infrastructure Status uses one localized polite atomic loading region", () => {
+    for (const [index, html] of homeSources.entries()) {
+      const document = homeDocuments[index];
+      const statusMatches = html.match(
+        /<p class="infrastructure-status-message" role="status" aria-live="polite" aria-atomic="true" data-infrastructure-status-state="loading" data-i18n="home\.infrastructure\.loading"><\/p>/g,
+      );
+
+      expect(statusMatches, document).toHaveLength(1);
+      expect(html, document).toContain(
+        'aria-labelledby="infrastructureStatusTitle"',
+      );
+    }
+
+    expect(homeCardsSource).toContain(
+      'message.setAttribute("aria-live", "polite")',
+    );
+    expect(homeCardsSource).toContain(
+      'message.setAttribute("aria-atomic", "true")',
+    );
+    expect(homeCardsSource).toContain(
+      '`${getHuihuiApiBase()}/api/infrastructure-status`',
     );
   });
 
