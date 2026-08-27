@@ -1,11 +1,12 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import worker from "../../workers/huihui-api/worker.js";
 
-const fallbackLinks = [
+const safeLinksAfterRejectedLatestItem = [
   "https://openai.com/news",
+  "https://www.anthropic.com/news/older-article",
   "https://developer.apple.com/news/",
-  "https://android-developers.googleblog.com/",
 ];
+const anthropicNewsroomUrl = "https://www.anthropic.com/news";
 const fixedNow = new Date("2026-07-31T12:00:00.000Z");
 
 function rssFeed({
@@ -31,15 +32,51 @@ function rssFeed({
   `;
 }
 
-async function requestTechNews(rss) {
+function encodeHtml(text) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function anthropicNewsroom({
+  title,
+  link = "/news/deterministic-fixture",
+  pubDate = "Thu, 09 Jul 2026 12:00:00 GMT",
+}) {
+  return `
+    <main>
+      <a href="/news/older-article">
+        <time>Wed, 08 Jul 2026 12:00:00 GMT</time>
+        <span>Announcements</span>
+        <span>Older Anthropic article</span>
+      </a>
+      <a href="${link}">
+        <time>${pubDate}</time>
+        <span>Announcements</span>
+        <span>${encodeHtml(title)}</span>
+      </a>
+    </main>
+  `;
+}
+
+async function requestTechNews(options) {
   const pendingTasks = [];
+  const rss = rssFeed(options);
+  const newsroom = anthropicNewsroom(options);
 
   vi.stubGlobal(
     "fetch",
-    vi.fn(async () =>
-      new Response(rss, {
+    vi.fn(async (url) =>
+      new Response(url === anthropicNewsroomUrl ? newsroom : rss, {
         status: 200,
-        headers: { "Content-Type": "application/rss+xml" },
+        headers: {
+          "Content-Type":
+            url === anthropicNewsroomUrl
+              ? "text/html"
+              : "application/rss+xml",
+        },
       }),
     ),
   );
@@ -75,13 +112,11 @@ describe("tech-news Worker timestamps", () => {
     vi.useFakeTimers();
     vi.setSystemTime(fixedNow);
 
-    const data = await requestTechNews(
-      rssFeed({
-        title: "Future article",
-        link: "https://example.test/future",
-        pubDate: "Fri, 31 Jul 2026 16:19:00 GMT",
-      }),
-    );
+    const data = await requestTechNews({
+      title: "Future article",
+      link: "/news/future",
+      pubDate: "Fri, 31 Jul 2026 16:19:00 GMT",
+    });
 
     expect(data.techNews.map((item) => item.timeAgo)).toEqual([
       "just now",
@@ -95,13 +130,11 @@ describe("tech-news Worker timestamps", () => {
     vi.useFakeTimers();
     vi.setSystemTime(fixedNow);
 
-    const data = await requestTechNews(
-      rssFeed({
-        title: "Current article",
-        link: "https://example.test/current",
-        pubDate: "Fri, 31 Jul 2026 12:00:00 GMT",
-      }),
-    );
+    const data = await requestTechNews({
+      title: "Current article",
+      link: "/news/current",
+      pubDate: "Fri, 31 Jul 2026 12:00:00 GMT",
+    });
 
     expect(data.techNews.map((item) => item.timeAgo)).toEqual([
       "just now",
@@ -114,15 +147,17 @@ describe("tech-news Worker timestamps", () => {
     vi.useFakeTimers();
     vi.setSystemTime(fixedNow);
 
-    const data = await requestTechNews(
-      rssFeed({
-        title: "Invalid date article",
-        link: "https://example.test/invalid-date",
-        pubDate: "not-a-date",
-      }),
-    );
+    const data = await requestTechNews({
+      title: "Invalid date article",
+      link: "/news/invalid-date",
+      pubDate: "not-a-date",
+    });
 
-    expect(data.techNews.map((item) => item.timeAgo)).toEqual(["", "", ""]);
+    expect(data.techNews.map((item) => item.timeAgo)).toEqual([
+      "",
+      "23 days ago",
+      "",
+    ]);
     expect(JSON.stringify(data.techNews)).not.toContain("NaN");
   });
 
@@ -134,13 +169,11 @@ describe("tech-news Worker timestamps", () => {
     vi.useFakeTimers();
     vi.setSystemTime(fixedNow);
 
-    const data = await requestTechNews(
-      rssFeed({
-        title: "Past article",
-        link: "https://example.test/past",
-        pubDate,
-      }),
-    );
+    const data = await requestTechNews({
+      title: "Past article",
+      link: "/news/past",
+      pubDate,
+    });
 
     expect(data.techNews.map((item) => item.timeAgo)).toEqual([
       expected,
@@ -151,15 +184,42 @@ describe("tech-news Worker timestamps", () => {
 });
 
 describe("tech-news Worker sanitization", () => {
+  test("uses exactly the official OpenAI, Anthropic, and Apple source contract", async () => {
+    const data = await requestTechNews({
+      title: "Official source fixture",
+      link: "/news/official-source-fixture",
+    });
+
+    expect(data.techNews.map((item) => item.category)).toEqual([
+      "OpenAI",
+      "Anthropic",
+      "Apple",
+    ]);
+    expect(data.techNews.map((item) => item.source)).toEqual([
+      "OpenAI News",
+      "Anthropic Newsroom",
+      "Apple Developer News",
+    ]);
+    expect(data.techNews.map((item) => item.tag)).toEqual([
+      "News",
+      "Newsroom",
+      "Developer",
+    ]);
+    expect(fetch.mock.calls.map(([url]) => url)).toEqual([
+      "https://openai.com/news/rss.xml",
+      "https://www.anthropic.com/news",
+      "https://developer.apple.com/news/rss/news.rss",
+    ]);
+    expect(JSON.stringify(data.techNews)).not.toMatch(/Android|Google/);
+  });
+
   test("keeps a hostile RSS title as plain response data", async () => {
     const hostileTitle = '</h3><img src=x onerror="alert(1)">';
-    const data = await requestTechNews(
-      rssFeed({
-        title: hostileTitle,
-        link: "https://example.test/article",
-        cdataTitle: true,
-      }),
-    );
+    const data = await requestTechNews({
+      title: hostileTitle,
+      link: "/news/hostile-title",
+      cdataTitle: true,
+    });
 
     expect(data.ok).toBe(true);
     expect(data.techNews).toHaveLength(3);
@@ -176,12 +236,10 @@ describe("tech-news Worker sanitization", () => {
   });
 
   test("keeps an encoded HTML title as plain response data", async () => {
-    const data = await requestTechNews(
-      rssFeed({
-        title: "&lt;script&gt;alert(1)&lt;/script&gt;",
-        link: "https://example.test/article",
-      }),
-    );
+    const data = await requestTechNews({
+      title: "&lt;script&gt;alert(1)&lt;/script&gt;",
+      link: "/news/encoded-title",
+    });
 
     expect(data.techNews.map((item) => item.title)).toEqual([
       "<script>alert(1)</script>",
@@ -194,25 +252,23 @@ describe("tech-news Worker sanitization", () => {
     ["a javascript URL", "javascript:alert(1)"],
     ["a malformed URL", "://not a valid URL"],
     ["an HTTP URL", "http://example.test/article"],
-  ])("replaces %s with source HTTPS fallbacks", async (_label, link) => {
-    const data = await requestTechNews(
-      rssFeed({ title: "Safe title", link }),
-    );
+  ])("rejects %s and retains safe HTTPS source links", async (_label, link) => {
+    const data = await requestTechNews({ title: "Safe title", link });
 
-    expect(data.techNews.map((item) => item.link)).toEqual(fallbackLinks);
+    expect(data.techNews.map((item) => item.link)).toEqual(
+      safeLinksAfterRejectedLatestItem,
+    );
   });
 
   test("keeps a valid HTTPS article URL and removes its fragment", async () => {
-    const data = await requestTechNews(
-      rssFeed({
-        title: "Safe title",
-        link: "https://example.test/article?id=1&amp;kind=security#details",
-      }),
-    );
+    const data = await requestTechNews({
+      title: "Safe title",
+      link: "https://example.test/article?id=1&amp;kind=security#details",
+    });
 
     expect(data.techNews.map((item) => item.link)).toEqual([
       "https://example.test/article?id=1&kind=security",
-      "https://example.test/article?id=1&kind=security",
+      "https://www.anthropic.com/news/older-article",
       "https://example.test/article?id=1&kind=security",
     ]);
   });

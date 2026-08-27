@@ -5,7 +5,21 @@ function decodeHtml(text) {
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
+    .replace(/&#39;/g, "'")
+    .replace(/&#(?:x([0-9a-f]+)|(\d+));/gi, (entity, hex, decimal) => {
+      const codePoint = Number.parseInt(hex || decimal, hex ? 16 : 10);
+
+      if (
+        !Number.isInteger(codePoint) ||
+        codePoint < 0 ||
+        codePoint > 0x10ffff ||
+        (codePoint >= 0xd800 && codePoint <= 0xdfff)
+      ) {
+        return entity;
+      }
+
+      return String.fromCodePoint(codePoint);
+    });
 }
 
 function cleanUrl(url) {
@@ -490,29 +504,85 @@ export async function withUpstreamDeadline(timeoutMs, operation) {
 const SOURCES = [
   {
     upstream: "openai_rss",
-    category: "AI",
-    tag: "OpenAI",
+    category: "OpenAI",
+    tag: "News",
     source: "OpenAI News",
     url: "https://openai.com/news/rss.xml",
     fallbackLink: "https://openai.com/news",
   },
   {
+    upstream: "anthropic_newsroom",
+    category: "Anthropic",
+    tag: "Newsroom",
+    source: "Anthropic Newsroom",
+    url: "https://www.anthropic.com/news",
+    fallbackLink: "https://www.anthropic.com/news",
+    format: "anthropic_newsroom",
+  },
+  {
     upstream: "apple_rss",
-    category: "iOS",
-    tag: "Apple",
+    category: "Apple",
+    tag: "Developer",
     source: "Apple Developer News",
     url: "https://developer.apple.com/news/rss/news.rss",
     fallbackLink: "https://developer.apple.com/news/",
   },
-  {
-    upstream: "android_rss",
-    category: "Android",
-    tag: "Google",
-    source: "Android Developers Blog",
-    url: "https://android-developers.googleblog.com/feeds/posts/default",
-    fallbackLink: "https://android-developers.googleblog.com/",
-  },
 ];
+
+function getAnthropicNewsroomItem(html, fallbackLink) {
+  const candidates = [];
+  const articlePattern =
+    /<a\b[^>]*href=["'](\/news\/[^"'?#]+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+
+  for (const match of html.matchAll(articlePattern)) {
+    const articleBody = match[2];
+    const publishedText = getFirstMatch(articleBody, [
+      /<time\b[^>]*>([\s\S]*?)<\/time>/i,
+    ]);
+    const publishedAt = new Date(publishedText).getTime();
+    const spanMatches = [
+      ...articleBody.matchAll(/<span\b[^>]*>([\s\S]*?)<\/span>/gi),
+    ];
+
+    if (!Number.isFinite(publishedAt) || spanMatches.length < 2) {
+      continue;
+    }
+
+    const titleMarkup = spanMatches[spanMatches.length - 1][1];
+    const title = decodeHtml(titleMarkup.replace(/<[^>]*>/g, "")).trim();
+    const link = cleanUrl(new URL(match[1], fallbackLink).href);
+
+    if (!title || !link) {
+      continue;
+    }
+
+    candidates.push({ link, pubDate: publishedText, publishedAt, title });
+  }
+
+  candidates.sort((left, right) => right.publishedAt - left.publishedAt);
+  return candidates[0] || null;
+}
+
+function getTechNewsSourceItem(source, body) {
+  if (source.format === "anthropic_newsroom") {
+    return getAnthropicNewsroomItem(body, source.fallbackLink);
+  }
+
+  const entry = getEntryBlock(body);
+
+  if (!entry) {
+    return null;
+  }
+
+  return {
+    link: getLink(entry, source.fallbackLink),
+    pubDate: getFirstMatch(entry, [
+      /<pubDate>(.*?)<\/pubDate>/,
+      /<updated>(.*?)<\/updated>/,
+    ]),
+    title: getTitle(entry, source.source),
+  };
+}
 
 function getTimeAgo(dateString) {
   const pastTime = new Date(dateString).getTime();
@@ -538,11 +608,15 @@ async function getTechNews() {
   return Promise.all(
     SOURCES.map(async (source) => {
       try {
-        const xml = await withUpstreamDeadline(
+        const body = await withUpstreamDeadline(
           TECH_NEWS_SOURCE_DEADLINE_MS,
           async (signal) => {
             const res = await fetch(source.url, {
               headers: {
+                Accept:
+                  source.format === "anthropic_newsroom"
+                    ? "text/html"
+                    : "application/rss+xml, application/atom+xml, application/xml, text/xml",
                 "User-Agent": "huihui.dev tech-news worker",
               },
               signal,
@@ -558,26 +632,20 @@ async function getTechNews() {
             );
           }
         );
-        const entry = getEntryBlock(xml);
+        const item = getTechNewsSourceItem(source, body);
 
-        if (!entry) {
+        if (!item) {
           throw new UpstreamInvalidResponseError();
         }
 
-        const link = getLink(entry, source.fallbackLink);
-        const pubDate = getFirstMatch(entry, [
-          /<pubDate>(.*?)<\/pubDate>/,
-          /<updated>(.*?)<\/updated>/,
-        ]);
-
         return {
           category: source.category,
-          title: getTitle(entry, source.source),
+          title: item.title,
           description: `最新來源：${source.source}`,
           tag: source.tag,
           source: source.source,
-          timeAgo: pubDate ? getTimeAgo(pubDate) : "",
-          link,
+          timeAgo: item.pubDate ? getTimeAgo(item.pubDate) : "",
+          link: item.link,
         };
       } catch (error) {
         warnUpstreamFailure("/api/tech-news", source.upstream, error);
@@ -597,7 +665,7 @@ async function getTechNews() {
 
 async function handleTechNews(request, env, ctx) {
   const cache = caches.default;
-  const cacheKey = new Request(new URL(request.url).origin + "/api/tech-news?v3");
+  const cacheKey = new Request(new URL(request.url).origin + "/api/tech-news?v4");
 
   const cachedResponse = await cache.match(cacheKey);
 

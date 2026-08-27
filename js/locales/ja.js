@@ -40,7 +40,7 @@ window.HUIHUI_I18N.ja = {
     },
     tech: {
       title: "テックニュース",
-      desc: "AI・iOS・Android の最新情報を表示します。",
+      desc: "OpenAI・Anthropic・Apple の最新情報を表示します。",
       loading: "テクノロジー情報を読み込んでいます……",
       empty: "現在表示できるテクノロジー情報はありません。",
       loadError: "テクノロジー情報を読み込めませんでした。",

@@ -40,6 +40,25 @@ async function createLayoutContext(pathname = "/") {
 }
 
 describe("route and localization core", () => {
+  test("describes the official OpenAI, Anthropic, and Apple Tech Updates grouping", async () => {
+    const { context } = await createLayoutContext();
+    const expectedDescriptions = {
+      zh: "每日整理 OpenAI、Anthropic 與 Apple 的最新消息。",
+      en: "Daily updates from OpenAI, Anthropic and Apple.",
+      ja: "OpenAI・Anthropic・Apple の最新情報を表示します。",
+    };
+
+    for (const locale of locales) {
+      const description = context.window.HUIHUI_I18N[locale].home.tech.desc;
+
+      expect(description).toBe(expectedDescriptions[locale]);
+      expect(description).toContain("OpenAI");
+      expect(description).toContain("Anthropic");
+      expect(description).toContain("Apple");
+      expect(description).not.toMatch(/Android|\biOS\b/);
+    }
+  });
+
   test("generates every equivalent route across all three locales", async () => {
     const { context } = await createLayoutContext();
 

@@ -53,6 +53,15 @@ function rssResponse(title, link) {
   );
 }
 
+function anthropicNewsroomResponse(title) {
+  return new Response(
+    `<main><a href="/news/bounded-article">` +
+      `<time>Sun, 02 Aug 2026 12:00:00 GMT</time>` +
+      `<span>Announcements</span><span>${title}</span></a></main>`,
+    { status: 200, headers: { "Content-Type": "text/html" } },
+  );
+}
+
 function apodResponse(date) {
   return new Response(
     JSON.stringify({
@@ -168,6 +177,10 @@ describe("bounded upstream route fallbacks", () => {
     const fetchMock = vi.fn((url) => {
       if (url === "https://openai.com/news/rss.xml") {
         return Promise.resolve(oversized.response);
+      }
+
+      if (url === "https://www.anthropic.com/news") {
+        return Promise.resolve(anthropicNewsroomResponse("Bounded article"));
       }
 
       return Promise.resolve(

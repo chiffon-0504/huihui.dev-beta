@@ -279,6 +279,80 @@ test("renders hostile feed values as text and only links HTTPS cards", async ({
   );
 });
 
+for (const viewport of [
+  { name: "desktop", width: 1440, height: 900, columns: 3 },
+  { name: "mobile", width: 390, height: 844, columns: 1 },
+]) {
+  test(`${viewport.name} renders the OpenAI, Anthropic, and Apple grouping without overflow`, async ({
+    page,
+  }) => {
+    const consoleErrors = [];
+    const pageErrors = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text());
+    });
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await stubHomeDependencies(page, {
+      techNews: [
+        techNewsItem({
+          category: "OpenAI",
+          title: "OpenAI article",
+          source: "OpenAI News",
+          tag: "News",
+          link: "https://openai.com/news/openai-article",
+        }),
+        techNewsItem({
+          category: "Anthropic",
+          title: "Anthropic article",
+          source: "Anthropic Newsroom",
+          tag: "Newsroom",
+          link: "https://www.anthropic.com/news/anthropic-article",
+        }),
+        techNewsItem({
+          category: "Apple",
+          title: "Apple article",
+          source: "Apple Developer News",
+          tag: "Developer",
+          link: "https://developer.apple.com/news/apple-article",
+        }),
+      ],
+    });
+
+    await page.goto("/", { waitUntil: "load" });
+
+    const cards = page.locator("#techNewsCards > .tech-news-card");
+    await expect(cards).toHaveCount(3);
+    await expect(cards.locator(".tech-news-category")).toHaveText([
+      "OpenAI",
+      "Anthropic",
+      "Apple",
+    ]);
+    await expect(cards.locator(".tech-news-tag")).toHaveText([
+      "News",
+      "Newsroom",
+      "Developer",
+    ]);
+    expect(await cards.evaluateAll((items) => items.map((item) => item.href))).toEqual([
+      "https://openai.com/news/openai-article",
+      "https://www.anthropic.com/news/anthropic-article",
+      "https://developer.apple.com/news/apple-article",
+    ]);
+
+    const layout = await getTechNewsLayout(page);
+    expect(layout).toMatchObject({
+      pageOverflows: false,
+      gridOverflows: false,
+      columns: viewport.columns,
+      childCount: 3,
+      cardCount: 3,
+      statusCount: 0,
+    });
+    expect(consoleErrors).toEqual([]);
+    expect(pageErrors).toEqual([]);
+  });
+}
+
 test("preserves the loading and request-failure states", async ({ page }) => {
   let releaseTechNews;
   const techNewsGate = new Promise((resolve) => {
