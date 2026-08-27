@@ -13,8 +13,8 @@ const apiOrigin = "https://api.example.test";
 const productionOrigin = "https://huihui.dev";
 const techNewsSourceUrls = [
   "https://openai.com/news/rss.xml",
+  "https://www.anthropic.com/news",
   "https://developer.apple.com/news/rss/news.rss",
-  "https://android-developers.googleblog.com/feeds/posts/default",
 ];
 const steamEnv = {
   STEAM_API_KEY: "test-steam-api-key",
@@ -49,8 +49,8 @@ const approvedRoutes = new Set([
 ]);
 const approvedUpstreams = new Set([
   "openai_rss",
+  "anthropic_newsroom",
   "apple_rss",
-  "android_rss",
   "nasa_apod",
   "steam",
   "turnstile",
@@ -86,6 +86,19 @@ function rssResponse(title = "Article") {
       `<pubDate>Sun, 02 Aug 2026 12:00:00 GMT</pubDate>` +
       `</item></channel></rss>`,
     { status: 200, headers: { "Content-Type": "application/rss+xml" } },
+  );
+}
+
+function healthyTechNewsResponse(url, title = "Article") {
+  if (url !== techNewsSourceUrls[1]) {
+    return rssResponse(title);
+  }
+
+  return new Response(
+    `<main><a href="/news/${title.toLowerCase()}">` +
+      `<time>Sun, 02 Aug 2026 12:00:00 GMT</time>` +
+      `<span>Announcements</span><span>${title}</span></a></main>`,
+    { status: 200, headers: { "Content-Type": "text/html" } },
   );
 }
 
@@ -243,7 +256,7 @@ describe("Worker structured observability", () => {
     const fetchMock = vi.fn((url) =>
       url === techNewsSourceUrls[0]
         ? new Promise(() => {})
-        : Promise.resolve(rssResponse("Healthy")),
+        : Promise.resolve(healthyTechNewsResponse(url, "Healthy")),
     );
     vi.stubGlobal("fetch", fetchMock);
 
@@ -276,7 +289,7 @@ describe("Worker structured observability", () => {
                 "Content-Length": String(TECH_NEWS_RESPONSE_MAX_BYTES + 1),
               },
             })
-          : rssResponse("Healthy"),
+          : healthyTechNewsResponse(url, "Healthy"),
       ),
     );
     vi.stubGlobal("fetch", fetchMock);
@@ -298,7 +311,7 @@ describe("Worker structured observability", () => {
       Promise.resolve(
         url === techNewsSourceUrls[0]
           ? new Response(null, { status: 503 })
-          : rssResponse("Healthy"),
+          : healthyTechNewsResponse(url, "Healthy"),
       ),
     );
     vi.stubGlobal("fetch", fetchMock);
@@ -325,7 +338,7 @@ describe("Worker structured observability", () => {
         Promise.resolve(
           url === techNewsSourceUrls[0]
             ? new Response(body)
-            : rssResponse("Healthy"),
+            : healthyTechNewsResponse(url, "Healthy"),
         ),
       );
       vi.stubGlobal("fetch", fetchMock);

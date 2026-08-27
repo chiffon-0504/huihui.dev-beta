@@ -7,7 +7,7 @@ const betaOrigin = "https://beta.huihui.dev";
 const readRoutes = [
   {
     path: "/api/tech-news",
-    cachePath: "/api/tech-news?v3",
+    cachePath: "/api/tech-news?v4",
     payload: { ok: true, techNews: [{ source: "Tech News route" }] },
   },
   {

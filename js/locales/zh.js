@@ -40,7 +40,7 @@ window.HUIHUI_I18N.zh = {
     },
     tech: {
       title: "科技動態",
-      desc: "每日整理 AI、iOS 與 Android 的最新消息。",
+      desc: "每日整理 OpenAI、Anthropic 與 Apple 的最新消息。",
       loading: "載入科技動態中……",
       empty: "目前沒有科技動態。",
       loadError: "無法載入科技動態。",

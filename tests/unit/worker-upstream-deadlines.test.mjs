@@ -11,13 +11,13 @@ import worker, {
 const fixedNow = new Date("2026-08-03T12:00:00.000Z");
 const techNewsSourceUrls = [
   "https://openai.com/news/rss.xml",
+  "https://www.anthropic.com/news",
   "https://developer.apple.com/news/rss/news.rss",
-  "https://android-developers.googleblog.com/feeds/posts/default",
 ];
 const techNewsSources = [
   "OpenAI News",
+  "Anthropic Newsroom",
   "Apple Developer News",
-  "Android Developers Blog",
 ];
 const steamEnv = {
   STEAM_API_KEY: "test-steam-api-key",
@@ -51,6 +51,19 @@ function rssResponse(title, link) {
     `<rss><channel><item><title>${title}</title><link>${link}</link>` +
       `<pubDate>Sun, 02 Aug 2026 12:00:00 GMT</pubDate></item></channel></rss>`,
     { status: 200, headers: { "Content-Type": "application/rss+xml" } },
+  );
+}
+
+function techNewsResponse(sourceIndex, title, link) {
+  if (sourceIndex !== 1) {
+    return rssResponse(title, link);
+  }
+
+  return new Response(
+    `<main><a href="/news/article-${sourceIndex}">` +
+      `<time>Sun, 02 Aug 2026 12:00:00 GMT</time>` +
+      `<span>Announcements</span><span>${title}</span></a></main>`,
+    { status: 200, headers: { "Content-Type": "text/html" } },
   );
 }
 
@@ -237,7 +250,8 @@ describe("Tech News upstream deadlines", () => {
     const fetchMock = vi.fn((url) => {
       const sourceIndex = techNewsSourceUrls.indexOf(url);
       return Promise.resolve(
-        rssResponse(
+        techNewsResponse(
+          sourceIndex,
           `Article ${sourceIndex}`,
           `https://articles.example.test/${sourceIndex}`,
         ),
@@ -281,7 +295,8 @@ describe("Tech News upstream deadlines", () => {
 
       const sourceIndex = techNewsSourceUrls.indexOf(url);
       return Promise.resolve(
-        rssResponse(
+        techNewsResponse(
+          sourceIndex,
           `Article ${sourceIndex}`,
           `https://articles.example.test/${sourceIndex}`,
         ),

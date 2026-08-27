@@ -40,7 +40,7 @@ window.HUIHUI_I18N.en = {
     },
     tech: {
       title: "Tech Updates",
-      desc: "Daily signals from AI, iOS and Android.",
+      desc: "Daily updates from OpenAI, Anthropic and Apple.",
       loading: "Loading tech updates…",
       empty: "No tech updates are available.",
       loadError: "Failed to load tech updates.",
