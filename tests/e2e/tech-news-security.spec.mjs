@@ -79,6 +79,15 @@ async function stubHomeDependencies(
         return;
       }
 
+      if (pathname === "/api/infrastructure-status") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ ok: true, providers: [] }),
+        });
+        return;
+      }
+
       await route.fulfill({
         status: 500,
         contentType: "application/json",

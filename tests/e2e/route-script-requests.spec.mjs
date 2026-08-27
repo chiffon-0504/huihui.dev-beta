@@ -87,6 +87,8 @@ async function stubExternalDependencies(page) {
         }
       : pathname.endsWith("/api/steam-library")
         ? { ok: true, games: [] }
+        : pathname.endsWith("/api/infrastructure-status")
+          ? { ok: true, providers: [] }
         : null;
 
     return route.fulfill({
@@ -129,6 +131,7 @@ async function verifyHome(page) {
     "/en/",
   );
   await expect(page.locator("#techNewsCards .tech-news-card")).toHaveCount(1);
+  await expect(page.locator(".infrastructure-status-card")).toHaveCount(2);
   await expect(page.locator("#lightbox")).toHaveCount(0);
 }
 

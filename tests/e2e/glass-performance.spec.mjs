@@ -106,7 +106,7 @@ test("desktop Liquid Glass surfaces keep effective backdrop filters", async ({
     ".home-hero",
     ".home-hero .project-update-card",
     ".website-version-section .apod-card",
-    ".tech-news-section .tech-news-card",
+    "#techNewsCards > .tech-news-card",
   ]) {
     expect(await getBackdropFilter(page.locator(selector)), selector).toMatch(
       /blur\(/,

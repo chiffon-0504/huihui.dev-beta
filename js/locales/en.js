@@ -46,6 +46,33 @@ window.HUIHUI_I18N.en = {
       loadError: "Failed to load tech updates.",
       timeout: "Tech updates timed out.",
       sourceLabel: "Source:"
+    },
+    infrastructure: {
+      title: "Infrastructure Status",
+      desc: "Official upstream service status from Cloudflare and GitHub.",
+      loading: "Loading infrastructure status…",
+      loadError: "Unable to load infrastructure status.",
+      cloudflareTitle: "Cloudflare Status",
+      githubTitle: "GitHub Status",
+      cloudflareLink: "View Cloudflare Status →",
+      githubLink: "View GitHub Status →",
+      statuses: {
+        operational: "Operational",
+        underMaintenance: "Under Maintenance",
+        degradedPerformance: "Degraded Performance",
+        partialOutage: "Partial Outage",
+        majorOutage: "Major Outage",
+        unknown: "Unknown"
+      },
+      components: {
+        pages: "Pages",
+        workers: "Workers",
+        dns: "DNS",
+        cdn: "CDN",
+        actions: "Actions",
+        apiRequests: "API Requests",
+        gitOperations: "Git Operations"
+      }
     }
   },
   contact: {

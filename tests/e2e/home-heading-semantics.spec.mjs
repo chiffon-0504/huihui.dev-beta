@@ -33,6 +33,8 @@ async function stubExternalDependencies(page) {
     const pathname = new URL(route.request().url()).pathname;
     const body = pathname === "/api/tech-news"
       ? { ok: true, techNews: [] }
+      : pathname === "/api/infrastructure-status"
+        ? { ok: true, providers: [] }
       : null;
 
     return route.fulfill({
@@ -81,9 +83,9 @@ for (const route of homeRoutes) {
     await expect(
       page.getByRole("heading", { name: route.subtitle }),
     ).toHaveCount(0);
-    await expect(main.getByRole("heading")).toHaveCount(4);
+    await expect(main.getByRole("heading")).toHaveCount(7);
 
-    expect(headingLevels).toEqual([1, 2, 2, 2]);
+    expect(headingLevels).toEqual([1, 2, 2, 2, 2, 3, 3]);
     expect(
       headingLevels.every(
         (level, index) =>
@@ -94,6 +96,7 @@ for (const route of homeRoutes) {
       "projectUpdateTitle",
       "websiteVersionTitle",
       "techNewsTitle",
+      "infrastructureStatusTitle",
     ]) {
       expect(
         await main.locator(`#${id}`).evaluate((element) => element.tagName),

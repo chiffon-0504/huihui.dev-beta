@@ -41,6 +41,9 @@ async function stubExternalDependencies(page) {
     if (pathname === "/api/tech-news") {
       return { ok: true, techNews: [] };
     }
+    if (pathname === "/api/infrastructure-status") {
+      return { ok: true, providers: [] };
+    }
     if (pathname === "/api/steam-library") {
       return { ok: true, games: [] };
     }
@@ -69,6 +72,7 @@ async function awaitRouteReady(page, route) {
         '#techNewsCards > .tech-news-status[data-tech-news-state="empty"]',
       ),
     ).toHaveCount(1);
+    await expect(page.locator(".infrastructure-status-card")).toHaveCount(2);
     return;
   }
 
@@ -219,7 +223,7 @@ for (const route of primaryRoutes) {
     }
 
     const expectedApiRequests = route.routeKey === "home"
-      ? ["/api/tech-news"]
+      ? ["/api/tech-news", "/api/infrastructure-status"]
       : route.routeKey === "about"
         ? ["/api/steam-library"]
         : [];

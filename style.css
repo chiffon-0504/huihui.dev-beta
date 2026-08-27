@@ -661,6 +661,141 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   font-size: 0.95rem;
 }
 
+/* Infrastructure Status */
+.infrastructure-status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.infrastructure-status-card {
+  display: flex;
+  min-width: 0;
+  min-height: 270px;
+  flex-direction: column;
+}
+
+.infrastructure-status-card h3 {
+  margin-bottom: 12px;
+}
+
+.infrastructure-provider-summary {
+  margin-bottom: 14px !important;
+  font-weight: 700;
+}
+
+.infrastructure-status-text,
+.infrastructure-component-status {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background-color: #101828;
+}
+
+.infrastructure-status-symbol {
+  flex: 0 0 auto;
+  font-weight: 800;
+}
+
+.infrastructure-component-list {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 18px;
+}
+
+.infrastructure-component-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+  gap: 16px;
+  align-items: start;
+}
+
+.infrastructure-component-row dt,
+.infrastructure-component-row dd {
+  min-width: 0;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.infrastructure-component-row dd {
+  text-align: right;
+}
+
+.infrastructure-status-text[data-status="operational"],
+.infrastructure-component-status[data-status="operational"] {
+  color: #6ee7b7;
+}
+
+.infrastructure-status-text[data-status="under_maintenance"],
+.infrastructure-component-status[data-status="under_maintenance"] {
+  color: #c4b5fd;
+}
+
+.infrastructure-status-text[data-status="degraded_performance"],
+.infrastructure-component-status[data-status="degraded_performance"] {
+  color: #fde68a;
+}
+
+.infrastructure-status-text[data-status="partial_outage"],
+.infrastructure-component-status[data-status="partial_outage"] {
+  color: #fdba74;
+}
+
+.infrastructure-status-text[data-status="major_outage"],
+.infrastructure-component-status[data-status="major_outage"] {
+  color: #fca5a5;
+}
+
+.infrastructure-status-text[data-status="unknown"],
+.infrastructure-component-status[data-status="unknown"] {
+  color: #cbd5e1;
+}
+
+.infrastructure-status-link {
+  width: fit-content;
+  margin-top: auto;
+  padding: 4px 8px;
+  border-radius: 8px;
+  color: #7dd3fc;
+  background-color: #101828;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.infrastructure-status-link:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 4px;
+}
+
+.infrastructure-status-message {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.95rem;
+}
+
+@media (forced-colors: active) {
+  .infrastructure-status-card {
+    border-color: CanvasText;
+  }
+
+  .infrastructure-status-text,
+  .infrastructure-component-status,
+  .infrastructure-status-link {
+    color: CanvasText;
+    background-color: Canvas;
+  }
+
+  .infrastructure-status-link:focus-visible {
+    outline-color: Highlight;
+  }
+}
+
 /* =========================
    Inline Text Utility Classes
 ========================= */
@@ -1603,6 +1738,7 @@ textarea {
   }
 
   .tech-news-grid,
+  .infrastructure-status-grid,
   .steam-favorites {
     grid-template-columns: 1fr;
   }
