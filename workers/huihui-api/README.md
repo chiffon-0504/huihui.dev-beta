@@ -16,7 +16,7 @@ The `Deploy huihui API Worker` workflow keeps the environments explicit and sepa
 - A relevant push to `main` runs validation and automatically deploys only the beta Worker.
 - Manual workflow dispatch is production-only; beta has no manual deployment entry point that can bypass post-deployment verification.
 - Production deploys only when a manual run selects `production` from the `main` branch. The production job references the GitHub environment named `production`.
-- Pull requests do not deploy either Worker.
+- Pull requests run validation but do not deploy either Worker.
 
 Configure required reviewers and any other deployment protection rules for the `production` environment manually in the GitHub repository settings. Referencing the environment in workflow YAML does not create those rules.
 
