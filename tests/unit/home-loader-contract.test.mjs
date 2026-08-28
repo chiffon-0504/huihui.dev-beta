@@ -22,6 +22,7 @@ const liveHomeFunctionNames = [
   "aggregateSystemStatus",
   "unknownSystemStatus",
   "getValidSystemStatus",
+  "createStatusText",
   "createSystemStatusState",
   "formatSystemStatusTime",
   "createSystemStatusComponents",

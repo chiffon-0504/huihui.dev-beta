@@ -661,6 +661,67 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   font-size: 0.95rem;
 }
 
+/* Shared status primitives */
+.status-chip {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background-color: #101828;
+}
+
+.status-symbol {
+  flex: 0 0 auto;
+  font-size: 0.8em;
+}
+
+.status-chip .status-symbol {
+  font-weight: 800;
+}
+
+.status-chip[data-status="operational"] {
+  color: #6ee7b7;
+}
+
+.status-chip[data-status="under_maintenance"] {
+  color: #c4b5fd;
+}
+
+.status-chip[data-status="degraded_performance"] {
+  color: #fde68a;
+}
+
+.status-chip[data-status="partial_outage"] {
+  color: #fdba74;
+}
+
+.status-chip[data-status="major_outage"] {
+  color: #fca5a5;
+}
+
+.status-chip[data-status="unknown"] {
+  color: #cbd5e1;
+}
+
+.status-link {
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 8px;
+  color: #7dd3fc;
+  background-color: #101828;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.status-link:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 4px;
+}
+
 /* Infrastructure Status */
 .infrastructure-status-grid {
   display: grid;
@@ -682,22 +743,6 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 .infrastructure-provider-summary {
   margin-bottom: 14px !important;
   font-weight: 700;
-}
-
-.infrastructure-status-text,
-.infrastructure-component-status {
-  display: inline-flex;
-  min-width: 0;
-  align-items: center;
-  gap: 8px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background-color: #101828;
-}
-
-.infrastructure-status-symbol {
-  flex: 0 0 auto;
-  font-weight: 800;
 }
 
 .infrastructure-component-list {
@@ -724,52 +769,8 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   text-align: right;
 }
 
-.infrastructure-status-text[data-status="operational"],
-.infrastructure-component-status[data-status="operational"] {
-  color: #6ee7b7;
-}
-
-.infrastructure-status-text[data-status="under_maintenance"],
-.infrastructure-component-status[data-status="under_maintenance"] {
-  color: #c4b5fd;
-}
-
-.infrastructure-status-text[data-status="degraded_performance"],
-.infrastructure-component-status[data-status="degraded_performance"] {
-  color: #fde68a;
-}
-
-.infrastructure-status-text[data-status="partial_outage"],
-.infrastructure-component-status[data-status="partial_outage"] {
-  color: #fdba74;
-}
-
-.infrastructure-status-text[data-status="major_outage"],
-.infrastructure-component-status[data-status="major_outage"] {
-  color: #fca5a5;
-}
-
-.infrastructure-status-text[data-status="unknown"],
-.infrastructure-component-status[data-status="unknown"] {
-  color: #cbd5e1;
-}
-
 .infrastructure-status-link {
-  width: fit-content;
   margin-top: auto;
-  padding: 4px 8px;
-  border-radius: 8px;
-  color: #7dd3fc;
-  background-color: #101828;
-  font-weight: 700;
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 4px;
-}
-
-.infrastructure-status-link:focus-visible {
-  outline: 3px solid currentColor;
-  outline-offset: 4px;
 }
 
 .infrastructure-status-message {
@@ -784,14 +785,13 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
     border-color: CanvasText;
   }
 
-  .infrastructure-status-text,
-  .infrastructure-component-status,
-  .infrastructure-status-link {
+  .status-chip,
+  .status-link {
     color: CanvasText;
     background-color: Canvas;
   }
 
-  .infrastructure-status-link:focus-visible {
+  .status-link:focus-visible {
     outline-color: Highlight;
   }
 }
@@ -1079,18 +1079,12 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   line-height: 1.3;
 }
 
-.system-status-summary-state,
-.system-status-state {
+.system-status-summary-state {
   display: inline-flex;
   align-items: baseline;
   gap: 0.45rem;
   color: var(--ink-strong, #172033);
   font-weight: 700;
-}
-
-.system-status-symbol {
-  flex: 0 0 auto;
-  font-size: 0.8em;
 }
 
 .system-status-component-list {
@@ -1131,43 +1125,26 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 }
 
 .system-status-link {
-  width: fit-content;
-  color: inherit;
   font-size: 0.82rem;
-  font-weight: 750;
-  text-decoration: underline;
-  text-decoration-thickness: 0.08em;
-  text-underline-offset: 0.22em;
 }
 
-.system-status-link:focus-visible {
-  outline: 3px solid currentColor;
-  outline-offset: 4px;
-  border-radius: 3px;
-}
-
-.system-status-summary-state[data-status="operational"],
-.system-status-state[data-status="operational"] {
+.system-status-summary-state[data-status="operational"] {
   color: #0b6938;
 }
 
-.system-status-summary-state[data-status="degraded_performance"],
-.system-status-state[data-status="degraded_performance"] {
+.system-status-summary-state[data-status="degraded_performance"] {
   color: #7a4a00;
 }
 
-.system-status-summary-state[data-status="partial_outage"],
-.system-status-state[data-status="partial_outage"] {
+.system-status-summary-state[data-status="partial_outage"] {
   color: #9a3f00;
 }
 
-.system-status-summary-state[data-status="major_outage"],
-.system-status-state[data-status="major_outage"] {
+.system-status-summary-state[data-status="major_outage"] {
   color: #a11f2f;
 }
 
-.system-status-summary-state[data-status="unknown"],
-.system-status-state[data-status="unknown"] {
+.system-status-summary-state[data-status="unknown"] {
   color: #4d5665;
 }
 
@@ -1287,9 +1264,6 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
     color: CanvasText;
   }
 
-  .system-status-link:focus-visible {
-    outline-color: Highlight;
-  }
 }
 
 /* =========================

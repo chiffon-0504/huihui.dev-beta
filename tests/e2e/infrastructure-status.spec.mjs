@@ -229,25 +229,21 @@ for (const locale of locales) {
     );
 
     const visibleStatuses = await section
-      .locator(
-        ".infrastructure-status-text, .infrastructure-component-status",
-      )
+      .locator(".status-chip")
       .allTextContents();
     for (const status of locale.statuses) {
       expect(visibleStatuses.some((value) => value.includes(status))).toBe(true);
     }
 
     const statusContracts = await section
-      .locator(
-        ".infrastructure-status-text, .infrastructure-component-status",
-      )
+      .locator(".status-chip")
       .evaluateAll((elements) =>
         elements.map((element) => ({
           state: element.dataset.status,
           text: element.textContent.trim(),
-          symbol: element.querySelector(".infrastructure-status-symbol")?.textContent,
+          symbol: element.querySelector(".status-symbol")?.textContent,
           symbolHidden:
-            element.querySelector(".infrastructure-status-symbol")?.getAttribute(
+            element.querySelector(".status-symbol")?.getAttribute(
               "aria-hidden",
             ),
         })),
@@ -264,8 +260,21 @@ for (const locale of locales) {
         symbol: "◆",
       }),
     );
+    expect(new Set(statusContracts.map(({ state }) => state))).toEqual(
+      new Set([
+        "operational",
+        "under_maintenance",
+        "degraded_performance",
+        "partial_outage",
+        "major_outage",
+        "unknown",
+      ]),
+    );
+    await expect(
+      cards.locator(".infrastructure-provider-summary > .status-chip"),
+    ).toHaveCount(2);
 
-    const links = cards.locator(".infrastructure-status-link");
+    const links = cards.locator(".infrastructure-status-link.status-link");
     await expect(links).toHaveCount(2);
     await expect(links.nth(0)).toHaveAttribute(
       "href",
@@ -382,15 +391,15 @@ test("maintenance renders explicitly while degraded remains the mixed worst stat
   ).toContainText("Under Maintenance");
 });
 
-test("default status and provider-link colors meet WCAG AA contrast", async ({
+test("shared status chips and links use opaque WCAG AA contrast", async ({
   page,
 }) => {
   await stubHomeDependencies(page, { providers: allStatesFixture() });
   await page.goto("/en/", { waitUntil: "load" });
 
   const contrastResults = await page
-    .locator(".infrastructure-status-section")
-    .evaluate((section) => {
+    .locator("body")
+    .evaluate((body) => {
       const parseColor = (value) => {
         const channels = value.match(/[\d.]+/g).map(Number);
         return {
@@ -422,8 +431,8 @@ test("default status and provider-link colors meet WCAG AA contrast", async ({
         );
       };
       return [
-        ...section.querySelectorAll(
-          ".infrastructure-status-text, .infrastructure-component-status, .infrastructure-status-link",
+        ...body.querySelectorAll(
+          ".status-chip, .status-link",
         ),
       ].map((element) => {
         const foreground = parseColor(getComputedStyle(element).color);
@@ -431,6 +440,7 @@ test("default status and provider-link colors meet WCAG AA contrast", async ({
 
         return {
           backgroundAlpha: background.alpha,
+          classes: element.className,
           label: element.textContent.trim(),
           ratio: contrastRatio(foreground, background),
         };
@@ -442,6 +452,16 @@ test("default status and provider-link colors meet WCAG AA contrast", async ({
     true,
   );
   expect(contrastResults.every(({ ratio }) => ratio >= 4.5)).toBe(true);
+  for (const className of [
+    "system-status-state",
+    "system-status-link",
+    "infrastructure-component-status",
+    "infrastructure-status-link",
+  ]) {
+    expect(
+      contrastResults.some(({ classes }) => classes.includes(className)),
+    ).toBe(true);
+  }
 });
 
 test("a request failure replaces loading with an accessible error and two Unknown cards", async ({
@@ -493,12 +513,12 @@ test("forced-colors keeps status text, card boundaries, and links understandable
 
       const statusColors = [
         ...section.querySelectorAll(
-          ".infrastructure-status-text, .infrastructure-component-status, .infrastructure-status-link",
+          ".status-chip, .status-link",
         ),
       ].map((element) => getComputedStyle(element).color);
       const statusBackgrounds = [
         ...section.querySelectorAll(
-          ".infrastructure-status-text, .infrastructure-component-status, .infrastructure-status-link",
+          ".status-chip, .status-link",
         ),
       ].map((element) => getComputedStyle(element).backgroundColor);
 
