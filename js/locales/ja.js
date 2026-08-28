@@ -75,6 +75,35 @@ window.HUIHUI_I18N.ja = {
       }
     }
   },
+  systemStatus: {
+    title: "システム状況",
+    pageTitle: "huihui.dev システム状況",
+    pageIntro: "Website、API、Contact Service の現在のファーストパーティー稼働状況です。",
+    allOperational: "すべてのシステムが正常稼働中",
+    statusUnknown: "システム状況は不明です",
+    checking: "システム状況を確認しています……",
+    unable: "現在のシステム状況を判定できません。",
+    lastChecked: "最終確認",
+    notChecked: "未確認",
+    viewStatus: "状況を見る →",
+    components: {
+      website: "Website",
+      api: "API",
+      contact: "Contact Service"
+    },
+    descriptions: {
+      website: "huihui.dev の静的ページ、HTML 応答、安定したサイトマーカー。",
+      api: "huihui.dev Worker と API リクエスト経路の可用性。",
+      contact: "送信を行わずに確認する Contact ハンドラーと必須ランタイム設定の準備状況。"
+    },
+    statuses: {
+      operational: "正常稼働",
+      degradedPerformance: "パフォーマンス低下",
+      partialOutage: "一部停止",
+      majorOutage: "重大な障害",
+      unknown: "不明"
+    }
+  },
   contact: {
     title: "連絡先",
     intro: "ご質問、コラボレーション、フィードバックなどは、下のフォームからご連絡ください。",

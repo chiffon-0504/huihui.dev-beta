@@ -17,6 +17,15 @@ const liveHomeFunctionNames = [
   "getSafeTechNewsUrl",
   "getHomeTechNewsText",
   "getHomeInfrastructureText",
+  "getSystemStatusText",
+  "getSystemStatusLabel",
+  "aggregateSystemStatus",
+  "unknownSystemStatus",
+  "getValidSystemStatus",
+  "createSystemStatusState",
+  "formatSystemStatusTime",
+  "createSystemStatusComponents",
+  "renderSystemStatus",
   "setTechNewsStatus",
   "getValidTechNewsItem",
   "renderTechNewsCards",
@@ -28,6 +37,7 @@ const liveHomeFunctionNames = [
   "setInfrastructureStatusLoading",
   "loadTechNews",
   "loadInfrastructureStatus",
+  "loadSystemStatus",
   "initHomeCards",
 ];
 
@@ -56,7 +66,8 @@ describe("Home loader contract", () => {
         );
       }
 
-      expect(html, document).toContain('id="projectUpdateTitle"');
+      expect(html, document).toContain('aria-labelledby="systemStatusTitle"');
+      expect(html, document).toContain('data-system-status-surface="home"');
       expect(html, document).toContain('id="websiteVersionTitle"');
       expect(html, document).toContain('id="techNewsCards"');
       expect(html, document).toContain('id="infrastructureStatusCards"');
@@ -72,6 +83,9 @@ describe("Home loader contract", () => {
     const setIntervalMock = vi.fn();
     const context = {
       document: {
+        querySelectorAll() {
+          return [];
+        },
         getElementById(id) {
           elementLookups.push(id);
           return null;
@@ -153,6 +167,21 @@ describe("Home loader contract", () => {
     expect(homeCardsSource).toContain(
       '`${getHuihuiApiBase()}/api/infrastructure-status`',
     );
+  });
+
+  test("System Status uses a polite atomic live region and the first-party API", () => {
+    for (const [index, html] of homeSources.entries()) {
+      const document = homeDocuments[index];
+
+      expect(html, document).toContain(
+        'role="status" aria-live="polite" aria-atomic="true" data-system-status-surface="home"',
+      );
+    }
+
+    expect(homeCardsSource).toContain(
+      '`${getHuihuiApiBase()}/api/system-status`',
+    );
+    expect(homeCardsSource).toContain('cache: "no-store"');
   });
 
   test("the frontend script has no orphan loader, selector, endpoint, or interval", () => {

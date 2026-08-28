@@ -75,6 +75,35 @@ window.HUIHUI_I18N.en = {
       }
     }
   },
+  systemStatus: {
+    title: "System Status",
+    pageTitle: "huihui.dev System Status",
+    pageIntro: "Current first-party health for the Website, API, and Contact Service.",
+    allOperational: "All Systems Operational",
+    statusUnknown: "System Status Unknown",
+    checking: "Checking status…",
+    unable: "Unable to determine system status.",
+    lastChecked: "Last checked",
+    notChecked: "Not yet available",
+    viewStatus: "View status →",
+    components: {
+      website: "Website",
+      api: "API",
+      contact: "Contact Service"
+    },
+    descriptions: {
+      website: "huihui.dev static pages, HTML response, and stable site marker.",
+      api: "Availability of the huihui.dev Worker and API request path.",
+      contact: "Non-submitting readiness of the Contact handler and required runtime configuration."
+    },
+    statuses: {
+      operational: "Operational",
+      degradedPerformance: "Degraded Performance",
+      partialOutage: "Partial Outage",
+      majorOutage: "Major Outage",
+      unknown: "Unknown"
+    }
+  },
   contact: {
     title: "Contact",
     intro: "For questions, collaborations, or feedback, you can reach me through the form below.",

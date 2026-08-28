@@ -94,6 +94,15 @@ const routeFamilies = [
     ],
     featureScripts: ["/js/contact.js", turnstileScript],
   },
+  {
+    name: "System Status",
+    pages: [
+      ["status/index.html", "/status/"],
+      ["en/status/index.html", "/en/status/"],
+      ["ja/status/index.html", "/ja/status/"],
+    ],
+    featureScripts: ["/js/home-cards.js"],
+  },
 ];
 
 function getAttribute(tag, name) {
@@ -171,8 +180,8 @@ describe("route-specific JavaScript manifests", () => {
     });
   }
 
-  test("all 18 primary routes load exactly one active locale dictionary", async () => {
-    expect(primaryRoutes).toHaveLength(18);
+  test("all 21 primary routes load exactly one active locale dictionary", async () => {
+    expect(primaryRoutes).toHaveLength(21);
 
     for (const route of primaryRoutes) {
       const scripts = await getScripts(route.file, route.url);

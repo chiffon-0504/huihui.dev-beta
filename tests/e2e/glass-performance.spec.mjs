@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { systemStatusFixture } from "../support/system-status.mjs";
 
 const expectedInitialWrites = [
   { name: "--glass-tint-opacity", value: "0.58" },
@@ -23,7 +24,11 @@ async function stubHomepageApis(page) {
               },
             ],
           }
-        : null;
+        : pathname === "/api/infrastructure-status"
+          ? { ok: true, providers: [] }
+          : pathname === "/api/system-status"
+            ? systemStatusFixture()
+            : null;
 
     await route.fulfill({
       status: body ? 200 : 500,
@@ -266,6 +271,24 @@ async function stubGlassDependencies(page, controller) {
           ok: !isError,
           techNews: isError ? [] : populatedTechNews,
         }),
+      });
+      return;
+    }
+
+    if (pathname === "/api/infrastructure-status") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ok: true, providers: [] }),
+      });
+      return;
+    }
+
+    if (pathname === "/api/system-status") {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(systemStatusFixture()),
       });
       return;
     }

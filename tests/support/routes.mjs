@@ -35,6 +35,15 @@ export const primaryRouteGroups = [
     paths: { zh: "/contact/", en: "/en/contact/", ja: "/ja/contact/" },
   },
   {
+    routeKey: "status",
+    navKey: null,
+    paths: {
+      zh: "/status/",
+      en: "/en/status/",
+      ja: "/ja/status/",
+    },
+  },
+  {
     routeKey: "tools",
     navKey: "tools",
     paths: {

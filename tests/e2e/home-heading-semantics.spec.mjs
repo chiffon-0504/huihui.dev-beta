@@ -35,6 +35,17 @@ async function stubExternalDependencies(page) {
       ? { ok: true, techNews: [] }
       : pathname === "/api/infrastructure-status"
         ? { ok: true, providers: [] }
+        : pathname === "/api/system-status"
+          ? {
+              ok: true,
+              status: "operational",
+              components: [
+                { id: "website", status: "operational" },
+                { id: "api", status: "operational" },
+                { id: "contact", status: "operational" },
+              ],
+              checkedAt: "2026-08-28T12:00:00.000Z",
+            }
       : null;
 
     return route.fulfill({
@@ -93,7 +104,7 @@ for (const route of homeRoutes) {
       ),
     ).toBe(true);
     for (const id of [
-      "projectUpdateTitle",
+      "systemStatusTitle",
       "websiteVersionTitle",
       "techNewsTitle",
       "infrastructureStatusTitle",

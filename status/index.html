@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+  <link rel="stylesheet" href="/style.css" />
+  <title>系統狀態 | huihui.dev</title>
+  <meta name="description" content="查看 huihui.dev Website、API 與聯絡服務的目前系統狀態。" />
+  <link rel="canonical" href="https://huihui.dev/status/" />
+  <link rel="alternate" hreflang="zh-Hant" href="https://huihui.dev/status/" />
+  <link rel="alternate" hreflang="en" href="https://huihui.dev/en/status/" />
+  <link rel="alternate" hreflang="ja" href="https://huihui.dev/ja/status/" />
+  <link rel="alternate" hreflang="x-default" href="https://huihui.dev/status/" />
+</head>
+
+<body>
+  <aside id="site-sidebar" class="sidebar"></aside>
+
+  <main class="main">
+    <section class="page-shell system-status-page">
+      <header class="system-status-page-header">
+        <p class="project-update-label" data-i18n="systemStatus.title">系統狀態</p>
+        <h1 data-i18n="systemStatus.pageTitle">huihui.dev 系統狀態</h1>
+        <p data-i18n="systemStatus.pageIntro">目前 Website、API 與聯絡服務的第一方健康狀態。</p>
+      </header>
+
+      <section class="system-status-detail" role="status" aria-live="polite" aria-atomic="true" data-system-status-surface="detail" data-status="unknown">
+        <p class="system-status-overall" data-i18n="systemStatus.checking">正在檢查狀態……</p>
+      </section>
+    </section>
+  </main>
+
+  <script src="/js/layout.js"></script>
+  <script src="/js/home-cards.js"></script>
+  <script src="/js/glass-material.js"></script>
+  <script src="/js/mobile-drawer.js"></script>
+  <script src="/js/main.js"></script>
+  <script src="/js/locales/zh.js"></script>
+  <script src="/js/i18n.js"></script>
+</body>
+</html>

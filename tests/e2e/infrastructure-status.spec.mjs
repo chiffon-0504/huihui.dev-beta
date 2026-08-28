@@ -1,8 +1,10 @@
 import { expect, test } from "@playwright/test";
+import { systemStatusFixture } from "../support/system-status.mjs";
 
 const infrastructureApiUrl =
   "https://api.huihui.dev/api/infrastructure-status";
 const techNewsApiUrl = "https://api.huihui.dev/api/tech-news";
+const systemStatusApiUrl = "https://api.huihui.dev/api/system-status";
 const locales = [
   {
     name: "ZH",
@@ -142,6 +144,15 @@ async function stubHomeDependencies(
           ok: infrastructureStatus === 200,
           providers,
         }),
+      });
+      return;
+    }
+
+    if (url === systemStatusApiUrl) {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(systemStatusFixture()),
       });
       return;
     }
@@ -286,7 +297,11 @@ for (const locale of locales) {
       }),
     ).toBe(true);
     await expect(page.locator("#techNewsCards > .tech-news-card")).toHaveCount(1);
-    expect(requests).toEqual(["/api/tech-news", "/api/infrastructure-status"]);
+    expect(requests).toEqual([
+      "/api/system-status",
+      "/api/tech-news",
+      "/api/infrastructure-status",
+    ]);
     expect(consoleErrors).toEqual([]);
     expect(pageErrors).toEqual([]);
   });

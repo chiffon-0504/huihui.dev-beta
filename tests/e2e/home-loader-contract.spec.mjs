@@ -8,7 +8,7 @@ const homeRoutes = [
   {
     path: "/",
     lang: "zh-Hant",
-    status: "🟢 更新中",
+    status: "全部系統運作正常",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
       "導入根頁面 OverlayScrollbars，並維持原生鍵盤、歷史紀錄與重新載入捲動還原",
@@ -20,7 +20,7 @@ const homeRoutes = [
   {
     path: "/en/",
     lang: "en",
-    status: "🟢 Active",
+    status: "All Systems Operational",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
       "Added root-page OverlayScrollbars while preserving native keyboard, history, and reload scroll restoration",
@@ -32,7 +32,7 @@ const homeRoutes = [
   {
     path: "/ja/",
     lang: "ja",
-    status: "🟢 更新中",
+    status: "すべてのシステムが正常稼働中",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
       "ルートページに OverlayScrollbars を導入し、ネイティブのキーボード操作、履歴、再読み込み時のスクロール復元を維持",
@@ -87,6 +87,17 @@ async function stubHomeApis(page) {
           }
         : pathname === "/api/infrastructure-status"
           ? { ok: true, providers: [] }
+        : pathname === "/api/system-status"
+          ? {
+              ok: true,
+              status: "operational",
+              components: [
+                { id: "website", status: "operational" },
+                { id: "api", status: "operational" },
+                { id: "contact", status: "operational" },
+              ],
+              checkedAt: "2026-08-28T12:00:00.000Z",
+            }
         : null;
 
     return route.fulfill({
@@ -157,7 +168,7 @@ for (const route of homeRoutes) {
     expect(response?.status()).toBe(200);
     await expect(page.locator("html")).toHaveAttribute("lang", route.lang);
     await expect(main.locator("h1")).toHaveText("huihui.dev");
-    await expect(main.locator(".project-update-card h2")).toHaveText(
+    await expect(main.locator(".project-update-card h2")).toContainText(
       route.status,
     );
     await expect(releaseCard.locator("h2")).toHaveText("v1.5.0");
@@ -200,6 +211,7 @@ for (const route of homeRoutes) {
     expect(overflow.body).toBeLessThanOrEqual(0);
     expect(overflow.document).toBeLessThanOrEqual(0);
     expect(apiRequests).toEqual([
+      "/api/system-status",
       "/api/tech-news",
       "/api/infrastructure-status",
     ]);

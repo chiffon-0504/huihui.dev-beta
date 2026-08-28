@@ -264,6 +264,9 @@ describe("Worker public API contract", () => {
       endpoints: [
         "/api/tech-news",
         "/api/infrastructure-status",
+        "/api/system-status",
+        "/api/health",
+        "/api/contact/health",
         "/api/apod",
         "/api/steam-library",
         "/api/contact",
