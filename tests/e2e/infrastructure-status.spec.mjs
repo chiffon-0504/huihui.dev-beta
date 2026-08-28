@@ -5,8 +5,11 @@ const infrastructureApiUrl =
   "https://api.huihui.dev/api/infrastructure-status";
 const techNewsApiUrl = "https://api.huihui.dev/api/tech-news";
 const systemStatusApiUrl = "https://api.huihui.dev/api/system-status";
-const expectedStatusSurface = "rgb(248, 250, 252)";
-const expectedStatusBorder = "rgb(203, 216, 230)";
+const expectedStatusSurface = "rgba(255, 255, 255, 0.26)";
+const expectedStatusBorder = "rgba(255, 255, 255, 0.32)";
+const expectedStatusBackdropFilter = "blur(18px) saturate(1.35)";
+const expectedStatusBoxShadow =
+  "rgba(255, 255, 255, 0.38) 0px 1px 0px 0px inset, rgba(80, 140, 210, 0.08) 0px 8px 22px 0px";
 const expectedStatusColors = {
   operational: "rgb(11, 105, 56)",
   under_maintenance: "rgb(91, 63, 140)",
@@ -16,6 +19,14 @@ const expectedStatusColors = {
   unknown: "rgb(77, 86, 101)",
 };
 const expectedStatusLinkColor = "rgb(23, 79, 120)";
+const representativeStatusBackgrounds = [
+  { context: "Home Hero light/cyan", color: "#eef8ff" },
+  // Strongest Hero cyan radial composited over the desktop blue body stop.
+  { context: "Home Hero stronger blue", color: "#b2e5ff" },
+  { context: "Cloudflare card", color: "#d9efff" },
+  { context: "GitHub card", color: "#f4f0ff" },
+  { context: "mobile status layout", color: "#dcebfb" },
+];
 const locales = [
   {
     name: "ZH",
@@ -55,6 +66,57 @@ const locales = [
     statuses: ["正常稼働", "メンテナンス中", "パフォーマンス低下", "一部停止", "重大な障害", "不明"],
   },
 ];
+
+function parseCssColor(value) {
+  if (value.startsWith("#")) {
+    return {
+      red: Number.parseInt(value.slice(1, 3), 16),
+      green: Number.parseInt(value.slice(3, 5), 16),
+      blue: Number.parseInt(value.slice(5, 7), 16),
+      alpha: 1,
+    };
+  }
+
+  const channels = value.match(/[\d.]+/g).map(Number);
+  return {
+    red: channels[0],
+    green: channels[1],
+    blue: channels[2],
+    alpha: channels[3] ?? 1,
+  };
+}
+
+function compositeColor(foreground, background) {
+  return {
+    red: foreground.red * foreground.alpha + background.red * (1 - foreground.alpha),
+    green:
+      foreground.green * foreground.alpha + background.green * (1 - foreground.alpha),
+    blue: foreground.blue * foreground.alpha + background.blue * (1 - foreground.alpha),
+    alpha: 1,
+  };
+}
+
+function contrastRatio(foreground, background) {
+  const luminance = (color) => {
+    const linearize = (channel) => {
+      const value = channel / 255;
+      return value <= 0.04045
+        ? value / 12.92
+        : ((value + 0.055) / 1.055) ** 2.4;
+    };
+    return (
+      0.2126 * linearize(color.red) +
+      0.7152 * linearize(color.green) +
+      0.0722 * linearize(color.blue)
+    );
+  };
+  const foregroundLuminance = luminance(foreground);
+  const backgroundLuminance = luminance(background);
+  return (
+    (Math.max(foregroundLuminance, backgroundLuminance) + 0.05) /
+    (Math.min(foregroundLuminance, backgroundLuminance) + 0.05)
+  );
+}
 
 function providerFixtures({ cloudflare = {}, github = {} } = {}) {
   return [
@@ -424,6 +486,8 @@ test("System and Infrastructure component chips use identical computed tokens", 
       borderTopStyle: style.borderTopStyle,
       borderTopColor: style.borderTopColor,
       backgroundColor: style.backgroundColor,
+      backdropFilter: style.backdropFilter,
+      boxShadow: style.boxShadow,
       symbolFontSize: symbolStyle.fontSize,
     };
   };
@@ -459,90 +523,72 @@ test("System and Infrastructure component chips use identical computed tokens", 
       borderTopStyle: "solid",
       borderTopColor: expectedStatusBorder,
       backgroundColor: expectedStatusSurface,
+      backdropFilter: expectedStatusBackdropFilter,
+      boxShadow: expectedStatusBoxShadow,
       symbolFontSize: "11.52px",
     });
     await expectNoHorizontalOverflow(page);
   }
 });
 
-test("shared status chips and links use fixed light WCAG AA surfaces", async ({
+test("shared status chips and links use translucent glass with WCAG AA composite contrast", async ({
   page,
 }) => {
   await stubHomeDependencies(page, { providers: allStatesFixture() });
   await page.goto("/en/", { waitUntil: "load" });
 
-  const contrastResults = await page
+  const statusSurfaces = await page
     .locator("body")
-    .evaluate((body) => {
-      const parseColor = (value) => {
-        const channels = value.match(/[\d.]+/g).map(Number);
+    .evaluate((body) =>
+      [...body.querySelectorAll(".status-chip, .status-link")].map((element) => {
+        const style = getComputedStyle(element);
         return {
-          red: channels[0],
-          green: channels[1],
-          blue: channels[2],
-          alpha: channels[3] ?? 1,
-        };
-      };
-      const luminance = (color) => {
-        const linearize = (channel) => {
-          const value = channel / 255;
-          return value <= 0.04045
-            ? value / 12.92
-            : ((value + 0.055) / 1.055) ** 2.4;
-        };
-        return (
-          0.2126 * linearize(color.red) +
-          0.7152 * linearize(color.green) +
-          0.0722 * linearize(color.blue)
-        );
-      };
-      const contrastRatio = (foreground, background) => {
-        const foregroundLuminance = luminance(foreground);
-        const backgroundLuminance = luminance(background);
-        return (
-          (Math.max(foregroundLuminance, backgroundLuminance) + 0.05) /
-          (Math.min(foregroundLuminance, backgroundLuminance) + 0.05)
-        );
-      };
-      return [
-        ...body.querySelectorAll(
-          ".status-chip, .status-link",
-        ),
-      ].map((element) => {
-        const foreground = parseColor(getComputedStyle(element).color);
-        const background = parseColor(getComputedStyle(element).backgroundColor);
-
-        return {
-          backgroundAlpha: background.alpha,
-          backgroundColor: getComputedStyle(element).backgroundColor,
+          backdropFilter: style.backdropFilter,
+          backgroundColor: style.backgroundColor,
           classes: element.className,
-          color: getComputedStyle(element).color,
+          color: style.color,
           label: element.textContent.trim(),
-          ratio: contrastRatio(foreground, background),
           state: element.dataset.status || null,
         };
-      });
-    });
+      }),
+    );
 
-  expect(contrastResults.length).toBeGreaterThan(0);
-  expect(contrastResults.every(({ backgroundAlpha }) => backgroundAlpha === 1)).toBe(
-    true,
-  );
-  expect(contrastResults.every(({ ratio }) => ratio >= 4.5)).toBe(true);
+  expect(statusSurfaces.length).toBeGreaterThan(0);
   expect(
-    contrastResults.every(
+    statusSurfaces.every(
       ({ backgroundColor }) => backgroundColor === expectedStatusSurface,
     ),
   ).toBe(true);
+  expect(
+    statusSurfaces.every(
+      ({ backdropFilter }) => backdropFilter === expectedStatusBackdropFilter,
+    ),
+  ).toBe(true);
+
+  const glassOverlay = parseCssColor(expectedStatusSurface);
+  expect(glassOverlay.alpha).toBe(0.26);
+  for (const surface of statusSurfaces) {
+    const foreground = parseCssColor(surface.color);
+    for (const background of representativeStatusBackgrounds) {
+      const composite = compositeColor(
+        glassOverlay,
+        parseCssColor(background.color),
+      );
+      expect(
+        contrastRatio(foreground, composite),
+        `${surface.label} on ${background.context}`,
+      ).toBeGreaterThanOrEqual(4.5);
+    }
+  }
   for (const [state, color] of Object.entries(expectedStatusColors)) {
     expect(
-      contrastResults.some(
+      statusSurfaces.some(
         (result) => result.state === state && result.color === color,
       ),
     ).toBe(true);
   }
   expect(
-    contrastResults
+    statusSurfaces
       .filter(({ classes }) => classes.includes("status-link"))
       .every(({ color }) => color === expectedStatusLinkColor),
   ).toBe(true);
@@ -553,12 +599,12 @@ test("shared status chips and links use fixed light WCAG AA surfaces", async ({
     "infrastructure-status-link",
   ]) {
     expect(
-      contrastResults.some(({ classes }) => classes.includes(className)),
+      statusSurfaces.some(({ classes }) => classes.includes(className)),
     ).toBe(true);
   }
 });
 
-test("shared status links use identical light interactive treatment", async ({
+test("shared status links use identical glass interactive treatment", async ({
   page,
 }) => {
   await stubHomeDependencies(page);
@@ -569,11 +615,13 @@ test("shared status links use identical light interactive treatment", async ({
       const style = getComputedStyle(link);
       return {
         backgroundColor: style.backgroundColor,
+        backdropFilter: style.backdropFilter,
         borderColor: style.borderTopColor,
         borderRadius: style.borderRadius,
         borderStyle: style.borderTopStyle,
         borderWidth: style.borderTopWidth,
         color: style.color,
+        boxShadow: style.boxShadow,
         fontSize: style.fontSize,
         fontWeight: style.fontWeight,
         lineHeight: style.lineHeight,
@@ -592,11 +640,13 @@ test("shared status links use identical light interactive treatment", async ({
   expect(new Set(linkTokens.map((tokens) => JSON.stringify(tokens))).size).toBe(1);
   expect(linkTokens[0]).toEqual({
     backgroundColor: expectedStatusSurface,
+    backdropFilter: expectedStatusBackdropFilter,
     borderColor: expectedStatusBorder,
     borderRadius: "10px",
     borderStyle: "solid",
     borderWidth: "1px",
     color: expectedStatusLinkColor,
+    boxShadow: expectedStatusBoxShadow,
     fontSize: "13.12px",
     fontWeight: "700",
     lineHeight: "18.368px",
@@ -605,6 +655,15 @@ test("shared status links use identical light interactive treatment", async ({
   });
 
   for (const link of await page.locator(".status-link").all()) {
+    await link.hover();
+    await expect(link).toHaveCSS(
+      "background-color",
+      "rgba(255, 255, 255, 0.34)",
+    );
+    await expect(link).toHaveCSS(
+      "border-top-color",
+      "rgba(255, 255, 255, 0.48)",
+    );
     await link.focus();
     await expect(link).toBeFocused();
     expect(
