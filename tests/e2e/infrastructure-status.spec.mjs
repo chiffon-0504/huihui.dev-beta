@@ -5,6 +5,17 @@ const infrastructureApiUrl =
   "https://api.huihui.dev/api/infrastructure-status";
 const techNewsApiUrl = "https://api.huihui.dev/api/tech-news";
 const systemStatusApiUrl = "https://api.huihui.dev/api/system-status";
+const expectedStatusSurface = "rgb(248, 250, 252)";
+const expectedStatusBorder = "rgb(203, 216, 230)";
+const expectedStatusColors = {
+  operational: "rgb(11, 105, 56)",
+  under_maintenance: "rgb(91, 63, 140)",
+  degraded_performance: "rgb(122, 74, 0)",
+  partial_outage: "rgb(154, 63, 0)",
+  major_outage: "rgb(161, 31, 47)",
+  unknown: "rgb(77, 86, 101)",
+};
+const expectedStatusLinkColor = "rgb(23, 79, 120)";
 const locales = [
   {
     name: "ZH",
@@ -391,7 +402,70 @@ test("maintenance renders explicitly while degraded remains the mixed worst stat
   ).toContainText("Under Maintenance");
 });
 
-test("shared status chips and links use opaque WCAG AA contrast", async ({
+test("System and Infrastructure component chips use identical computed tokens", async ({
+  page,
+}) => {
+  await stubHomeDependencies(page, { providers: allStatesFixture() });
+
+  const readChipTokens = (chip) => {
+    const style = getComputedStyle(chip);
+    const symbolStyle = getComputedStyle(chip.querySelector(".status-symbol"));
+    return {
+      fontSize: style.fontSize,
+      lineHeight: style.lineHeight,
+      fontWeight: style.fontWeight,
+      paddingTop: style.paddingTop,
+      paddingRight: style.paddingRight,
+      paddingBottom: style.paddingBottom,
+      paddingLeft: style.paddingLeft,
+      borderRadius: style.borderRadius,
+      gap: style.gap,
+      borderTopWidth: style.borderTopWidth,
+      borderTopStyle: style.borderTopStyle,
+      borderTopColor: style.borderTopColor,
+      backgroundColor: style.backgroundColor,
+      symbolFontSize: symbolStyle.fontSize,
+    };
+  };
+
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/en/", { waitUntil: "load" });
+
+    const systemTokens = await page
+      .locator(".system-status-state.status-chip")
+      .first()
+      .evaluate(readChipTokens);
+    const infrastructureTokens = await page
+      .locator(".infrastructure-component-status.status-chip")
+      .first()
+      .evaluate(readChipTokens);
+
+    expect(infrastructureTokens).toEqual(systemTokens);
+    expect(systemTokens).toEqual({
+      fontSize: "13.12px",
+      lineHeight: "17.712px",
+      fontWeight: "700",
+      paddingTop: "3px",
+      paddingRight: "9px",
+      paddingBottom: "3px",
+      paddingLeft: "9px",
+      borderRadius: "999px",
+      gap: "6px",
+      borderTopWidth: "1px",
+      borderTopStyle: "solid",
+      borderTopColor: expectedStatusBorder,
+      backgroundColor: expectedStatusSurface,
+      symbolFontSize: "11.52px",
+    });
+    await expectNoHorizontalOverflow(page);
+  }
+});
+
+test("shared status chips and links use fixed light WCAG AA surfaces", async ({
   page,
 }) => {
   await stubHomeDependencies(page, { providers: allStatesFixture() });
@@ -440,9 +514,12 @@ test("shared status chips and links use opaque WCAG AA contrast", async ({
 
         return {
           backgroundAlpha: background.alpha,
+          backgroundColor: getComputedStyle(element).backgroundColor,
           classes: element.className,
+          color: getComputedStyle(element).color,
           label: element.textContent.trim(),
           ratio: contrastRatio(foreground, background),
+          state: element.dataset.status || null,
         };
       });
     });
@@ -452,6 +529,23 @@ test("shared status chips and links use opaque WCAG AA contrast", async ({
     true,
   );
   expect(contrastResults.every(({ ratio }) => ratio >= 4.5)).toBe(true);
+  expect(
+    contrastResults.every(
+      ({ backgroundColor }) => backgroundColor === expectedStatusSurface,
+    ),
+  ).toBe(true);
+  for (const [state, color] of Object.entries(expectedStatusColors)) {
+    expect(
+      contrastResults.some(
+        (result) => result.state === state && result.color === color,
+      ),
+    ).toBe(true);
+  }
+  expect(
+    contrastResults
+      .filter(({ classes }) => classes.includes("status-link"))
+      .every(({ color }) => color === expectedStatusLinkColor),
+  ).toBe(true);
   for (const className of [
     "system-status-state",
     "system-status-link",
@@ -461,6 +555,61 @@ test("shared status chips and links use opaque WCAG AA contrast", async ({
     expect(
       contrastResults.some(({ classes }) => classes.includes(className)),
     ).toBe(true);
+  }
+});
+
+test("shared status links use identical light interactive treatment", async ({
+  page,
+}) => {
+  await stubHomeDependencies(page);
+  await page.goto("/en/", { waitUntil: "load" });
+
+  const linkTokens = await page.locator(".status-link").evaluateAll((links) =>
+    links.map((link) => {
+      const style = getComputedStyle(link);
+      return {
+        backgroundColor: style.backgroundColor,
+        borderColor: style.borderTopColor,
+        borderRadius: style.borderRadius,
+        borderStyle: style.borderTopStyle,
+        borderWidth: style.borderTopWidth,
+        color: style.color,
+        fontSize: style.fontSize,
+        fontWeight: style.fontWeight,
+        lineHeight: style.lineHeight,
+        padding: [
+          style.paddingTop,
+          style.paddingRight,
+          style.paddingBottom,
+          style.paddingLeft,
+        ],
+        textDecorationLine: style.textDecorationLine,
+      };
+    }),
+  );
+
+  expect(linkTokens).toHaveLength(3);
+  expect(new Set(linkTokens.map((tokens) => JSON.stringify(tokens))).size).toBe(1);
+  expect(linkTokens[0]).toEqual({
+    backgroundColor: expectedStatusSurface,
+    borderColor: expectedStatusBorder,
+    borderRadius: "10px",
+    borderStyle: "solid",
+    borderWidth: "1px",
+    color: expectedStatusLinkColor,
+    fontSize: "13.12px",
+    fontWeight: "700",
+    lineHeight: "18.368px",
+    padding: ["5px", "9px", "5px", "9px"],
+    textDecorationLine: "underline",
+  });
+
+  for (const link of await page.locator(".status-link").all()) {
+    await link.focus();
+    await expect(link).toBeFocused();
+    expect(
+      await link.evaluate((element) => getComputedStyle(element).outlineStyle),
+    ).not.toBe("none");
   }
 });
 
