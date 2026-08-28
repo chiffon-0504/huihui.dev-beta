@@ -77,11 +77,16 @@ for (const locale of localeCases) {
 
     const homeStatus = page.locator('[data-system-status-surface="home"]');
     await expect(homeStatus).toHaveAttribute("data-status", "operational");
-    await expect(homeStatus.locator(".system-status-overall")).toContainText(
+    const overall = homeStatus.locator(".system-status-overall");
+    await expect(overall).toContainText(
       locale.allOperational,
     );
+    await expect(overall.locator(".status-chip")).toHaveCount(0);
     await expect(homeStatus.locator(".system-status-component-row")).toHaveCount(3);
-    const viewStatus = homeStatus.locator(".system-status-link");
+    await expect(
+      homeStatus.locator(".system-status-state.status-chip"),
+    ).toHaveCount(3);
+    const viewStatus = homeStatus.locator(".system-status-link.status-link");
     await expect(viewStatus).toHaveAttribute("href", locale.status);
     await viewStatus.focus();
     await expect(viewStatus).toBeFocused();
@@ -91,6 +96,12 @@ for (const locale of localeCases) {
     await expect(page.getByRole("heading", { name: locale.title })).toBeVisible();
     await expect(detail).toHaveAttribute("data-status", "operational");
     await expect(detail.locator(".system-status-component-card")).toHaveCount(3);
+    await expect(
+      detail.locator(".system-status-state.status-chip"),
+    ).toHaveCount(3);
+    await expect(
+      detail.locator(".system-status-overall .status-chip"),
+    ).toHaveCount(0);
     await expect(detail.locator(".system-status-component-card h2")).toHaveText(
       locale.components,
     );
@@ -129,9 +140,27 @@ test("renders every first-party state from deterministic fixtures", async ({ pag
     await expect(card.locator(".system-status-overall")).toContainText(
       expectedLabels[status],
     );
-    await expect(card.locator(".system-status-state")).toHaveText(
+    const componentChips = card.locator(".system-status-state.status-chip");
+    await expect(componentChips).toHaveText(
       Array(3).fill(status === "unknown" ? "?Unknown" : `${status === "major_outage" ? "✕" : status === "partial_outage" ? "◐" : status === "degraded_performance" ? "▲" : "●"}${status === "operational" ? "Operational" : expectedLabels[status]}`),
     );
+    expect(
+      await componentChips.evaluateAll(
+        (chips, expectedStatus) =>
+          chips.every(
+            (chip) =>
+              chip.dataset.status === expectedStatus &&
+              chip.textContent.trim() &&
+              chip
+                .querySelector(".status-symbol")
+                ?.getAttribute("aria-hidden") === "true",
+          ),
+        status,
+      ),
+    ).toBe(true);
+    await expect(
+      card.locator(".system-status-overall .status-chip"),
+    ).toHaveCount(0);
   }
 });
 
@@ -260,9 +289,26 @@ test("desktop, mobile, forced colors, and reduced motion remain understandable",
   expect(
     await detail.evaluate((element) => getComputedStyle(element).animationName),
   ).toBe("none");
-  await expect(detail.locator(".system-status-state")).toHaveText([
+  const componentChips = detail.locator(".system-status-state.status-chip");
+  await expect(componentChips).toHaveText([
     "●Operational",
     "●Operational",
     "●Operational",
   ]);
+  const forcedColors = await componentChips.first().evaluate((chip) => {
+    const canvas = document.createElement("span");
+    canvas.style.backgroundColor = "Canvas";
+    canvas.style.color = "CanvasText";
+    document.body.append(canvas);
+    const result = {
+      background: getComputedStyle(chip).backgroundColor,
+      canvas: getComputedStyle(canvas).backgroundColor,
+      color: getComputedStyle(chip).color,
+      canvasText: getComputedStyle(canvas).color,
+    };
+    canvas.remove();
+    return result;
+  });
+  expect(forcedColors.background).toBe(forcedColors.canvas);
+  expect(forcedColors.color).toBe(forcedColors.canvasText);
 });

@@ -216,19 +216,29 @@ function getValidSystemStatus(data) {
   };
 }
 
-function createSystemStatusState(status, className) {
+function createStatusText(status, label, symbolText, className, symbolClassName) {
   const wrapper = document.createElement("span");
   const symbol = document.createElement("span");
   const text = document.createElement("span");
 
   wrapper.className = className;
   wrapper.dataset.status = status;
-  symbol.className = "system-status-symbol";
+  symbol.className = `status-symbol ${symbolClassName}`;
   symbol.setAttribute("aria-hidden", "true");
-  symbol.textContent = SYSTEM_STATUS_SYMBOLS[status];
-  text.textContent = getSystemStatusLabel(status);
+  symbol.textContent = symbolText;
+  text.textContent = label;
   wrapper.append(symbol, text);
   return wrapper;
+}
+
+function createSystemStatusState(status, className) {
+  return createStatusText(
+    status,
+    getSystemStatusLabel(status),
+    SYSTEM_STATUS_SYMBOLS[status],
+    className,
+    "system-status-symbol",
+  );
 }
 
 function formatSystemStatusTime(value) {
@@ -262,7 +272,12 @@ function createSystemStatusComponents(status, isDetail) {
       card.dataset.status = component.status;
       heading.textContent = getSystemStatusText(component.labelKey);
       description.textContent = getSystemStatusText(component.descKey);
-      state.append(createSystemStatusState(component.status, "system-status-state"));
+      state.append(
+        createSystemStatusState(
+          component.status,
+          "status-chip system-status-state",
+        ),
+      );
       card.append(heading, description, state);
       list.append(card);
       return;
@@ -274,7 +289,12 @@ function createSystemStatusComponents(status, isDetail) {
 
     row.className = "system-status-component-row";
     name.textContent = getSystemStatusText(component.labelKey);
-    state.append(createSystemStatusState(component.status, "system-status-state"));
+    state.append(
+      createSystemStatusState(
+        component.status,
+        "status-chip system-status-state",
+      ),
+    );
     row.append(name, state);
     list.append(row);
   });
@@ -328,7 +348,7 @@ function renderSystemStatus(container, status, state = "ready") {
     const link = document.createElement("a");
     const locale = typeof getCurrentLocale === "function" ? getCurrentLocale() : "zh";
 
-    link.className = "system-status-link";
+    link.className = "status-link system-status-link";
     link.href = SYSTEM_STATUS_ROUTES[locale] || SYSTEM_STATUS_ROUTES.zh;
     link.textContent = getSystemStatusText("viewStatus");
     fragment.append(link);
@@ -471,18 +491,13 @@ function getValidInfrastructureProvider(provider, definition) {
 }
 
 function createInfrastructureStatusText(status, className) {
-  const wrapper = document.createElement("span");
-  const symbol = document.createElement("span");
-  const text = document.createElement("span");
-
-  wrapper.className = className;
-  wrapper.dataset.status = status;
-  symbol.className = "infrastructure-status-symbol";
-  symbol.setAttribute("aria-hidden", "true");
-  symbol.textContent = INFRASTRUCTURE_STATUS_SYMBOLS[status];
-  text.textContent = getInfrastructureStatusText(status);
-  wrapper.append(symbol, text);
-  return wrapper;
+  return createStatusText(
+    status,
+    getInfrastructureStatusText(status),
+    INFRASTRUCTURE_STATUS_SYMBOLS[status],
+    `status-chip ${className}`,
+    "infrastructure-status-symbol",
+  );
 }
 
 function createInfrastructureCard(provider) {
@@ -524,7 +539,7 @@ function createInfrastructureCard(provider) {
     components.append(row);
   });
 
-  link.className = "infrastructure-status-link";
+  link.className = "status-link infrastructure-status-link";
   link.href = provider.url;
   link.target = "_blank";
   link.rel = "noopener noreferrer";
