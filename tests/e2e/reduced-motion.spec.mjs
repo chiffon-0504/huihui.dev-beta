@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { systemStatusFixture } from "../support/system-status.mjs";
 
 async function stubHomepageApis(page) {
   await page.route("https://api.huihui.dev/**", async (route) => {
@@ -20,6 +21,8 @@ async function stubHomepageApis(page) {
           }
         : pathname === "/api/infrastructure-status"
           ? { ok: true, providers: [] }
+        : pathname === "/api/system-status"
+          ? systemStatusFixture()
         : null;
 
     await route.fulfill({

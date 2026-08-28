@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { primaryRoutes } from "../support/routes.mjs";
 import { getExpectedSeoMetadata } from "../support/seo-metadata.mjs";
+import { systemStatusFixture } from "../support/system-status.mjs";
 
 async function stubExternalDependencies(page) {
   await page.route("https://challenges.cloudflare.com/**", (route) =>
@@ -19,6 +20,8 @@ async function stubExternalDependencies(page) {
         ? { ok: true, games: [] }
         : pathname === "/api/infrastructure-status"
           ? { ok: true, providers: [] }
+          : pathname === "/api/system-status"
+            ? systemStatusFixture()
           : null;
 
     return route.fulfill({

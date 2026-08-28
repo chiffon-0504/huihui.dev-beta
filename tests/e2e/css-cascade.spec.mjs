@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { systemStatusFixture } from "../support/system-status.mjs";
 
 const desktopViewport = { width: 1440, height: 900 };
 const mobileViewport = { width: 390, height: 844 };
@@ -24,6 +25,10 @@ async function stubExternalDependencies(page, handleTechNews = null) {
       ? { ok: true, games: [] }
       : pathname === "/api/tech-news"
         ? { ok: true, techNews: [] }
+        : pathname === "/api/infrastructure-status"
+          ? { ok: true, providers: [] }
+          : pathname === "/api/system-status"
+            ? systemStatusFixture()
         : null;
 
     await route.fulfill({

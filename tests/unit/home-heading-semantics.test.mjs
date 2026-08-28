@@ -20,7 +20,7 @@ const homeDocuments = [
   },
 ];
 const realSectionHeadingIds = [
-  "projectUpdateTitle",
+  "systemStatusTitle",
   "websiteVersionTitle",
   "techNewsTitle",
   "infrastructureStatusTitle",

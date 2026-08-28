@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { systemStatusFixture } from "../support/system-status.mjs";
 
 const TECH_NEWS_API_URL = "https://api.huihui.dev/api/tech-news";
 const locales = [
@@ -84,6 +85,15 @@ async function stubHomeDependencies(
           status: 200,
           contentType: "application/json",
           body: JSON.stringify({ ok: true, providers: [] }),
+        });
+        return;
+      }
+
+      if (pathname === "/api/system-status") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(systemStatusFixture()),
         });
         return;
       }

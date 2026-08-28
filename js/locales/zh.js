@@ -75,6 +75,35 @@ window.HUIHUI_I18N.zh = {
       }
     }
   },
+  systemStatus: {
+    title: "系統狀態",
+    pageTitle: "huihui.dev 系統狀態",
+    pageIntro: "目前 Website、API 與聯絡服務的第一方健康狀態。",
+    allOperational: "全部系統運作正常",
+    statusUnknown: "系統狀態未知",
+    checking: "正在檢查狀態……",
+    unable: "目前無法判定系統狀態。",
+    lastChecked: "上次檢查",
+    notChecked: "尚未完成",
+    viewStatus: "查看狀態 →",
+    components: {
+      website: "Website",
+      api: "API",
+      contact: "聯絡服務"
+    },
+    descriptions: {
+      website: "huihui.dev 靜態頁面、HTML 回應與穩定網站標記。",
+      api: "huihui.dev Worker 與 API 請求路徑的可用狀態。",
+      contact: "聯絡處理程式與必要執行環境設定的非提交式就緒狀態。"
+    },
+    statuses: {
+      operational: "營運正常",
+      degradedPerformance: "效能下降",
+      partialOutage: "部分中斷",
+      majorOutage: "重大中斷",
+      unknown: "未知"
+    }
+  },
   contact: {
     title: "聯絡我",
     intro: "有問題、合作或回饋，可以用下面的表單聯絡我。",

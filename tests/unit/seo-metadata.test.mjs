@@ -30,6 +30,9 @@ const expectedPrimaryRouteUrls = [
   "/milestones/",
   "/en/milestones/",
   "/ja/milestones/",
+  "/status/",
+  "/en/status/",
+  "/ja/status/",
   "/tools/tier-maker/",
   "/en/tools/tier-maker/",
   "/ja/tools/tier-maker/",
@@ -50,6 +53,9 @@ const expectedTitles = {
   "/milestones/": "里程碑 | huihui.dev",
   "/en/milestones/": "Milestones | huihui.dev",
   "/ja/milestones/": "マイルストーン | huihui.dev",
+  "/status/": "系統狀態 | huihui.dev",
+  "/en/status/": "System Status | huihui.dev",
+  "/ja/status/": "システム状況 | huihui.dev",
   "/tools/tier-maker/": "分級表製作器 | huihui.dev",
   "/en/tools/tier-maker/": "Tier Maker | huihui.dev",
   "/ja/tools/tier-maker/": "ティアメーカー | huihui.dev",
@@ -61,6 +67,12 @@ const expectedHomeDescriptions = {
     "huihui.dev is a personal website and portfolio featuring development projects, milestones, and personal interests.",
   "/ja/":
     "huihui.devは、開発プロジェクト、マイルストーン、個人の興味・関心を紹介する個人サイト兼ポートフォリオです。",
+  "/status/":
+    "查看 huihui.dev Website、API 與聯絡服務的目前系統狀態。",
+  "/en/status/":
+    "View the current health of the huihui.dev Website, API, and Contact Service.",
+  "/ja/status/":
+    "huihui.dev の Website、API、Contact Service の現在の稼働状況を確認できます。",
 };
 
 function getTags(source, tagName) {
@@ -120,15 +132,15 @@ async function readRouteHtml(route) {
 }
 
 describe("canonical and hreflang static contracts", () => {
-  test("covers exactly the 18 primary locale routes", async () => {
+  test("covers exactly the 21 primary locale routes", async () => {
     const redirects = await readFile(path.join(root, "_redirects"), "utf8");
     const redirectSources = redirects
       .split(/\r?\n/)
       .map((line) => line.trim().split(/\s+/, 1)[0])
       .filter(Boolean);
 
-    expect(primaryRouteGroups).toHaveLength(6);
-    expect(primaryRoutes).toHaveLength(18);
+    expect(primaryRouteGroups).toHaveLength(7);
+    expect(primaryRoutes).toHaveLength(21);
     expect(primaryRoutes.map((route) => route.url).sort()).toEqual(
       [...expectedPrimaryRouteUrls].sort(),
     );

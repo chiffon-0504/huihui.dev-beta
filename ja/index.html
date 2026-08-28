@@ -31,10 +31,11 @@
         </div>
       </div>
 
-      <article class="project-update-card" aria-labelledby="projectUpdateTitle">
-        <p class="project-update-label" data-i18n="home.projectUpdate.label"></p>
-        <h2 id="projectUpdateTitle" data-i18n="home.projectUpdate.title"></h2>
-        <p class="project-update-desc" data-i18n="home.projectUpdate.desc"></p>
+      <article class="project-update-card system-status-card" aria-labelledby="systemStatusTitle">
+        <p class="project-update-label" data-i18n="systemStatus.title">システム状況</p>
+        <div class="system-status-live" role="status" aria-live="polite" aria-atomic="true" data-system-status-surface="home">
+          <h2 id="systemStatusTitle" class="system-status-overall" data-i18n="systemStatus.checking">システム状況を確認しています……</h2>
+        </div>
       </article>
     </section>
 

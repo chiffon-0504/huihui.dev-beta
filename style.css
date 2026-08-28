@@ -1058,6 +1058,240 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   }
 }
 
+/* huihui.dev current System Status */
+.system-status-card {
+  min-width: 0;
+}
+
+.system-status-card .project-update-label {
+  margin-bottom: 10px;
+}
+
+.system-status-live {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.system-status-overall {
+  margin: 0;
+  font-size: clamp(1rem, 1.7vw, 1.28rem);
+  line-height: 1.3;
+}
+
+.system-status-summary-state,
+.system-status-state {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  color: var(--ink-strong, #172033);
+  font-weight: 700;
+}
+
+.system-status-symbol {
+  flex: 0 0 auto;
+  font-size: 0.8em;
+}
+
+.system-status-component-list {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+}
+
+.system-status-component-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(9.5rem, auto);
+  gap: 12px;
+  align-items: baseline;
+}
+
+.system-status-component-row dt,
+.system-status-component-row dd {
+  min-width: 0;
+  margin: 0;
+  font-size: 0.83rem;
+  line-height: 1.35;
+}
+
+.system-status-component-row dd {
+  text-align: right;
+}
+
+.system-status-checked-at,
+.system-status-error {
+  margin: 0;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: var(--ink-muted, #526074);
+}
+
+.system-status-error {
+  font-weight: 650;
+}
+
+.system-status-link {
+  width: fit-content;
+  color: inherit;
+  font-size: 0.82rem;
+  font-weight: 750;
+  text-decoration: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.22em;
+}
+
+.system-status-link:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 4px;
+  border-radius: 3px;
+}
+
+.system-status-summary-state[data-status="operational"],
+.system-status-state[data-status="operational"] {
+  color: #0b6938;
+}
+
+.system-status-summary-state[data-status="degraded_performance"],
+.system-status-state[data-status="degraded_performance"] {
+  color: #7a4a00;
+}
+
+.system-status-summary-state[data-status="partial_outage"],
+.system-status-state[data-status="partial_outage"] {
+  color: #9a3f00;
+}
+
+.system-status-summary-state[data-status="major_outage"],
+.system-status-state[data-status="major_outage"] {
+  color: #a11f2f;
+}
+
+.system-status-summary-state[data-status="unknown"],
+.system-status-state[data-status="unknown"] {
+  color: #4d5665;
+}
+
+.system-status-page {
+  display: grid;
+  gap: 28px;
+}
+
+.system-status-page-header {
+  max-width: 760px;
+}
+
+.system-status-page-header h1 {
+  margin: 8px 0 12px;
+}
+
+.system-status-page-header > p:last-child {
+  margin: 0;
+  color: var(--ink-muted, #526074);
+  line-height: 1.7;
+}
+
+.system-status-detail {
+  display: grid;
+  gap: 22px;
+  padding: clamp(22px, 4vw, 40px);
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.42);
+  box-shadow: 0 22px 60px rgba(29, 43, 73, 0.12);
+  backdrop-filter: blur(24px) saturate(145%);
+  -webkit-backdrop-filter: blur(24px) saturate(145%);
+}
+
+.system-status-detail > .system-status-overall {
+  font-size: clamp(1.3rem, 2.4vw, 1.8rem);
+  font-weight: 800;
+}
+
+.system-status-component-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.system-status-component-card {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.34);
+}
+
+.system-status-component-card h2,
+.system-status-component-card p {
+  margin: 0;
+}
+
+.system-status-component-card h2 {
+  font-size: 1.05rem;
+}
+
+.system-status-component-card > p:nth-of-type(1) {
+  min-height: 4.6em;
+  margin-top: 10px;
+  color: var(--ink-muted, #526074);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.system-status-component-card > p:last-child {
+  margin-top: 16px;
+}
+
+@media (max-width: 900px) {
+  .system-status-component-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .system-status-component-card > p:nth-of-type(1) {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .system-status-component-row {
+    grid-template-columns: minmax(0, 1fr) minmax(7.2rem, auto);
+    gap: 8px;
+  }
+
+  .system-status-component-row dt,
+  .system-status-component-row dd,
+  .system-status-link {
+    font-size: 0.76rem;
+  }
+
+  .system-status-detail {
+    padding: 20px;
+    border-radius: 22px;
+  }
+}
+
+@media (forced-colors: active) {
+  .system-status-detail,
+  .system-status-component-card {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    box-shadow: none;
+  }
+
+  .system-status-summary-state,
+  .system-status-state,
+  .system-status-checked-at,
+  .system-status-error,
+  .system-status-page-header > p:last-child,
+  .system-status-component-card > p:nth-of-type(1) {
+    color: CanvasText;
+  }
+
+  .system-status-link:focus-visible {
+    outline-color: Highlight;
+  }
+}
+
 /* =========================
    Early Responsive Overrides
    Competes with later mobile drawer, posts safety, safe header, and unified

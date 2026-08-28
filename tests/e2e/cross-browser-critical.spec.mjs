@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { systemStatusFixture } from "../support/system-status.mjs";
 
 const localOrigin = "http://127.0.0.1:4173";
 const apiOrigins = [
@@ -88,6 +89,7 @@ async function preparePage(page) {
     if (pathname === "/api/infrastructure-status") {
       return { ok: true, providers: [] };
     }
+    if (pathname === "/api/system-status") return systemStatusFixture();
     if (pathname === "/api/steam-library") return { ok: true, games: [] };
     return null;
   };
@@ -171,6 +173,7 @@ test.describe("localized route shell", () => {
       );
       await expect(page.locator(".infrastructure-status-card")).toHaveCount(2);
       expect(state.apiRequests).toEqual([
+        "/api/system-status",
         "/api/tech-news",
         "/api/infrastructure-status",
       ]);

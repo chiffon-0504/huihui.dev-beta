@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { systemStatusFixture } from "../support/system-status.mjs";
 
 const localOrigin = "http://127.0.0.1:4173";
 const sharedScripts = [
@@ -59,6 +60,11 @@ const routeCases = [
     route: "/contact/",
     scripts: scriptsFor("zh", ["/js/contact.js"]),
   },
+  {
+    name: "System Status",
+    route: "/status/",
+    scripts: scriptsFor("zh", ["/js/home-cards.js"]),
+  },
 ];
 
 async function stubExternalDependencies(page) {
@@ -89,6 +95,8 @@ async function stubExternalDependencies(page) {
         ? { ok: true, games: [] }
         : pathname.endsWith("/api/infrastructure-status")
           ? { ok: true, providers: [] }
+        : pathname.endsWith("/api/system-status")
+          ? systemStatusFixture()
         : null;
 
     return route.fulfill({
@@ -195,12 +203,22 @@ async function verifyContact(page, requestedScripts) {
   );
 }
 
+async function verifySystemStatus(page) {
+  await expect(page.getByRole("heading", { name: "huihui.dev 系統狀態" })).toBeVisible();
+  await expect(page.locator(".system-status-component-card")).toHaveCount(3);
+  await expect(page.locator(".system-status-detail")).toHaveAttribute(
+    "data-status",
+    "operational",
+  );
+}
+
 const functionalChecks = {
   Home: verifyHome,
   About: verifyAbout,
   Works: verifyWorks,
   Milestones: verifyMilestones,
   Contact: verifyContact,
+  "System Status": verifySystemStatus,
 };
 
 for (const routeCase of routeCases) {

@@ -12,6 +12,7 @@ const localizedRouteSegments = Object.freeze({
   works: "works",
   posts: "milestones",
   contact: "contact",
+  status: "status",
   tools: "tools/tier-maker"
 });
 
@@ -22,6 +23,7 @@ const routeKeysByPath = Object.freeze({
   milestones: "posts",
   posts: "posts",
   contact: "contact",
+  status: "status",
   "tools/tier-maker": "tools"
 });
 

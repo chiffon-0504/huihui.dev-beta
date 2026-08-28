@@ -197,12 +197,14 @@ async function handleReadOnlyRoute(request, handler) {
 
 export const TECH_NEWS_SOURCE_DEADLINE_MS = 5000;
 export const INFRASTRUCTURE_STATUS_PROVIDER_DEADLINE_MS = 3500;
+export const SYSTEM_STATUS_WEBSITE_DEADLINE_MS = 4000;
 export const APOD_ATTEMPT_DEADLINE_MS = 3000;
 export const APOD_TOTAL_BUDGET_MS = 6000;
 export const STEAM_UPSTREAM_DEADLINE_MS = 5000;
 export const CONTACT_REQUEST_MAX_BYTES = 64 * 1024;
 export const TECH_NEWS_RESPONSE_MAX_BYTES = 2 * 1024 * 1024;
 export const INFRASTRUCTURE_STATUS_RESPONSE_MAX_BYTES = 1024 * 1024;
+export const SYSTEM_STATUS_WEBSITE_RESPONSE_MAX_BYTES = 256 * 1024;
 export const APOD_RESPONSE_MAX_BYTES = 256 * 1024;
 export const STEAM_RESPONSE_MAX_BYTES = 2 * 1024 * 1024;
 export const TURNSTILE_RESPONSE_MAX_BYTES = 64 * 1024;
@@ -462,6 +464,9 @@ function getDiagnosticRoute(pathname) {
   switch (pathname) {
     case "/api/tech-news":
     case "/api/infrastructure-status":
+    case "/api/system-status":
+    case "/api/health":
+    case "/api/contact/health":
     case "/api/apod":
     case "/api/steam-library":
     case "/api/contact":
@@ -904,6 +909,224 @@ async function handleInfrastructureStatus(request, env, ctx) {
   }
 
   return response;
+}
+
+/* =========================
+   huihui.dev System Status
+========================= */
+
+const SYSTEM_STATUS_RANK = Object.freeze({
+  operational: 0,
+  degraded_performance: 1,
+  partial_outage: 2,
+  major_outage: 3,
+});
+const SYSTEM_STATUS_WEBSITE_TARGETS = Object.freeze({
+  production: "https://huihui.dev/",
+  beta: "https://beta.huihui.dev/",
+});
+const SYSTEM_STATUS_WEBSITE_MARKER =
+  /<link\s+rel=["']canonical["']\s+href=["']https:\/\/huihui\.dev\/["']\s*\/?>/i;
+const SYSTEM_STATUS_COMPONENT_IDS = Object.freeze([
+  "website",
+  "api",
+  "contact",
+]);
+
+export function aggregateSystemStatus(components) {
+  if (components.some((component) => component.status === "unknown")) {
+    return "unknown";
+  }
+
+  return components.reduce(
+    (worst, component) =>
+      SYSTEM_STATUS_RANK[component.status] > SYSTEM_STATUS_RANK[worst]
+        ? component.status
+        : worst,
+    "operational"
+  );
+}
+
+function systemStatusComponent(id, status) {
+  return { id, status };
+}
+
+function getSystemStatusWebsiteTarget(env) {
+  return env?.WORKER_ENV === "beta"
+    ? SYSTEM_STATUS_WEBSITE_TARGETS.beta
+    : SYSTEM_STATUS_WEBSITE_TARGETS.production;
+}
+
+async function checkSystemWebsite(env) {
+  try {
+    return await withUpstreamDeadline(
+      SYSTEM_STATUS_WEBSITE_DEADLINE_MS,
+      async (signal) => {
+        const response = await fetch(getSystemStatusWebsiteTarget(env), {
+          method: "GET",
+          headers: {
+            Accept: "text/html",
+            "User-Agent": "huihui.dev system-status worker",
+          },
+          redirect: "manual",
+          cache: "no-store",
+          signal,
+        });
+
+        if (response.status !== 200) {
+          warnUpstreamFailure(
+            "/api/system-status",
+            "system_website",
+            new UpstreamHttpStatusError(response.status)
+          );
+          await cancelBody(response.body);
+          return systemStatusComponent(
+            "website",
+            response.status >= 500 ? "major_outage" : "partial_outage"
+          );
+        }
+
+        const contentType = response.headers.get("Content-Type") || "";
+        const isHtml = contentType
+          .split(";", 1)[0]
+          .trim()
+          .toLowerCase() === "text/html";
+        const body = await readResponseTextWithLimit(
+          response,
+          SYSTEM_STATUS_WEBSITE_RESPONSE_MAX_BYTES
+        );
+
+        if (!isHtml || !SYSTEM_STATUS_WEBSITE_MARKER.test(body)) {
+          warnUpstreamFailure(
+            "/api/system-status",
+            "system_website",
+            new UpstreamInvalidResponseError()
+          );
+          return systemStatusComponent("website", "partial_outage");
+        }
+
+        return systemStatusComponent("website", "operational");
+      }
+    );
+  } catch (error) {
+    warnUpstreamFailure("/api/system-status", "system_website", error);
+    return systemStatusComponent("website", "unknown");
+  }
+}
+
+function createApiHealthPayload() {
+  return {
+    ok: true,
+    status: "operational",
+    scope: "worker_request_path",
+  };
+}
+
+export function normalizeApiReadinessPayload(payload) {
+  return payload &&
+    typeof payload === "object" &&
+    !Array.isArray(payload) &&
+    payload.ok === true &&
+    payload.status === "operational" &&
+    payload.scope === "worker_request_path"
+    ? "operational"
+    : "unknown";
+}
+
+function checkApiReadiness() {
+  const status = normalizeApiReadinessPayload(createApiHealthPayload());
+
+  if (status === "unknown") {
+    warnUpstreamFailure(
+      "/api/system-status",
+      "system_api",
+      new UpstreamInvalidResponseError()
+    );
+  }
+
+  return systemStatusComponent("api", status);
+}
+
+function isConfiguredSecret(value) {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function isValidContactEndpoint(value) {
+  if (!isConfiguredSecret(value)) return false;
+
+  try {
+    const endpoint = new URL(value);
+    return (
+      endpoint.protocol === "https:" &&
+      !endpoint.username &&
+      !endpoint.password &&
+      !endpoint.hash
+    );
+  } catch (error) {
+    return false;
+  }
+}
+
+function checkContactReadiness(env, diagnosticRoute = "/api/system-status") {
+  const hasTurnstileSecret = isConfiguredSecret(env?.TURNSTILE_SECRET_KEY);
+  const hasFormspreeEndpoint = isConfiguredSecret(env?.FORMSPREE_ENDPOINT);
+
+  if (!hasTurnstileSecret || !hasFormspreeEndpoint) {
+    errorConfigurationFailure(diagnosticRoute, "contact_readiness");
+    return systemStatusComponent("contact", "unknown");
+  }
+
+  if (!isValidContactEndpoint(env.FORMSPREE_ENDPOINT)) {
+    warnUpstreamFailure(
+      diagnosticRoute,
+      "contact_readiness",
+      new UpstreamInvalidResponseError()
+    );
+    return systemStatusComponent("contact", "unknown");
+  }
+
+  return systemStatusComponent("contact", "operational");
+}
+
+function handleApiHealth() {
+  return jsonResponse(createApiHealthPayload(), {
+    "Cache-Control": "no-store",
+  });
+}
+
+function handleContactHealth(env) {
+  const component = checkContactReadiness(env, "/api/contact/health");
+  const isOperational = component.status === "operational";
+
+  return jsonResponse(
+    {
+      ok: isOperational,
+      status: component.status,
+      scope: "configuration_readiness",
+    },
+    { "Cache-Control": "no-store" },
+    isOperational ? 200 : 503
+  );
+}
+
+async function handleSystemStatus(env) {
+  const components = await Promise.all([
+    checkSystemWebsite(env),
+    Promise.resolve(checkApiReadiness()),
+    Promise.resolve(checkContactReadiness(env)),
+  ]);
+
+  return jsonResponse(
+    {
+      ok: true,
+      status: aggregateSystemStatus(components),
+      components: SYSTEM_STATUS_COMPONENT_IDS.map((id) =>
+        components.find((component) => component.id === id)
+      ),
+      checkedAt: new Date().toISOString(),
+    },
+    { "Cache-Control": "no-store" }
+  );
 }
 
 /* =========================
@@ -1590,6 +1813,18 @@ async function routeRequest(request, env, ctx) {
     );
   }
 
+  if (url.pathname === "/api/system-status") {
+    return handleReadOnlyRoute(request, () => handleSystemStatus(env));
+  }
+
+  if (url.pathname === "/api/health") {
+    return handleReadOnlyRoute(request, handleApiHealth);
+  }
+
+  if (url.pathname === "/api/contact/health") {
+    return handleReadOnlyRoute(request, () => handleContactHealth(env));
+  }
+
   if (url.pathname === "/api/apod") {
     return handleReadOnlyRoute(request, () => handleApod(request, env, ctx));
   }
@@ -1619,6 +1854,9 @@ async function routeRequest(request, env, ctx) {
       endpoints: [
         "/api/tech-news",
         "/api/infrastructure-status",
+        "/api/system-status",
+        "/api/health",
+        "/api/contact/health",
         "/api/apod",
         "/api/steam-library",
         "/api/contact",
