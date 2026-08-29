@@ -663,18 +663,30 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 
 /* Shared status primitives */
 .status-chip {
+  --status-chip-surface-alpha: 0.26;
+
   display: inline-flex;
   min-width: 0;
   align-items: center;
-  gap: 8px;
-  padding: 2px 8px;
+  gap: 6px;
+  padding: 3px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
   border-radius: 999px;
-  background-color: #101828;
+  color: #4d5665;
+  background-color: rgba(255, 255, 255, var(--status-chip-surface-alpha));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    0 8px 22px rgba(80, 140, 210, 0.08);
+  backdrop-filter: blur(18px) saturate(135%);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .status-symbol {
   flex: 0 0 auto;
-  font-size: 0.8em;
+  font-size: 0.72rem;
 }
 
 .status-chip .status-symbol {
@@ -682,39 +694,62 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 }
 
 .status-chip[data-status="operational"] {
-  color: #6ee7b7;
+  color: #0b6938;
 }
 
 .status-chip[data-status="under_maintenance"] {
-  color: #c4b5fd;
+  color: #5b3f8c;
 }
 
 .status-chip[data-status="degraded_performance"] {
-  color: #fde68a;
+  color: #7a4a00;
 }
 
 .status-chip[data-status="partial_outage"] {
-  color: #fdba74;
+  color: #9a3f00;
 }
 
 .status-chip[data-status="major_outage"] {
-  color: #fca5a5;
+  color: #a11f2f;
 }
 
 .status-chip[data-status="unknown"] {
-  color: #cbd5e1;
+  color: #4d5665;
+}
+
+.system-status-card:hover .status-chip,
+.infrastructure-status-card:hover .status-chip {
+  --status-chip-surface-alpha: 0.46;
 }
 
 .status-link {
+  display: inline-flex;
+  align-items: center;
   width: fit-content;
-  padding: 4px 8px;
-  border-radius: 8px;
-  color: #7dd3fc;
-  background-color: #101828;
+  padding: 5px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 10px;
+  color: #174f78;
+  background-color: rgba(255, 255, 255, 0.26);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    0 8px 22px rgba(80, 140, 210, 0.08);
+  backdrop-filter: blur(18px) saturate(135%);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+  font-size: 0.82rem;
   font-weight: 700;
+  line-height: 1.4;
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 4px;
+}
+
+.status-link:hover {
+  border-color: rgba(255, 255, 255, 0.48);
+  background-color: rgba(255, 255, 255, 0.34);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.46),
+    0 10px 24px rgba(80, 140, 210, 0.12);
 }
 
 .status-link:focus-visible {
@@ -787,8 +822,12 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 
   .status-chip,
   .status-link {
+    border-color: CanvasText;
     color: CanvasText;
     background-color: Canvas;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
   .status-link:focus-visible {
@@ -1124,10 +1163,6 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   font-weight: 650;
 }
 
-.system-status-link {
-  font-size: 0.82rem;
-}
-
 .system-status-summary-state[data-status="operational"] {
   color: #0b6938;
 }
@@ -1236,8 +1271,7 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   }
 
   .system-status-component-row dt,
-  .system-status-component-row dd,
-  .system-status-link {
+  .system-status-component-row dd {
     font-size: 0.76rem;
   }
 
