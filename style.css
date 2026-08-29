@@ -663,6 +663,8 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 
 /* Shared status primitives */
 .status-chip {
+  --status-chip-surface-alpha: 0.26;
+
   display: inline-flex;
   min-width: 0;
   align-items: center;
@@ -671,7 +673,7 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   border: 1px solid rgba(255, 255, 255, 0.32);
   border-radius: 999px;
   color: #4d5665;
-  background-color: rgba(255, 255, 255, 0.26);
+  background-color: rgba(255, 255, 255, var(--status-chip-surface-alpha));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.38),
     0 8px 22px rgba(80, 140, 210, 0.08);
@@ -713,6 +715,11 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 
 .status-chip[data-status="unknown"] {
   color: #4d5665;
+}
+
+.system-status-card:hover .status-chip,
+.infrastructure-status-card:hover .status-chip {
+  --status-chip-surface-alpha: 0.46;
 }
 
 .status-link {
