@@ -265,6 +265,7 @@ describe("Worker public API contract", () => {
         "/api/tech-news",
         "/api/infrastructure-status",
         "/api/system-status",
+        "/api/system-status/history",
         "/api/health",
         "/api/contact/health",
         "/api/apod",

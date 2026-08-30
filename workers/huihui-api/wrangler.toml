@@ -11,6 +11,8 @@ invocation_logs = false
 
 [vars]
 WORKER_ENV = "production"
+# Public non-secret Status Page URL; both environments read production monitors.
+BETTER_STACK_STATUS_PAGE_JSON_URL = "https://huihui-dev.betteruptime.com/index.json"
 
 [env.beta]
 name = "huihui-api-beta"
@@ -18,6 +20,8 @@ workers_dev = true
 
 [env.beta.vars]
 WORKER_ENV = "beta"
+# Vars are not inherited; use the same production monitors, never beta monitors.
+BETTER_STACK_STATUS_PAGE_JSON_URL = "https://huihui-dev.betteruptime.com/index.json"
 
 [env.beta.observability]
 enabled = true

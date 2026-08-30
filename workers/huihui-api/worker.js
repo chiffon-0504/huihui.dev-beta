@@ -198,6 +198,7 @@ async function handleReadOnlyRoute(request, handler) {
 export const TECH_NEWS_SOURCE_DEADLINE_MS = 5000;
 export const INFRASTRUCTURE_STATUS_PROVIDER_DEADLINE_MS = 3500;
 export const SYSTEM_STATUS_WEBSITE_DEADLINE_MS = 4000;
+export const SYSTEM_STATUS_HISTORY_DEADLINE_MS = 4000;
 export const APOD_ATTEMPT_DEADLINE_MS = 3000;
 export const APOD_TOTAL_BUDGET_MS = 6000;
 export const STEAM_UPSTREAM_DEADLINE_MS = 5000;
@@ -205,6 +206,7 @@ export const CONTACT_REQUEST_MAX_BYTES = 64 * 1024;
 export const TECH_NEWS_RESPONSE_MAX_BYTES = 2 * 1024 * 1024;
 export const INFRASTRUCTURE_STATUS_RESPONSE_MAX_BYTES = 1024 * 1024;
 export const SYSTEM_STATUS_WEBSITE_RESPONSE_MAX_BYTES = 256 * 1024;
+export const SYSTEM_STATUS_HISTORY_RESPONSE_MAX_BYTES = 1024 * 1024;
 export const APOD_RESPONSE_MAX_BYTES = 256 * 1024;
 export const STEAM_RESPONSE_MAX_BYTES = 2 * 1024 * 1024;
 export const TURNSTILE_RESPONSE_MAX_BYTES = 64 * 1024;
@@ -465,6 +467,7 @@ function getDiagnosticRoute(pathname) {
     case "/api/tech-news":
     case "/api/infrastructure-status":
     case "/api/system-status":
+    case "/api/system-status/history":
     case "/api/health":
     case "/api/contact/health":
     case "/api/apod":
@@ -1127,6 +1130,242 @@ async function handleSystemStatus(env) {
     },
     { "Cache-Control": "no-store" }
   );
+}
+
+/* =========================
+   Independent System Status history (Better Stack public JSON)
+========================= */
+
+const SYSTEM_STATUS_HISTORY_ROUTE = "/api/system-status/history";
+const SYSTEM_STATUS_HISTORY_UPSTREAM = "better_stack_status_page";
+const SYSTEM_STATUS_HISTORY_WINDOW_DAYS = 90;
+const SYSTEM_STATUS_HISTORY_CACHE_TTL_SECONDS = 60;
+const BETTER_STACK_RESOURCES = Object.freeze([
+  { id: "website", publicName: "Website" },
+  { id: "api", publicName: "API" },
+  { id: "contact", publicName: "Contact Service" },
+]);
+const BETTER_STACK_STATUS_MAP = Object.freeze({
+  operational: "operational",
+  degraded: "degraded_performance",
+  downtime: "major_outage",
+  maintenance: "unknown",
+  not_monitored: "unknown",
+});
+
+function isBetterStackStatus(value) {
+  return typeof value === "string" && Object.hasOwn(BETTER_STACK_STATUS_MAP, value);
+}
+
+export function normalizeBetterStackAvailability(value) {
+  if (!Number.isFinite(value) || value < 0 || value > 100) return null;
+  return value <= 1 ? value * 100 : value;
+}
+
+function getBetterStackStatusPageUrl(env) {
+  const value = env?.BETTER_STACK_STATUS_PAGE_JSON_URL;
+
+  if (typeof value !== "string" || !value.trim()) {
+    errorConfigurationFailure(SYSTEM_STATUS_HISTORY_ROUTE, SYSTEM_STATUS_HISTORY_UPSTREAM);
+    throw new WorkerConfigurationError();
+  }
+
+  let url;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new UpstreamInvalidResponseError();
+  }
+
+  if (
+    url.protocol !== "https:" ||
+    url.username || url.password || url.hash || url.search ||
+    url.pathname !== "/index.json"
+  ) {
+    throw new UpstreamInvalidResponseError();
+  }
+
+  return url.href;
+}
+
+function unknownSystemHistoryComponent({ id }) {
+  return {
+    id,
+    status: "unknown",
+    availabilityPercent: null,
+    observedDays: 0,
+    historyStartDate: null,
+    historyEndDate: null,
+    history: [],
+  };
+}
+
+function normalizeBetterStackHistory(items) {
+  if (!Array.isArray(items)) throw new UpstreamInvalidResponseError();
+
+  const days = new Set();
+  const history = items.map((item) => {
+    if (
+      !item || typeof item !== "object" || Array.isArray(item) ||
+      typeof item.day !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(item.day) ||
+      !Number.isFinite(Date.parse(`${item.day}T00:00:00.000Z`)) ||
+      new Date(`${item.day}T00:00:00.000Z`).toISOString().slice(0, 10) !== item.day ||
+      days.has(item.day) || !isBetterStackStatus(item.status) ||
+      !Number.isFinite(item.downtime_duration) || item.downtime_duration < 0 ||
+      !Number.isFinite(item.maintenance_duration) || item.maintenance_duration < 0
+    ) {
+      throw new UpstreamInvalidResponseError();
+    }
+
+    days.add(item.day);
+    // Provider padding and paused days are unobserved, but still require full validation.
+    if (item.status === "not_monitored") return null;
+    return {
+      date: item.day,
+      status: BETTER_STACK_STATUS_MAP[item.status],
+      downtimeSeconds: item.downtime_duration,
+      maintenanceSeconds: item.maintenance_duration,
+    };
+  });
+
+  // Validate every source record before filtering/trimming; never fill gaps or invent days.
+  const observedHistory = history.filter((item) => item !== null);
+  observedHistory.sort((left, right) => left.date.localeCompare(right.date));
+  return observedHistory.slice(-SYSTEM_STATUS_HISTORY_WINDOW_DAYS);
+}
+
+function normalizeBetterStackStatusPage(data) {
+  if (
+    !data || typeof data !== "object" || Array.isArray(data) ||
+    data.data?.type !== "status_page" || !Array.isArray(data.included)
+  ) {
+    throw new UpstreamInvalidResponseError();
+  }
+
+  let hasInvalidComponent = false;
+  const components = BETTER_STACK_RESOURCES.map((definition) => {
+    const matches = data.included.filter((item) =>
+      item?.type === "status_page_resource" &&
+      item.attributes?.public_name === definition.publicName
+    );
+
+    try {
+      const attributes = matches[0]?.attributes;
+      const availabilityPercent = normalizeBetterStackAvailability(attributes?.availability);
+      if (
+        matches.length !== 1 || attributes?.resource_type !== "Monitor" ||
+        !isBetterStackStatus(attributes.status) || availabilityPercent === null
+      ) {
+        throw new UpstreamInvalidResponseError();
+      }
+
+      const history = normalizeBetterStackHistory(attributes.status_history);
+      return {
+        id: definition.id,
+        status: BETTER_STACK_STATUS_MAP[attributes.status],
+        availabilityPercent,
+        observedDays: history.length,
+        historyStartDate: history[0]?.date ?? null,
+        historyEndDate: history.at(-1)?.date ?? null,
+        history,
+      };
+    } catch {
+      hasInvalidComponent = true;
+      return unknownSystemHistoryComponent(definition);
+    }
+  });
+
+  return { components, hasInvalidComponent };
+}
+
+function systemHistoryResponse(components) {
+  const complete = components.every((component) =>
+    component.status !== "unknown" && component.availabilityPercent !== null &&
+    component.history.every((item) => item.status !== "unknown")
+  );
+  return jsonResponse(
+    {
+      ok: complete,
+      source: "better_stack",
+      complete,
+      windowDays: SYSTEM_STATUS_HISTORY_WINDOW_DAYS,
+      components: components.map((component) => ({
+        ...component,
+        availabilityPercent: component.availabilityPercent === null
+          ? null
+          : Number(component.availabilityPercent.toFixed(8)),
+      })),
+      // Fetch completion time, not a monitor check time or status-page updated_at.
+      fetchedAt: new Date().toISOString(),
+    },
+    {
+      "Cache-Control": complete
+        ? `public, max-age=${SYSTEM_STATUS_HISTORY_CACHE_TTL_SECONDS}`
+        : "no-store",
+      "X-Cache": complete ? "MISS" : "BYPASS",
+    }
+  );
+}
+
+async function handleSystemStatusHistory(request, env, ctx) {
+  try {
+    // Validate configuration before cache lookup, and isolate caches by configuration.
+    const upstreamUrl = getBetterStackStatusPageUrl(env);
+    const cache = caches.default;
+    const cacheKey = new Request(
+      new URL(request.url).origin + SYSTEM_STATUS_HISTORY_ROUTE +
+      "?v1&source=" + encodeURIComponent(upstreamUrl)
+    );
+    const cachedResponse = await cache.match(cacheKey);
+    if (cachedResponse) {
+      const response = new Response(cachedResponse.body, cachedResponse);
+      response.headers.set("X-Cache", "HIT");
+      return response;
+    }
+
+    const data = await withUpstreamDeadline(
+      SYSTEM_STATUS_HISTORY_DEADLINE_MS,
+      async (signal) => {
+        const response = await fetch(upstreamUrl, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "User-Agent": "huihui.dev system-status-history worker",
+          },
+          redirect: "manual",
+          // Workers have no browser credentials mode; never copy inbound headers.
+          cache: "no-store",
+          signal,
+        });
+        if (!response.ok) {
+          await cancelBody(response.body);
+          throw new UpstreamHttpStatusError(response.status);
+        }
+        return readResponseJsonWithLimit(response, SYSTEM_STATUS_HISTORY_RESPONSE_MAX_BYTES);
+      }
+    );
+    const { components, hasInvalidComponent } = normalizeBetterStackStatusPage(data);
+    if (hasInvalidComponent) {
+      warnUpstreamFailure(
+        SYSTEM_STATUS_HISTORY_ROUTE,
+        SYSTEM_STATUS_HISTORY_UPSTREAM,
+        new UpstreamInvalidResponseError()
+      );
+    }
+
+    const response = systemHistoryResponse(components);
+    if (response.headers.get("X-Cache") === "MISS") {
+      ctx.waitUntil(cache.put(cacheKey, response.clone()).catch(() => {
+        errorUnhandledFailure(SYSTEM_STATUS_HISTORY_ROUTE);
+      }));
+    }
+    return response;
+  } catch (error) {
+    if (!(error instanceof WorkerConfigurationError)) {
+      warnUpstreamFailure(SYSTEM_STATUS_HISTORY_ROUTE, SYSTEM_STATUS_HISTORY_UPSTREAM, error);
+    }
+    return systemHistoryResponse(BETTER_STACK_RESOURCES.map(unknownSystemHistoryComponent));
+  }
 }
 
 /* =========================
@@ -1817,6 +2056,10 @@ async function routeRequest(request, env, ctx) {
     return handleReadOnlyRoute(request, () => handleSystemStatus(env));
   }
 
+  if (url.pathname === SYSTEM_STATUS_HISTORY_ROUTE) {
+    return handleReadOnlyRoute(request, () => handleSystemStatusHistory(request, env, ctx));
+  }
+
   if (url.pathname === "/api/health") {
     return handleReadOnlyRoute(request, handleApiHealth);
   }
@@ -1855,6 +2098,7 @@ async function routeRequest(request, env, ctx) {
         "/api/tech-news",
         "/api/infrastructure-status",
         "/api/system-status",
+        "/api/system-status/history",
         "/api/health",
         "/api/contact/health",
         "/api/apod",
