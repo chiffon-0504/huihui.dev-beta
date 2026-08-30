@@ -1218,6 +1218,8 @@ function normalizeBetterStackHistory(items) {
     }
 
     days.add(item.day);
+    // Provider padding and paused days are unobserved, but still require full validation.
+    if (item.status === "not_monitored") return null;
     return {
       date: item.day,
       status: BETTER_STACK_STATUS_MAP[item.status],
@@ -1226,9 +1228,10 @@ function normalizeBetterStackHistory(items) {
     };
   });
 
-  // Validate all returned records before trimming; never fill gaps or invent days.
-  history.sort((left, right) => left.date.localeCompare(right.date));
-  return history.slice(-SYSTEM_STATUS_HISTORY_WINDOW_DAYS);
+  // Validate every source record before filtering/trimming; never fill gaps or invent days.
+  const observedHistory = history.filter((item) => item !== null);
+  observedHistory.sort((left, right) => left.date.localeCompare(right.date));
+  return observedHistory.slice(-SYSTEM_STATUS_HISTORY_WINDOW_DAYS);
 }
 
 function normalizeBetterStackStatusPage(data) {

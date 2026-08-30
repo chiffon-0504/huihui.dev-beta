@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import worker, {
   SYSTEM_STATUS_HISTORY_DEADLINE_MS,
@@ -25,6 +26,15 @@ function day(dayValue = "2026-08-30", overrides = {}) {
     maintenance_duration: 0,
     ...overrides,
   };
+}
+
+// Better Stack pads its fixed 90-day window before a new monitor's first observation.
+function paddedHistory(lastDay = day()) {
+  return [
+    ...Array.from({ length: 89 }, (_, index) =>
+      day(new Date(Date.UTC(2026, 5, 2 + index)).toISOString().slice(0, 10), { status: "not_monitored" })),
+    lastDay,
+  ];
 }
 
 function resource(publicName, overrides = {}) {
@@ -133,6 +143,12 @@ afterEach(() => {
 });
 
 describe("Better Stack public System Status history", () => {
+  test.each(["vars", "env.beta.vars"])("configures the public non-secret URL in [%s]", (section) => {
+    const config = readFileSync(new URL("../../workers/huihui-api/wrangler.toml", import.meta.url), "utf8");
+    const vars = config.split(`[${section}]`)[1]?.split("[")[0];
+    expect(vars).toMatch(/^BETTER_STACK_STATUS_PAGE_JSON_URL = "https:\/\/huihui-dev\.betteruptime\.com\/index\.json"$/m);
+  });
+
   test("GET normalizes all three resources, ignores unrelated records, and caches only public fields", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(now));
@@ -203,7 +219,7 @@ describe("Better Stack public System Status history", () => {
 
   test.each([
     ["operational", "operational"], ["degraded", "degraded_performance"],
-    ["downtime", "major_outage"], ["maintenance", "unknown"], ["not_monitored", "unknown"],
+    ["downtime", "major_outage"], ["maintenance", "unknown"],
   ])("maps current and historical %s to %s without discarding durations", async (source, target) => {
     const payload = fixture();
     Object.assign(payload.included[0].attributes, {
@@ -279,6 +295,114 @@ describe("Better Stack public System Status history", () => {
     });
     expect(data.windowDays).toBe(90);
     expect(data.complete).toBe(true); // Schema completeness is not 90-day coverage.
+  });
+
+  test.each([
+    ["operational", "operational", 0, 0],
+    ["downtime", "major_outage", 2785.414413725, 60.25],
+  ])("omits 89 leading unobserved days and retains the one %s observation", async (source, target, downtime, maintenance) => {
+    const payload = fixture();
+    payload.included[0].attributes.status_history = paddedHistory(day(undefined, {
+      status: source, downtime_duration: downtime, maintenance_duration: maintenance,
+    }));
+    const { response, cache } = await requestHistory({ payload });
+    const data = await response.json();
+    expect(data.components[0]).toEqual({
+      ...completeComponent("website"),
+      history: [{ date: "2026-08-30", status: target, downtimeSeconds: downtime, maintenanceSeconds: maintenance }],
+    });
+    expect(data.complete).toBe(true);
+    expect(data.ok).toBe(true);
+    expect(response.headers.get("Cache-Control")).toBe("public, max-age=60");
+    expect(response.headers.get("X-Cache")).toBe("MISS");
+    expect(cache.put).toHaveBeenCalledOnce();
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  test("preserves current not_monitored as Unknown while retaining real downtime history", async () => {
+    const payload = fixture();
+    for (const item of payload.included) item.attributes.status_history = paddedHistory();
+    for (const item of payload.included.slice(1)) {
+      item.attributes.status = "not_monitored";
+      item.attributes.status_history = paddedHistory(day(undefined, { status: "downtime", downtime_duration: 2785.414413725 }));
+    }
+    const { response, cache } = await requestHistory({ payload });
+    const data = await response.json();
+    expect(data.components).toEqual([
+      completeComponent("website"),
+      ...["api", "contact"].map((id) => ({
+        ...completeComponent(id), status: "unknown",
+        history: [{ date: "2026-08-30", status: "major_outage", downtimeSeconds: 2785.414413725, maintenanceSeconds: 0 }],
+      })),
+    ]);
+    expect(data.complete).toBe(false);
+    expect(data.ok).toBe(false);
+    expectUncached(response, cache);
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  test("omits a paused day between non-contiguous observations without filling any gap", async () => {
+    const payload = fixture();
+    payload.included[0].attributes.status_history = [
+      day("2026-08-30"), day("2026-08-27", { status: "not_monitored", downtime_duration: 25, maintenance_duration: 10 }), day("2026-08-25"),
+    ];
+    const { response, cache } = await requestHistory({ payload });
+    const data = await response.json();
+    expect(data.components[0]).toEqual({
+      ...completeComponent("website"), observedDays: 2, historyStartDate: "2026-08-25",
+      history: ["2026-08-25", "2026-08-30"].map((date) => ({
+        date, status: "operational", downtimeSeconds: 0, maintenanceSeconds: 0,
+      })),
+    });
+    expect(data.complete).toBe(true);
+    expect(cache.put).toHaveBeenCalledOnce();
+  });
+
+  test.each(["operational", "not_monitored"])("all 90 unobserved days give no coverage while current %s controls completeness", async (status) => {
+    const payload = fixture();
+    Object.assign(payload.included[0].attributes, {
+      status, status_history: paddedHistory(day(undefined, { status: "not_monitored" })),
+    });
+    const { response, cache } = await requestHistory({ payload });
+    const data = await response.json();
+    expect(data.components[0]).toEqual({
+      ...unknown("website"), status: status === "operational" ? "operational" : "unknown", availabilityPercent: 99.963,
+    });
+    expect(data.complete).toBe(status === "operational");
+    expect(data.ok).toBe(status === "operational");
+    if (status === "operational") expect(cache.put).toHaveBeenCalledOnce();
+    else expectUncached(response, cache);
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    ["unshaped date", { day: "2026-6-02" }], ["impossible date", { day: "2026-02-30" }],
+    ["missing date", { day: undefined }], ["invalid month", { day: "2026-13-01" }],
+    ["negative downtime", { downtime_duration: -1 }], ["string downtime", { downtime_duration: "0" }],
+    ["missing downtime", { downtime_duration: undefined }], ["NaN downtime", { downtime_duration: NaN }],
+    ["infinite downtime", { downtime_duration: Infinity }],
+    ["negative maintenance", { maintenance_duration: -1 }], ["string maintenance", { maintenance_duration: "0" }],
+    ["missing maintenance", { maintenance_duration: undefined }], ["infinite maintenance", { maintenance_duration: Infinity }],
+  ])("validates unobserved records before filtering: %s", async (_label, overrides) => {
+    const payload = fixture();
+    payload.included[0].attributes.status_history = paddedHistory();
+    Object.assign(payload.included[0].attributes.status_history[0], overrides);
+    const { response, cache } = await requestHistory({ payload });
+    const data = await response.json();
+    expect(data.components).toEqual([unknown("website"), completeComponent("api"), completeComponent("contact")]);
+    expect(data.complete).toBe(false);
+    expectUncached(response, cache);
+    expect(warnSpy).toHaveBeenCalledWith({ event: "worker_upstream_failure", route, upstream: "better_stack_status_page", category: "invalid_response" });
+  });
+
+  test.each([
+    ["not_monitored", "not_monitored"], ["not_monitored", "operational"], ["operational", "not_monitored"],
+  ])("rejects duplicate dates across %s and %s before filtering", async (first, second) => {
+    const payload = fixture();
+    payload.included[0].attributes.status_history = [day(undefined, { status: first }), day(undefined, { status: second })];
+    const { response, cache } = await requestHistory({ payload });
+    expect((await response.json()).components[0]).toEqual(unknown("website"));
+    expectUncached(response, cache);
   });
 
   test("sorts four non-contiguous real days and never fills their gaps", async () => {
