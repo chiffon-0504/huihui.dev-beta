@@ -125,6 +125,91 @@ for (const [locale, fullDates, labels, downtime] of [
   });
 }
 
+test.describe("cross-year observed history", () => {
+  test.use({ timezoneId: "America/Los_Angeles" });
+
+  for (const [locale, statusLabel] of [["/status/", "營運正常"], ["/en/status/", "Operational"], ["/ja/status/", "正常稼働"]]) {
+    test(`${locale} exposes every year per component and wraps 90 observations without overflow`, async ({ page }) => {
+      const sameYear = systemStatusHistoryFixture(["2026-08-20", "2026-08-24", "2026-08-30"].map((date) => ({
+        date, status: "operational", downtimeSeconds: 0, maintenanceSeconds: 0,
+      }))).components[1];
+      let fixture;
+      await stubHomeApis(page, null, (route) => route.fulfill({ json: fixture }));
+      for (const dates of [
+        ["2024-08-30", "2025-08-30", "2027-08-30"],
+        Array.from({ length: 90 }, (_, index) => new Date(Date.UTC(2024, 10, 10 + index)).toISOString().slice(0, 10)),
+      ]) {
+        fixture = systemStatusHistoryFixture(dates.map((date, index) => ({
+          date, status: historyStates[index % historyStates.length], downtimeSeconds: 7278, maintenanceSeconds: 125,
+        })));
+        fixture.components[1] = sameYear;
+        const expectedLabels = dates.map((date) => {
+          const [year, month, day] = date.split("-").map(Number);
+          return locale === "/en/status/" ? `${month}/${day}/${year}` : `${year}/${month}/${day}`;
+        });
+        expect(new Set(expectedLabels).size).toBe(dates.length);
+        for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+          await page.emulateMedia({ forcedColors: "none" });
+          await page.setViewportSize(viewport);
+          await page.goto(locale);
+          await expect(page.locator("#systemStatusHistory")).toHaveAttribute("data-history-state", "ready");
+          await expect(page.locator(".system-status-history-cell")).toHaveCount(dates.length * 2 + 3);
+          for (const id of ["website", "contact"]) {
+            const card = page.locator(`.system-status-history-card[data-component="${id}"]`);
+            const cells = card.locator(".system-status-history-cell");
+            await expect(cells).toHaveCount(dates.length);
+            await expect(cells.locator("time")).toHaveText(expectedLabels);
+            expect(await cells.locator("time").evaluateAll((items) => items.map((item) => item.dateTime))).toEqual(dates);
+            expect(await cells.evaluateAll((items) => items.map((item) => item.dataset.date))).toEqual(dates);
+            await expect(cells.locator(".status-symbol")).toHaveText(dates.map((_, index) => ["●", "▲", "◐", "✕", "?"][index % 5]));
+            const geometry = await cells.evaluateAll((items) => items.map((cell) => {
+              const date = cell.querySelector("time");
+              const bounds = cell.getBoundingClientRect();
+              const dateBounds = date.getBoundingClientRect();
+              return {
+                width: bounds.width, height: bounds.height, top: bounds.top,
+                fits: dateBounds.width > 0 && dateBounds.height > 0 && dateBounds.left >= bounds.left &&
+                  dateBounds.right <= bounds.right && cell.scrollWidth <= cell.clientWidth + 1,
+                font: parseFloat(getComputedStyle(date).fontSize),
+              };
+            }));
+            expect(geometry.every((cell) => cell.width === 88 && cell.height === 52 && cell.fits && cell.font >= 12)).toBe(true);
+            if (dates.length === 90) expect(new Set(geometry.map((cell) => cell.top)).size).toBeGreaterThan(1);
+            const first = cells.first();
+            await expect(first.locator("time")).toBeVisible();
+            await expect(first.locator("time")).toHaveAttribute("aria-hidden", "true");
+            const description = first.locator(".system-status-history-cell-text");
+            await expect(description).toContainText("2024");
+            await expect(description).toContainText(statusLabel);
+            const fullText = await description.textContent();
+            expect(fullText.split(" · ")).toHaveLength(4);
+            await expect(first).toMatchAriaSnapshot(`- listitem: ${JSON.stringify(fullText)}`);
+          }
+          const sameYearCells = page.locator('.system-status-history-card[data-component="api"] .system-status-history-cell');
+          await expect(sameYearCells.locator("time")).toHaveText(["8/20", "8/24", "8/30"]);
+          expect(await sameYearCells.evaluateAll((items) => items.every((cell) => cell.getBoundingClientRect().width === 48))).toBe(true);
+          await expectNoHorizontalOverflow(page);
+          await page.emulateMedia({ forcedColors: "active" });
+          const forcedCells = page.locator('.system-status-history-card[data-component="website"] .system-status-history-cell');
+          await expect(forcedCells.locator("time")).toHaveText(expectedLabels);
+          for (let index = 0; index < Math.min(dates.length, 5); index += 1) {
+            const cell = forcedCells.nth(index);
+            await expect(cell.locator("time")).toBeVisible();
+            await expect(cell.locator(".status-symbol")).toBeVisible();
+            const style = await cell.evaluate((item) => ({ color: getComputedStyle(item).color, background: getComputedStyle(item).backgroundColor }));
+            expect(style.color).not.toBe(style.background);
+            await expect(cell).toHaveCSS("border-top-width", "1px");
+            await expect(cell).toHaveCSS("border-top-style", "solid");
+            await expect(cell.locator("time")).toHaveCSS("color", style.color);
+            await expect(cell.locator(".status-symbol")).toHaveCSS("color", style.color);
+          }
+          await expectNoHorizontalOverflow(page);
+        }
+      }
+    });
+  }
+});
+
 test("mixed incomplete history renders only returned dates, all states, impact durations and separate timestamps", async ({ page }) => {
   const fixture = mixedHistory();
   fixture.components[0].availabilityPercent = 99.98765432;

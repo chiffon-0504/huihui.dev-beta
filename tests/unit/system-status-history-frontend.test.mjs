@@ -20,6 +20,19 @@ function validate(payload, mutation = "") {
 const record = (date, status = "operational") => ({ date, status, downtimeSeconds: 0, maintenanceSeconds: 0 });
 
 describe("compact history cell dates", () => {
+  test.each(["zh", "en", "ja"])("%s includes a numeric four-digit year only when requested for cross-year history", (locale) => {
+    const scope = context(locale);
+    const labels = [];
+    for (const year of [2024, 2025, 2027]) {
+      scope.date = `${year}-08-30`;
+      const label = vm.runInContext("formatSystemStatusHistoryCellDate(date, true)", scope);
+      expect(label).toBe(locale === "en" ? `8/30/${year}` : `${year}/8/30`);
+      expect(vm.runInContext("formatSystemStatusHistoryCellDate(date, false)", scope)).toBe("8/30");
+      labels.push(label);
+    }
+    expect(new Set(labels).size).toBe(3);
+  });
+
   test.each(["zh", "en", "ja"])("%s formats calendar dates compactly, including month and year boundaries", (locale) => {
     const scope = context(locale);
     for (const [date, expected] of [

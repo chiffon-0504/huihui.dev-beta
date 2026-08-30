@@ -824,8 +824,9 @@ function formatSystemStatusHistoryDate(value) {
   }).format(new Date(`${value}T00:00:00.000Z`));
 }
 
-function formatSystemStatusHistoryCellDate(value) {
+function formatSystemStatusHistoryCellDate(value, includeYear = false) {
   return new Intl.DateTimeFormat(getSystemStatusHistoryLocale(), {
+    year: includeYear ? "numeric" : undefined,
     month: "numeric", day: "numeric", timeZone: "UTC",
   }).format(new Date(`${value}T00:00:00.000Z`));
 }
@@ -895,12 +896,14 @@ function createSystemStatusHistoryCard(component) {
     const strip = document.createElement("ol");
     strip.className = "system-status-history-strip";
     strip.setAttribute("aria-label", getSystemStatusText("history.chronological"));
+    const crossYear = component.history[0].date.slice(0, 4) !== component.history.at(-1).date.slice(0, 4);
+    if (crossYear) strip.dataset.crossYear = "true";
     component.history.forEach((record) => {
       const cell = document.createElement("li");
       cell.className = "system-status-history-cell";
       cell.dataset.status = record.status;
       cell.dataset.date = record.date;
-      const date = createSystemStatusHistoryText("time", "system-status-history-cell-date", formatSystemStatusHistoryCellDate(record.date));
+      const date = createSystemStatusHistoryText("time", "system-status-history-cell-date", formatSystemStatusHistoryCellDate(record.date, crossYear));
       date.dateTime = record.date;
       date.setAttribute("aria-hidden", "true");
       const symbol = createSystemStatusHistoryText("span", "status-symbol", SYSTEM_STATUS_SYMBOLS[record.status]);

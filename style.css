@@ -1399,6 +1399,10 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   background: rgba(255, 255, 255, 0.46);
 }
 
+.system-status-history-strip[data-cross-year="true"] .system-status-history-cell {
+  flex-basis: 88px;
+}
+
 .system-status-history-cell-date {
   font-size: 0.8rem;
   font-weight: 600;
