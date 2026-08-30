@@ -19,6 +19,28 @@ function validate(payload, mutation = "") {
 
 const record = (date, status = "operational") => ({ date, status, downtimeSeconds: 0, maintenanceSeconds: 0 });
 
+describe("history service-impact evidence", () => {
+  const cases = [
+    ["operational", false],
+    ["unknown", false],
+    ["degraded_performance", true],
+    ["partial_outage", true],
+    ["major_outage", true],
+  ].flatMap(([status, zeroDurationImpact]) => [
+    { status, downtimeSeconds: 0, maintenanceSeconds: 0, expected: zeroDurationImpact },
+    { status, downtimeSeconds: 0.5, maintenanceSeconds: 0, expected: true },
+    { status, downtimeSeconds: 0, maintenanceSeconds: 0.5, expected: true },
+    { status, downtimeSeconds: 120, maintenanceSeconds: 60, expected: true },
+  ]);
+
+  test.each(cases)("$status with downtime=$downtimeSeconds maintenance=$maintenanceSeconds has impact=$expected", ({ expected, ...fields }) => {
+    const scope = context();
+    scope.record = Object.freeze({ date: "2026-08-30", ...fields });
+    expect(vm.runInContext("hasSystemStatusHistoryImpact(record)", scope)).toBe(expected);
+    expect(scope.record).toEqual({ date: "2026-08-30", ...fields });
+  });
+});
+
 describe("frontend history contract", () => {
   test("accepts complete one-day and gapped observations without requiring 90 days or padding", () => {
     for (const records of [[record("2026-08-30")], [record("2024-02-29"), record("2026-08-30")]]) {

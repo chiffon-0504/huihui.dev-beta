@@ -840,6 +840,12 @@ function formatSystemStatusHistoryDuration(seconds) {
   return parts.join(" ");
 }
 
+function hasSystemStatusHistoryImpact(record) {
+  return record.status === "degraded_performance" ||
+    record.status === "partial_outage" || record.status === "major_outage" ||
+    record.downtimeSeconds > 0 || record.maintenanceSeconds > 0;
+}
+
 function getSystemStatusHistoryImpactText(record) {
   const parts = [];
   if (record.downtimeSeconds > 0) {
@@ -899,8 +905,7 @@ function createSystemStatusHistoryCard(component) {
   }
 
   card.append(createSystemStatusHistoryText("h4", "", getSystemStatusText("history.recentImpact")));
-  const impacts = component.history.filter((record) =>
-    record.status !== "operational" || record.downtimeSeconds > 0 || record.maintenanceSeconds > 0);
+  const impacts = component.history.filter(hasSystemStatusHistoryImpact);
   if (impacts.length === 0) {
     card.append(createSystemStatusHistoryText("p", "system-status-history-empty", getSystemStatusText("history.noImpact")));
   } else {

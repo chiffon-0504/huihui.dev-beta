@@ -101,13 +101,14 @@ test("mixed incomplete history renders only returned dates, all states, impact d
   await expect(cells.locator(".status-symbol")).toHaveText(["●", "▲", "◐", "✕", "?"]);
   await expect(cells.nth(3)).toContainText("Aug 26, 2026 · Major Outage · Downtime: 2 hr 1 min 18 sec");
   const impact = website.locator(".system-status-history-impacts");
-  await expect(impact.locator("li")).toHaveCount(4);
-  await expect(impact).toContainText("Unknown");
+  await expect(impact.locator("li")).toHaveCount(3);
+  await expect(impact).not.toContainText("Unknown");
+  await expect(cells.nth(4)).toContainText("Unknown");
   await expect(impact).toContainText("Maintenance: 2 min 5 sec");
   await expect(impact).toContainText("Downtime: 2 hr 1 min 18 sec");
-  await expect(history.locator('[data-component="contact"] .system-status-history-impacts li')).toHaveCount(5);
+  await expect(history.locator('[data-component="contact"] .system-status-history-impacts li')).toHaveCount(4);
   await expect(history.locator('[data-component="contact"] .system-status-history-impacts li').last()).toContainText("OperationalMaintenance: 30 sec");
-  expect(await impact.locator("time").evaluateAll((items) => items.map((item) => item.dateTime))).toEqual(["2026-08-28", "2026-08-26", "2026-08-24", "2026-08-22"]);
+  expect(await impact.locator("time").evaluateAll((items) => items.map((item) => item.dateTime))).toEqual(["2026-08-26", "2026-08-24", "2026-08-22"]);
   await expect(history.locator(".system-status-history-fetched")).toContainText("History fetched:");
   await expect(page.locator(".system-status-checked-at")).toContainText("Last checked:");
   await expect(page.locator(".system-status-detail")).toHaveAttribute("data-status", "operational");
@@ -115,6 +116,83 @@ test("mixed incomplete history renders only returned dates, all states, impact d
   await expect(history.locator(".system-status-history-content [role=status], .system-status-history-content [aria-live]")).toHaveCount(0);
   await expect(history.locator(".system-status-history-content")).not.toHaveAttribute("aria-live", /.+/);
 });
+
+test("history service impacts require status or duration evidence without removing chronological cells", async ({ page }) => {
+  const cases = [
+    ["operational", 0, 0, false],
+    ["unknown", 0, 0, false],
+    ["unknown", 0.5, 0, true],
+    ["unknown", 0, 0.5, true],
+    ["degraded_performance", 0, 0, true],
+    ["partial_outage", 0, 0, true],
+    ["major_outage", 0, 0, true],
+    ["operational", 60, 0, true],
+    ["operational", 0, 120, true],
+    ["unknown", 60, 120, true],
+  ];
+  const records = cases.map(([status, downtimeSeconds, maintenanceSeconds], index) => ({
+    date: `2026-08-${20 + index}`, status, downtimeSeconds, maintenanceSeconds,
+  }));
+  const fixture = systemStatusHistoryFixture(records);
+  await stubHomeApis(page, null, (route) => route.fulfill({ json: fixture }));
+  await page.goto("/en/status/");
+  const history = page.locator("#systemStatusHistory");
+  await expect(history).toHaveAttribute("data-history-state", "ready");
+  await expect(history.locator(".system-status-history-notice")).toHaveCount(1);
+  for (const id of ["website", "api", "contact"]) {
+    const card = history.locator(`[data-component="${id}"]`);
+    await expect(card.getByRole("heading", { level: 4 })).toHaveText("Recent service impact");
+    const cells = card.locator(".system-status-history-cell");
+    await expect(cells).toHaveCount(records.length);
+    expect(await cells.evaluateAll((items) => items.map((item) => [item.dataset.date, item.dataset.status]))).toEqual(
+      records.map((item) => [item.date, item.status]),
+    );
+    await expect(cells.nth(1)).toContainText("Unknown");
+    await expect(cells.nth(1).locator(".status-symbol")).toHaveText("?");
+    const impacts = card.locator(".system-status-history-impacts li");
+    const expected = records.filter((_, index) => cases[index][3]).reverse();
+    expect(await impacts.evaluateAll((items) => items.map((item) => [
+      item.querySelector("time").dateTime, item.querySelector(".status-chip").dataset.status,
+    ]))).toEqual(expected.map((item) => [item.date, item.status]));
+    await expect(impacts.filter({ has: page.locator('time[datetime="2026-08-22"]') })).toContainText("Downtime: Less than 1 sec");
+    await expect(impacts.filter({ has: page.locator('time[datetime="2026-08-23"]') })).toContainText("Maintenance: Less than 1 sec");
+    await expect(impacts.filter({ has: page.locator('time[datetime="2026-08-27"]') })).toContainText("Downtime: 1 min");
+    await expect(impacts.filter({ has: page.locator('time[datetime="2026-08-28"]') })).toContainText("Maintenance: 2 min");
+  }
+  await expect(page.locator(".system-status-detail")).toHaveAttribute("data-status", "operational");
+});
+
+for (const [locale, heading, empty, unknown] of [
+  ["/status/", "近期服務影響", "已觀測的歷史紀錄中，沒有服務受影響的日期。", "未知"],
+  ["/en/status/", "Recent service impact", "No service-impact days in the observed history.", "Unknown"],
+  ["/ja/status/", "最近のサービス影響", "観測履歴にサービスへの影響があった日はありません。", "不明"],
+]) {
+  test(`${locale} evidence-free history retains Unknown cells and localizes the no-service-impact state`, async ({ page }) => {
+    const fixture = systemStatusHistoryFixture([
+      { date: "2026-08-29", status: "operational", downtimeSeconds: 0, maintenanceSeconds: 0 },
+      { date: "2026-08-30", status: "unknown", downtimeSeconds: 0, maintenanceSeconds: 0 },
+    ]);
+    await stubHomeApis(page, null, (route) => route.fulfill({ json: fixture }));
+    await page.goto(locale);
+    const history = page.locator("#systemStatusHistory");
+    await expect(history).toHaveAttribute("data-history-state", "ready");
+    await expect(history.locator(".system-status-history-notice")).toHaveCount(1);
+    await expect(history.locator(".system-status-history-impacts")).toHaveCount(0);
+    for (const id of ["website", "api", "contact"]) {
+      const card = history.locator(`[data-component="${id}"]`);
+      await expect(card.getByRole("heading", { level: 4 })).toHaveText(heading);
+      await expect(card.locator(".system-status-history-empty")).toHaveText(empty);
+      await expect(card.locator(".system-status-history-cell")).toHaveCount(2);
+      const unknownCell = card.locator('.system-status-history-cell[data-status="unknown"]');
+      await expect(unknownCell).toHaveAttribute("data-date", "2026-08-30");
+      await expect(unknownCell).toContainText(unknown);
+      await expect(unknownCell.locator(".status-symbol")).toBeVisible();
+      await expect(unknownCell.locator(".status-symbol")).toHaveText("?");
+      await expect(card.locator(".system-status-history-summary")).toContainText("100%");
+    }
+    await expect(page.locator(".system-status-detail")).toHaveAttribute("data-status", "operational");
+  });
+}
 
 for (const [name, mutate] of [
   ["contradictory false/true", (data) => { data.ok = false; }],
