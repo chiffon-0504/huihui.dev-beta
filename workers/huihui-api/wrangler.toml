@@ -11,6 +11,8 @@ invocation_logs = false
 
 [vars]
 WORKER_ENV = "production"
+# Optional public non-secret URL: BETTER_STACK_STATUS_PAGE_JSON_URL.
+# Set the real published HTTPS /index.json URL here when supplied; no invented default.
 
 [env.beta]
 name = "huihui-api-beta"
@@ -18,6 +20,8 @@ workers_dev = true
 
 [env.beta.vars]
 WORKER_ENV = "beta"
+# BETTER_STACK_STATUS_PAGE_JSON_URL must be set separately here for beta.
+# It uses the same production monitors, never beta Website/API/Contact monitors.
 
 [env.beta.observability]
 enabled = true
