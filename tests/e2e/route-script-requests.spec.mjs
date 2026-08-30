@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { systemStatusFixture, systemStatusHistoryFixture } from "../support/system-status.mjs";
+import { systemStatusFixture, systemStatusHistoryFixture, systemStatusIncidentsFixture } from "../support/system-status.mjs";
 
 const localOrigin = "http://127.0.0.1:4173";
 const sharedScripts = [
@@ -99,6 +99,8 @@ async function stubExternalDependencies(page) {
           ? systemStatusFixture()
         : pathname === "/api/system-status/history"
           ? systemStatusHistoryFixture([])
+        : pathname === "/api/system-status/incidents"
+          ? systemStatusIncidentsFixture()
         : null;
 
     return route.fulfill({

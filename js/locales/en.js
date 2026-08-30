@@ -76,6 +76,17 @@ window.HUIHUI_I18N.en = {
     }
   },
   systemStatus: {
+    incidents: {
+      title: "Incidents & Status Updates",
+      intro: "Public incident and status updates from Better Stack, separate from current health and daily availability history above.",
+      loading: "Loading incident history…",
+      loaded: "Incident history loaded.",
+      unavailable: "Incident history is currently unavailable.",
+      empty: "No incidents or status updates are currently available.",
+      fetched: "Last fetched",
+      viewReport: "View status report",
+      chronological: "Status updates, oldest to newest",
+    },
     history: {
       title: "Availability & History",
       intro: "Independent external observations from Better Stack. Availability is provider-reported; coverage includes only the observed days below, not necessarily 90 days. Current health above is checked separately.",

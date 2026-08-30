@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { systemStatusFixture, systemStatusHistoryFixture } from "../support/system-status.mjs";
+import { systemStatusFixture, systemStatusHistoryFixture, systemStatusIncidentsFixture } from "../support/system-status.mjs";
 
 const apiOrigin = "https://api.huihui.dev";
 const localeCases = [
@@ -29,6 +29,11 @@ const localeCases = [
 async function stubHomeApis(page, handleSystemStatus, handleHistory) {
   await page.route(`${apiOrigin}/**`, async (route) => {
     const pathname = new URL(route.request().url()).pathname;
+
+    if (pathname === "/api/system-status/incidents") {
+      await route.fulfill({ json: systemStatusIncidentsFixture() });
+      return;
+    }
 
     if (pathname === "/api/system-status/history") {
       if (handleHistory) await handleHistory(route);

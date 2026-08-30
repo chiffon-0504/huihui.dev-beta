@@ -1461,6 +1461,106 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   }
 }
 
+/* Public reports are normal content; only their concise lifecycle is live. */
+.system-status-incidents,
+.system-status-incidents-content,
+.system-status-incident,
+.system-status-incident header {
+  display: grid;
+  min-width: 0;
+  gap: 18px;
+  overflow-wrap: anywhere;
+}
+
+.system-status-incidents h2,
+.system-status-incidents h3,
+.system-status-incidents p {
+  margin: 0;
+}
+
+.system-status-incidents h2 { font-size: 1.25rem; }
+.system-status-incidents h3 { font-size: 1.05rem; line-height: 1.6; }
+
+.system-status-incidents-intro,
+.system-status-incidents-fetched,
+.system-status-incident time {
+  color: var(--ink-muted, #526074);
+  font-size: 0.88rem;
+  line-height: 1.7;
+}
+
+.system-status-incident,
+.system-status-incidents-message {
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.34);
+  box-shadow: 0 12px 36px rgba(29, 43, 73, 0.08);
+  backdrop-filter: blur(24px) saturate(145%);
+  -webkit-backdrop-filter: blur(24px) saturate(145%);
+  line-height: 1.7;
+}
+
+.system-status-incidents-message:empty { display: none; }
+
+.system-status-incidents-announcement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.system-status-incident-link {
+  justify-self: start;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.system-status-incident-updates {
+  display: grid;
+  gap: 20px;
+  margin: 0;
+  padding-inline-start: 24px;
+}
+
+.system-status-incident-updates li {
+  min-width: 0;
+  padding-inline-start: 12px;
+  border-inline-start: 2px solid rgba(77, 86, 101, 0.3);
+}
+
+.system-status-incident-message {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+}
+
+@media (forced-colors: active) {
+  .system-status-incidents {
+    /* Preserve system colors through the existing shared !important text tokens. */
+    --content-text-main: CanvasText;
+    --content-text-muted: CanvasText;
+  }
+
+  .system-status-incident,
+  .system-status-incidents-message {
+    border-color: CanvasText;
+    background: Canvas;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .system-status-incidents p,
+  .system-status-incident time { color: CanvasText; }
+  .system-status-incident-updates li { border-color: CanvasText; }
+  .system-status-incident-link { color: LinkText; border-color: LinkText; }
+  .system-status-incident-link:focus-visible { outline: 2px solid Highlight; outline-offset: 4px; }
+}
+
 /* =========================
    Early Responsive Overrides
    Competes with later mobile drawer, posts safety, safe header, and unified

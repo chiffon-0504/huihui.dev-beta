@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { systemStatusFixture, systemStatusHistoryFixture } from "../support/system-status.mjs";
+import { systemStatusFixture, systemStatusHistoryFixture, systemStatusIncidentsFixture } from "../support/system-status.mjs";
 
 const localOrigin = "http://127.0.0.1:4173";
 const apiOrigins = [
@@ -91,6 +91,7 @@ async function preparePage(page) {
     }
     if (pathname === "/api/system-status") return systemStatusFixture();
     if (pathname === "/api/system-status/history") return systemStatusHistoryFixture();
+    if (pathname === "/api/system-status/incidents") return systemStatusIncidentsFixture();
     if (pathname === "/api/steam-library") return { ok: true, games: [] };
     return null;
   };
@@ -152,9 +153,12 @@ test("localized status histories remain separate from current health", async ({ 
     await expect(page.locator("#systemStatusHistory")).toHaveAttribute("data-history-state", "ready");
     await expect(page.locator(".system-status-history-cell")).toHaveCount(3);
     await expect(page.locator(".system-status-history-cell .status-symbol")).toHaveText(["●", "●", "●"]);
+    await expect(page.locator("#systemStatusIncidents")).toHaveAttribute("data-incidents-state", "ready");
+    await expect(page.locator(".system-status-incidents-message")).toBeVisible();
+    await expect(page.locator(".system-status-incident")).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
   }
-  expect(state.apiRequests).toEqual(Array(3).fill(["/api/system-status", "/api/system-status/history"]).flat());
+  expect(state.apiRequests).toEqual(Array(3).fill(["/api/system-status", "/api/system-status/history", "/api/system-status/incidents"]).flat());
   expectNoDiagnostics(state);
 });
 
