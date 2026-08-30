@@ -19,6 +19,19 @@ function validate(payload, mutation = "") {
 
 const record = (date, status = "operational") => ({ date, status, downtimeSeconds: 0, maintenanceSeconds: 0 });
 
+describe("compact history cell dates", () => {
+  test.each(["zh", "en", "ja"])("%s formats calendar dates compactly, including month and year boundaries", (locale) => {
+    const scope = context(locale);
+    for (const [date, expected] of [
+      ["2026-08-20", "8/20"], ["2026-08-24", "8/24"], ["2026-08-30", "8/30"],
+      ["2026-12-31", "12/31"], ["2027-01-01", "1/1"], ["2024-02-29", "2/29"],
+    ]) {
+      scope.date = date;
+      expect(vm.runInContext("formatSystemStatusHistoryCellDate(date)", scope)).toBe(expected);
+    }
+  });
+});
+
 describe("history service-impact evidence", () => {
   const cases = [
     ["operational", false],

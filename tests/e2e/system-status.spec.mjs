@@ -81,6 +81,50 @@ const mixedHistory = () => systemStatusHistoryFixture(historyStates.map((status,
   maintenanceSeconds: status === "degraded_performance" ? 125 : 0,
 })));
 
+for (const [locale, fullDates, labels, downtime] of [
+  ["/status/", ["2026年8月20日", "2026年8月24日", "2026年8月30日"], ["營運正常", "未知", "重大中斷"], "停機時間"],
+  ["/en/status/", ["Aug 20, 2026", "Aug 24, 2026", "Aug 30, 2026"], ["Operational", "Unknown", "Major Outage"], "Downtime"],
+  ["/ja/status/", ["2026/08/20", "2026/08/24", "2026/08/30"], ["正常稼働", "不明", "重大な障害"], "停止時間"],
+]) {
+  test(`${locale} gapped history exposes compact dates without interaction or synthesized cells`, async ({ page }) => {
+    const records = [
+      { date: "2026-08-20", status: "operational", downtimeSeconds: 0, maintenanceSeconds: 0 },
+      { date: "2026-08-24", status: "unknown", downtimeSeconds: 0, maintenanceSeconds: 0 },
+      { date: "2026-08-30", status: "major_outage", downtimeSeconds: 7278, maintenanceSeconds: 0 },
+    ];
+    await stubHomeApis(page, null, (route) => route.fulfill({ json: systemStatusHistoryFixture(records) }));
+    for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+      await page.setViewportSize(viewport);
+      await page.goto(locale);
+      const history = page.locator("#systemStatusHistory");
+      await expect(history).toHaveAttribute("data-history-state", "ready");
+      await expect(history.locator(".system-status-history-cell")).toHaveCount(9);
+      for (const id of ["website", "api", "contact"]) {
+        const cells = history.locator(`[data-component="${id}"] .system-status-history-cell`);
+        await expect(cells).toHaveCount(3);
+        await expect(cells.locator(".system-status-history-cell-date")).toHaveText(["8/20", "8/24", "8/30"]);
+        await expect(cells.locator(".status-symbol")).toHaveText(["●", "?", "✕"]);
+        for (let index = 0; index < records.length; index += 1) {
+          const cell = cells.nth(index);
+          const date = cell.locator("time.system-status-history-cell-date");
+          await expect(cell).toHaveAttribute("data-date", records[index].date);
+          await expect(date).toHaveAttribute("datetime", records[index].date);
+          await expect(date).toHaveAttribute("aria-hidden", "true");
+          await expect(date).toBeVisible();
+          await expect(date).toHaveCSS("clip-path", "none");
+          await expect(cell.locator(".status-symbol")).toBeVisible();
+          const description = cell.locator(".system-status-history-cell-text");
+          await expect(description).toContainText(`${fullDates[index]} · ${labels[index]}`);
+          const fullText = await description.textContent();
+          await expect(cell).toMatchAriaSnapshot(`- listitem: ${JSON.stringify(fullText)}`);
+        }
+        await expect(cells.last().locator(".system-status-history-cell-text")).toContainText(`${downtime}:`);
+      }
+      await expectNoHorizontalOverflow(page);
+    }
+  });
+}
+
 test("mixed incomplete history renders only returned dates, all states, impact durations and separate timestamps", async ({ page }) => {
   const fixture = mixedHistory();
   fixture.components[0].availabilityPercent = 99.98765432;
@@ -425,6 +469,25 @@ test("90-day strips wrap at desktop/mobile sizes and forced colors retain symbol
     })));
     expect(new Set(cardGeometry.map((card) => card.x)).size).toBe(1);
     expect(new Set(cardGeometry.map((card) => card.width)).size).toBe(1);
+    for (const id of ["website", "api", "contact"]) {
+      const cells = page.locator(`[data-component="${id}"] .system-status-history-cell`);
+      await expect(cells).toHaveCount(90);
+      const geometry = await cells.evaluateAll((items) => items.map((cell) => {
+        const date = cell.querySelector(".system-status-history-cell-date");
+        return {
+          width: cell.getBoundingClientRect().width, top: cell.getBoundingClientRect().top,
+          dateWidth: date.getBoundingClientRect().width, dateHeight: date.getBoundingClientRect().height,
+          dateFont: parseFloat(getComputedStyle(date).fontSize),
+          fits: date.scrollWidth <= date.clientWidth + 1 && cell.scrollWidth <= cell.clientWidth + 1,
+        };
+      }));
+      expect(new Set(geometry.map((cell) => cell.top)).size).toBeGreaterThan(1);
+      expect(geometry.every((cell) => cell.width >= 40 && cell.width <= 50 &&
+        cell.dateWidth > 0 && cell.dateHeight > 0 && cell.dateFont >= 12 && cell.fits)).toBe(true);
+      expect(await cells.locator("time").evaluateAll((items) => items.map((item) => item.dateTime))).toEqual(
+        fixture.components[0].history.map((item) => item.date),
+      );
+    }
   }
   await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
   const systemColors = await page.evaluate(() => {
@@ -439,6 +502,10 @@ test("90-day strips wrap at desktop/mobile sizes and forced colors retain symbol
   const cells = page.locator('[data-component="website"] .system-status-history-cell');
   for (let index = 0; index < 5; index += 1) {
     await expect(cells.nth(index).locator(".status-symbol")).toBeVisible();
+    const date = cells.nth(index).locator(".system-status-history-cell-date");
+    await expect(date).toBeVisible();
+    await expect(date).not.toBeEmpty();
+    await expect(date).toHaveCSS("color", systemColors.color);
     const styles = await cells.nth(index).evaluate((cell) => {
       const style = getComputedStyle(cell);
       return { border: style.borderTopWidth, borderStyle: style.borderTopStyle, color: style.color, background: style.backgroundColor, animation: style.animationName };
@@ -467,6 +534,10 @@ test("calendar bucket dates do not shift in a negative UTC offset", async ({ bro
     await page.goto("http://127.0.0.1:4173/en/status/");
     await expect(page.locator(".system-status-history-range").first()).toHaveText("Observed date range: Aug 30, 2026 – Aug 30, 2026");
     await expect(page.locator(".system-status-history-cell").first()).toContainText("Aug 30, 2026");
+    const date = page.locator(".system-status-history-cell-date").first();
+    await expect(date).toBeVisible();
+    await expect(date).toHaveText("8/30");
+    await expect(date).toHaveAttribute("datetime", "2026-08-30");
   } finally {
     await context.close();
   }

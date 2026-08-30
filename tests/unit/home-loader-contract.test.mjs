@@ -44,6 +44,7 @@ const liveHomeFunctionNames = [
   "getValidSystemStatusHistory",
   "getSystemStatusHistoryLocale",
   "formatSystemStatusHistoryDate",
+  "formatSystemStatusHistoryCellDate",
   "formatSystemStatusHistoryDuration",
   "hasSystemStatusHistoryImpact",
   "getSystemStatusHistoryImpactText",

@@ -824,6 +824,12 @@ function formatSystemStatusHistoryDate(value) {
   }).format(new Date(`${value}T00:00:00.000Z`));
 }
 
+function formatSystemStatusHistoryCellDate(value) {
+  return new Intl.DateTimeFormat(getSystemStatusHistoryLocale(), {
+    month: "numeric", day: "numeric", timeZone: "UTC",
+  }).format(new Date(`${value}T00:00:00.000Z`));
+}
+
 function formatSystemStatusHistoryDuration(seconds) {
   if (seconds > 0 && seconds < 1) return getSystemStatusText("history.lessThanSecond");
   const parts = [];
@@ -894,11 +900,14 @@ function createSystemStatusHistoryCard(component) {
       cell.className = "system-status-history-cell";
       cell.dataset.status = record.status;
       cell.dataset.date = record.date;
+      const date = createSystemStatusHistoryText("time", "system-status-history-cell-date", formatSystemStatusHistoryCellDate(record.date));
+      date.dateTime = record.date;
+      date.setAttribute("aria-hidden", "true");
       const symbol = createSystemStatusHistoryText("span", "status-symbol", SYSTEM_STATUS_SYMBOLS[record.status]);
       symbol.setAttribute("aria-hidden", "true");
       const text = [formatSystemStatusHistoryDate(record.date), getSystemStatusLabel(record.status), getSystemStatusHistoryImpactText(record)].filter(Boolean).join(" · ");
       // Text remains available to assistive technology; symbols and the visible legend do not require hover.
-      cell.append(symbol, createSystemStatusHistoryText("span", "system-status-history-cell-text", text));
+      cell.append(date, symbol, createSystemStatusHistoryText("span", "system-status-history-cell-text", text));
       strip.append(cell);
     });
     card.append(strip);

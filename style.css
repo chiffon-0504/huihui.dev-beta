@@ -1387,14 +1387,23 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 .system-status-history-cell {
   position: relative;
   display: flex;
-  flex: 0 0 24px;
-  height: 32px;
+  flex: 0 0 48px;
+  height: 52px;
+  flex-direction: column;
+  gap: 4px;
   align-items: center;
   justify-content: center;
   border: 1px solid currentColor;
   border-radius: 6px;
   color: #4d5665;
   background: rgba(255, 255, 255, 0.46);
+}
+
+.system-status-history-cell-date {
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .system-status-history-cell[data-status="operational"] { color: #0b6938; }
