@@ -16,6 +16,12 @@ const readRoutes = [
     payload: { ok: true, providers: [] },
   },
   {
+    path: "/api/system-status/incidents",
+    cachePath: "/api/system-status/incidents?v1&source=https%3A%2F%2Fstatus.example.test%2Ffeed.rss",
+    payload: { ok: true, source: "better_stack", reports: [], fetchedAt: "2026-08-31T00:00:00.000Z" },
+    env: { BETTER_STACK_STATUS_PAGE_JSON_URL: "https://status.example.test/index.json" },
+  },
+  {
     path: "/api/apod",
     cachePath: "/api/apod-v2",
     payload: { ok: true, title: "APOD route" },
@@ -54,7 +60,7 @@ afterEach(() => {
 describe("Worker public API contract", () => {
   test.each(readRoutes)(
     "$path keeps routing GET requests to its existing handler",
-    async ({ path, cachePath, payload }) => {
+    async ({ path, cachePath, payload, env = {} }) => {
       const fetchMock = vi.fn();
       vi.stubGlobal("fetch", fetchMock);
       const cache = stubCache(async (cacheKey) => {
@@ -66,7 +72,7 @@ describe("Worker public API contract", () => {
         });
       });
 
-      const response = await worker.fetch(request(path), {}, context());
+      const response = await worker.fetch(request(path), env, context());
 
       expect(response.status).toBe(200);
       expect(response.headers.get("X-Cache")).toBe("HIT");
@@ -266,6 +272,7 @@ describe("Worker public API contract", () => {
         "/api/infrastructure-status",
         "/api/system-status",
         "/api/system-status/history",
+        "/api/system-status/incidents",
         "/api/health",
         "/api/contact/health",
         "/api/apod",

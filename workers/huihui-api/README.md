@@ -33,6 +33,143 @@ Provision the following runtime secrets separately for beta and production in Cl
 
 `NASA_API_KEY` is optional; the Worker uses its existing fallback when it is not configured.
 
+## System Status Phase B3.1: public incident updates
+
+`GET /api/system-status/incidents` is a Worker-only adapter for Better Stack's
+[public RSS 2.0 status updates](https://betterstack.com/docs/uptime/status-pages/subscribing-to-status-updates/subscribing-to-rss/).
+It adds no frontend B3 UI and changes neither current health nor daily history:
+
+| Endpoint | Meaning |
+| --- | --- |
+| `/api/system-status` | Current Website/API/Contact health (Phase A) |
+| `/api/system-status/history` | Daily availability and observed history (B1/B2) |
+| `/api/system-status/incidents` | Public incident/maintenance/status-report messages (B3.1) |
+
+### Source and request safety
+
+The adapter reuses the validated `BETTER_STACK_STATUS_PAGE_JSON_URL` configuration,
+then derives exactly `/feed.rss` from its origin. With the existing binding this is
+`https://huihui-dev.betteruptime.com/feed.rss`. No additional binding or Better Stack
+auth token is required. Custom trusted public status-page domains remain supported;
+request input cannot choose an origin, path, or upstream headers. B3.1 additionally
+rejects whitespace, backslashes, credentials, queries/fragments (including empty
+delimiters), normalized dot paths, and non-default ports in the configured URL.
+
+Upstream requests use HTTPS GET, a fixed `huihui.dev system-status-incidents worker`
+User-Agent, `Accept: application/rss+xml, application/xml, text/xml`,
+`redirect: "manual"`, and `cache: "no-store"`. No inbound Authorization, Cookie,
+visitor headers or query parameters are forwarded. Redirects and non-2xx responses
+fail closed. The shared deadline mechanism bounds fetching/body reading and async
+normalization to 4,000 ms. Synchronous parsing is separately bounded by byte/node/item
+limits; a JavaScript timer cannot interrupt synchronous work.
+
+Only RSS/XML content types and valid UTF-8 are accepted. Both declared Content-Length
+and streamed bytes have a **512 KiB** ceiling: ample headroom for this text-only,
+bounded recent-history adapter without buffering an unlimited provider feed.
+
+### Public JSON contract
+
+```json
+{
+  "ok": true,
+  "source": "better_stack",
+  "reports": [
+    {
+      "key": "64 lowercase hexadecimal characters (SHA-256 of canonical public URL)",
+      "title": "API Status 404",
+      "url": "https://huihui-dev.betteruptime.com/incident/123",
+      "updates": [
+        {
+          "publishedAt": "2026-08-30T12:00:00.000Z",
+          "message": "Investigating the API."
+        }
+      ]
+    }
+  ],
+  "fetchedAt": "2026-08-31T12:00:00.000Z"
+}
+```
+
+The values above are illustrative, not an assertion about a real incident.
+`fetchedAt` is fetch/normalization completion time and remains unchanged on a HIT.
+The endpoint does not infer current severity, recovery, uptime or incident duration
+from free-form messages. Consumers must distinguish `ok:false` from validated empty
+history; HTTP 200 alone does not prove that the source was available.
+
+### Validation, grouping and bounds
+
+- Require one RSS 2.0 root with one channel, and nonempty scalar channel title,
+  description and same-origin root link. A validated channel without items is valid.
+  The restricted XML 1.0 reader supports UTF-8 declarations, comments, CDATA and
+  the standard Atom self-link namespace. DTDs, external/custom entities, processing
+  instructions, namespace rebinding, malformed XML and nested items are rejected.
+  Other well-formed metadata is ignored; it is never serialized.
+- Each item requires exactly one nonempty scalar `title`, `description`, `link`,
+  `pubDate` and `guid`. Nested markup in XML fields is invalid; formatted descriptions
+  must be XML-escaped or CDATA, as in RSS. Any malformed item invalidates the **entire
+  payload**, even if that item would later fall outside the presentation limits.
+- Links must be absolute HTTPS URLs on the configured origin with exactly
+  `/incident/{public-token}` (1–128 ASCII letters/digits, `_` or `-`); an optional
+  trailing slash is removed. This is the documented public path for status reports,
+  including maintenance. No speculative API/monitor/status-report paths are allowed.
+  Reject credentials, query/fragment, nonmatching origin, escapes and dot segments
+  before URL normalization. Host case and default HTTPS port normalize normally.
+- Dates accept the RSS RFC 822/2822 subset: English month, optional matching weekday,
+  one/two-digit day, two/four-digit year, hours/minutes with optional seconds, and
+  numeric `+/-HHMM`, UT/GMT or standard US timezone abbreviations. Two-digit years
+  use the RFC 2822 1950–2049 window; years before 1900, impossible calendar dates,
+  invalid times/zones and mismatched weekdays are rejected. Serialize UTC ISO 8601;
+  never repair a malformed date with the current time.
+- Group by canonical public URL, never title. `key` is its SHA-256 digest, not a
+  Better Stack resource ID. GUIDs stay internal, are at most 512 UTF-16 code units
+  without whitespace/angle brackets, and deduplicate identical normalized records.
+  A GUID reused for conflicting data invalidates the payload. Identical URL/time/text
+  updates with different GUIDs are also deduplicated.
+- Sort reports by latest update descending (URL breaks equal-time ties). Use the
+  latest update's title; title/message lexical order breaks equal-time ties within a
+  report. Return updates oldest to newest. Keep at most **20 reports**, each with
+  its latest **20 unique updates**, only after validating all source items.
+- Accept at most **512 source items**, **8,192 XML elements**, and **16 element
+  levels**. Exceeding an input bound is an error, not a silently truncated input.
+  Output is a bounded recent view, not a claim of complete historical coverage.
+
+### Plain text, privacy and failures
+
+Titles/messages are normalized server-side, with limits of **200 / 4,000 UTF-16
+code units** respectively. Over-limit or empty normalized text fails the payload;
+messages are not silently cut off. Decode XML's predefined/numeric entities and
+common formatted HTML entities (quotes, nbsp, dashes, ellipsis, copyright, currency,
+bullets and numeric Unicode). Unknown HTML named entities remain literal text;
+invalid XML entities/code points fail. Each encoding layer is decoded once.
+
+Strip all tags, comments and attributes; discard script/style and embedded
+script-capable container contents. Preserve text and block/BR line breaks, collapse
+horizontal whitespace and keep at most one blank line. Ambiguous/unclosed markup
+fails closed. No angle-bracket opening delimiter or executable markup is emitted.
+Future UI must still use `textContent`, never `innerHTML` or another HTML sink.
+
+Only selected already-public titles/messages, canonical incident links and times
+are returned. No raw RSS/HTML, GUID, monitor resource/internal URL field, HTTP response
+body field, request diagnostics or visitor information is exposed. Link attributes
+are discarded, not fetched. Public editorial text itself is not a secret-redaction
+service: publishers remain responsible for what they post on their public page.
+Diagnostics use only bounded route/upstream/category and optional HTTP status;
+raw errors, headers, URLs and provider content are never logged.
+
+Full validation (including an empty channel) returns `ok:true`,
+`Cache-Control: public, max-age=60`, and `X-Cache: MISS` then `HIT`. The cache key
+includes the validated RSS URL and is separate from current/daily history. There is
+no stale fallback or background revalidation. Once the entry expires, any upstream,
+configuration, decoding, XML or item failure returns HTTP 200 with
+`{ "ok": false, "source": "better_stack", "reports": [], "fetchedAt": "..." }`,
+`Cache-Control: no-store`, and `X-Cache: BYPASS`; errors are never cached.
+GET/OPTIONS and the existing production/beta/preview CORS rules apply. OPTIONS
+returns 204 without fetching; other methods return 405 with `Allow: GET, OPTIONS`.
+
+Tests use synthetic RSS fixtures and stub all upstream/cache access; normal CI
+never depends on live Better Stack. Existing Home/status browser mocks and request
+assertions are unchanged because no frontend calls the new endpoint in B3.1.
+
 ## System Status Phase B1: independent history
 
 `GET /api/system-status/history` reads Better Stack's **public Status Page `/index.json`**

@@ -199,6 +199,7 @@ export const TECH_NEWS_SOURCE_DEADLINE_MS = 5000;
 export const INFRASTRUCTURE_STATUS_PROVIDER_DEADLINE_MS = 3500;
 export const SYSTEM_STATUS_WEBSITE_DEADLINE_MS = 4000;
 export const SYSTEM_STATUS_HISTORY_DEADLINE_MS = 4000;
+export const SYSTEM_STATUS_INCIDENTS_DEADLINE_MS = 4000;
 export const APOD_ATTEMPT_DEADLINE_MS = 3000;
 export const APOD_TOTAL_BUDGET_MS = 6000;
 export const STEAM_UPSTREAM_DEADLINE_MS = 5000;
@@ -207,6 +208,7 @@ export const TECH_NEWS_RESPONSE_MAX_BYTES = 2 * 1024 * 1024;
 export const INFRASTRUCTURE_STATUS_RESPONSE_MAX_BYTES = 1024 * 1024;
 export const SYSTEM_STATUS_WEBSITE_RESPONSE_MAX_BYTES = 256 * 1024;
 export const SYSTEM_STATUS_HISTORY_RESPONSE_MAX_BYTES = 1024 * 1024;
+export const SYSTEM_STATUS_INCIDENTS_RESPONSE_MAX_BYTES = 512 * 1024;
 export const APOD_RESPONSE_MAX_BYTES = 256 * 1024;
 export const STEAM_RESPONSE_MAX_BYTES = 2 * 1024 * 1024;
 export const TURNSTILE_RESPONSE_MAX_BYTES = 64 * 1024;
@@ -468,6 +470,7 @@ function getDiagnosticRoute(pathname) {
     case "/api/infrastructure-status":
     case "/api/system-status":
     case "/api/system-status/history":
+    case "/api/system-status/incidents":
     case "/api/health":
     case "/api/contact/health":
     case "/api/apod":
@@ -1377,6 +1380,313 @@ async function handleSystemStatusHistory(request, env, ctx) {
 }
 
 /* =========================
+   Better Stack public incident updates (independent of current/daily status)
+========================= */
+
+const SYSTEM_STATUS_INCIDENTS_ROUTE = "/api/system-status/incidents";
+const SYSTEM_STATUS_INCIDENTS_UPSTREAM = "better_stack_rss";
+const SYSTEM_STATUS_INCIDENTS_CACHE_TTL_SECONDS = 60;
+const INCIDENT_MAX_ITEMS = 512;
+const INCIDENT_MAX_REPORTS = 20;
+const INCIDENT_MAX_UPDATES = 20;
+const INCIDENT_TITLE_MAX_LENGTH = 200;
+const INCIDENT_MESSAGE_MAX_LENGTH = 4000;
+const XML_ENTITIES = Object.freeze({ amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" });
+const INCIDENT_HTML_ENTITIES = Object.freeze({
+  ...XML_ENTITIES, nbsp: " ", copy: "©", reg: "®", trade: "™", ndash: "–", mdash: "—",
+  hellip: "…", lsquo: "‘", rsquo: "’", ldquo: "“", rdquo: "”", bull: "•", middot: "·",
+  euro: "€", pound: "£", yen: "¥", ensp: " ", emsp: " ", thinsp: " ",
+});
+
+function assertIncident(condition) {
+  if (!condition) throw new UpstreamInvalidResponseError();
+}
+
+function decodeIncidentEntities(value, html = false) {
+  const entities = html ? INCIDENT_HTML_ENTITIES : XML_ENTITIES;
+  return value.replace(/&(#x[0-9a-f]+|#\d+|[a-z][a-z0-9]*);|&/gi, (entity, name) => {
+    if (name?.startsWith("#")) {
+      assertIncident(html || name[1] !== "X");
+      const hex = name[1].toLowerCase() === "x";
+      const point = Number.parseInt(name.slice(hex ? 2 : 1), hex ? 16 : 10);
+      assertIncident(point === 9 || point === 10 || point === 13 ||
+        (point >= 32 && point <= 0x10ffff && !(point >= 0xd800 && point <= 0xdfff) &&
+          point !== 0xfffe && point !== 0xffff));
+      return String.fromCodePoint(point);
+    }
+    if (Object.hasOwn(entities, name)) return entities[name];
+    // HTML's unrecognized entities remain literal text. XML cannot invent entities.
+    assertIncident(html);
+    return entity;
+  });
+}
+
+// A deliberately restricted XML 1.0 reader, not an HTML/RSS recovery parser.
+// No DTDs, external entities, processing instructions, namespace rebinding or repairs.
+function parseIncidentRss(xml) {
+  assertIncident(!/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffe\uffff]/u.test(xml));
+  const document = { name: "#document", children: [], text: "" };
+  const stack = [document];
+  const token = /<!--(?:[^-]|-(?!-))*-->|<!\[CDATA\[[\s\S]*?\]\]>|<\?xml[ \t\r\n]+version=(?:"1\.0"|'1\.0')(?:[ \t\r\n]+encoding=(?:"UTF-8"|'UTF-8'))?(?:[ \t\r\n]+standalone=(?:"(?:yes|no)"|'(?:yes|no)'))?[ \t\r\n]*\?>|<\/[A-Za-z_][\w.:-]*[ \t\r\n]*>|<[A-Za-z_][\w.:-]*(?:[ \t\r\n]+[A-Za-z_][\w.:-]*[ \t\r\n]*=[ \t\r\n]*(?:"[^"<]*"|'[^'<]*'))*[ \t\r\n]*\/?>|[^<]+/gy;
+  let offset = 0;
+  let nodes = 0;
+  while (offset < xml.length) {
+    token.lastIndex = offset;
+    const match = token.exec(xml);
+    assertIncident(match);
+    const part = match[0];
+    const parent = stack.at(-1);
+    if (part.startsWith("<?")) {
+      assertIncident(offset === 0);
+    } else if (part.startsWith("<!--")) {
+      // Comments carry no public data.
+    } else if (part.startsWith("<![CDATA[")) {
+      assertIncident(stack.length > 1);
+      parent.text += part.slice(9, -3);
+    } else if (part.startsWith("</")) {
+      assertIncident(stack.length > 1 && part.slice(2, -1).trim() === parent.name);
+      stack.pop();
+    } else if (part.startsWith("<")) {
+      const name = /^<([^\s/>]+)/.exec(part)[1];
+      const attributes = Object.create(null);
+      for (const attribute of part.matchAll(/([A-Za-z_][\w.:-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)) {
+        assertIncident(!Object.hasOwn(attributes, attribute[1]));
+        assertIncident(!attribute[1].includes(":") || ["xmlns:atom", "xml:lang"].includes(attribute[1]));
+        attributes[attribute[1]] = decodeIncidentEntities(attribute[2] ?? attribute[3]);
+        assertIncident(!attribute[1].startsWith("xmlns") ||
+          (name === "rss" && stack.length === 1 && attribute[1] === "xmlns:atom" &&
+            attributes[attribute[1]] === "http://www.w3.org/2005/Atom"));
+      }
+      assertIncident(!name.includes(":") || (name === "atom:link" &&
+        document.children[0]?.attributes["xmlns:atom"] === "http://www.w3.org/2005/Atom"));
+      assertIncident(++nodes <= 8192 && stack.length <= 16);
+      const node = { name, attributes, children: [], text: "" };
+      parent.children.push(node);
+      if (!part.endsWith("/>")) stack.push(node);
+    } else {
+      assertIncident(!part.includes("]]>"));
+      parent.text += decodeIncidentEntities(part);
+    }
+    offset = token.lastIndex;
+  }
+  assertIncident(stack.length === 1 && /^[ \t\r\n]*$/.test(document.text) && document.children.length === 1);
+  const rss = document.children[0];
+  assertIncident(rss.name === "rss" && rss.attributes.version === "2.0" &&
+    !rss.text.trim() && rss.children.length === 1 && rss.children[0].name === "channel");
+  const channel = rss.children[0];
+  assertIncident(!channel.text.trim());
+  const items = channel.children.filter((node) => node.name === "item");
+  assertIncident(items.length <= INCIDENT_MAX_ITEMS);
+  // Unknown metadata may be ignored only if it cannot conceal nested feed items.
+  function validatePlacement(node, parentName) {
+    if (node.name === "item") assertIncident(parentName === "channel" && channel.children.includes(node));
+    for (const child of node.children) validatePlacement(child, node.name);
+  }
+  validatePlacement(rss, "#document");
+  return { channel, items };
+}
+
+function incidentRssField(node, name) {
+  const fields = node.children.filter((child) => child.name === name);
+  assertIncident(fields.length === 1 && fields[0].children.length === 0);
+  const value = fields[0].text.trim();
+  assertIncident(value.length > 0);
+  return value;
+}
+
+function incidentPlainText(value, limit) {
+  // Decode once at each layer (XML above, formatted HTML here). Never emit markup.
+  const html = decodeIncidentEntities(value, true);
+  const hiddenElements = new Set(["script", "style", "iframe", "object", "template", "noscript", "svg", "math"]);
+  const hidden = [];
+  const output = [];
+  let offset = 0;
+  while (offset < html.length) {
+    if (html.startsWith("<!--", offset)) {
+      const end = html.indexOf("-->", offset + 4);
+      assertIncident(end !== -1);
+      offset = end + 3;
+      continue;
+    }
+    if (html[offset] === "<") {
+      // Scan quoted attributes linearly; malformed long tags must not cause regex backtracking.
+      let end = offset + 1;
+      let quote = "";
+      for (; end < html.length; end++) {
+        const character = html[end];
+        if (quote) {
+          if (character === quote) quote = "";
+        } else if (character === '"' || character === "'") {
+          quote = character;
+        } else if (character === ">") {
+          break;
+        } else {
+          assertIncident(character !== "<");
+        }
+      }
+      assertIncident(end < html.length && !quote);
+      const part = html.slice(offset, end + 1);
+      const match = /^<\/?([a-z][a-z0-9:-]*)(?=[\s/>])/i.exec(part);
+      assertIncident(match);
+      const name = match[1].toLowerCase();
+      if (hiddenElements.has(name)) {
+        if (part.startsWith("</")) {
+          assertIncident(hidden.at(-1) === name);
+          hidden.pop();
+        } else {
+          assertIncident(hidden.length < 16);
+          hidden.push(name);
+        }
+      }
+      if (!hidden.length && /^(?:br|p|div|li|ul|ol|h[1-6]|blockquote|pre|hr|tr)$/.test(name)) output.push("\n");
+      offset = end + 1;
+    } else {
+      const next = html.indexOf("<", offset);
+      const end = next === -1 ? html.length : next;
+      if (!hidden.length) output.push(html.slice(offset, end));
+      offset = end;
+    }
+  }
+  assertIncident(hidden.length === 0);
+  const text = output.join("").replace(/\r\n?/g, "\n").replace(/[^\S\n]+/gu, " ")
+    .replace(/ *\n */g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  assertIncident(text.length > 0 && text.length <= limit && !text.includes("<"));
+  return text;
+}
+
+function incidentPublishedAt(value) {
+  const match = /^(?:(Sun|Mon|Tue|Wed|Thu|Fri|Sat),\s+)?(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{2}|\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?\s+([+-]\d{4}|UT|GMT|EST|EDT|CST|CDT|MST|MDT|PST|PDT)$/.exec(value);
+  assertIncident(match);
+  const [, weekday, day, month, yearValue, hour, minute, second = "0", zone] = match;
+  let year = Number(yearValue);
+  if (yearValue.length === 2) year += year < 50 ? 2000 : 1900;
+  const monthIndex = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].indexOf(month);
+  const local = new Date(Date.UTC(year, monthIndex, Number(day), Number(hour), Number(minute), Number(second)));
+  assertIncident(year >= 1900 && local.getUTCFullYear() === year && local.getUTCMonth() === monthIndex &&
+    local.getUTCDate() === Number(day) && Number(hour) < 24 && Number(minute) < 60 && Number(second) < 60 &&
+    (!weekday || ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][local.getUTCDay()] === weekday));
+  const zones = { UT: 0, GMT: 0, EST: -300, EDT: -240, CST: -360, CDT: -300, MST: -420, MDT: -360, PST: -480, PDT: -420 };
+  let offset = zones[zone];
+  if (offset === undefined) {
+    assertIncident(Number(zone.slice(1, 3)) < 24 && Number(zone.slice(3)) < 60);
+    offset = (Number(zone.slice(1, 3)) * 60 + Number(zone.slice(3))) * (zone[0] === "+" ? 1 : -1);
+  }
+  return new Date(local.getTime() - offset * 60_000).toISOString();
+}
+
+function incidentPublicUrl(value, origin) {
+  // Check the raw path before URL normalization can erase dot segments or escapes.
+  assertIncident(/^https:\/\/[^/?#\\@\s]+\/incident\/[A-Za-z0-9_-]{1,128}\/?$/.test(value));
+  const url = new URL(value);
+  assertIncident(url.origin === origin && !url.username && !url.password && !url.search && !url.hash);
+  return url.origin + url.pathname.replace(/\/$/, "");
+}
+
+async function normalizeIncidentRss(xml, origin) {
+  const { channel, items } = parseIncidentRss(xml);
+  incidentPlainText(incidentRssField(channel, "title"), INCIDENT_TITLE_MAX_LENGTH);
+  incidentPlainText(incidentRssField(channel, "description"), INCIDENT_MESSAGE_MAX_LENGTH);
+  const channelLink = incidentRssField(channel, "link");
+  assertIncident(channelLink === origin || channelLink === origin + "/");
+  const guids = new Map();
+  const records = [];
+  for (const item of items) {
+    assertIncident(!item.text.trim());
+    const record = {
+      url: incidentPublicUrl(incidentRssField(item, "link"), origin),
+      title: incidentPlainText(incidentRssField(item, "title"), INCIDENT_TITLE_MAX_LENGTH),
+      publishedAt: incidentPublishedAt(incidentRssField(item, "pubDate")),
+      message: incidentPlainText(incidentRssField(item, "description"), INCIDENT_MESSAGE_MAX_LENGTH),
+    };
+    const guid = incidentRssField(item, "guid");
+    assertIncident(guid.length <= 512 && !/[\s<>]/u.test(guid));
+    const signature = JSON.stringify(record);
+    assertIncident(!guids.has(guid) || guids.get(guid) === signature);
+    if (!guids.has(guid)) records.push(record);
+    guids.set(guid, signature);
+  }
+  // Validate all input before deduplication and presentation limits, including old items.
+  records.sort((left, right) => right.publishedAt.localeCompare(left.publishedAt) ||
+    left.url.localeCompare(right.url) || left.title.localeCompare(right.title) || left.message.localeCompare(right.message));
+  const groups = new Map();
+  for (const record of records) {
+    if (!groups.has(record.url)) groups.set(record.url, { title: record.title, url: record.url, updates: [], seen: new Set() });
+    const group = groups.get(record.url);
+    const identity = JSON.stringify([record.publishedAt, record.message]);
+    if (!group.seen.has(identity)) group.updates.push({ publishedAt: record.publishedAt, message: record.message });
+    group.seen.add(identity);
+  }
+  return Promise.all([...groups.values()].slice(0, INCIDENT_MAX_REPORTS).map(async (group) => {
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(group.url));
+    return {
+      key: Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join(""),
+      title: group.title,
+      url: group.url,
+      updates: group.updates.slice(0, INCIDENT_MAX_UPDATES).reverse(),
+    };
+  }));
+}
+
+function incidentHistoryResponse(ok, reports = []) {
+  return jsonResponse({ ok, source: "better_stack", reports, fetchedAt: new Date().toISOString() }, {
+    "Cache-Control": ok ? `public, max-age=${SYSTEM_STATUS_INCIDENTS_CACHE_TTL_SECONDS}` : "no-store",
+    "X-Cache": ok ? "MISS" : "BYPASS",
+  });
+}
+
+async function handleSystemStatusIncidents(request, env, ctx) {
+  try {
+    const configured = env?.BETTER_STACK_STATUS_PAGE_JSON_URL;
+    if (typeof configured !== "string" || !configured.trim()) {
+      errorConfigurationFailure(SYSTEM_STATUS_INCIDENTS_ROUTE, SYSTEM_STATUS_INCIDENTS_UPSTREAM);
+      throw new WorkerConfigurationError();
+    }
+    assertIncident(/^https:\/\/[^/?#\\@\s]+\/index\.json$/.test(configured));
+    const pageUrl = new URL(getBetterStackStatusPageUrl(env));
+    assertIncident(!pageUrl.port);
+    const upstreamUrl = new URL("/feed.rss", pageUrl.origin).href;
+    const cache = caches.default;
+    const cacheKey = new Request(new URL(request.url).origin + SYSTEM_STATUS_INCIDENTS_ROUTE +
+      "?v1&source=" + encodeURIComponent(upstreamUrl));
+    const cached = await cache.match(cacheKey);
+    if (cached) {
+      const response = new Response(cached.body, cached);
+      response.headers.set("X-Cache", "HIT");
+      return response;
+    }
+    const reports = await withUpstreamDeadline(SYSTEM_STATUS_INCIDENTS_DEADLINE_MS, async (signal) => {
+      const upstream = await fetch(upstreamUrl, {
+        method: "GET",
+        headers: { Accept: "application/rss+xml, application/xml, text/xml", "User-Agent": "huihui.dev system-status-incidents worker" },
+        redirect: "manual", cache: "no-store", signal,
+      });
+      if (!upstream.ok) {
+        await cancelBody(upstream.body);
+        throw new UpstreamHttpStatusError(upstream.status);
+      }
+      const type = upstream.headers.get("Content-Type")?.split(";")[0].trim().toLowerCase();
+      if (!["application/rss+xml", "application/xml", "text/xml"].includes(type)) {
+        await cancelBody(upstream.body);
+        throw new UpstreamInvalidResponseError();
+      }
+      const bytes = await readResponseBytesWithLimit(upstream, SYSTEM_STATUS_INCIDENTS_RESPONSE_MAX_BYTES);
+      let xml;
+      try { xml = new TextDecoder("utf-8", { fatal: true }).decode(bytes); }
+      catch { throw new UpstreamInvalidResponseError(); }
+      return normalizeIncidentRss(xml, pageUrl.origin);
+    });
+    const response = incidentHistoryResponse(true, reports);
+    ctx.waitUntil(cache.put(cacheKey, response.clone()).catch(() => errorUnhandledFailure(SYSTEM_STATUS_INCIDENTS_ROUTE)));
+    return response;
+  } catch (error) {
+    if (!(error instanceof WorkerConfigurationError)) {
+      warnUpstreamFailure(SYSTEM_STATUS_INCIDENTS_ROUTE, SYSTEM_STATUS_INCIDENTS_UPSTREAM, error);
+    }
+    return incidentHistoryResponse(false);
+  }
+}
+
+/* =========================
    NASA APOD
 ========================= */
 
@@ -2068,6 +2378,10 @@ async function routeRequest(request, env, ctx) {
     return handleReadOnlyRoute(request, () => handleSystemStatusHistory(request, env, ctx));
   }
 
+  if (url.pathname === SYSTEM_STATUS_INCIDENTS_ROUTE) {
+    return handleReadOnlyRoute(request, () => handleSystemStatusIncidents(request, env, ctx));
+  }
+
   if (url.pathname === "/api/health") {
     return handleReadOnlyRoute(request, handleApiHealth);
   }
@@ -2107,6 +2421,7 @@ async function routeRequest(request, env, ctx) {
         "/api/infrastructure-status",
         "/api/system-status",
         "/api/system-status/history",
+        "/api/system-status/incidents",
         "/api/health",
         "/api/contact/health",
         "/api/apod",
