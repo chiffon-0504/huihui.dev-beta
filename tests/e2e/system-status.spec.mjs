@@ -81,7 +81,7 @@ const mixedHistory = () => systemStatusHistoryFixture(historyStates.map((status,
   maintenanceSeconds: status === "degraded_performance" ? 125 : 0,
 })));
 
-test("complete history renders only returned dates, all states, impact durations and separate timestamps", async ({ page }) => {
+test("mixed incomplete history renders only returned dates, all states, impact durations and separate timestamps", async ({ page }) => {
   const fixture = mixedHistory();
   fixture.components[0].availabilityPercent = 99.98765432;
   fixture.components[2].history[0].maintenanceSeconds = 30;
@@ -111,10 +111,87 @@ test("complete history renders only returned dates, all states, impact durations
   await expect(history.locator(".system-status-history-fetched")).toContainText("History fetched:");
   await expect(page.locator(".system-status-checked-at")).toContainText("Last checked:");
   await expect(page.locator(".system-status-detail")).toHaveAttribute("data-status", "operational");
-  await expect(history.locator(".system-status-history-notice")).toHaveCount(0);
+  await expect(history.locator(".system-status-history-notice")).toHaveCount(1);
   await expect(history.locator(".system-status-history-content [role=status], .system-status-history-content [aria-live]")).toHaveCount(0);
   await expect(history.locator(".system-status-history-content")).not.toHaveAttribute("aria-live", /.+/);
 });
+
+for (const [name, mutate] of [
+  ["contradictory false/true", (data) => { data.ok = false; }],
+  ["contradictory true/false", (data) => { data.complete = false; }],
+  ["true/true with unknown current status", (data) => { data.components[1].status = "unknown"; }],
+  ["true/true with unknown history status", (data) => { data.components[2].history[0].status = "unknown"; }],
+  ["true/true with null availability", (data) => { data.components[0].availabilityPercent = null; }],
+  ["false/false with complete content", (data) => { data.ok = false; data.complete = false; }],
+]) {
+  test(`history rejects ${name} without changing Phase A`, async ({ page }) => {
+    const fixture = systemStatusHistoryFixture();
+    await stubHomeApis(page, null, (route) => route.fulfill({ json: fixture }));
+    await page.goto("/en/status/");
+    const history = page.locator("#systemStatusHistory");
+    await expect(history).toHaveAttribute("data-history-state", "ready");
+    await expect(history.locator(".system-status-history-notice")).toHaveCount(0);
+    await expect(history.locator(".system-status-history-cell")).toHaveCount(3);
+    mutate(fixture);
+    await page.evaluate(() => loadSystemStatusHistory());
+    await expect(history).toHaveAttribute("data-history-state", "error");
+    await expect(history.getByRole("status")).toHaveText("Unable to load history. History status is unknown.");
+    await expect(history.locator(".system-status-history-card")).toHaveCount(0);
+    await expect(page.locator(".system-status-detail")).toHaveAttribute("data-status", "operational");
+  });
+}
+
+for (const [locale, loading, loaded, unavailable] of [
+  ["/status/", "正在載入監測歷史……", "歷史紀錄已載入。", "無法載入歷史紀錄，歷史狀態不明。"],
+  ["/en/status/", "Loading monitoring history…", "Monitoring history loaded.", "Unable to load history. History status is unknown."],
+  ["/ja/status/", "監視履歴を読み込み中…", "監視履歴を読み込みました。", "履歴を読み込めません。履歴の状態は不明です。"],
+]) {
+  test(`${locale} history live region announces loading, completion and error without announcing 90-day content`, async ({ page }) => {
+    const pending = [];
+    await stubHomeApis(page, null, (route) => { pending.push(route); });
+    await page.goto(locale);
+    const history = page.locator("#systemStatusHistory");
+    const message = history.getByRole("status");
+    await expect.poll(() => pending.length).toBe(1);
+    await expect(history).toHaveAttribute("data-history-state", "loading");
+    await expect(message).toHaveText(loading);
+    await expect(message).toBeVisible();
+    await expect(message).toHaveCSS("clip-path", "none");
+    await expect(message).toHaveAttribute("aria-live", "polite");
+    await expect(message).toHaveAttribute("aria-atomic", "true");
+    const fixture = systemStatusHistoryFixture(Array.from({ length: 90 }, (_, index) => ({
+      date: new Date(Date.UTC(2026, 5, index + 1)).toISOString().slice(0, 10),
+      status: "operational", downtimeSeconds: 0, maintenanceSeconds: 0,
+    })));
+    await pending.shift().fulfill({ json: fixture });
+    await expect(history).toHaveAttribute("data-history-state", "ready");
+    await expect(message).toHaveCount(1);
+    await expect(message).toHaveText(loaded);
+    await expect(message).toMatchAriaSnapshot(`- status: ${loaded}`);
+    await expect(message).toHaveCSS("display", "block");
+    await expect(message).toHaveCSS("visibility", "visible");
+    await expect(message).toHaveCSS("clip-path", "inset(50%)");
+    expect(await message.evaluate((element) => element.closest('[hidden], [aria-hidden="true"]') === null)).toBe(true);
+    await expect(history.locator(".system-status-history-cell")).toHaveCount(270);
+    const content = history.locator(".system-status-history-content");
+    expect(await content.evaluate((element) => element.closest('[aria-live], [role="status"], [role="alert"], [role="log"]') === null)).toBe(true);
+    await expect(content.locator('[aria-live], [role="status"], [role="alert"], [role="log"]')).toHaveCount(0);
+    await expect(history.locator(".system-status-history-notice")).toHaveCount(0);
+
+    await page.evaluate(() => { void loadSystemStatusHistory(); });
+    await expect.poll(() => pending.length).toBe(1);
+    await expect(message).toHaveText(loading);
+    await expect(message).toBeVisible();
+    await expect(message).toHaveCSS("clip-path", "none");
+    await pending.shift().fulfill({ status: 503, json: {} });
+    await expect(history).toHaveAttribute("data-history-state", "error");
+    await expect(message).toHaveText(unavailable);
+    await expect(message).toBeVisible();
+    await expect(message).toHaveCSS("clip-path", "none");
+    await expect(content).toBeEmpty();
+    await expect(page.locator(".system-status-detail")).toHaveAttribute("data-status", "operational");
+  });
+}
 
 for (const [locale, title, incomplete, observed, unknown, empty, error] of [
   ["/status/", "可用率與歷史紀錄", "外部監測資料尚不完整", "已觀測 1 天", "可用率不明", "已觀測的歷史紀錄中，沒有服務受影響的日期。", "無法載入歷史紀錄"],

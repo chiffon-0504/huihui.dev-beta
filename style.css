@@ -1402,7 +1402,8 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 .system-status-history-cell[data-status="partial_outage"] { color: #9a3f00; }
 .system-status-history-cell[data-status="major_outage"] { color: #a11f2f; }
 
-.system-status-history-cell-text {
+.system-status-history-cell-text,
+.system-status-history[data-history-state="ready"] .system-status-history-message {
   position: absolute;
   width: 1px;
   height: 1px;

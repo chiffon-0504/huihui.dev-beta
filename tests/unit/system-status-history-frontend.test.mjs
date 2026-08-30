@@ -20,17 +20,66 @@ function validate(payload, mutation = "") {
 const record = (date, status = "operational") => ({ date, status, downtimeSeconds: 0, maintenanceSeconds: 0 });
 
 describe("frontend history contract", () => {
-  test("accepts complete, incomplete, empty and gapped observations without padding", () => {
-    for (const records of [[], [record("2026-08-30")], [record("2024-02-29"), record("2026-08-30", "unknown")]]) {
-      for (const ok of [true, false]) {
-        for (const complete of [true, false]) {
-          const data = systemStatusHistoryFixture(records);
-          Object.assign(data, { ok, complete });
-          const result = validate(data);
-          expect(result.complete).toBe(complete);
-          expect(result.components[0].history).toEqual(records);
-        }
-      }
+  test("accepts complete one-day and gapped observations without requiring 90 days or padding", () => {
+    for (const records of [[record("2026-08-30")], [record("2024-02-29"), record("2026-08-30")]]) {
+      const data = systemStatusHistoryFixture(records);
+      expect(data).toMatchObject({ ok: true, complete: true });
+      const result = validate(data);
+      expect(result.complete).toBe(true);
+      expect(result.components[0].history).toEqual(records);
+    }
+  });
+
+  test.each([
+    ["unknown current status", "data.components[1].status = 'unknown'"],
+    ["unknown history status", "data.components[2].history[0].status = 'unknown'"],
+    ["null availability", "data.components[0].availabilityPercent = null"],
+  ])("accepts false/false for %s but rejects an incorrect true/true claim", (_, mutation) => {
+    const data = systemStatusHistoryFixture();
+    expect(validate(data, mutation)).toBeNull();
+    Object.assign(data, { ok: false, complete: false });
+    const result = validate(data, mutation);
+    expect(result.complete).toBe(false);
+    expect(result.components.map((component) => component.observedDays)).toEqual([1, 1, 1]);
+  });
+
+  test.each([
+    { ok: false, complete: true },
+    { ok: true, complete: false },
+  ])("rejects contradictory flags $ok/$complete on complete and incomplete content", (flags) => {
+    for (const status of ["operational", "unknown"]) {
+      const data = systemStatusHistoryFixture([record("2026-08-30", status)]);
+      Object.assign(data, flags);
+      expect(validate(data)).toBeNull();
+    }
+  });
+
+  test("rejects false/false when the content actually satisfies B1 completeness", () => {
+    const data = systemStatusHistoryFixture();
+    Object.assign(data, { ok: false, complete: false });
+    expect(validate(data)).toBeNull();
+  });
+
+  test("accepts incomplete empty and gapped unknown observations without padding", () => {
+    for (const records of [[], [record("2024-02-29"), record("2026-08-30", "unknown")]]) {
+      const data = systemStatusHistoryFixture(records);
+      expect(data).toMatchObject({ ok: false, complete: false });
+      const result = validate(data);
+      expect(result.complete).toBe(false);
+      expect(result.components[0].history).toEqual(records);
+    }
+  });
+
+  test("B1 completeness adds no observation-count, operational-status or positive-availability requirement", () => {
+    const empty = systemStatusHistoryFixture([]);
+    Object.assign(empty, { ok: true, complete: true });
+    empty.components.forEach((component) => { component.availabilityPercent = 0; });
+    expect(validate(empty).complete).toBe(true);
+    for (const status of ["degraded_performance", "partial_outage", "major_outage"]) {
+      const data = systemStatusHistoryFixture([record("2026-08-30", status)]);
+      Object.assign(data.components[0], { status, availabilityPercent: 0 });
+      Object.assign(data.components[0].history[0], { downtimeSeconds: 7278, maintenanceSeconds: 125 });
+      expect(validate(data).complete).toBe(true);
     }
   });
 

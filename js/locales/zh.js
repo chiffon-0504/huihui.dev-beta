@@ -80,6 +80,7 @@ window.HUIHUI_I18N.zh = {
       title: "可用率與歷史紀錄",
       intro: "由 Better Stack 提供的獨立外部監測紀錄。可用率為供應商回報的彙總數據；涵蓋範圍僅限下列實際觀測日，不一定有 90 天。上方的目前健康狀態另行檢查。",
       loading: "正在載入監測歷史……",
+      loaded: "歷史紀錄已載入。",
       unavailable: "無法載入歷史紀錄，歷史狀態不明。",
       incomplete: "外部監測資料尚不完整，以下顯示可用的觀測紀錄。",
       availability: "可用率 {value}",

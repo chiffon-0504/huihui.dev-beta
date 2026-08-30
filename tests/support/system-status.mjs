@@ -14,20 +14,25 @@ export function systemStatusFixture(status = "operational") {
 export function systemStatusHistoryFixture(records = [
   { date: "2026-08-30", status: "operational", downtimeSeconds: 0, maintenanceSeconds: 0 },
 ]) {
+  const components = ["website", "api", "contact"].map((id) => ({
+    id,
+    status: "operational",
+    availabilityPercent: records.length ? 100 : null,
+    observedDays: records.length,
+    historyStartDate: records[0]?.date ?? null,
+    historyEndDate: records.at(-1)?.date ?? null,
+    history: records.map((record) => ({ ...record })),
+  }));
+  const complete = components.every((component) =>
+    component.status !== "unknown" && component.availabilityPercent !== null &&
+    component.history.every((item) => item.status !== "unknown")
+  );
   return {
-    ok: true,
+    ok: complete,
     source: "better_stack",
-    complete: true,
+    complete,
     windowDays: 90,
     fetchedAt: "2026-08-30T12:34:56.000Z",
-    components: ["website", "api", "contact"].map((id) => ({
-      id,
-      status: "operational",
-      availabilityPercent: records.length ? 100 : null,
-      observedDays: records.length,
-      historyStartDate: records[0]?.date ?? null,
-      historyEndDate: records.at(-1)?.date ?? null,
-      history: records.map((record) => ({ ...record })),
-    })),
+    components,
   };
 }

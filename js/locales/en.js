@@ -80,6 +80,7 @@ window.HUIHUI_I18N.en = {
       title: "Availability & History",
       intro: "Independent external observations from Better Stack. Availability is provider-reported; coverage includes only the observed days below, not necessarily 90 days. Current health above is checked separately.",
       loading: "Loading monitoring history…",
+      loaded: "Monitoring history loaded.",
       unavailable: "Unable to load history. History status is unknown.",
       incomplete: "External monitoring data is incomplete. Available observations are shown.",
       availability: "{value} availability",

@@ -803,7 +803,13 @@ function getValidSystemStatusHistory(data) {
       historyEndDate: component.historyEndDate, history,
     });
   }
-  return { complete: data.complete, fetchedAt: data.fetchedAt, components };
+  // Match the B1 Worker's completeness predicate after validating the public fields.
+  const complete = components.every((component) =>
+    component.status !== "unknown" && component.availabilityPercent !== null &&
+    component.history.every((item) => item.status !== "unknown")
+  );
+  if (data.ok !== complete || data.complete !== complete) return null;
+  return { complete, fetchedAt: data.fetchedAt, components };
 }
 
 function getSystemStatusHistoryLocale() {
@@ -919,7 +925,7 @@ function renderSystemStatusHistory(container, history, state = "ready") {
   const content = container.querySelector(".system-status-history-content");
   const message = container.querySelector(".system-status-history-message");
   message.textContent = state === "loading" ? getSystemStatusText("history.loading")
-    : state === "error" ? getSystemStatusText("history.unavailable") : "";
+    : state === "error" ? getSystemStatusText("history.unavailable") : getSystemStatusText("history.loaded");
   content.replaceChildren();
   if (!history) return;
 
