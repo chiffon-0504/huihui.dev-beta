@@ -1145,7 +1145,7 @@ const BETTER_STACK_RESOURCES = Object.freeze([
   { id: "api", publicName: "API" },
   { id: "contact", publicName: "Contact Service" },
 ]);
-const BETTER_STACK_STATUS_MAP = Object.freeze({
+const BETTER_STACK_CURRENT_STATUS_MAP = Object.freeze({
   operational: "operational",
   degraded: "degraded_performance",
   downtime: "major_outage",
@@ -1153,8 +1153,12 @@ const BETTER_STACK_STATUS_MAP = Object.freeze({
   not_monitored: "unknown",
 });
 
-function isBetterStackStatus(value) {
-  return typeof value === "string" && Object.hasOwn(BETTER_STACK_STATUS_MAP, value);
+function isBetterStackCurrentStatus(value) {
+  return typeof value === "string" && Object.hasOwn(BETTER_STACK_CURRENT_STATUS_MAP, value);
+}
+
+function isBetterStackHistoryStatus(value) {
+  return isBetterStackCurrentStatus(value) || value === "recovered";
 }
 
 export function normalizeBetterStackAvailability(value) {
@@ -1210,7 +1214,7 @@ function normalizeBetterStackHistory(items) {
       typeof item.day !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(item.day) ||
       !Number.isFinite(Date.parse(`${item.day}T00:00:00.000Z`)) ||
       new Date(`${item.day}T00:00:00.000Z`).toISOString().slice(0, 10) !== item.day ||
-      days.has(item.day) || !isBetterStackStatus(item.status) ||
+      days.has(item.day) || !isBetterStackHistoryStatus(item.status) ||
       !Number.isFinite(item.downtime_duration) || item.downtime_duration < 0 ||
       !Number.isFinite(item.maintenance_duration) || item.maintenance_duration < 0
     ) {
@@ -1220,9 +1224,13 @@ function normalizeBetterStackHistory(items) {
     days.add(item.day);
     // Provider padding and paused days are unobserved, but still require full validation.
     if (item.status === "not_monitored") return null;
+    // Observed in provider history only: recovery must not erase that day's downtime.
+    const status = item.status === "recovered"
+      ? (item.downtime_duration > 0 ? "major_outage" : "unknown")
+      : BETTER_STACK_CURRENT_STATUS_MAP[item.status];
     return {
       date: item.day,
-      status: BETTER_STACK_STATUS_MAP[item.status],
+      status,
       downtimeSeconds: item.downtime_duration,
       maintenanceSeconds: item.maintenance_duration,
     };
@@ -1254,7 +1262,7 @@ function normalizeBetterStackStatusPage(data) {
       const availabilityPercent = normalizeBetterStackAvailability(attributes?.availability);
       if (
         matches.length !== 1 || attributes?.resource_type !== "Monitor" ||
-        !isBetterStackStatus(attributes.status) || availabilityPercent === null
+        !isBetterStackCurrentStatus(attributes.status) || availabilityPercent === null
       ) {
         throw new UpstreamInvalidResponseError();
       }
@@ -1262,7 +1270,7 @@ function normalizeBetterStackStatusPage(data) {
       const history = normalizeBetterStackHistory(attributes.status_history);
       return {
         id: definition.id,
-        status: BETTER_STACK_STATUS_MAP[attributes.status],
+        status: BETTER_STACK_CURRENT_STATUS_MAP[attributes.status],
         availabilityPercent,
         observedDays: history.length,
         historyStartDate: history[0]?.date ?? null,
