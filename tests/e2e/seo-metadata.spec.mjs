@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { primaryRoutes } from "../support/routes.mjs";
 import { getExpectedSeoMetadata } from "../support/seo-metadata.mjs";
-import { systemStatusFixture } from "../support/system-status.mjs";
+import { systemStatusFixture, systemStatusHistoryFixture } from "../support/system-status.mjs";
 
 async function stubExternalDependencies(page) {
   await page.route("https://challenges.cloudflare.com/**", (route) =>
@@ -22,6 +22,8 @@ async function stubExternalDependencies(page) {
           ? { ok: true, providers: [] }
           : pathname === "/api/system-status"
             ? systemStatusFixture()
+          : pathname === "/api/system-status/history"
+            ? systemStatusHistoryFixture([])
           : null;
 
     return route.fulfill({

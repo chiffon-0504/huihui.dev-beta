@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { systemStatusFixture } from "../support/system-status.mjs";
+import { systemStatusFixture, systemStatusHistoryFixture } from "../support/system-status.mjs";
 
 const apiOrigin = "https://api.huihui.dev";
 const localeCases = [
@@ -26,9 +26,15 @@ const localeCases = [
   },
 ];
 
-async function stubHomeApis(page, handleSystemStatus) {
+async function stubHomeApis(page, handleSystemStatus, handleHistory) {
   await page.route(`${apiOrigin}/**`, async (route) => {
     const pathname = new URL(route.request().url()).pathname;
+
+    if (pathname === "/api/system-status/history") {
+      if (handleHistory) await handleHistory(route);
+      else await route.fulfill({ json: systemStatusHistoryFixture() });
+      return;
+    }
 
     if (pathname === "/api/system-status") {
       if (handleSystemStatus) {
@@ -67,6 +73,249 @@ async function expectNoHorizontalOverflow(page) {
   expect(geometry.body).toBeLessThanOrEqual(geometry.viewport + 1);
   expect(geometry.document).toBeLessThanOrEqual(geometry.viewport + 1);
 }
+
+const historyStates = ["operational", "degraded_performance", "partial_outage", "major_outage", "unknown"];
+const mixedHistory = () => systemStatusHistoryFixture(historyStates.map((status, index) => ({
+  date: `2026-08-${20 + index * 2}`, status,
+  downtimeSeconds: status === "major_outage" ? 7278 : 0,
+  maintenanceSeconds: status === "degraded_performance" ? 125 : 0,
+})));
+
+test("complete history renders only returned dates, all states, impact durations and separate timestamps", async ({ page }) => {
+  const fixture = mixedHistory();
+  fixture.components[0].availabilityPercent = 99.98765432;
+  fixture.components[2].history[0].maintenanceSeconds = 30;
+  await stubHomeApis(page, null, (route) => route.fulfill({ json: fixture }));
+  await page.goto("/en/status/");
+  const history = page.locator("#systemStatusHistory");
+  await expect(history).toHaveAttribute("data-history-state", "ready");
+  await expect(history.getByRole("heading", { level: 2 })).toHaveText("Availability & History");
+  await expect(history.locator(".system-status-history-card h3")).toHaveText(["Website", "API", "Contact Service"]);
+  const website = history.locator('[data-component="website"]');
+  await expect(website.locator(".system-status-history-summary")).toHaveText("99.988% availability · 5 days observed");
+  const cells = website.locator(".system-status-history-cell");
+  await expect(cells).toHaveCount(5);
+  expect(await cells.evaluateAll((items) => items.map((item) => [item.dataset.date, item.dataset.status]))).toEqual(
+    fixture.components[0].history.map((item) => [item.date, item.status]),
+  );
+  await expect(cells.locator(".status-symbol")).toHaveText(["●", "▲", "◐", "✕", "?"]);
+  await expect(cells.nth(3)).toContainText("Aug 26, 2026 · Major Outage · Downtime: 2 hr 1 min 18 sec");
+  const impact = website.locator(".system-status-history-impacts");
+  await expect(impact.locator("li")).toHaveCount(4);
+  await expect(impact).toContainText("Unknown");
+  await expect(impact).toContainText("Maintenance: 2 min 5 sec");
+  await expect(impact).toContainText("Downtime: 2 hr 1 min 18 sec");
+  await expect(history.locator('[data-component="contact"] .system-status-history-impacts li')).toHaveCount(5);
+  await expect(history.locator('[data-component="contact"] .system-status-history-impacts li').last()).toContainText("OperationalMaintenance: 30 sec");
+  expect(await impact.locator("time").evaluateAll((items) => items.map((item) => item.dateTime))).toEqual(["2026-08-28", "2026-08-26", "2026-08-24", "2026-08-22"]);
+  await expect(history.locator(".system-status-history-fetched")).toContainText("History fetched:");
+  await expect(page.locator(".system-status-checked-at")).toContainText("Last checked:");
+  await expect(page.locator(".system-status-detail")).toHaveAttribute("data-status", "operational");
+  await expect(history.locator(".system-status-history-notice")).toHaveCount(0);
+  await expect(history.locator(".system-status-history-content [role=status], .system-status-history-content [aria-live]")).toHaveCount(0);
+  await expect(history.locator(".system-status-history-content")).not.toHaveAttribute("aria-live", /.+/);
+});
+
+for (const [locale, title, incomplete, observed, unknown, empty, error] of [
+  ["/status/", "可用率與歷史紀錄", "外部監測資料尚不完整", "已觀測 1 天", "可用率不明", "已觀測的歷史紀錄中，沒有服務受影響的日期。", "無法載入歷史紀錄"],
+  ["/en/status/", "Availability & History", "External monitoring data is incomplete", "1 day observed", "Availability unknown", "No service-impact days in the observed history.", "Unable to load history"],
+  ["/ja/status/", "可用性と履歴", "外部監視データは一部不足しています", "観測日数：1 日", "可用率は不明", "観測履歴にサービスへの影響があった日はありません。", "履歴を読み込めません"],
+]) {
+  test(`${locale} incomplete one-day history, unknown availability, empty impact and localized errors`, async ({ page }) => {
+    const fixture = systemStatusHistoryFixture();
+    fixture.ok = false;
+    fixture.complete = false;
+    fixture.components[1].availabilityPercent = null;
+    fixture.components[1].status = "unknown";
+    fixture.components[1].history[0].status = "major_outage";
+    fixture.components[1].history[0].downtimeSeconds = 7278;
+    let malformed = false;
+    await stubHomeApis(page, null, (route) => route.fulfill({ json: malformed ? {} : fixture }));
+    await page.goto(locale);
+    const history = page.locator("#systemStatusHistory");
+    await expect(history).toHaveAttribute("data-history-state", "ready");
+    await expect(history.getByRole("heading", { level: 2 })).toHaveText(title);
+    await expect(history.locator(".system-status-history-notice")).toContainText(incomplete);
+    await expect(history.locator(".system-status-history-cell")).toHaveCount(3);
+    for (const id of ["website", "api", "contact"]) {
+      const card = history.locator(`[data-component="${id}"]`);
+      await expect(card.locator(".system-status-history-cell")).toHaveCount(1);
+      await expect(card.locator(".system-status-history-summary")).toContainText(observed);
+    }
+    await expect(history.locator('[data-component="website"]')).toContainText(empty);
+    await expect(history.locator('[data-component="website"] .system-status-history-summary')).toContainText("100%");
+    await expect(history.locator('[data-component="api"] .system-status-history-summary')).toContainText(unknown);
+    await expect(history.locator('[data-component="api"] .system-status-history-summary')).not.toContainText("0%");
+    await expect(history.locator('[data-component="api"] .system-status-history-impacts li')).toHaveCount(1);
+    await expect(page.locator(".system-status-detail")).toHaveAttribute("data-status", "operational");
+    malformed = true;
+    await page.evaluate(() => loadSystemStatusHistory());
+    await expect(history).toHaveAttribute("data-history-state", "error");
+    await expect(history.locator(".system-status-history-message")).toContainText(error);
+    await expect(history.locator(".system-status-history-card")).toHaveCount(0);
+    await expect(page.locator(".system-status-detail")).toHaveAttribute("data-status", "operational");
+  });
+}
+
+test("zero observed days render neither fake cells nor a date range", async ({ page }) => {
+  await stubHomeApis(page, null, (route) => route.fulfill({ json: systemStatusHistoryFixture([]) }));
+  await page.goto("/en/status/");
+  await expect(page.locator("#systemStatusHistory")).toHaveAttribute("data-history-state", "ready");
+  await expect(page.locator(".system-status-history-summary")).toHaveText(Array(3).fill("Availability unknown · 0 days observed"));
+  await expect(page.locator(".system-status-history-cell, .system-status-history-range")).toHaveCount(0);
+  await expect(page.getByText("No observed history available.", { exact: true })).toHaveCount(3);
+});
+
+test("both request failures are independent, including HTTP, network and malformed history", async ({ page }) => {
+  let currentFails = true;
+  let historyFailure = "none";
+  await stubHomeApis(page,
+    (route) => route.fulfill({ status: currentFails ? 503 : 200, json: systemStatusFixture() }),
+    (route) => historyFailure === "network" ? route.abort("failed") : route.fulfill({
+      status: historyFailure === "http" ? 503 : 200,
+      json: historyFailure === "malformed" ? { ...systemStatusHistoryFixture(), components: [] } : mixedHistory(),
+    }));
+  await page.goto("/en/status/");
+  await expect(page.locator(".system-status-detail")).toHaveAttribute("data-status", "unknown");
+  await expect(page.locator("#systemStatusHistory")).toHaveAttribute("data-history-state", "ready");
+  currentFails = false;
+  await page.evaluate(() => loadSystemStatus());
+  for (const failure of ["http", "network", "malformed"]) {
+    historyFailure = failure;
+    await page.evaluate(() => loadSystemStatusHistory());
+    await expect(page.locator("#systemStatusHistory")).toHaveAttribute("data-history-state", "error");
+    await expect(page.locator(".system-status-history-cell")).toHaveCount(0);
+    await expect(page.locator(".system-status-detail")).toHaveAttribute("data-status", "operational");
+  }
+});
+
+test("history timeout aborts independently and ignores a late successful response", async ({ page }) => {
+  await stubHomeApis(page);
+  await page.goto("/en/status/");
+  await expect(page.locator("#systemStatusHistory")).toHaveAttribute("data-history-state", "ready");
+  await page.clock.install();
+  await page.evaluate(() => {
+    const original = window.fetch;
+    window.fetch = (url, options) => url.endsWith("/api/system-status/history")
+      ? new Promise((resolve) => { window.historyTestPending = { resolve, signal: options.signal }; })
+      : original(url, options);
+    window.historyTestTask = loadSystemStatusHistory();
+  });
+  await expect(page.locator("#systemStatusHistory")).toHaveAttribute("data-history-state", "loading");
+  await page.clock.fastForward(6001);
+  await expect(page.locator(".system-status-history-message")).toHaveText("Unable to load history. History status is unknown.");
+  expect(await page.evaluate(() => window.historyTestPending.signal.aborted)).toBe(true);
+  await page.evaluate(async (fixture) => {
+    window.historyTestPending.resolve({ ok: true, json: async () => fixture });
+    await window.historyTestTask;
+  }, mixedHistory());
+  await expect(page.locator("#systemStatusHistory")).toHaveAttribute("data-history-state", "error");
+  await expect(page.locator(".system-status-history-cell")).toHaveCount(0);
+  await expect(page.locator(".system-status-detail")).toHaveAttribute("data-status", "operational");
+});
+
+test("superseded history requests abort and cannot overwrite newer history", async ({ page }) => {
+  await stubHomeApis(page);
+  await page.goto("/en/status/");
+  await expect(page.locator("#systemStatusHistory")).toHaveAttribute("data-history-state", "ready");
+  await page.evaluate(() => {
+    window.historyTestPending = [];
+    window.fetch = (_url, options) => new Promise((resolve) => window.historyTestPending.push({ resolve, signal: options.signal }));
+    window.historyTestOld = loadSystemStatusHistory();
+    window.historyTestNew = loadSystemStatusHistory();
+  });
+  expect(await page.evaluate(() => window.historyTestPending[0].signal.aborted)).toBe(true);
+  await page.evaluate(async (fixture) => {
+    window.historyTestPending[1].resolve({ ok: true, json: async () => fixture });
+    await window.historyTestNew;
+  }, mixedHistory());
+  await expect(page.locator(".system-status-history-cell")).toHaveCount(15);
+  await page.evaluate(async (fixture) => {
+    window.historyTestPending[0].resolve({ ok: true, json: async () => fixture });
+    await window.historyTestOld;
+  }, systemStatusHistoryFixture());
+  await expect(page.locator(".system-status-history-cell")).toHaveCount(15);
+  await expect(page.locator(".system-status-detail")).toHaveAttribute("data-status", "operational");
+});
+
+test("history uses the same API base as current status and Home issues no history request", async ({ page }) => {
+  const historyRequests = [];
+  page.on("request", (request) => {
+    if (request.url().endsWith("/api/system-status/history")) historyRequests.push(request.url());
+  });
+  await stubHomeApis(page);
+  await page.goto("/en/");
+  await expect(page.locator(".system-status-live")).toHaveAttribute("data-status", "operational");
+  await page.evaluate(() => loadSystemStatusHistory());
+  expect(historyRequests).toEqual([]);
+  await expect(page.locator("#systemStatusHistory")).toHaveCount(0);
+  await page.goto("/en/status/");
+  await expect(page.locator("#systemStatusHistory")).toHaveAttribute("data-history-state", "ready");
+  expect(historyRequests).toEqual([await page.evaluate(() => `${getHuihuiApiBase()}/api/system-status/history`)]);
+});
+
+test("90-day strips wrap at desktop/mobile sizes and forced colors retain symbols and boundaries", async ({ page }) => {
+  const fixture = systemStatusHistoryFixture(Array.from({ length: 90 }, (_, index) => ({
+    date: new Date(Date.UTC(2026, 5, index + 1)).toISOString().slice(0, 10),
+    status: historyStates[index % historyStates.length], downtimeSeconds: 0, maintenanceSeconds: 0,
+  })));
+  await stubHomeApis(page, null, (route) => route.fulfill({ json: fixture }));
+  for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/ja/status/");
+    await expect(page.locator(".system-status-history-cell")).toHaveCount(270);
+    await expectNoHorizontalOverflow(page);
+    const cardGeometry = await page.locator(".system-status-history-card").evaluateAll((cards) => cards.map((card) => ({
+      x: card.getBoundingClientRect().x, width: card.getBoundingClientRect().width,
+    })));
+    expect(new Set(cardGeometry.map((card) => card.x)).size).toBe(1);
+    expect(new Set(cardGeometry.map((card) => card.width)).size).toBe(1);
+  }
+  await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
+  const systemColors = await page.evaluate(() => {
+    const sample = document.createElement("span");
+    sample.style.color = "CanvasText";
+    sample.style.backgroundColor = "Canvas";
+    document.body.append(sample);
+    const colors = { color: getComputedStyle(sample).color, background: getComputedStyle(sample).backgroundColor };
+    sample.remove();
+    return colors;
+  });
+  const cells = page.locator('[data-component="website"] .system-status-history-cell');
+  for (let index = 0; index < 5; index += 1) {
+    await expect(cells.nth(index).locator(".status-symbol")).toBeVisible();
+    const styles = await cells.nth(index).evaluate((cell) => {
+      const style = getComputedStyle(cell);
+      return { border: style.borderTopWidth, borderStyle: style.borderTopStyle, color: style.color, background: style.backgroundColor, animation: style.animationName };
+    });
+    expect(styles.border).toBe("1px");
+    expect(styles.borderStyle).toBe("solid");
+    expect(styles.color).not.toBe(styles.background);
+    expect(styles.color).toBe(systemColors.color);
+    expect(styles.background).toBe(systemColors.background);
+    expect(styles.animation).toBe("none");
+  }
+  expect(await cells.locator(".status-symbol").allTextContents()).toEqual(Array.from({ length: 90 }, (_, i) => ["●", "▲", "◐", "✕", "?"][i % 5]));
+  await expect(page.locator(".system-status-history-legend .status-chip")).toHaveCount(5);
+  expect(await page.locator("#systemStatusHistory .status-chip").evaluateAll((chips) =>
+    chips.every((chip) => getComputedStyle(chip).color === getComputedStyle(chips[0]).color),
+  )).toBe(true);
+  expect(await page.locator(".system-status-history-legend .status-chip").first().evaluate((chip) => getComputedStyle(chip).color)).toBe(systemColors.color);
+  await expectNoHorizontalOverflow(page);
+});
+
+test("calendar bucket dates do not shift in a negative UTC offset", async ({ browser }) => {
+  const context = await browser.newContext({ timezoneId: "America/Los_Angeles" });
+  try {
+    const page = await context.newPage();
+    await stubHomeApis(page);
+    await page.goto("http://127.0.0.1:4173/en/status/");
+    await expect(page.locator(".system-status-history-range").first()).toHaveText("Observed date range: Aug 30, 2026 – Aug 30, 2026");
+    await expect(page.locator(".system-status-history-cell").first()).toContainText("Aug 30, 2026");
+  } finally {
+    await context.close();
+  }
+});
 
 for (const locale of localeCases) {
   test(`${locale.home} renders localized operational Home and status routes`, async ({

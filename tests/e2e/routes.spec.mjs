@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { systemStatusFixture } from "../support/system-status.mjs";
+import { systemStatusFixture, systemStatusHistoryFixture } from "../support/system-status.mjs";
 import { primaryRouteGroups, primaryRoutes } from "../support/routes.mjs";
 
 const routeGroupsByKey = new Map(
@@ -46,6 +46,7 @@ async function stubExternalDependencies(page) {
       return { ok: true, providers: [] };
     }
     if (pathname === "/api/system-status") return systemStatusFixture();
+    if (pathname === "/api/system-status/history") return systemStatusHistoryFixture([]);
     if (pathname === "/api/steam-library") {
       return { ok: true, games: [] };
     }
@@ -227,7 +228,7 @@ for (const route of primaryRoutes) {
     const expectedApiRequests = route.routeKey === "home"
       ? ["/api/system-status", "/api/tech-news", "/api/infrastructure-status"]
       : route.routeKey === "status"
-        ? ["/api/system-status"]
+        ? ["/api/system-status", "/api/system-status/history"]
       : route.routeKey === "about"
         ? ["/api/steam-library"]
         : [];
