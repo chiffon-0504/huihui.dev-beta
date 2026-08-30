@@ -39,6 +39,19 @@ const liveHomeFunctionNames = [
   "loadTechNews",
   "loadInfrastructureStatus",
   "loadSystemStatus",
+  "isSystemStatusHistoryObject",
+  "isSystemStatusHistoryDate",
+  "getValidSystemStatusHistory",
+  "getSystemStatusHistoryLocale",
+  "formatSystemStatusHistoryDate",
+  "formatSystemStatusHistoryCellDate",
+  "formatSystemStatusHistoryDuration",
+  "hasSystemStatusHistoryImpact",
+  "getSystemStatusHistoryImpactText",
+  "createSystemStatusHistoryText",
+  "createSystemStatusHistoryCard",
+  "renderSystemStatusHistory",
+  "loadSystemStatusHistory",
   "initHomeCards",
 ];
 
@@ -69,6 +82,7 @@ describe("Home loader contract", () => {
 
       expect(html, document).toContain('aria-labelledby="systemStatusTitle"');
       expect(html, document).toContain('data-system-status-surface="home"');
+      expect(html, document).not.toContain('id="systemStatusHistory"');
       expect(html, document).toContain('id="websiteVersionTitle"');
       expect(html, document).toContain('id="techNewsCards"');
       expect(html, document).toContain('id="infrastructureStatusCards"');
@@ -102,6 +116,7 @@ describe("Home loader contract", () => {
     vm.runInContext("initHomeCards(); initHomeCards();", context);
 
     expect(elementLookups).toEqual([
+      "systemStatusHistory",
       "techNewsCards",
       "infrastructureStatusCards",
     ]);

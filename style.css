@@ -1300,6 +1300,167 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 
 }
 
+/* Dedicated history stays separate from the current-status live surface. */
+.system-status-history,
+.system-status-history-content {
+  display: grid;
+  min-width: 0;
+  gap: 18px;
+}
+
+.system-status-history h2,
+.system-status-history h3,
+.system-status-history h4,
+.system-status-history p {
+  margin: 0;
+}
+
+.system-status-history h2 {
+  font-size: 1.25rem;
+}
+
+.system-status-history h3 {
+  font-size: 1.05rem;
+}
+
+.system-status-history h4 {
+  margin-top: 8px;
+  font-size: 0.9rem;
+}
+
+.system-status-history-intro,
+.system-status-history-range,
+.system-status-history-empty,
+.system-status-history-fetched,
+.system-status-history-duration {
+  color: var(--ink-muted, #526074);
+  font-size: 0.88rem;
+  line-height: 1.7;
+}
+
+.system-status-history-message:empty {
+  display: none;
+}
+
+.system-status-history-notice {
+  padding: 12px 16px;
+  border-inline-start: 3px solid currentColor;
+  color: var(--ink-muted, #526074);
+  line-height: 1.6;
+}
+
+.system-status-history-card {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.34);
+  box-shadow: 0 12px 36px rgba(29, 43, 73, 0.08);
+  backdrop-filter: blur(24px) saturate(145%);
+  -webkit-backdrop-filter: blur(24px) saturate(145%);
+  overflow-wrap: anywhere;
+}
+
+.system-status-history-summary {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.system-status-history-strip,
+.system-status-history-legend,
+.system-status-history-impacts {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.system-status-history-strip,
+.system-status-history-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.system-status-history-cell {
+  position: relative;
+  display: flex;
+  flex: 0 0 48px;
+  height: 52px;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  color: #4d5665;
+  background: rgba(255, 255, 255, 0.46);
+}
+
+.system-status-history-strip[data-cross-year="true"] .system-status-history-cell {
+  flex-basis: 88px;
+}
+
+.system-status-history-cell-date {
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.system-status-history-cell[data-status="operational"] { color: #0b6938; }
+.system-status-history-cell[data-status="degraded_performance"] { color: #7a4a00; }
+.system-status-history-cell[data-status="partial_outage"] { color: #9a3f00; }
+.system-status-history-cell[data-status="major_outage"] { color: #a11f2f; }
+
+.system-status-history-cell-text,
+.system-status-history[data-history-state="ready"] .system-status-history-message {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.system-status-history-impacts {
+  display: grid;
+  gap: 10px;
+}
+
+.system-status-history-impacts li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(77, 86, 101, 0.18);
+  font-size: 0.85rem;
+}
+
+@media (forced-colors: active) {
+  .system-status-history-card,
+  .system-status-history .status-chip,
+  .system-status-history .system-status-history-cell {
+    border: 1px solid CanvasText;
+    color: CanvasText;
+    background: Canvas;
+    box-shadow: none;
+  }
+
+  .system-status-history p,
+  .system-status-history-duration {
+    color: CanvasText;
+  }
+
+  .system-status-history-impacts li {
+    border-color: CanvasText;
+  }
+}
+
 /* =========================
    Early Responsive Overrides
    Competes with later mobile drawer, posts safety, safe header, and unified

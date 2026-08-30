@@ -6,6 +6,9 @@ let homeCardsReady = false;
 const TECH_NEWS_REQUEST_TIMEOUT_MS = 8000;
 const INFRASTRUCTURE_STATUS_REQUEST_TIMEOUT_MS = 6000;
 const SYSTEM_STATUS_REQUEST_TIMEOUT_MS = 6000;
+const SYSTEM_STATUS_HISTORY_REQUEST_TIMEOUT_MS = 6000;
+let systemStatusHistoryRequestSequence = 0;
+let activeSystemStatusHistoryRequestController;
 let techNewsRequestSequence = 0;
 let activeTechNewsRequestController;
 let infrastructureStatusRequestSequence = 0;
@@ -736,11 +739,270 @@ async function loadSystemStatus() {
   }
 }
 
+function isSystemStatusHistoryObject(value) {
+  return value !== null && typeof value === "object" &&
+    (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
+}
+
+function isSystemStatusHistoryDate(value) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+function getValidSystemStatusHistory(data) {
+  if (
+    !isSystemStatusHistoryObject(data) || data.source !== "better_stack" ||
+    typeof data.ok !== "boolean" || typeof data.complete !== "boolean" ||
+    !Number.isInteger(data.windowDays) || data.windowDays !== 90 ||
+    typeof data.fetchedAt !== "string" ||
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(data.fetchedAt) ||
+    !isSystemStatusHistoryDate(data.fetchedAt.slice(0, 10)) ||
+    !Number.isFinite(Date.parse(data.fetchedAt)) ||
+    !Array.isArray(data.components) || data.components.length !== SYSTEM_STATUS_COMPONENTS.length
+  ) return null;
+
+  const components = [];
+  for (const definition of SYSTEM_STATUS_COMPONENTS) {
+    const matches = data.components.filter((item) =>
+      isSystemStatusHistoryObject(item) && item.id === definition.id);
+    if (matches.length !== 1) return null;
+    const component = matches[0];
+    if (
+      !SYSTEM_STATUS_VALUES.has(component.status) ||
+      (component.availabilityPercent !== null &&
+        (!Number.isFinite(component.availabilityPercent) ||
+          component.availabilityPercent < 0 || component.availabilityPercent > 100)) ||
+      !Number.isInteger(component.observedDays) || component.observedDays < 0 ||
+      component.observedDays > 90 || !Array.isArray(component.history) ||
+      component.history.length !== component.observedDays
+    ) return null;
+
+    const history = [];
+    let previousDate = "";
+    for (const record of component.history) {
+      if (
+        !isSystemStatusHistoryObject(record) || !isSystemStatusHistoryDate(record.date) ||
+        record.date <= previousDate || !SYSTEM_STATUS_VALUES.has(record.status) ||
+        !Number.isFinite(record.downtimeSeconds) || record.downtimeSeconds < 0 ||
+        !Number.isFinite(record.maintenanceSeconds) || record.maintenanceSeconds < 0
+      ) return null;
+      previousDate = record.date;
+      history.push({
+        date: record.date, status: record.status,
+        downtimeSeconds: record.downtimeSeconds, maintenanceSeconds: record.maintenanceSeconds,
+      });
+    }
+    if (
+      component.historyStartDate !== (history[0]?.date ?? null) ||
+      component.historyEndDate !== (history.at(-1)?.date ?? null)
+    ) return null;
+    components.push({
+      ...definition, status: component.status, availabilityPercent: component.availabilityPercent,
+      observedDays: component.observedDays, historyStartDate: component.historyStartDate,
+      historyEndDate: component.historyEndDate, history,
+    });
+  }
+  // Match the B1 Worker's completeness predicate after validating the public fields.
+  const complete = components.every((component) =>
+    component.status !== "unknown" && component.availabilityPercent !== null &&
+    component.history.every((item) => item.status !== "unknown")
+  );
+  if (data.ok !== complete || data.complete !== complete) return null;
+  return { complete, fetchedAt: data.fetchedAt, components };
+}
+
+function getSystemStatusHistoryLocale() {
+  const locale = typeof getCurrentLocale === "function" ? getCurrentLocale() : "zh";
+  return { zh: "zh-Hant", en: "en", ja: "ja" }[locale] || "zh-Hant";
+}
+
+function formatSystemStatusHistoryDate(value) {
+  // Daily buckets are calendar dates, not instants in the visitor's time zone.
+  return new Intl.DateTimeFormat(getSystemStatusHistoryLocale(), {
+    dateStyle: "medium", timeZone: "UTC",
+  }).format(new Date(`${value}T00:00:00.000Z`));
+}
+
+function formatSystemStatusHistoryCellDate(value, includeYear = false) {
+  return new Intl.DateTimeFormat(getSystemStatusHistoryLocale(), {
+    year: includeYear ? "numeric" : undefined,
+    month: "numeric", day: "numeric", timeZone: "UTC",
+  }).format(new Date(`${value}T00:00:00.000Z`));
+}
+
+function formatSystemStatusHistoryDuration(seconds) {
+  if (seconds > 0 && seconds < 1) return getSystemStatusText("history.lessThanSecond");
+  const parts = [];
+  let remaining = Math.floor(seconds);
+  for (const [size, unit] of [[86400, "day"], [3600, "hour"], [60, "minute"], [1, "second"]]) {
+    const value = Math.floor(remaining / size);
+    remaining %= size;
+    if (value > 0 || (unit === "second" && parts.length === 0)) {
+      parts.push(new Intl.NumberFormat(getSystemStatusHistoryLocale(), {
+        style: "unit", unit, unitDisplay: "short", maximumFractionDigits: 0,
+      }).format(value));
+    }
+  }
+  return parts.join(" ");
+}
+
+function hasSystemStatusHistoryImpact(record) {
+  return record.status === "degraded_performance" ||
+    record.status === "partial_outage" || record.status === "major_outage" ||
+    record.downtimeSeconds > 0 || record.maintenanceSeconds > 0;
+}
+
+function getSystemStatusHistoryImpactText(record) {
+  const parts = [];
+  if (record.downtimeSeconds > 0) {
+    parts.push(`${getSystemStatusText("history.downtime")}: ${formatSystemStatusHistoryDuration(record.downtimeSeconds)}`);
+  }
+  if (record.maintenanceSeconds > 0) {
+    parts.push(`${getSystemStatusText("history.maintenance")}: ${formatSystemStatusHistoryDuration(record.maintenanceSeconds)}`);
+  }
+  return parts.join(" · ");
+}
+
+function createSystemStatusHistoryText(tag, className, text) {
+  const element = document.createElement(tag);
+  element.className = className;
+  element.textContent = text;
+  return element;
+}
+
+function createSystemStatusHistoryCard(component) {
+  const card = document.createElement("article");
+  card.className = "system-status-history-card";
+  card.dataset.component = component.id;
+  const heading = createSystemStatusHistoryText("h3", "", getSystemStatusText(component.labelKey));
+  const availability = component.availabilityPercent === null
+    ? getSystemStatusText("history.availabilityUnknown")
+    : getSystemStatusText("history.availability").replace("{value}",
+      new Intl.NumberFormat(getSystemStatusHistoryLocale(), {
+        style: "percent", maximumFractionDigits: 3,
+      }).format(component.availabilityPercent / 100));
+  const observed = getSystemStatusText(component.observedDays === 1
+    ? "history.observedOne" : "history.observedMany").replace("{count}",
+    new Intl.NumberFormat(getSystemStatusHistoryLocale()).format(component.observedDays));
+  card.append(heading, createSystemStatusHistoryText("p", "system-status-history-summary", `${availability} · ${observed}`));
+
+  if (component.history.length === 0) {
+    card.append(createSystemStatusHistoryText("p", "system-status-history-empty", getSystemStatusText("history.noHistory")));
+  } else {
+    const range = `${formatSystemStatusHistoryDate(component.historyStartDate)} – ${formatSystemStatusHistoryDate(component.historyEndDate)}`;
+    card.append(createSystemStatusHistoryText("p", "system-status-history-range",
+      `${getSystemStatusText("history.dateRange")}: ${range}`));
+    const strip = document.createElement("ol");
+    strip.className = "system-status-history-strip";
+    strip.setAttribute("aria-label", getSystemStatusText("history.chronological"));
+    const crossYear = component.history[0].date.slice(0, 4) !== component.history.at(-1).date.slice(0, 4);
+    if (crossYear) strip.dataset.crossYear = "true";
+    component.history.forEach((record) => {
+      const cell = document.createElement("li");
+      cell.className = "system-status-history-cell";
+      cell.dataset.status = record.status;
+      cell.dataset.date = record.date;
+      const date = createSystemStatusHistoryText("time", "system-status-history-cell-date", formatSystemStatusHistoryCellDate(record.date, crossYear));
+      date.dateTime = record.date;
+      date.setAttribute("aria-hidden", "true");
+      const symbol = createSystemStatusHistoryText("span", "status-symbol", SYSTEM_STATUS_SYMBOLS[record.status]);
+      symbol.setAttribute("aria-hidden", "true");
+      const text = [formatSystemStatusHistoryDate(record.date), getSystemStatusLabel(record.status), getSystemStatusHistoryImpactText(record)].filter(Boolean).join(" · ");
+      // Text remains available to assistive technology; symbols and the visible legend do not require hover.
+      cell.append(date, symbol, createSystemStatusHistoryText("span", "system-status-history-cell-text", text));
+      strip.append(cell);
+    });
+    card.append(strip);
+  }
+
+  card.append(createSystemStatusHistoryText("h4", "", getSystemStatusText("history.recentImpact")));
+  const impacts = component.history.filter(hasSystemStatusHistoryImpact);
+  if (impacts.length === 0) {
+    card.append(createSystemStatusHistoryText("p", "system-status-history-empty", getSystemStatusText("history.noImpact")));
+  } else {
+    const list = document.createElement("ul");
+    list.className = "system-status-history-impacts";
+    impacts.slice().reverse().forEach((record) => {
+      const row = document.createElement("li");
+      const date = createSystemStatusHistoryText("time", "", formatSystemStatusHistoryDate(record.date));
+      date.dateTime = record.date;
+      row.append(date, createSystemStatusState(record.status, "status-chip"));
+      const duration = getSystemStatusHistoryImpactText(record);
+      if (duration) row.append(createSystemStatusHistoryText("span", "system-status-history-duration", duration));
+      list.append(row);
+    });
+    card.append(list);
+  }
+  return card;
+}
+
+function renderSystemStatusHistory(container, history, state = "ready") {
+  container.dataset.historyState = state;
+  const content = container.querySelector(".system-status-history-content");
+  const message = container.querySelector(".system-status-history-message");
+  message.textContent = state === "loading" ? getSystemStatusText("history.loading")
+    : state === "error" ? getSystemStatusText("history.unavailable") : getSystemStatusText("history.loaded");
+  content.replaceChildren();
+  if (!history) return;
+
+  if (!history.complete) {
+    content.append(createSystemStatusHistoryText("p", "system-status-history-notice", getSystemStatusText("history.incomplete")));
+  }
+  history.components.forEach((component) => content.append(createSystemStatusHistoryCard(component)));
+  content.append(createSystemStatusHistoryText("p", "system-status-history-fetched",
+    `${getSystemStatusText("history.fetched")}: ${formatSystemStatusTime(history.fetchedAt)}`));
+  const legend = document.createElement("ul");
+  legend.className = "system-status-history-legend";
+  legend.setAttribute("aria-label", getSystemStatusText("history.legend"));
+  SYSTEM_STATUS_VALUES.forEach((status) => {
+    const item = document.createElement("li");
+    item.append(createSystemStatusState(status, "status-chip"));
+    legend.append(item);
+  });
+  content.append(legend);
+}
+
+async function loadSystemStatusHistory() {
+  const container = document.getElementById("systemStatusHistory");
+  if (!container) return;
+  const requestSequence = ++systemStatusHistoryRequestSequence;
+  activeSystemStatusHistoryRequestController?.abort();
+  const controller = new AbortController();
+  activeSystemStatusHistoryRequestController = controller;
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+    if (requestSequence === systemStatusHistoryRequestSequence) {
+      renderSystemStatusHistory(container, null, "error");
+    }
+  }, SYSTEM_STATUS_HISTORY_REQUEST_TIMEOUT_MS);
+  renderSystemStatusHistory(container, null, "loading");
+  try {
+    const response = await fetch(`${getHuihuiApiBase()}/api/system-status/history`, {
+      signal: controller.signal, cache: "no-store",
+    });
+    if (!response.ok) throw new Error("API request failed");
+    const history = getValidSystemStatusHistory(await response.json());
+    if (controller.signal.aborted || requestSequence !== systemStatusHistoryRequestSequence) return;
+    if (!history) throw new Error("Invalid API response");
+    renderSystemStatusHistory(container, history);
+  } catch (error) {
+    if (requestSequence !== systemStatusHistoryRequestSequence) return;
+    renderSystemStatusHistory(container, null, "error");
+  } finally {
+    clearTimeout(timeoutId);
+    if (activeSystemStatusHistoryRequestController === controller) {
+      activeSystemStatusHistoryRequestController = undefined;
+    }
+  }
+}
+
 function initHomeCards() {
   if (homeCardsReady) return;
 
   homeCardsReady = true;
   loadSystemStatus();
+  loadSystemStatusHistory();
   loadTechNews();
   loadInfrastructureStatus();
 }
