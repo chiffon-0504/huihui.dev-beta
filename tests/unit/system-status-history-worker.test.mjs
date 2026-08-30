@@ -240,7 +240,33 @@ describe("Better Stack public System Status history", () => {
     expect(JSON.stringify(data)).not.toContain("under_maintenance");
   });
 
-  test.each(["unexpected", "under_maintenance", "constructor", null, 1, ["operational"]].map((status) => [status]))(
+  test.each([
+    ["downtime", 2785.414413725, 0, "major_outage"],
+    ["downtime and maintenance", 120.5, 60.25, "major_outage"],
+    ["maintenance only", 0, 60.25, "unknown"],
+    ["zero durations", 0, 0, "unknown"],
+  ])("normalizes historical recovered with %s without making it green", async (_label, downtime, maintenance, target) => {
+    const payload = fixture();
+    payload.included[0].attributes.status_history = [day(undefined, {
+      status: "recovered", downtime_duration: downtime, maintenance_duration: maintenance,
+    })];
+    const { response, cache } = await requestHistory({ payload });
+    const data = await response.json();
+    expect(data.components).toEqual([
+      {
+        ...completeComponent("website"),
+        history: [{ date: "2026-08-30", status: target, downtimeSeconds: downtime, maintenanceSeconds: maintenance }],
+      },
+      completeComponent("api"), completeComponent("contact"),
+    ]);
+    expect(data.complete).toBe(target !== "unknown");
+    expect(data.ok).toBe(target !== "unknown");
+    if (target === "unknown") expectUncached(response, cache);
+    else expect(cache.put).toHaveBeenCalledOnce();
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  test.each(["unexpected", "recovered", "under_maintenance", "constructor", null, 1, ["operational"]].map((status) => [status]))(
     "rejects unexpected current state %j", async (status) => {
       const payload = fixture();
       payload.included[0].attributes.status = status;
@@ -319,12 +345,12 @@ describe("Better Stack public System Status history", () => {
     expect(warnSpy).not.toHaveBeenCalled();
   });
 
-  test("preserves current not_monitored as Unknown while retaining real downtime history", async () => {
+  test.each(["downtime", "recovered"])("preserves current not_monitored as Unknown with 89 padding days and one %s day", async (status) => {
     const payload = fixture();
     for (const item of payload.included) item.attributes.status_history = paddedHistory();
     for (const item of payload.included.slice(1)) {
       item.attributes.status = "not_monitored";
-      item.attributes.status_history = paddedHistory(day(undefined, { status: "downtime", downtime_duration: 2785.414413725 }));
+      item.attributes.status_history = paddedHistory(day(undefined, { status, downtime_duration: 2785.414413725 }));
     }
     const { response, cache } = await requestHistory({ payload });
     const data = await response.json();
@@ -397,6 +423,7 @@ describe("Better Stack public System Status history", () => {
 
   test.each([
     ["not_monitored", "not_monitored"], ["not_monitored", "operational"], ["operational", "not_monitored"],
+    ["recovered", "recovered"], ["not_monitored", "recovered"], ["recovered", "not_monitored"],
   ])("rejects duplicate dates across %s and %s before filtering", async (first, second) => {
     const payload = fixture();
     payload.included[0].attributes.status_history = [day(undefined, { status: first }), day(undefined, { status: second })];
@@ -463,6 +490,30 @@ describe("Better Stack public System Status history", () => {
     expect(data.components).toEqual([unknown("website"), completeComponent("api"), completeComponent("contact")]);
     expect(data.complete).toBe(false);
     expectUncached(response, cache);
+  });
+
+  test.each([
+    ["impossible date", { day: "2026-02-30" }], ["missing date", { day: undefined }],
+    ["negative downtime", { downtime_duration: -1 }], ["string downtime", { downtime_duration: "120" }],
+    ["missing downtime", { downtime_duration: undefined }], ["NaN downtime", { downtime_duration: NaN }],
+    ["infinite downtime", { downtime_duration: Infinity }],
+    ["negative maintenance", { maintenance_duration: -1 }], ["string maintenance", { maintenance_duration: "0" }],
+    ["missing maintenance", { maintenance_duration: undefined }], ["NaN maintenance", { maintenance_duration: NaN }],
+    ["infinite maintenance", { maintenance_duration: Infinity }],
+  ])("fails closed for malformed recovered history: %s", async (_label, overrides) => {
+    const payload = fixture();
+    payload.included[0].attributes.status_history = [day(undefined, {
+      status: "recovered", downtime_duration: 120.5, ...overrides,
+    })];
+    const { response, cache } = await requestHistory({ payload });
+    const data = await response.json();
+    expect(data.components).toEqual([unknown("website"), completeComponent("api"), completeComponent("contact")]);
+    expect(data.complete).toBe(false);
+    expect(data.ok).toBe(false);
+    expectUncached(response, cache);
+    expect(warnSpy.mock.calls).toEqual([[{
+      event: "worker_upstream_failure", route, upstream: "better_stack_status_page", category: "invalid_response",
+    }]]);
   });
 
   test("historical maintenance is retained and prevents caching even when currently operational", async () => {

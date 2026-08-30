@@ -106,12 +106,26 @@ Availability is the upstream resource's reported aggregate, not a recalculated
 | `downtime` | `major_outage` | `major_outage` |
 | `maintenance` | `unknown` | `unknown` (duration retained) |
 | `not_monitored` | `unknown` | Omitted as unobserved after validation |
+| `recovered` | Invalid component / `unknown` | `major_outage` if downtime > 0; otherwise `unknown` |
 | Unexpected state | Invalid component / `unknown` | Invalid component / `unknown` |
+
+Current resource validation is separate from historical normalization. As checked
+on 2026-08-30, Better Stack's public JSON documentation lists only `operational`,
+`degraded`, `downtime`, `maintenance`, and `not_monitored`. However, the real
+[public payload](https://huihui-dev.betteruptime.com/index.json) emitted historical
+`recovered` for API and Contact Service after their setup incidents were resolved,
+while their current resource state remained `not_monitored`.
+Accept `recovered` only in `status_history`, after normal validation. Positive
+`downtime_duration` takes precedence even if maintenance is also recorded. With
+maintenance only, or both durations zero, the day remains `unknown`, never green.
+Always retain both durations and count the day as observed; resolving an incident
+does not erase its downtime. This does not change availability semantics or provide
+evidence to accept `recovered` as a current resource state.
 
 There is no new System Status `under_maintenance` state. Known maintenance history
 retains its separate duration. History requires real `YYYY-MM-DD` calendar dates,
 known source states, finite non-negative numeric durations, and unique days.
-All records, including `not_monitored`, are validated before excluding unobserved
+All records, including `not_monitored` and `recovered`, are validated before excluding unobserved
 days, sorting, and retaining the latest 90 observed records. Malformed or duplicate
 unobserved records still invalidate the component; filtering cannot hide them.
 
