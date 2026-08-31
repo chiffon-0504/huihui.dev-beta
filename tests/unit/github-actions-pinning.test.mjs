@@ -652,12 +652,14 @@ describe("Playwright cross-browser validation contract", () => {
       "https://huihui-api-beta.huihuigames01.workers.dev",
     );
     expect(
-      [
-        ...httpSmokeSource.matchAll(
-          /`\$\{API_BASE_URL\}(\/api\/[^`]+)`/g,
-        ),
-      ].map((match) => match[1]),
-    ).toEqual(["/api/tech-news", "/api/steam-library"]);
+      httpSmokeSource.match(/\/api\/[a-z/-]+/g)?.sort(),
+    ).toEqual([
+      "/api/contact/health",
+      "/api/health",
+      "/api/steam-library",
+      "/api/system-status",
+      "/api/tech-news",
+    ]);
     expect(httpSmokeSource).toContain(
       'response.headers.get("access-control-allow-origin")',
     );
@@ -668,7 +670,7 @@ describe("Playwright cross-browser validation contract", () => {
     expect(betaOriginSource).toContain("unexpected origin ${final.origin}");
     expect(
       httpSmokeSource.match(/assertExactFinalUrl\(url, response\.url\)/g),
-    ).toHaveLength(2);
+    ).toHaveLength(3); // Tech News, Steam, and the shared status/readiness guard.
     expect(browserSmokeSource.match(/^test\(/gm)).toHaveLength(5);
     for (const routeCall of [
       'page.goto("/", { waitUntil: "load" })',
