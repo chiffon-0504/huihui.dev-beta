@@ -330,20 +330,6 @@ img {
   padding: 28px;
 }
 
-.work-card {
-  position: relative;
-  border-radius: 20px;
-  overflow: hidden;
-}
-
-.work-card img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-/* 不要圖片下面文字 */
 /* Lightbox */
 .lightbox {
   position: fixed;
@@ -494,7 +480,7 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 /* =========================
    Homepage Dynamic Content: APOD And Tech Updates
    APOD markup is static on the homepage; tech cards and error/loading states
-   are populated by js/main.js.
+   are populated by js/home-cards.js.
 ========================= */
 
 /* NASA APOD */
@@ -513,22 +499,6 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.apod-media-link {
-  display: block;
-  min-width: 0;
-  aspect-ratio: 16 / 10;
-  border-radius: 18px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.apod-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
 }
 
 .apod-content {
@@ -565,10 +535,6 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 }
 
 @media (min-width: 901px) and (max-width: 1200px) {
-  .apod-media-link {
-    aspect-ratio: 16 / 9;
-  }
-
   .apod-content {
     min-width: 0;
   }
@@ -885,19 +851,6 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   width: 100%;
 }
 
-.about-title {
-  margin: 0 0 28px;
-  font-size: clamp(2.4rem, 6vw, 4.2rem);
-  line-height: 1.08;
-  letter-spacing: -0.03em;
-}
-
-.about-section-title {
-  margin: 0 0 22px;
-  font-size: clamp(1.3rem, 3vw, 1.8rem);
-  line-height: 1.2;
-}
-
 .interest-cards {
   display: grid;
   gap: 56px;
@@ -915,18 +868,6 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   font-weight: 700;
   line-height: 1.08;
   letter-spacing: inherit;
-}
-
-.interest-gallery {
-  width: 100%;
-}
-
-.interest-gallery img {
-  width: 100% !important;
-  max-width: 100% !important;
-  height: auto !important;
-  border-radius: 18px;
-  display: block;
 }
 
 .interest-note {
@@ -1056,7 +997,6 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
   }
 }
 
-.work-card,
 .tech-news-card,
 .apod-card,
 .project-update-card,
@@ -1070,7 +1010,6 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
     opacity 0.2s ease;
 }
 
-.work-card:hover,
 .apod-card:hover,
 .project-update-card:hover {
   transform: translateY(-4px);
@@ -1087,7 +1026,6 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
     animation: none;
   }
 
-  .work-card,
   .tech-news-card,
   .apod-card,
   .project-update-card,
@@ -1569,10 +1507,6 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 
 /* Mobile */
 @media (max-width: 900px) {
-  .work-card {
-    grid-column: span 12 !important;
-  }
-
   .home-hero {
     flex-direction: column;
     align-items: stretch;
@@ -1584,25 +1518,12 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
     margin: 40px auto 56px;
   }
 
-  .apod-media-link {
-    aspect-ratio: 16 / 9;
-  }
-
   .tech-news-card {
     min-height: auto;
   }
 
   .interest-cards {
     gap: 34px;
-  }
-
-  .interest-gallery {
-    grid-template-columns: 1fr;
-  }
-
-  .interest-gallery img {
-    width: 100% !important;
-    max-width: 100% !important;
   }
 
   .steam-favorites {
@@ -1620,21 +1541,20 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
    Later material/readability passes override .hero-btn and related controls.
 ========================= */
 
-/* CTA Buttons */
 .hero-actions {
-  margin-top: 22px;   /* 原本 18，稍微拉開 */
+  margin-top: 22px;
   display: flex;
-  gap: 14px;          /* 原本 12，間距多一點 */
+  gap: 14px;
 }
 
 .hero-btn {
-  padding: 11px 22px; /* 原本 8 16，放大 */
+  padding: 11px 22px;
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 999px;
   color: #fff;
   text-decoration: none;
-  font-size: 1.05rem;    /* 原本 0.9，變清楚 */
-  font-weight: 500;   /* 新增：提升質感 */
+  font-size: 1.05rem;
+  font-weight: 500;
   opacity: 0.85;
   transition: all 0.2s ease;
 }
@@ -1646,8 +1566,8 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 }
 
 /* =========================
-   Homepage Project Update Card
-   Static homepage card with link text updated by js/main.js.
+   Homepage System Status Card
+   Static homepage shell with status content updated by js/home-cards.js.
 ========================= */
 
 .project-update-card {
@@ -1670,16 +1590,6 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 .project-update-card h2 {
   margin: 0 0 10px;
   font-size: 1.4rem;
-}
-
-.project-update-desc {
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 14px;
-}
-
-.project-update-meta {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.5);
 }
 
 /* =========================
@@ -1770,7 +1680,6 @@ textarea {
 .project-update-card,
 .apod-card,
 .tech-news-card,
-.work-card,
 .contact-form,
 .code-block,
 .galgame-showcase,
@@ -1790,7 +1699,6 @@ textarea {
 .project-update-card,
 .apod-card,
 .tech-news-card,
-.work-card,
 .contact-form,
 .code-block,
 .galgame-showcase {
@@ -1802,7 +1710,6 @@ textarea {
 .project-update-card::before,
 .apod-card::before,
 .tech-news-card::before,
-.work-card::before,
 .contact-form::before,
 .code-block::before,
 .galgame-showcase::before {
@@ -1941,8 +1848,7 @@ textarea {
 .code-header,
 .code-block pre,
 .galgame-showcase > *,
-.post-card > *,
-.work-card > * {
+.post-card > * {
   position: relative;
   z-index: 1;
 }
@@ -1967,7 +1873,6 @@ textarea {
 .home-text h3,
 .home-text h5,
 .home-text h6,
-.project-update-desc,
 .apod-content p,
 .tech-news-header p,
 .tech-news-card p,
@@ -2019,7 +1924,6 @@ textarea {
   color: var(--accent-cyan);
 }
 
-.project-update-meta,
 .hashtag,
 .contact-fallback a {
   color: var(--accent-blue) !important;
@@ -2036,18 +1940,14 @@ textarea {
   border-radius: var(--glass-radius-md);
 }
 
-.apod-media-link,
 .post-image,
-.work-card,
 .galgame-banner-link,
 .galgame-banner,
 .steam-game-card img {
   border-radius: var(--glass-radius-sm);
 }
 
-.apod-media-link,
 .post-image,
-.interest-gallery img,
 .galgame-banner,
 .steam-game-card img {
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -2056,28 +1956,13 @@ textarea {
 
 .tech-news-card:hover,
 .apod-card:hover,
-.project-update-card:hover,
-.work-card:hover {
+.project-update-card:hover {
   transform: translateY(var(--glass-hover-y));
   border-color: rgba(255, 255, 255, 0.28);
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.07)),
     var(--glass-bg-strong);
   box-shadow: var(--glass-shadow);
-}
-
-.work-card {
-  border-radius: var(--glass-radius-md);
-  isolation: isolate;
-}
-
-.work-card img {
-  transition: transform 0.35s ease, filter 0.35s ease;
-}
-
-.work-card:hover img {
-  transform: scale(1.025);
-  filter: saturate(1.08) brightness(1.04);
 }
 
 .code-block {
@@ -2119,11 +2004,6 @@ textarea {
   border: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(var(--glass-blur-soft));
   -webkit-backdrop-filter: blur(var(--glass-blur-soft));
-}
-
-.interest-gallery img {
-  width: min(1000px, 100%) !important;
-  max-width: 100% !important;
 }
 
 .galgame-showcase {
@@ -2194,7 +2074,6 @@ textarea {
   .project-update-card,
   .apod-card,
   .tech-news-card,
-  .work-card,
   .contact-form,
   .code-block,
   .galgame-showcase,
@@ -2283,8 +2162,7 @@ textarea {
 
 .about-page,
 .contact-page,
-.page-shell,
-.content-wrapper {
+.page-shell {
   min-height: calc(100vh - var(--sidebar-offset, 0px));
   margin-top: 0;
   padding-top: 0;
@@ -2308,8 +2186,7 @@ textarea {
   .home-hero,
   .about-page,
   .contact-page,
-  .page-shell,
-  .content-wrapper {
+  .page-shell {
     min-height: auto;
     margin-top: 0;
   }
@@ -2375,10 +2252,6 @@ textarea {
   }
 }
 
-.apod-image {
-  filter: brightness(1.08) contrast(1.05);
-}
-
 .tech-news-card:hover {
   transform: translateY(-4px);
   box-shadow:
@@ -2416,7 +2289,6 @@ body {
 .project-update-card,
 .apod-card,
 .tech-news-card,
-.work-card,
 .post-card,
 .contact-form,
 .code-block {
@@ -2434,7 +2306,6 @@ body {
 .project-update-card::before,
 .apod-card::before,
 .tech-news-card::before,
-.work-card::before,
 .contact-form::before,
 .code-block::before {
   background:
@@ -2497,7 +2368,6 @@ body {
 .project-update-card,
 .apod-card,
 .tech-news-card,
-.work-card,
 .post-card,
 .contact-form,
 .code-block {
@@ -2515,7 +2385,6 @@ body {
 .project-update-card::before,
 .apod-card::before,
 .tech-news-card::before,
-.work-card::before,
 .contact-form::before,
 .code-block::before {
   background:
@@ -2550,7 +2419,6 @@ body {
 .home-text .home-subtitle,
 .home-text h5,
 .home-text h6,
-.project-update-desc,
 .apod-content p,
 .tech-news-header p,
 .tech-news-card p,
@@ -2584,7 +2452,6 @@ body {
 .project-update-label,
 .apod-label,
 .tech-news-category,
-.project-update-meta,
 .hashtag {
   color: var(--accent-blue) !important;
 }
@@ -2619,8 +2486,7 @@ body {
 
 .tech-news-card:hover,
 .apod-card:hover,
-.project-update-card:hover,
-.work-card:hover {
+.project-update-card:hover {
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.46)),
     var(--glass-bg-strong);
@@ -2665,7 +2531,6 @@ body {
 .project-update-card,
 .apod-card,
 .tech-news-card,
-.work-card,
 .post-card,
 .contact-form,
 .code-block {
@@ -2705,7 +2570,6 @@ body {
 .project-update-card,
 .apod-card,
 .tech-news-card,
-.work-card,
 .post-card,
 .contact-form,
 .code-block {
@@ -2717,7 +2581,6 @@ body {
 .project-update-card::before,
 .apod-card::before,
 .tech-news-card::before,
-.work-card::before,
 .contact-form::before,
 .code-block::before {
   background:
@@ -2757,8 +2620,7 @@ body {
 
 .tech-news-card:hover,
 .apod-card:hover,
-.project-update-card:hover,
-.work-card:hover {
+.project-update-card:hover {
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.22)),
     var(--glass-bg-strong);
@@ -2784,7 +2646,6 @@ body {
 .project-update-card,
 .apod-card,
 .tech-news-card,
-.work-card,
 .post-card,
 .contact-form,
 .code-block {
@@ -2811,7 +2672,6 @@ body {
 .project-update-card,
 .apod-card,
 .tech-news-card,
-.work-card,
 .post-card,
 .contact-form,
 .code-block {
@@ -2857,7 +2717,6 @@ body::before {
 .tech-news-card:hover,
 .apod-card:hover,
 .project-update-card:hover,
-.work-card:hover,
 .post-card:hover,
 .hero-btn:hover,
 .contact-form button:hover,
@@ -2873,7 +2732,6 @@ body::before {
 .tech-news-card:hover,
 .apod-card:hover,
 .project-update-card:hover,
-.work-card:hover,
 .post-card:hover {
   background:
     linear-gradient(
@@ -2978,7 +2836,6 @@ body::before {
 .project-update-card,
 .apod-card,
 .tech-news-card,
-.work-card,
 .post-card,
 .contact-form,
 .code-block {
@@ -2999,7 +2856,6 @@ body::before {
 }
 
 .home-text h3,
-.project-update-desc,
 .apod-content p,
 .tech-news-header p,
 .tech-news-card p,
@@ -3017,7 +2873,6 @@ body::before {
 .tech-news-card:hover,
 .apod-card:hover,
 .project-update-card:hover,
-.work-card:hover,
 .post-card:hover {
   transform: none;
   background:
@@ -3037,7 +2892,6 @@ body::before {
 .contact-form button:hover,
 .copy-btn:hover,
 .steam-game-card:hover,
-.work-card:hover img,
 .steam-game-card:hover img {
   transform: none;
 }
@@ -3051,7 +2905,6 @@ body::before {
 .project-update-card,
 .apod-card,
 .tech-news-card,
-.work-card,
 .post-card,
 .contact-form,
 .code-block {
@@ -3074,7 +2927,6 @@ body::before {
     );
 }
 
-.work-card:hover,
 .post-card:hover {
   background:
     linear-gradient(
@@ -3082,36 +2934,6 @@ body::before {
       rgba(255, 255, 255, calc(var(--glass-tint-hover-opacity) + 0.21)),
       rgba(255, 255, 255, var(--glass-tint-hover-opacity))
     );
-}
-
-.light-text {
-  color: var(--text-main-light);
-}
-
-.light-text p,
-.light-text span,
-.light-text small,
-.light-text .project-update-desc,
-.light-text .apod-content p,
-.light-text .tech-news-card p,
-.light-text .post-content,
-.light-text .post-caption {
-  color: var(--text-muted-light);
-}
-
-.dark-text {
-  color: var(--text-main-dark);
-}
-
-.dark-text p,
-.dark-text span,
-.dark-text small,
-.dark-text .project-update-desc,
-.dark-text .apod-content p,
-.dark-text .tech-news-card p,
-.dark-text .post-content,
-.dark-text .post-caption {
-  color: var(--text-muted-dark);
 }
 
 /* =========================
@@ -3129,7 +2951,6 @@ body::before {
 .project-update-card,
 .apod-card,
 .tech-news-card,
-.work-card,
 .post-card,
 .contact-form,
 .code-block {
@@ -3148,9 +2969,6 @@ body::before {
 .tech-news-card h1,
 .tech-news-card h2,
 .tech-news-card h3,
-.work-card h1,
-.work-card h2,
-.work-card h3,
 .post-card h1,
 .post-card h2,
 .post-card h3,
@@ -3170,8 +2988,6 @@ body::before {
 .home-text .home-subtitle,
 .home-text h5,
 .home-text h6,
-.project-update-desc,
-.project-update-meta,
 .apod-content p,
 .apod-date,
 .tech-news-header p,
@@ -3231,7 +3047,6 @@ body::before {
   color: var(--content-text-main);
 }
 
-.work-card,
 .post-card,
 .contact-form,
 .code-block {
@@ -3267,8 +3082,6 @@ body::before {
 }
 
 .main p,
-.project-update-desc,
-.project-update-meta,
 .apod-content p,
 .apod-date,
 .tech-news-header p,
@@ -3339,11 +3152,6 @@ code[class*="language-"] {
       rgba(255, 255, 255, 0.78),
       rgba(235, 248, 255, 0.64)
     );
-}
-
-.posts-list,
-.posts-grid {
-  align-items: start;
 }
 
 .sidebar,
@@ -3455,7 +3263,7 @@ body {
 
 /* =========================
    Mobile iOS Drawer
-   Dynamic nodes are created by js/main.js. Later posts drawer safety, safe
+   Dynamic nodes are created by js/mobile-drawer.js. Later drawer safety, safe
    header, and unified layout sections repeat some sidebar/mobile rules.
 ========================= */
 
@@ -3582,9 +3390,9 @@ body {
 }
 
 /* =========================
-   Posts Drawer Safety
+   Milestones Drawer Safety
    COMPETING OVERRIDE SECTION: repeats sidebar open/closed mobile state to
-   protect generated posts layout.
+   protect the generated milestones layout.
 ========================= */
 
 @media (max-width: 900px) {
@@ -3613,20 +3421,10 @@ body {
   }
 }
 
-/* =========================
-   Fix galgame banner hours color
-   About Galgame Banner Fixes
-   COMPETING OVERRIDE SECTION: #galgameBannerHours is declared twice here; keep
-   both declarations until the generated about-page markup is visually checked.
-========================= */
-
-/* Fix galgame banner hours color */
-
 #galgameBannerName {
   color: rgba(18, 24, 35, 0.92) !important;
 }
 
-/* fix: galgame banner text clipping */
 .galgame-banner-meta {
   padding-left: 2px;
 }
@@ -3644,8 +3442,6 @@ body {
    active styles before the final nav-link-specific overrides.
 ========================= */
 
-/* sidebar item 基礎 */
-/* active 重點 */
 .sidebar-top nav a {
   display: block;
   position: relative;
@@ -3706,7 +3502,6 @@ body {
 }
 
 /* =========================
-   Mobile left drawer safe header
    Mobile Left Drawer Safe Header
    COMPETING OVERRIDE SECTION: final mobile #menuToggle dimensions and page
    heading offsets after the Mobile iOS Drawer block.
@@ -3728,8 +3523,6 @@ body {
     z-index: 2000 !important;
   }
 
-  .about-title,
-  .posts-page > h1,
   .contact-content > h1,
   .tier-maker-page > h1,
   .works-page > h1 {
@@ -3746,7 +3539,6 @@ body {
 }
 
 /* =========================
-   Sidebar Home Link
    Sidebar Home Link And Nav Icon Final Overrides
    COMPETING OVERRIDE SECTION: nav-link-specific active/icon styles layered on
    top of generic .sidebar-top nav a rules.
@@ -4098,7 +3890,6 @@ body {
 
 :root {
   --sidebar-width: 300px;
-  --sidebar-gap: 40px;
   --main-offset: 340px;
   --page-shell-width: 1000px;
   --page-top-offset: 56px;
@@ -4143,13 +3934,8 @@ body {
 .page-shell,
 .about-page,
 .works-page,
-.work-page,
-.posts-page,
-.post-page,
 .contact-page,
-.tools-page,
-.tier-maker-page,
-.tier-page {
+.tier-maker-page {
   width: 100%;
   max-width: var(--page-shell-width);
   margin-left: auto;
@@ -4195,8 +3981,6 @@ body {
 .tier-board,
 .image-pool,
 .tier-note,
-.posts-grid,
-.post-list,
 #postsList {
   width: 100%;
   max-width: 100%;
@@ -4326,13 +4110,8 @@ body {
   .page-shell,
   .about-page,
   .works-page,
-  .work-page,
-  .posts-page,
-  .post-page,
   .contact-page,
-  .tools-page,
-  .tier-maker-page,
-  .tier-page {
+  .tier-maker-page {
     max-width: 100%;
   }
 
@@ -4356,8 +4135,6 @@ img,
 .apod-card,
 .project-update-card,
 .galgame-showcase,
-.interest-gallery,
-.interest-gallery img,
 .galgame-banner,
 .post-image,
 .tier-board,
@@ -4379,7 +4156,6 @@ body:has(#aboutPage) .about-content,
 body:has(#aboutPage) .page-body,
 body:has(#aboutPage) .interest-cards,
 body:has(#aboutPage) .interest-card,
-body:has(#aboutPage) .interest-gallery,
 body:has(#aboutPage) .galgame-showcase,
 body:has(#aboutPage) .galgame-banner-link,
 body:has(#aboutPage) .steam-favorites,
@@ -4394,7 +4170,6 @@ body:has(#aboutPage) .galgame-showcase {
   overflow: hidden;
 }
 
-body:has(#aboutPage) .interest-gallery img,
 body:has(#aboutPage) .galgame-banner {
   inline-size: 100%;
   max-inline-size: 100%;
@@ -4425,16 +4200,12 @@ body:has(#aboutPage) .galgame-banner {
     grid-template-columns: 1fr !important;
   }
 
-  .apod-media-link,
   .apod-content {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
   }
 
-  .apod-media-link {
-    aspect-ratio: 16 / 9 !important;
-  }
 }
 
 body:has(#aboutPage) .arcaea-card {

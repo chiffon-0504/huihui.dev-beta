@@ -269,7 +269,6 @@
   }
 }
 
-/* Light glass readability pass */
 .tier-maker-page,
 .tier-header,
 .image-pool {
@@ -331,7 +330,6 @@
   color: rgba(10,15,25,.86);
 }
 
-/* Production light surface recovery */
 .tier-toolbar,
 .tier-board,
 .tier-content,
@@ -385,7 +383,6 @@
   color: rgba(45,58,78,.72);
 }
 
-/* Button readability recovery */
 button,
 .upload-button,
 .tier-toolbar button,
@@ -405,7 +402,6 @@ button:hover,
   color: rgba(10,15,25,.94);
 }
 
-/* Page shell containment fix */
 .main > .page-shell.tier-maker-page {
   width: 100%;
   max-width: var(--page-shell-width,1000px);
