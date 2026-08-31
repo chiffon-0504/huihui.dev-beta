@@ -7,6 +7,10 @@ const TECH_NEWS_REQUEST_TIMEOUT_MS = 8000;
 const INFRASTRUCTURE_STATUS_REQUEST_TIMEOUT_MS = 6000;
 const SYSTEM_STATUS_REQUEST_TIMEOUT_MS = 6000;
 const SYSTEM_STATUS_HISTORY_REQUEST_TIMEOUT_MS = 6000;
+const SYSTEM_STATUS_INCIDENTS_REQUEST_TIMEOUT_MS = 6000;
+let systemStatusIncidentsRequestSequence = 0;
+let activeSystemStatusIncidentsRequestController;
+let systemStatusIncidentsLifecycleReady = false;
 let systemStatusHistoryRequestSequence = 0;
 let activeSystemStatusHistoryRequestController;
 let techNewsRequestSequence = 0;
@@ -997,12 +1001,176 @@ async function loadSystemStatusHistory() {
   }
 }
 
+function isSystemStatusIncidentInstant(value) {
+  // B3.1 emits canonical UTC instants; reject calendar rollover and ambiguous dates.
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value)) return false;
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) && date.toISOString() === value;
+}
+
+function isSystemStatusIncidentUrl(value) {
+  // Validate raw input as well as URL properties: normalization must not repair paths.
+  if (typeof value !== "string" || !/^https:\/\/[^/?#\\@\s]+\/incident\/[A-Za-z0-9_-]{1,128}$/.test(value)) return false;
+  try {
+    const url = new URL(value);
+    return url.href === value && url.protocol === "https:" && !url.port &&
+      !url.username && !url.password && !url.search && !url.hash;
+  } catch (error) {
+    return false;
+  }
+}
+
+function getValidSystemStatusIncidents(data) {
+  if (!isSystemStatusHistoryObject(data) || data.ok !== true || data.source !== "better_stack" ||
+    !Array.isArray(data.reports) || data.reports.length > 20 ||
+    !isSystemStatusIncidentInstant(data.fetchedAt)) return null;
+  const keys = new Set();
+  const reports = [];
+  let previousLatest = Infinity;
+  let incidentOrigin;
+  for (const report of data.reports) {
+    if (!isSystemStatusHistoryObject(report) || typeof report.key !== "string" ||
+      report.key.length !== 64 || !/^[a-f0-9]{64}$/.test(report.key) || keys.has(report.key) ||
+      typeof report.title !== "string" || !report.title.trim() || report.title.length > 200 ||
+      !isSystemStatusIncidentUrl(report.url) || !Array.isArray(report.updates) ||
+      report.updates.length < 1 || report.updates.length > 20) return null;
+    // B3.1 authenticates the configured provider origin; B3.2 requires payload consistency.
+    const reportOrigin = new URL(report.url).origin;
+    if (incidentOrigin !== undefined && reportOrigin !== incidentOrigin) return null;
+    incidentOrigin = reportOrigin;
+    keys.add(report.key);
+    const seen = new Set();
+    const updates = [];
+    let previousTime = -Infinity;
+    for (const update of report.updates) {
+      if (!isSystemStatusHistoryObject(update) || !isSystemStatusIncidentInstant(update.publishedAt) ||
+        typeof update.message !== "string" || !update.message.trim() || update.message.length > 4000) return null;
+      const time = Date.parse(update.publishedAt);
+      const identity = JSON.stringify([time, update.message]);
+      if (time < previousTime || seen.has(identity)) return null;
+      seen.add(identity);
+      previousTime = time;
+      updates.push({ publishedAt: update.publishedAt, message: update.message });
+    }
+    if (previousTime > previousLatest) return null;
+    previousLatest = previousTime;
+    // Keys identify provider records only; they never enter the presentation model.
+    reports.push({ title: report.title, url: report.url, updates });
+  }
+  return { reports, fetchedAt: data.fetchedAt };
+}
+
+function formatSystemStatusIncidentTime(value) {
+  const locale = typeof getCurrentLocale === "function" ? getCurrentLocale() : "zh";
+  return new Intl.DateTimeFormat(locale === "zh" ? "zh-Hant" : locale, {
+    year: "numeric", month: "short", day: "numeric",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", timeZoneName: "short",
+  }).format(new Date(value));
+}
+
+function createSystemStatusIncidentText(tag, className, text) {
+  const node = document.createElement(tag);
+  node.className = className;
+  node.textContent = text;
+  return node;
+}
+
+function createSystemStatusIncidentTime(value) {
+  const time = createSystemStatusIncidentText("time", "", formatSystemStatusIncidentTime(value));
+  time.dateTime = value;
+  return time;
+}
+
+function createSystemStatusIncidentReport(report) {
+  const article = document.createElement("article");
+  article.className = "system-status-incident";
+  const header = document.createElement("header");
+  const title = createSystemStatusIncidentText("h3", "", report.title);
+  const link = createSystemStatusIncidentText("a", "status-link system-status-incident-link", getSystemStatusText("incidents.viewReport"));
+  link.href = report.url;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.setAttribute("aria-label", `${getSystemStatusText("incidents.viewReport")}: ${report.title}`);
+  header.append(title, link);
+  const updates = document.createElement("ol");
+  updates.className = "system-status-incident-updates";
+  updates.setAttribute("aria-label", getSystemStatusText("incidents.chronological"));
+  report.updates.forEach((update) => {
+    const item = document.createElement("li");
+    item.append(createSystemStatusIncidentTime(update.publishedAt),
+      createSystemStatusIncidentText("p", "system-status-incident-message", update.message));
+    updates.append(item);
+  });
+  article.append(header, updates);
+  return article;
+}
+
+function renderSystemStatusIncidents(container, incidents, state = "ready") {
+  container.dataset.incidentsState = state;
+  const message = container.querySelector(".system-status-incidents-message");
+  const content = container.querySelector(".system-status-incidents-content");
+  const populated = state === "ready" && incidents?.reports.length > 0;
+  message.classList.toggle("system-status-incidents-announcement", populated);
+  message.textContent = getSystemStatusText(`incidents.${state === "loading" ? "loading"
+    : state === "error" ? "unavailable" : populated ? "loaded" : "empty"}`);
+  content.replaceChildren();
+  if (state !== "ready" || !incidents) return;
+  incidents.reports.forEach((report) => content.append(createSystemStatusIncidentReport(report)));
+  const fetched = createSystemStatusIncidentText("p", "system-status-incidents-fetched", `${getSystemStatusText("incidents.fetched")}: `);
+  fetched.append(createSystemStatusIncidentTime(incidents.fetchedAt));
+  content.append(fetched);
+}
+
+async function loadSystemStatusIncidents() {
+  const container = document.getElementById("systemStatusIncidents");
+  if (!container) return;
+  if (!systemStatusIncidentsLifecycleReady) {
+    systemStatusIncidentsLifecycleReady = true;
+    window.addEventListener("pageshow", (event) => {
+      if (event.persisted) loadSystemStatusIncidents();
+    });
+  }
+  const requestSequence = ++systemStatusIncidentsRequestSequence;
+  activeSystemStatusIncidentsRequestController?.abort();
+  const controller = new AbortController();
+  activeSystemStatusIncidentsRequestController = controller;
+  const isCurrent = () => requestSequence === systemStatusIncidentsRequestSequence &&
+    document.getElementById("systemStatusIncidents") === container;
+  const onPageHide = () => {
+    if (requestSequence === systemStatusIncidentsRequestSequence) systemStatusIncidentsRequestSequence += 1;
+    controller.abort();
+  };
+  window.addEventListener("pagehide", onPageHide, { once: true });
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+    if (isCurrent()) renderSystemStatusIncidents(container, null, "error");
+  }, SYSTEM_STATUS_INCIDENTS_REQUEST_TIMEOUT_MS);
+  renderSystemStatusIncidents(container, null, "loading");
+  try {
+    const response = await fetch(`${getHuihuiApiBase()}/api/system-status/incidents`, {
+      signal: controller.signal, cache: "no-store",
+    });
+    if (!response.ok) throw new Error("API request failed");
+    const incidents = getValidSystemStatusIncidents(await response.json());
+    if (controller.signal.aborted || !isCurrent()) return;
+    if (!incidents) throw new Error("Invalid API response");
+    renderSystemStatusIncidents(container, incidents);
+  } catch (error) {
+    if (isCurrent()) renderSystemStatusIncidents(container, null, "error");
+  } finally {
+    clearTimeout(timeoutId);
+    window.removeEventListener("pagehide", onPageHide);
+    if (activeSystemStatusIncidentsRequestController === controller) activeSystemStatusIncidentsRequestController = undefined;
+  }
+}
+
 function initHomeCards() {
   if (homeCardsReady) return;
 
   homeCardsReady = true;
   loadSystemStatus();
   loadSystemStatusHistory();
+  loadSystemStatusIncidents();
   loadTechNews();
   loadInfrastructureStatus();
 }

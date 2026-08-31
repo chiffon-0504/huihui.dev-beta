@@ -76,6 +76,17 @@ window.HUIHUI_I18N.zh = {
     }
   },
   systemStatus: {
+    incidents: {
+      title: "事故與狀態更新",
+      intro: "Better Stack 公開發布的事故與狀態更新；與上方目前健康狀態及每日可用性歷史分開呈現。",
+      loading: "正在載入事故紀錄……",
+      loaded: "事故紀錄已載入。",
+      unavailable: "目前無法取得事故紀錄。",
+      empty: "目前沒有事故或狀態更新。",
+      fetched: "最後擷取",
+      viewReport: "查看狀態報告",
+      chronological: "狀態更新，由舊至新",
+    },
     history: {
       title: "可用率與歷史紀錄",
       intro: "由 Better Stack 提供的獨立外部監測紀錄。可用率為供應商回報的彙總數據；涵蓋範圍僅限下列實際觀測日，不一定有 90 天。上方的目前健康狀態另行檢查。",
