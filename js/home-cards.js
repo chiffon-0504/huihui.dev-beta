@@ -386,6 +386,38 @@ function setTechNewsStatus(container, state) {
   if (!existingStatus) container.replaceChildren(message);
 }
 
+function formatTechNewsTimeAgo(value) {
+  if (typeof value !== "string" || !value) return "";
+
+  // The current API exposes only timeAgo, not a publication timestamp.
+  const match = /^(-?\d+) (mins?|minutes?|hours?|days?) ago$/.exec(value);
+  if (value !== "just now" && !match) return value;
+
+  const amount = match ? Number(match[1]) : 0;
+  if (!Number.isSafeInteger(amount)) return "";
+
+  const locale = typeof getCurrentLocale === "function" ? getCurrentLocale() : "zh";
+  const localeTag = { zh: "zh-Hant", en: "en", ja: "ja" }[locale] || "zh-Hant";
+  if (value === "just now" || amount < 0) {
+    return localeTag === "en"
+      ? "just now"
+      : new Intl.RelativeTimeFormat(localeTag, { numeric: "auto" }).format(
+          0,
+          "second",
+        );
+  }
+
+  const unit = match[2].startsWith("min")
+    ? "minute"
+    : match[2].startsWith("hour")
+      ? "hour"
+      : "day";
+  return new Intl.RelativeTimeFormat(localeTag, { numeric: "always" }).format(
+    -amount,
+    unit,
+  );
+}
+
 function getValidTechNewsItem(item) {
   if (!item || typeof item !== "object" || Array.isArray(item)) return null;
 
@@ -400,7 +432,7 @@ function getValidTechNewsItem(item) {
     category: item.category,
     title: item.title,
     source: item.source,
-    timeAgo: typeof item.timeAgo === "string" ? item.timeAgo : "",
+    timeAgo: formatTechNewsTimeAgo(item.timeAgo),
     tag: item.tag,
     link: getSafeTechNewsUrl(item.link),
   };

@@ -28,6 +28,7 @@ const liveHomeFunctionNames = [
   "createSystemStatusComponents",
   "renderSystemStatus",
   "setTechNewsStatus",
+  "formatTechNewsTimeAgo",
   "getValidTechNewsItem",
   "renderTechNewsCards",
   "getInfrastructureStatusText",
@@ -65,17 +66,76 @@ const liveHomeFunctionNames = [
 ];
 
 let homeCardsSource;
+let i18nSource;
 let homeSources;
 
 beforeAll(async () => {
-  [homeCardsSource, homeSources] = await Promise.all([
+  [homeCardsSource, i18nSource, homeSources] = await Promise.all([
     readFile(path.join(root, "js/home-cards.js"), "utf8"),
+    readFile(path.join(root, "js/i18n.js"), "utf8"),
     Promise.all(
       homeDocuments.map((document) =>
         readFile(path.join(root, document), "utf8"),
       ),
     ),
   ]);
+});
+
+describe("Tech News relative-time localization", () => {
+  const locales = [
+    { path: "/", expected: ["12 分鐘前", "12 小時前", "3 天前"], now: "現在" },
+    { path: "/en/", expected: ["12 minutes ago", "12 hours ago", "3 days ago"], now: "just now" },
+    { path: "/ja/", expected: ["12 分前", "12 時間前", "3 日前"], now: "今" },
+  ];
+
+  function createContext(pathname) {
+    const context = vm.createContext({
+      window: { location: { pathname } },
+      document: { addEventListener() {} },
+      navigator: { language: "fr-FR" },
+      URL,
+    });
+    vm.runInContext(i18nSource, context);
+    vm.runInContext(homeCardsSource, context);
+    return context;
+  }
+
+  test.each(locales)("$path uses the page locale for minutes, hours, and days", ({ path, expected }) => {
+    const context = createContext(path);
+    const actual = ["12 mins ago", "12 hours ago", "3 days ago"].map(
+      (value) => context.formatTechNewsTimeAgo(value),
+    );
+    expect(actual).toEqual(expected);
+    if (path !== "/en/") expect(actual.join(" ")).not.toMatch(/(?:hours|minutes|mins) ago/);
+  });
+
+  test.each(locales)("$path preserves the Worker future/equal-time clamp", ({ path, now }) => {
+    const context = createContext(path);
+    expect(context.formatTechNewsTimeAgo("just now")).toBe(now);
+    expect(context.formatTechNewsTimeAgo("-2 hours ago")).toBe(now);
+  });
+
+  test.each(locales)("$path keeps cards with missing/invalid dates and upstream fallbacks", ({ path }) => {
+    const context = createContext(path);
+    for (const timeAgo of [undefined, null, "", 42, {}]) {
+      const item = context.getValidTechNewsItem({
+        category: "OpenAI", title: "OpenAI News", source: "OpenAI News",
+        tag: "News", link: "https://openai.com/news", timeAgo,
+      });
+      expect(item).not.toBeNull();
+      expect(item.timeAgo).toBe("");
+      expect(item.link).toBe("https://openai.com/news");
+    }
+    expect(context.formatTechNewsTimeAgo("now")).toBe("now");
+    expect(context.formatTechNewsTimeAgo("999999999999999999999 hours ago")).toBe("");
+  });
+
+  test("English pluralization and zero-minute ages use the internationalization API", () => {
+    const context = createContext("/en/");
+    expect(["0 mins ago", "1 min ago", "1 hours ago", "1 days ago"].map(
+      (value) => context.formatTechNewsTimeAgo(value),
+    )).toEqual(["0 minutes ago", "1 minute ago", "1 hour ago", "1 day ago"]);
+  });
 });
 
 describe("Home loader contract", () => {
