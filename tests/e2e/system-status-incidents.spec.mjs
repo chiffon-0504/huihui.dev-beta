@@ -228,6 +228,30 @@ test.describe("B3 localized UI", () => {
       expectClean(diagnostics);
     });
 
+    test(`${copy.route} custom incident origin renders unchanged; mixed origins fail closed`, async ({ page }) => {
+      const reports = [systemStatusIncidentReport(), systemStatusIncidentReport(1)];
+      reports[0].url = "https://status.huihui.dev/incident/abc";
+      reports[1].url = "https://status.huihui.dev/incident/def";
+      const fixture = systemStatusIncidentsFixture(reports);
+      const diagnostics = await stub(page, { incidents: (route) => route.fulfill({ json: fixture }) });
+      await page.goto(copy.route);
+      const section = page.locator("#systemStatusIncidents");
+      await expect(section).toHaveAttribute("data-incidents-state", "ready");
+      await expect(section.locator("article")).toHaveCount(2);
+      for (const report of reports) {
+        await expect(section.getByRole("link", { name: `${copy.link}: ${report.title}`, exact: true }))
+          .toHaveAttribute("href", report.url);
+      }
+      await expectIndependent(page);
+      reports[1].url = "https://huihui-dev.betteruptime.com/incident/def";
+      await page.evaluate(() => loadSystemStatusIncidents());
+      await expect(section).toHaveAttribute("data-incidents-state", "error");
+      await expect(section.locator(".system-status-incidents-message")).toHaveText(copy.unavailable);
+      await expect(section.locator("article, a, time")).toHaveCount(0);
+      await expectIndependent(page);
+      expectClean(diagnostics);
+    });
+
     test(`${copy.route} B2 or Phase A failure does not prevent valid B3`, async ({ page }) => {
       for (const failure of ["current", "history"]) {
         const diagnostics = await stub(page, { [failure]: { ok: false }, incidents: (route) => route.fulfill({ json: systemStatusIncidentsFixture([systemStatusIncidentReport()]) }) });

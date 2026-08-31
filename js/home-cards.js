@@ -1010,10 +1010,10 @@ function isSystemStatusIncidentInstant(value) {
 
 function isSystemStatusIncidentUrl(value) {
   // Validate raw input as well as URL properties: normalization must not repair paths.
-  if (typeof value !== "string" || !/^https:\/\/huihui-dev\.betteruptime\.com\/incident\/[A-Za-z0-9_-]{1,128}$/.test(value)) return false;
+  if (typeof value !== "string" || !/^https:\/\/[^/?#\\@\s]+\/incident\/[A-Za-z0-9_-]{1,128}$/.test(value)) return false;
   try {
     const url = new URL(value);
-    return url.href === value && url.protocol === "https:" && url.origin === "https://huihui-dev.betteruptime.com" &&
+    return url.href === value && url.protocol === "https:" && !url.port &&
       !url.username && !url.password && !url.search && !url.hash;
   } catch (error) {
     return false;
@@ -1027,12 +1027,17 @@ function getValidSystemStatusIncidents(data) {
   const keys = new Set();
   const reports = [];
   let previousLatest = Infinity;
+  let incidentOrigin;
   for (const report of data.reports) {
     if (!isSystemStatusHistoryObject(report) || typeof report.key !== "string" ||
       report.key.length !== 64 || !/^[a-f0-9]{64}$/.test(report.key) || keys.has(report.key) ||
       typeof report.title !== "string" || !report.title.trim() || report.title.length > 200 ||
       !isSystemStatusIncidentUrl(report.url) || !Array.isArray(report.updates) ||
       report.updates.length < 1 || report.updates.length > 20) return null;
+    // B3.1 authenticates the configured provider origin; B3.2 requires payload consistency.
+    const reportOrigin = new URL(report.url).origin;
+    if (incidentOrigin !== undefined && reportOrigin !== incidentOrigin) return null;
+    incidentOrigin = reportOrigin;
     keys.add(report.key);
     const seen = new Set();
     const updates = [];

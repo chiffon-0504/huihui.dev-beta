@@ -74,6 +74,29 @@ describe("B3 frontend contract", () => {
   });
 
   test.each([
+    "https://huihui-dev.betteruptime.com", "https://status.huihui.dev",
+    "https://another.betteruptime.com", "https://status.example.org",
+  ])("accepts same-origin reports from %s without rewriting URLs", (origin) => {
+    const reports = [systemStatusIncidentReport(), systemStatusIncidentReport(1)];
+    reports[0].url = `${origin}/incident/abc`;
+    reports[1].url = `${origin}/incident/${"A0_-".repeat(32)}`;
+    expect(validate("", systemStatusIncidentsFixture(reports)).reports)
+      .toEqual(reports.map(({ key, ...report }) => report));
+  });
+
+  test.each([
+    ["https://status.huihui.dev", "https://huihui-dev.betteruptime.com"],
+    ["https://huihui-dev.betteruptime.com", "https://status.huihui.dev"],
+    ["https://status.huihui.dev", "https://status.example.org"],
+    ["https://status.huihui.dev", "https://status.huihui.dev.example.org"],
+  ])("rejects mixed origins %s and %s wholesale", (first, second) => {
+    const reports = [systemStatusIncidentReport(), systemStatusIncidentReport(1)];
+    reports[0].url = `${first}/incident/abc`;
+    reports[1].url = `${second}/incident/def`;
+    expect(validate("", systemStatusIncidentsFixture(reports))).toBeNull();
+  });
+
+  test.each([
     ["null", "data = null"], ["array", "data = []"],
     ["nonplain", "Object.setPrototypeOf(data, { inherited: true })"],
     ["ok false", "data.ok = false"], ["ok missing", "delete data.ok"], ["ok number", "data.ok = 1"],
@@ -108,14 +131,22 @@ describe("B3 frontend contract", () => {
   });
 
   test.each([null, 2, "javascript:alert(1)", "http://huihui-dev.betteruptime.com/incident/abc",
-    "https://evil.example/incident/abc", "https://huihui-dev.betteruptime.com.evil.example/incident/abc",
     ...["?x=1", "?", "#x", "#", "/", "/extra", "%2f", "."].map((suffix) => `https://huihui-dev.betteruptime.com/incident/abc${suffix}`),
     "https://user:pass@huihui-dev.betteruptime.com/incident/abc", "https://@huihui-dev.betteruptime.com/incident/abc",
     "https://huihui-dev.betteruptime.com:443/incident/abc", "https://huihui-dev.betteruptime.com/other/../incident/abc",
     "https://huihui-dev.betteruptime.com/incident/", "https://huihui-dev.betteruptime.com/incident/" + "a".repeat(129),
     " https://huihui-dev.betteruptime.com/incident/abc", "https://huihui-dev.betteruptime.com\\incident\\abc",
     "https://huihui-dev.betteruptime.com/incident/abc\n",
-  ])("rejects unsafe URL %s", (url) => expect(validate(`data.reports[0].url = ${JSON.stringify(url)}`)).toBeNull());
+    "HTTPS://status.huihui.dev/incident/abc", "https://STATUS.huihui.dev/incident/abc",
+    "https://%73tatus.huihui.dev/incident/abc", "https://status.huihui.dev:/incident/abc",
+    "https://status.huihui.dev:443/incident/abc", "https://status.huihui.dev:8443/incident/abc",
+    "https://status.huihui.dev/incident/../incident/abc", "https://status.huihui.dev/%2e%2e/incident/abc",
+    "https://status.huihui.dev/incident/%61bc", "https://status.huihui.dev/incident/a%5cb",
+    "https://status.huihui.dev//incident/abc", "https://status.huihui.dev/incident/a b",
+    "https://status.huihui.dev/incident/a.b", "https://status.huihui.dev/incident/abc ",
+    "https://sta\ttus.huihui.dev/incident/abc", "https:////status.huihui.dev/incident/abc",
+  ])("rejects unsafe URL %s", (url) => expect(validate("",
+    systemStatusIncidentsFixture([{ ...systemStatusIncidentReport(), url }]))).toBeNull());
 
   test("allows equal times with different messages and equal report latest times", () => {
     expect(validate("data.reports[0].updates[1].publishedAt = data.reports[0].updates[0].publishedAt")).not.toBeNull();
