@@ -61,7 +61,6 @@ describe("high-confidence dead CSS removal", () => {
         ".project-update-label",
         ".apod-label",
         ".tech-news-category",
-        ".project-update-meta",
         ".hashtag",
       ]),
     ).toContain("color: var(--accent-blue) !important");
@@ -136,6 +135,17 @@ describe("high-confidence dead CSS removal", () => {
       ".page-title",
       ".page-subtitle",
       ".waiting-area",
+      ".about-title",
+      ".about-section-title",
+      ".content-wrapper",
+      ".posts-list",
+      ".posts-grid",
+      ".post-list",
+      ".posts-page",
+      ".post-page",
+      ".work-page",
+      ".tools-page",
+      ".tier-page",
     ]) {
       expectSelectorAbsent(globalCss, selector);
     }
@@ -155,8 +165,6 @@ describe("high-confidence dead CSS removal", () => {
       ".apod-card",
       ".project-update-card",
       ".galgame-showcase",
-      ".interest-gallery",
-      ".interest-gallery img",
       ".galgame-banner",
       ".post-image",
       ".tier-board",
@@ -167,7 +175,7 @@ describe("high-confidence dead CSS removal", () => {
     expect(overflowRule).toContain("box-sizing: border-box !important");
   });
 
-  test("removes verified legacy layout families while preserving live card systems", () => {
+  test("removes verified legacy layout and card families while preserving live systems", () => {
     for (const selector of [
       ".hero",
       ".hero-text",
@@ -190,11 +198,28 @@ describe("high-confidence dead CSS removal", () => {
       ".works-gallery .work-card-wide",
       ".works-gallery .work-card-tall",
       ".works-kicker",
+      ".work-card",
+      ".work-card:hover",
+      ".work-card::before",
+      ".work-card img",
+      ".work-card:hover img",
+      ".work-card > *",
+      ".apod-media-link",
+      ".apod-image",
+      ".interest-gallery",
+      ".interest-gallery img",
+      ".project-update-desc",
+      ".project-update-meta",
+      ".light-text",
+      ".dark-text",
     ]) {
       expectSelectorAbsent(globalCss, selector);
     }
 
-    expect(globalCss).toMatch(/\.work-card\s*\{/);
+    expect(globalCss).toMatch(/\.apod-card\s*\{/);
+    expect(globalCss).toMatch(/\.project-update-card\s*\{/);
+    expect(globalCss).toMatch(/\.about-page\s*\{/);
+    expect(globalCss).toMatch(/\.tier-maker-page\s*\{/);
     expect(globalCss).toMatch(/\.works-showcase-grid\s*\{/);
     expect(globalCss).toMatch(/\.showcase-card\s*\{/);
     expect(globalCss).toMatch(/\.showcase-card-wide\s*\{/);

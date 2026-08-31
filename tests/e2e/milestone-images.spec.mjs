@@ -233,8 +233,8 @@ for (const viewport of viewportCases) {
           geometry.requiredHeight,
         );
       } else if (viewport.name === "boundary-900-2x") {
-        // C2 must not rewrite 3013. Its pre-existing contract is four source
-        // pixels below this exact breakpoint's rounded border-box requirement.
+        // 3013 stays four source pixels below this exact breakpoint's rounded
+        // border-box requirement, so keep the established tolerance.
         expect(geometry.requiredWidth - selectedSource.width).toBeLessThanOrEqual(4);
         expect(geometry.requiredHeight - selectedSource.height).toBeLessThanOrEqual(3);
       } else if (viewport.deviceScaleFactor <= 2) {
