@@ -11,6 +11,7 @@ const locales = [
     error: "無法載入科技動態。",
     timeout: "科技動態載入逾時。",
     source: "來源：Fixture · now",
+    relativeTimes: ["12 分鐘前", "12 小時前", "3 天前", "現在"],
   },
   {
     name: "EN",
@@ -20,6 +21,7 @@ const locales = [
     error: "Failed to load tech updates.",
     timeout: "Tech updates timed out.",
     source: "Source: Fixture · now",
+    relativeTimes: ["12 minutes ago", "12 hours ago", "3 days ago", "just now"],
   },
   {
     name: "JA",
@@ -29,8 +31,56 @@ const locales = [
     error: "テクノロジー情報を読み込めませんでした。",
     timeout: "テクノロジー情報の読み込みがタイムアウトしました。",
     source: "出典：Fixture · now",
+    relativeTimes: ["12 分前", "12 時間前", "3 日前", "今"],
   },
 ];
+
+test.describe("Tech News relative-time localization", () => {
+  test.use({ locale: "fr-FR" });
+
+  for (const locale of locales) {
+    test(`${locale.name} follows the page locale and preserves dateless cards`, async ({
+      page,
+    }) => {
+      const consoleErrors = [];
+      page.on("pageerror", (error) => consoleErrors.push(error.message));
+      // These are the current Worker outputs for past, future/equal, and
+      // invalid/missing publication dates (including upstream fallback entries).
+      // Null and absent timeAgo also exercise the frontend's optional-field guard.
+      const ages = [
+        "12 mins ago", "12 hours ago", "3 days ago", "just now", "", null, undefined,
+      ];
+      await stubHomeDependencies(page, {
+        techNews: ages.map((timeAgo, index) =>
+          techNewsItem({ title: `Article ${index}`, timeAgo }),
+        ),
+      });
+
+      const response = await page.goto(locale.path, { waitUntil: "load" });
+      expect(response?.status()).toBe(200);
+      expect(await page.evaluate(() => navigator.language)).toBe("fr-FR");
+      const cards = page.locator("#techNewsCards > .tech-news-card");
+      await expect(cards).toHaveCount(ages.length);
+      const sourcePrefix = locale.source.replace(" · now", "");
+      await expect(cards.locator("p")).toHaveText([
+        ...locale.relativeTimes.map((time) => `${sourcePrefix} · ${time}`),
+        sourcePrefix,
+        sourcePrefix,
+        sourcePrefix,
+      ]);
+      if (locale.name !== "EN") {
+        await expect(page.locator("#techNewsCards")).not.toContainText(
+          /(?:hours|minutes|mins) ago/,
+        );
+      }
+      await expect(page.locator("#techNewsCards")).not.toContainText(
+        /-\d|NaN|Invalid Date/,
+      );
+      await expect(page.locator("#techNewsCards > .tech-news-status")).toHaveCount(0);
+      expect(consoleErrors).toEqual([]);
+    });
+  }
+});
 
 function techNewsItem(overrides = {}) {
   return {
@@ -294,7 +344,7 @@ test("renders hostile feed values as text and only links HTTPS cards", async ({
     { tag: "SPAN", className: "tech-news-tag" },
   ]);
   await expect(cards.nth(0).locator("p")).toHaveText(
-    `來源：${hostileSource} · 1 min ago`,
+    `來源：${hostileSource} · 1 分鐘前`,
   );
 });
 
