@@ -1095,24 +1095,15 @@ function checkContactReadiness(env, diagnosticRoute = "/api/system-status") {
 }
 
 function handleApiHealth() {
-  return jsonResponse(createApiHealthPayload(), {
+  return jsonResponse({ ok: true, service: "huihui-api" }, {
     "Cache-Control": "no-store",
   });
 }
 
-function handleContactHealth(env) {
-  const component = checkContactReadiness(env, "/api/contact/health");
-  const isOperational = component.status === "operational";
-
-  return jsonResponse(
-    {
-      ok: isOperational,
-      status: component.status,
-      scope: "configuration_readiness",
-    },
-    { "Cache-Control": "no-store" },
-    isOperational ? 200 : 503
-  );
+function handleContactHealth() {
+  return jsonResponse({ ok: true, service: "contact" }, {
+    "Cache-Control": "no-store",
+  });
 }
 
 async function handleSystemStatus(env) {
@@ -2387,7 +2378,7 @@ async function routeRequest(request, env, ctx) {
   }
 
   if (url.pathname === "/api/contact/health") {
-    return handleReadOnlyRoute(request, () => handleContactHealth(env));
+    return handleReadOnlyRoute(request, handleContactHealth);
   }
 
   if (url.pathname === "/api/apod") {

@@ -9,6 +9,27 @@ This directory contains the Cloudflare Worker that serves the site's existing AP
 
 GitHub Actions supplies deployment credentials. Do not commit secrets.
 
+## Uptime health endpoints
+
+Both Worker environments use the same lightweight health routes:
+
+| Request | HTTP status | JSON response |
+| --- | --- | --- |
+| `GET /api/health` | 200 | `{"ok":true,"service":"huihui-api"}` |
+| `GET /api/contact/health` | 200 | `{"ok":true,"service":"contact"}` |
+
+Responses use `Content-Type: application/json; charset=utf-8` and
+`Cache-Control: no-store`. Only GET runs the check; existing CORS preflight remains
+OPTIONS 204. HEAD and other unsupported methods return 405 with
+`Allow: GET, OPTIONS`. Production/beta CORS allowlists remain unchanged.
+
+These endpoints prove only that the Worker can route and answer the request.
+They do not inspect Contact configuration, verify Turnstile, call Formspree, send
+email, consume a submission, or access caches. `/api/system-status` retains its
+independent configuration readiness checks; a health 200 is not a delivery or
+dependency readiness guarantee. Production monitors will see these responses only
+after a separately authorized production Worker deployment and routing verification.
+
 ## GitHub Actions deployment flow
 
 The `Deploy huihui API Worker` workflow keeps the environments explicit and separate:

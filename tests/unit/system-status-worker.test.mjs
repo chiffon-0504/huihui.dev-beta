@@ -164,7 +164,7 @@ describe("huihui.dev current System Status Worker", () => {
     expect(data.status).toBe("unknown");
   });
 
-  test("Contact readiness never calls Turnstile or Formspree", async () => {
+  test("Contact health never calls Turnstile or Formspree", async () => {
     const fetchMock = vi.fn(async () => htmlResponse());
     vi.stubGlobal("fetch", fetchMock);
     const response = await worker.fetch(
@@ -176,13 +176,12 @@ describe("huihui.dev current System Status Worker", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       ok: true,
-      status: "operational",
-      scope: "configuration_readiness",
+      service: "contact",
     });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  test("Contact readiness fails closed for malformed configuration", async () => {
+  test("Contact health stays independent of malformed configuration", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     const response = await worker.fetch(
@@ -191,17 +190,16 @@ describe("huihui.dev current System Status Worker", () => {
       context(),
     );
 
-    expect(response.status).toBe(503);
+    expect(response.status).toBe(200);
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(await response.json()).toEqual({
-      ok: false,
-      status: "unknown",
-      scope: "configuration_readiness",
+      ok: true,
+      service: "contact",
     });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  test("API health explicitly limits its readiness scope", async () => {
+  test("API health returns only its service identity", async () => {
     vi.stubGlobal("fetch", vi.fn());
     const response = await worker.fetch(request("/api/health"), {}, context());
 
@@ -209,8 +207,7 @@ describe("huihui.dev current System Status Worker", () => {
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(await response.json()).toEqual({
       ok: true,
-      status: "operational",
-      scope: "worker_request_path",
+      service: "huihui-api",
     });
   });
 

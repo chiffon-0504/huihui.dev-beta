@@ -4,6 +4,10 @@ import worker from "../../workers/huihui-api/worker.js";
 const apiOrigin = "https://api.example.test";
 const productionOrigin = "https://huihui.dev";
 const betaOrigin = "https://beta.huihui.dev";
+const healthRoutes = [
+  { path: "/api/health", service: "huihui-api" },
+  { path: "/api/contact/health", service: "contact" },
+];
 const readRoutes = [
   {
     path: "/api/tech-news",
@@ -83,7 +87,10 @@ describe("Worker public API contract", () => {
     },
   );
 
-  test("keeps POST as the Contact route's successful method", async () => {
+  test.each([
+    ["production", productionOrigin],
+    ["beta", betaOrigin],
+  ])("keeps Contact POST unchanged after a health check in %s", async (workerEnvironment, origin) => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
@@ -91,7 +98,7 @@ describe("Worker public API contract", () => {
           JSON.stringify({
             success: true,
             action: "contact",
-            hostname: "huihui.dev",
+            hostname: new URL(origin).hostname,
           }),
           { headers: { "Content-Type": "application/json" } },
         ),
@@ -99,6 +106,16 @@ describe("Worker public API contract", () => {
       .mockResolvedValueOnce(new Response(null, { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
     stubCache();
+
+    const env = {
+      WORKER_ENV: workerEnvironment,
+      TURNSTILE_SECRET_KEY: "test-secret",
+      FORMSPREE_ENDPOINT: "https://formspree.example.test/contact",
+    };
+    const health = await worker.fetch(request("/api/contact/health"), env, context());
+    expect(health.status).toBe(200);
+    expect(await health.json()).toEqual({ ok: true, service: "contact" });
+    expect(fetchMock).not.toHaveBeenCalled();
 
     const formData = new FormData();
     formData.set("name", "Contract Test");
@@ -109,14 +126,10 @@ describe("Worker public API contract", () => {
     const response = await worker.fetch(
       request("/api/contact", {
         method: "POST",
-        headers: { Origin: productionOrigin },
+        headers: { Origin: origin },
         body: formData,
       }),
-      {
-        WORKER_ENV: "production",
-        TURNSTILE_SECRET_KEY: "test-secret",
-        FORMSPREE_ENDPOINT: "https://formspree.example.test/contact",
-      },
+      env,
       context(),
     );
 
@@ -232,7 +245,13 @@ describe("Worker public API contract", () => {
     },
   );
 
-  test.each(["/api/github-updates", "/api/does-not-exist"])(
+  test.each([
+    "/api/github-updates",
+    "/api/does-not-exist",
+    "/api/health/extra",
+    "/api/contact/health/extra",
+    "/api/contact/does-not-exist",
+  ])(
     "%s uses the normal unknown-route response",
     async (path) => {
       const fetchMock = vi.fn();
@@ -313,5 +332,103 @@ describe("Worker public API contract", () => {
     expect(responseText).not.toContain(exceptionMarker);
     expect(responseText).not.toContain("Error:");
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe.each([
+  ["production", productionOrigin, betaOrigin],
+  ["beta", betaOrigin, productionOrigin],
+])("%s uptime health endpoints", (workerEnvironment, allowedOrigin, rejectedOrigin) => {
+  test.each(healthRoutes)("GET $path is minimal and has no side effects", async ({ path, service }) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const cache = stubCache();
+    const ctx = context();
+    const env = { WORKER_ENV: workerEnvironment };
+    const readContactConfiguration = vi.fn(() => {
+      throw new Error("Health must not read Contact configuration");
+    });
+    Object.defineProperties(env, {
+      TURNSTILE_SECRET_KEY: { get: readContactConfiguration },
+      FORMSPREE_ENDPOINT: { get: readContactConfiguration },
+    });
+
+    const response = await worker.fetch(request(path), env, ctx);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("application/json; charset=utf-8");
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(response.headers.has("Access-Control-Allow-Origin")).toBe(false);
+    expect(await response.json()).toEqual({ ok: true, service });
+    expect(readContactConfiguration).not.toHaveBeenCalled();
+    // All external I/O uses fetch, including Turnstile and Formspree.
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(cache.match).not.toHaveBeenCalled();
+    expect(cache.put).not.toHaveBeenCalled();
+    expect(ctx.waitUntil).not.toHaveBeenCalled();
+  });
+
+  test.each(healthRoutes)("$path preserves CORS and preflight without running a check", async ({ path, service }) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const cache = stubCache();
+    const ctx = context();
+
+    for (const origin of [allowedOrigin, rejectedOrigin, "https://untrusted.example.test"]) {
+      for (const method of ["GET", "OPTIONS"]) {
+        const response = await worker.fetch(
+          request(path, { method, headers: { Origin: origin } }),
+          { WORKER_ENV: workerEnvironment },
+          ctx,
+        );
+
+        expect(response.status).toBe(method === "GET" ? 200 : 204);
+        expect(response.headers.get("Access-Control-Allow-Origin")).toBe(
+          origin === allowedOrigin ? origin : null,
+        );
+        expect(response.headers.get("Vary")).toBe("Origin");
+        if (method === "OPTIONS") {
+          expect(response.headers.get("Allow")).toBe("GET, OPTIONS");
+          expect(response.headers.get("Access-Control-Allow-Methods")).toBe(
+            origin === allowedOrigin ? "GET, OPTIONS" : null,
+          );
+          expect(await response.text()).toBe("");
+        } else {
+          expect(await response.json()).toEqual({ ok: true, service });
+        }
+      }
+    }
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(cache.match).not.toHaveBeenCalled();
+    expect(cache.put).not.toHaveBeenCalled();
+    expect(ctx.waitUntil).not.toHaveBeenCalled();
+  });
+
+  test.each(healthRoutes)("$path rejects non-GET methods without consuming a submission", async ({ path }) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const cache = stubCache();
+    const ctx = context();
+
+    for (const method of ["HEAD", "POST", "PUT", "PATCH", "DELETE"]) {
+      const incoming = request(path, {
+        method,
+        headers: { Origin: allowedOrigin },
+        ...(method === "HEAD" ? {} : { body: new URLSearchParams({ message: "not a submission" }) }),
+      });
+      const response = await worker.fetch(incoming, { WORKER_ENV: workerEnvironment }, ctx);
+
+      expect(response.status).toBe(405);
+      expect(response.headers.get("Allow")).toBe("GET, OPTIONS");
+      expect(response.headers.get("Cache-Control")).toBe("no-store");
+      expect(await response.json()).toEqual({ ok: false, error: "Method Not Allowed" });
+      expect(incoming.bodyUsed).toBe(false);
+    }
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(cache.match).not.toHaveBeenCalled();
+    expect(cache.put).not.toHaveBeenCalled();
+    expect(ctx.waitUntil).not.toHaveBeenCalled();
   });
 });
