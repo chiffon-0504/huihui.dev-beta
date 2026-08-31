@@ -191,17 +191,40 @@ test.describe("B3 localized UI", () => {
       expectClean(diagnostics);
     });
 
-    test(`${copy.route} native Tab navigation moves between report links`, async ({ page }) => {
+    test(`${copy.route} link focusability and native Tab navigation`, async ({ page }, testInfo) => {
       const reports = [systemStatusIncidentReport(), systemStatusIncidentReport(1)];
       const diagnostics = await stub(page, { incidents: (route) => route.fulfill({ json: systemStatusIncidentsFixture(reports) }) });
       await page.goto(copy.route);
       const links = page.locator(".system-status-incident-link");
       await expect(links).toHaveCount(2);
-      await links.first().focus();
-      await page.keyboard.press("Tab");
-      await expect(links.nth(1)).toBeFocused();
-      await page.keyboard.press("Shift+Tab");
-      await expect(links.first()).toBeFocused();
+      const linkContract = await links.evaluateAll((nodes) => nodes.map((node) => ({
+        tagName: node.tagName,
+        href: node.getAttribute("href"),
+        tabIndex: node.tabIndex,
+        target: node.getAttribute("target"),
+        rel: node.getAttribute("rel"),
+        role: node.getAttribute("role"),
+      })));
+      expect(linkContract.map(({ href }) => href)).toEqual(reports.map(({ url }) => url));
+      expect(linkContract.every(({ tagName, href, tabIndex, target, rel, role }) =>
+        tagName === "A" && typeof href === "string" && tabIndex === 0 && target === "_blank" &&
+        rel === "noopener noreferrer" && role === null)).toBe(true);
+      for (const [index, report] of reports.entries()) {
+        const link = links.nth(index);
+        await expect(link).toHaveAccessibleName(`${copy.link}: ${report.title}`);
+        await link.focus();
+        await page.keyboard.press("ArrowRight");
+        await expect(link).toBeFocused();
+        expect(await link.evaluate((node) => node.matches(":focus-visible"))).toBe(true);
+        expect(await link.evaluate((node) => parseFloat(getComputedStyle(node).outlineWidth))).toBeGreaterThan(0);
+      }
+      if (testInfo.project.name === "chromium") {
+        await links.first().focus();
+        await page.keyboard.press("Tab");
+        await expect(links.nth(1)).toBeFocused();
+        await page.keyboard.press("Shift+Tab");
+        await expect(links.first()).toBeFocused();
+      }
       expectClean(diagnostics);
     });
 
