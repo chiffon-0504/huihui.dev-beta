@@ -1,3 +1,7 @@
+// Allow the Worker's sequential Turnstile (5s) + Formspree (10s) deadlines
+// plus 15s for request/response transfer and processing before allowing a retry.
+const CONTACT_SUBMISSION_TIMEOUT_MS = 30_000;
+
 function getContactText(key) {
   const locale = getCurrentLocale();
 
@@ -59,10 +63,16 @@ function initContactForm() {
     submitButton.textContent = getContactText("submitting");
     contactStatus.textContent = "";
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, CONTACT_SUBMISSION_TIMEOUT_MS);
+
     try {
       const response = await fetch(contactForm.action, {
         method: "POST",
         body: formData,
+        signal: controller.signal,
       });
       const data = await response.json();
 
@@ -76,6 +86,7 @@ function initContactForm() {
     } catch (error) {
       contactStatus.textContent = getContactText("error");
     } finally {
+      clearTimeout(timeoutId);
       resetContactTurnstile(contactForm);
       isSubmitting = false;
       submitButton.disabled = false;

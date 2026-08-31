@@ -451,6 +451,59 @@ const contactViewports = [
 ];
 
 for (const localeCase of contactLocaleCases) {
+  test(`${localeCase.locale} Contact timeout aborts the browser request and restores the form`, async ({ page }) => {
+    const gate = createGate();
+    await page.clock.install();
+    const api = await stubContactDependencies(page, { gate: gate.promise });
+    await openContactPage(page, localeCase.route);
+    await fillRequiredFields(page);
+    await setTurnstileToken(page);
+    await page.evaluate(() => {
+      const nativeFetch = window.fetch.bind(window);
+      window.fetch = (url, options) => {
+        window.__contactSignal = options.signal;
+        return nativeFetch(url, options);
+      };
+    });
+
+    try {
+      const button = page.locator("button[type='submit']");
+      await button.click();
+      await expect.poll(api.count).toBe(1);
+      await expect(button).toBeDisabled();
+      await expect(button).toHaveText(localeCase.submitting);
+      expect(await page.evaluate(() => window.__contactSignal instanceof AbortSignal)).toBe(true);
+      await page.locator("#contact-form").evaluate((form) => {
+        form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      });
+      expect(api.count()).toBe(1);
+
+      const aborted = page.waitForEvent("requestfailed", (request) => request.url() === contactApiUrl);
+      const timeoutMs = await page.evaluate(() => CONTACT_SUBMISSION_TIMEOUT_MS);
+      await page.clock.fastForward(timeoutMs);
+      await aborted;
+
+      expect(await page.evaluate(() => window.__contactSignal.aborted)).toBe(true);
+      await expect(page.locator("#contact-status")).toHaveText(localeCase.error);
+      await expect(button).toBeEnabled();
+      await expect(button).toHaveText(localeCase.submit);
+      await expect(page.locator("input[name='name']")).toHaveValue("Test User");
+      await expect(page.locator("input[name='email']")).toHaveValue("test@example.com");
+      await expect(page.locator("textarea[name='message']")).toHaveValue("Test message");
+      expect(await getTurnstileState(page)).toEqual({
+        resetCount: 1,
+        responseValues: [""],
+        widgetCount: 1,
+      });
+      expect(api.count()).toBe(1);
+    } finally {
+      gate.release();
+      await page.unrouteAll({ behavior: "wait" });
+    }
+  });
+}
+
+for (const localeCase of contactLocaleCases) {
   for (const viewport of contactViewports) {
     test(`${localeCase.locale} Contact lifecycle at ${viewport.width}x${viewport.height}`, async ({
       page,
