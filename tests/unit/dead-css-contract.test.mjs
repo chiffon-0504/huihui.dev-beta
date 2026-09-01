@@ -43,6 +43,11 @@ beforeAll(async () => {
 });
 
 describe("high-confidence dead CSS removal", () => {
+  test("leaves text selection colors to the browser and operating system", () => {
+    expectSelectorAbsent(globalCss, "::selection");
+    expectSelectorAbsent(globalCss, "::-moz-selection");
+  });
+
   test("removes the Contact eyebrow without changing live Contact and label rules", () => {
     expectSelectorAbsent(contactCss, ".contact-eyebrow");
     expectSelectorAbsent(globalCss, ".contact-eyebrow");
