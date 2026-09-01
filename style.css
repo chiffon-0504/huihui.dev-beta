@@ -1670,11 +1670,6 @@ textarea {
   -webkit-tap-highlight-color: transparent;
 }
 
-::selection {
-  background: rgba(142, 197, 255, 0.34);
-  color: #fff;
-}
-
 .sidebar,
 .home-hero,
 .project-update-card,
