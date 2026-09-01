@@ -37,11 +37,7 @@ const SYSTEM_STATUS_COMPONENTS = Object.freeze([
   { id: "api", labelKey: "components.api", descKey: "descriptions.api" },
   { id: "contact", labelKey: "components.contact", descKey: "descriptions.contact" },
 ]);
-const SYSTEM_STATUS_ROUTES = Object.freeze({
-  zh: "/status/",
-  en: "/en/status/",
-  ja: "/ja/status/",
-});
+const SYSTEM_STATUS_PAGE_URL = "https://huihui-dev.betteruptime.com/";
 const SYSTEM_STATUS_SYMBOLS = Object.freeze({
   operational: "●",
   degraded_performance: "▲",
@@ -353,10 +349,11 @@ function renderSystemStatus(container, status, state = "ready") {
 
   if (!isDetail) {
     const link = document.createElement("a");
-    const locale = typeof getCurrentLocale === "function" ? getCurrentLocale() : "zh";
 
     link.className = "status-link system-status-link";
-    link.href = SYSTEM_STATUS_ROUTES[locale] || SYSTEM_STATUS_ROUTES.zh;
+    link.href = SYSTEM_STATUS_PAGE_URL;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
     link.textContent = getSystemStatusText("viewStatus");
     fragment.append(link);
   }

@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { systemStatusFixture, systemStatusHistoryFixture, systemStatusIncidentsFixture } from "../support/system-status.mjs";
 
 const apiOrigin = "https://api.huihui.dev";
+const publicStatusPageUrl = "https://huihui-dev.betteruptime.com/";
 const localeCases = [
   {
     home: "/",
@@ -652,7 +653,9 @@ for (const locale of localeCases) {
       homeStatus.locator(".system-status-state.status-chip"),
     ).toHaveCount(3);
     const viewStatus = homeStatus.locator(".system-status-link.status-link");
-    await expect(viewStatus).toHaveAttribute("href", locale.status);
+    await expect(viewStatus).toHaveAttribute("href", publicStatusPageUrl);
+    await expect(viewStatus).toHaveAttribute("target", "_blank");
+    await expect(viewStatus).toHaveAttribute("rel", "noopener noreferrer");
     await viewStatus.focus();
     await expect(viewStatus).toBeFocused();
 
