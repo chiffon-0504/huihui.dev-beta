@@ -1058,7 +1058,7 @@ h6 { font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
 
 .system-status-summary-state {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   gap: 0.45rem;
   color: var(--ink-strong, #172033);
   font-weight: 700;

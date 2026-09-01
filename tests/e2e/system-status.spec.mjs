@@ -643,9 +643,9 @@ for (const locale of localeCases) {
     const homeStatus = page.locator('[data-system-status-surface="home"]');
     await expect(homeStatus).toHaveAttribute("data-status", "operational");
     const overall = homeStatus.locator(".system-status-overall");
-    await expect(overall).toContainText(
-      locale.allOperational,
-    );
+    const homeSummary = overall.locator(".system-status-summary-state");
+    await expect(homeSummary).toHaveText(`●${locale.allOperational}`);
+    await expect(homeSummary).toHaveCSS("align-items", "center");
     await expect(overall.locator(".status-chip")).toHaveCount(0);
     await expect(homeStatus.locator(".system-status-component-row")).toHaveCount(3);
     await expect(
@@ -659,7 +659,11 @@ for (const locale of localeCases) {
     await page.goto(locale.status, { waitUntil: "load" });
     const detail = page.locator('[data-system-status-surface="detail"]');
     await expect(page.getByRole("heading", { name: locale.title })).toBeVisible();
+    await expect(page.locator('.system-status-page-header > .project-update-label[data-i18n="systemStatus.title"]')).toHaveCount(0);
     await expect(detail).toHaveAttribute("data-status", "operational");
+    const detailSummary = detail.locator(".system-status-summary-state");
+    await expect(detailSummary).toHaveText(`●${locale.allOperational}`);
+    await expect(detailSummary).toHaveCSS("align-items", "center");
     await expect(detail.locator(".system-status-component-card")).toHaveCount(3);
     await expect(
       detail.locator(".system-status-state.status-chip"),
