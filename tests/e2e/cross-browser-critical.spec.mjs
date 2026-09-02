@@ -121,6 +121,50 @@ async function preparePage(page) {
   };
 }
 
+async function installDeterministicStatusApiMock(page) {
+  const responses = {
+    "/api/system-status": systemStatusFixture(),
+    "/api/system-status/history": systemStatusHistoryFixture(),
+    "/api/system-status/incidents": systemStatusIncidentsFixture(),
+  };
+
+  await page.addInitScript(({ origins, responseBodies }) => {
+    const nativeFetch = window.fetch.bind(window);
+    const paths = new Set(Object.keys(responseBodies));
+    window.__statusApiMock = { started: [], consumed: [] };
+
+    window.fetch = async (input, init = {}) => {
+      const url = new URL(
+        typeof input === "string" ? input : input.url,
+        window.location.href,
+      );
+
+      if (!origins.includes(url.origin) || !paths.has(url.pathname)) {
+        return nativeFetch(input, init);
+      }
+
+      window.__statusApiMock.started.push(url.pathname);
+      if (init.signal?.aborted) {
+        throw init.signal.reason ?? new DOMException("Aborted", "AbortError");
+      }
+
+      const response = new Response(JSON.stringify(responseBodies[url.pathname]), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+      const readJson = response.json.bind(response);
+      Object.defineProperty(response, "json", {
+        value: async () => {
+          const body = await readJson();
+          window.__statusApiMock.consumed.push(url.pathname);
+          return body;
+        },
+      });
+      return response;
+    };
+  }, { origins: apiOrigins, responseBodies: responses });
+}
+
 async function expectNoHorizontalOverflow(page) {
   const geometry = await page.evaluate(() => ({
     bodyScrollWidth: document.body.scrollWidth,
@@ -145,8 +189,14 @@ function expectNoDiagnostics(state) {
 }
 
 test("localized status histories remain separate from current health", async ({ page }) => {
+  await installDeterministicStatusApiMock(page);
   const state = await preparePage(page);
   await page.setViewportSize(mobileViewport);
+  const expectedApiRequests = [
+    "/api/system-status",
+    "/api/system-status/history",
+    "/api/system-status/incidents",
+  ];
   for (const route of ["/status/", "/en/status/", "/ja/status/"]) {
     await page.goto(route, { waitUntil: "load" });
     await expect(page.locator(".system-status-detail")).toHaveAttribute("data-status", "operational");
@@ -156,9 +206,12 @@ test("localized status histories remain separate from current health", async ({ 
     await expect(page.locator("#systemStatusIncidents")).toHaveAttribute("data-incidents-state", "ready");
     await expect(page.locator(".system-status-incidents-message")).toBeVisible();
     await expect(page.locator(".system-status-incident")).toHaveCount(0);
+    const mockState = await page.evaluate(() => window.__statusApiMock);
+    expect(mockState.started).toEqual(expectedApiRequests);
+    expect([...mockState.consumed].sort()).toEqual([...expectedApiRequests].sort());
     await expectNoHorizontalOverflow(page);
   }
-  expect(state.apiRequests).toEqual(Array(3).fill(["/api/system-status", "/api/system-status/history", "/api/system-status/incidents"]).flat());
+  expect(state.apiRequests).toEqual([]);
   expectNoDiagnostics(state);
 });
 
