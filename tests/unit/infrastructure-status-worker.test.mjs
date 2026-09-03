@@ -8,19 +8,24 @@ const endpoint = "https://api.example.test/api/infrastructure-status";
 const cloudflareUrl =
   "https://www.cloudflarestatus.com/api/v2/summary.json";
 const githubUrl = "https://www.githubstatus.com/api/v2/summary.json";
+const cloudflarePageId = "yh6f0r4529hb";
 
-function summary(name, components, indicator = "none") {
+function summary(name, components, indicator = "none", pageId = "private-statuspage-id") {
   return {
-    page: { id: "private-statuspage-id", name },
+    page: { id: pageId, name },
     components,
     incidents: [{ body: "private incident fixture" }],
     status: { indicator },
   };
 }
 
-function cloudflareSummary(statuses = {}, extraComponents = []) {
+function cloudflareSummary(
+  statuses = {},
+  extraComponents = [],
+  page = { id: cloudflarePageId, name: "Cloudflare Status" },
+) {
   return summary(
-    "Cloudflare",
+    page.name,
     [
       { id: "cf-pages", name: "Pages", status: statuses.pages || "operational" },
       { id: "cf-workers", name: "Workers", status: statuses.workers || "operational" },
@@ -33,6 +38,7 @@ function cloudflareSummary(statuses = {}, extraComponents = []) {
       ...extraComponents,
     ],
     statuses.indicator || "none",
+    page.id,
   );
 }
 
@@ -128,6 +134,78 @@ afterEach(() => {
 });
 
 describe("Infrastructure Status Worker", () => {
+  test("accepts the current Cloudflare display name when the stable page id matches", async () => {
+    const { response } = await requestInfrastructure();
+    const data = await response.json();
+    const cloudflare = provider(data, "cloudflare");
+
+    expect(cloudflare.status).toBe("operational");
+    expect(cloudflare.components.every((component) => component.status === "operational")).toBe(true);
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  test("accepts future Cloudflare display-name changes when the stable page id matches", async () => {
+    const { response } = await requestInfrastructure({
+      fetchMock: createFetch({
+        cloudflare: cloudflareSummary({}, [], {
+          id: cloudflarePageId,
+          name: "Cloudflare Network Status",
+        }),
+      }),
+    });
+    const data = await response.json();
+
+    expect(provider(data, "cloudflare").status).toBe("operational");
+    expect(provider(data, "github").status).toBe("operational");
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  test("rejects a Cloudflare payload with the wrong page id", async () => {
+    const { cache, response } = await requestInfrastructure({
+      fetchMock: createFetch({
+        cloudflare: cloudflareSummary({}, [], {
+          id: "wrong-statuspage-id",
+          name: "Cloudflare",
+        }),
+      }),
+    });
+    const data = await response.json();
+
+    expect(provider(data, "cloudflare").status).toBe("unknown");
+    expect(provider(data, "github").status).toBe("operational");
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(cache.put).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalledWith({
+      event: "worker_upstream_failure",
+      route: "/api/infrastructure-status",
+      upstream: "cloudflare_status",
+      category: "invalid_response",
+    });
+  });
+
+  test.each([
+    ["missing", undefined],
+    ["invalid", "not-an-array"],
+  ])("rejects a Cloudflare payload with a %s components array", async (_label, components) => {
+    const fixture = cloudflareSummary();
+    if (components === undefined) delete fixture.components;
+    else fixture.components = components;
+
+    const { response } = await requestInfrastructure({
+      fetchMock: createFetch({ cloudflare: fixture }),
+    });
+    const data = await response.json();
+
+    expect(provider(data, "cloudflare").status).toBe("unknown");
+    expect(provider(data, "github").status).toBe("operational");
+    expect(warnSpy).toHaveBeenCalledWith({
+      event: "worker_upstream_failure",
+      route: "/api/infrastructure-status",
+      upstream: "cloudflare_status",
+      category: "invalid_response",
+    });
+  });
+
   test("normalizes only the exact relevant components and caches a complete result for 60 seconds", async () => {
     const fetchMock = createFetch({
       cloudflare: cloudflareSummary(
@@ -173,6 +251,7 @@ describe("Infrastructure Status Worker", () => {
       ],
     });
     expect(JSON.stringify(data)).not.toContain("private-statuspage-id");
+    expect(JSON.stringify(data)).not.toContain(cloudflarePageId);
     expect(JSON.stringify(data)).not.toContain("private incident fixture");
     expect(cache.put).toHaveBeenCalledOnce();
     expect(warnSpy).not.toHaveBeenCalled();

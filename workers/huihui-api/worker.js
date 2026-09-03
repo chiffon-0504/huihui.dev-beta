@@ -713,6 +713,7 @@ const INFRASTRUCTURE_STATUS_DEFINITIONS = Object.freeze([
   {
     id: "cloudflare",
     name: "Cloudflare",
+    pageId: "yh6f0r4529hb",
     upstream: "cloudflare_status",
     apiUrl: "https://www.cloudflarestatus.com/api/v2/summary.json",
     statusUrl: "https://www.cloudflarestatus.com/",
@@ -794,7 +795,9 @@ function normalizeInfrastructureProvider(definition, data) {
     !data ||
     typeof data !== "object" ||
     Array.isArray(data) ||
-    data.page?.name !== definition.name ||
+    (definition.pageId
+      ? data.page?.id !== definition.pageId
+      : data.page?.name !== definition.name) ||
     !Array.isArray(data.components)
   ) {
     throw new UpstreamInvalidResponseError();
