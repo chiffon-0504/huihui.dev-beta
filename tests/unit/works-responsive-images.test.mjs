@@ -11,10 +11,10 @@ const worksPages = [
 ];
 const largeImageSizes =
   "(max-width: 722px) 680px, (max-width: 900px) calc(100vw - 42px), 1074px";
-const portraitImageSizes =
-  "(max-width: 900px) calc(100vw - 42px), (max-width: 942px) 383px, (max-width: 1200px) calc(66.667vw - 245px), min(660px, calc(66.667vw - 298px))";
-const tallImageSizes =
-  "(max-width: 526px) 484px, (max-width: 900px) calc(100vw - 42px), 1146px";
+const tallPortraitImageSizes =
+  "(max-width: 316px) 274px, (max-width: 900px) calc(100vw - 42px), 649px";
+const wideLandscapeImageSizes =
+  "(max-width: 526px) 484px, (max-width: 900px) calc(100vw - 42px), 674px";
 const standardImageSizes =
   "(max-width: 439px) 397px, (max-width: 900px) calc(100vw - 42px), 554px";
 const worksImages = [
@@ -31,7 +31,7 @@ const worksImages = [
     width: 3024,
     height: 3078,
     lazy: true,
-    sizes: portraitImageSizes,
+    sizes: tallPortraitImageSizes,
     sourceWidths: [900, 1600, 1800],
   },
   {
@@ -39,7 +39,7 @@ const worksImages = [
     width: 4615,
     height: 2660,
     lazy: true,
-    sizes: tallImageSizes,
+    sizes: wideLandscapeImageSizes,
     sourceWidths: [900, 1600, 2400],
   },
   {
@@ -71,11 +71,11 @@ const saturatedDesktopContracts = new Map([
   ],
   [
     "2002",
-    { slotWidth: 660, coverWidth: 658.65625, coverHeight: 670.41796875 },
+    { slotWidth: 649, coverWidth: 648.421052631579, coverHeight: 660 },
   ],
   [
     "2003",
-    { slotWidth: 1146, coverWidth: 1145.0751879699246, coverHeight: 660 },
+    { slotWidth: 674, coverWidth: 673.1654135338346, coverHeight: 388 },
   ],
   [
     "2004",
@@ -103,6 +103,20 @@ function getWorksImageAttributes(html, id) {
 
   expect(tag, `${id} image tag`).toBeDefined();
   return readAttributes(tag);
+}
+
+function getWorksImageCard(html, id) {
+  const card = [...html.matchAll(/<article\b[\s\S]*?<\/article>/g)].find(
+    (match) => match[0].includes(`/images/${id}_w.webp`),
+  )?.[0];
+
+  expect(card, `${id} image card`).toBeDefined();
+  return {
+    className: readAttributes(card.match(/<article\b[^>]*>/)[0]).class,
+    labelKey: readAttributes(
+      card.match(/<div\b[^>]*\bclass="showcase-photo-label"[^>]*>/)[0],
+    )["data-i18n"],
+  };
 }
 
 function readWebp(buffer) {
@@ -227,6 +241,26 @@ describe("responsive Works images", () => {
 
     expect(localeContracts[1]).toEqual(localeContracts[0]);
     expect(localeContracts[2]).toEqual(localeContracts[0]);
+  });
+
+  test("places Yokohama in the wide card and Tsutenkaku in the tall card", async () => {
+    const expectedCards = {
+      "2002": {
+        className: "showcase-card showcase-photo-card showcase-card-tall",
+        labelKey: "works.cards.photography",
+      },
+      "2003": {
+        className: "showcase-card showcase-photo-card showcase-card-wide",
+        labelKey: "works.cards.travel",
+      },
+    };
+
+    for (const pagePath of worksPages) {
+      const html = await readFile(path.join(root, pagePath), "utf8");
+
+      expect(getWorksImageCard(html, "2002")).toEqual(expectedCards["2002"]);
+      expect(getWorksImageCard(html, "2003")).toEqual(expectedCards["2003"]);
+    }
   });
 
   test("derivatives preserve aspect ratio, reduce decode pixels, and strip private metadata", async () => {

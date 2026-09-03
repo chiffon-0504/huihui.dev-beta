@@ -172,7 +172,7 @@ async function verifyWorks(page) {
   await expect(page.locator(".showcase-card")).not.toHaveCount(0);
   await expect
     .poll(() => trigger.evaluate((image) => new URL(image.currentSrc).pathname))
-    .toMatch(/^\/images\/2002_w(?:-\d+)?\.webp$/);
+    .toMatch(/^\/images\/2003_w(?:-\d+)?\.webp$/);
   await openLightboxWithKeyboard(page, trigger);
 }
 
