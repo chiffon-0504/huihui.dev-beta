@@ -5,10 +5,10 @@ const worksImageRoutePattern =
   /^http:\/\/127\.0\.0\.1:4173\/images\/(?:200[1-6]_w|200[1-4]_w-(?:900|1600)|200[13]_w-2400|200[24]_w-1800)\.webp(?:\?.*)?$/;
 const largeImageSizes =
   "(max-width: 722px) 680px, (max-width: 900px) calc(100vw - 42px), 1074px";
-const portraitImageSizes =
-  "(max-width: 900px) calc(100vw - 42px), (max-width: 942px) 383px, (max-width: 1200px) calc(66.667vw - 245px), min(660px, calc(66.667vw - 298px))";
-const tallImageSizes =
-  "(max-width: 526px) 484px, (max-width: 900px) calc(100vw - 42px), 1146px";
+const tallPortraitImageSizes =
+  "(max-width: 316px) 274px, (max-width: 900px) calc(100vw - 42px), 649px";
+const wideLandscapeImageSizes =
+  "(max-width: 526px) 484px, (max-width: 900px) calc(100vw - 42px), 674px";
 const standardImageSizes =
   "(max-width: 439px) 397px, (max-width: 900px) calc(100vw - 42px), 554px";
 const worksPages = [
@@ -17,7 +17,7 @@ const worksPages = [
     route: "/works/",
     lang: "zh-Hant",
     heading: "作品",
-    alts: ["富士山", "通天閣", "橫濱港", "電車", "小鹿", "企鵝"],
+    alts: ["富士山", "橫濱港", "通天閣", "電車", "小鹿", "企鵝"],
   },
   {
     name: "en",
@@ -26,8 +26,8 @@ const worksPages = [
     heading: "Works",
     alts: [
       "Mount Fuji",
-      "Tsutenkaku",
       "Yokohama Port",
+      "Tsutenkaku",
       "Train",
       "Deer",
       "Penguin",
@@ -38,7 +38,7 @@ const worksPages = [
     route: "/ja/works/",
     lang: "ja",
     heading: "作品",
-    alts: ["富士山", "通天閣", "横浜港", "電車", "鹿", "ペンギン"],
+    alts: ["富士山", "横浜港", "通天閣", "電車", "鹿", "ペンギン"],
   },
 ];
 
@@ -58,31 +58,31 @@ const worksImages = [
     ],
   },
   {
-    path: "/images/2002_w.webp",
-    width: 3024,
-    height: 3078,
-    lazy: true,
-    srcset:
-      "/images/2002_w-900.webp 900w, /images/2002_w-1600.webp 1600w, /images/2002_w-1800.webp 1800w",
-    sizes: portraitImageSizes,
-    displaySources: [
-      { path: "/images/2002_w-900.webp", width: 900, height: 916 },
-      { path: "/images/2002_w-1600.webp", width: 1600, height: 1629 },
-      { path: "/images/2002_w-1800.webp", width: 1800, height: 1832 },
-    ],
-  },
-  {
     path: "/images/2003_w.webp",
     width: 4615,
     height: 2660,
     lazy: true,
     srcset:
       "/images/2003_w-900.webp 900w, /images/2003_w-1600.webp 1600w, /images/2003_w-2400.webp 2400w",
-    sizes: tallImageSizes,
+    sizes: wideLandscapeImageSizes,
     displaySources: [
       { path: "/images/2003_w-900.webp", width: 900, height: 519 },
       { path: "/images/2003_w-1600.webp", width: 1600, height: 922 },
       { path: "/images/2003_w-2400.webp", width: 2400, height: 1383 },
+    ],
+  },
+  {
+    path: "/images/2002_w.webp",
+    width: 3024,
+    height: 3078,
+    lazy: true,
+    srcset:
+      "/images/2002_w-900.webp 900w, /images/2002_w-1600.webp 1600w, /images/2002_w-1800.webp 1800w",
+    sizes: tallPortraitImageSizes,
+    displaySources: [
+      { path: "/images/2002_w-900.webp", width: 900, height: 916 },
+      { path: "/images/2002_w-1600.webp", width: 1600, height: 1629 },
+      { path: "/images/2002_w-1800.webp", width: 1800, height: 1832 },
     ],
   },
   {

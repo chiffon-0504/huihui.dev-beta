@@ -60,6 +60,10 @@ const deviceScaleFactors = [1, 1.25, 1.5, 1.75, 2];
 const borderSides = ["left", "right", "top", "bottom"];
 const geometrySlack = 1 / 32;
 const boundaryViewportWidths = [
+  { name: "portrait-cover-floor-316", width: 316, height: 844 },
+  { name: "portrait-fluid-317", width: 317, height: 844 },
+  { name: "landscape-cover-floor-526", width: 526, height: 844 },
+  { name: "landscape-fluid-527", width: 527, height: 844 },
   { name: "portrait-floor-942", width: 942, height: 900 },
   { name: "portrait-fluid-943", width: 943, height: 900 },
   { name: "desktop-offset-1201", width: 1201, height: 900 },
