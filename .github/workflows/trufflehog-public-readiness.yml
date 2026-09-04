@@ -37,8 +37,8 @@ jobs:
           echo "Tag refs:"
           git show-ref --tags || true
           # This runner can only expose refs that actually exist on GitHub.
-          # The prior 986-commit Gitleaks audit included 155 local-only branches;
-          # those local-only refs are not part of the repository's current public exposure surface.
+          # The prior 986-commit Gitleaks audit included local-only refs that
+          # are not part of the repository's current GitHub exposure surface.
           if [ "${commits}" -lt 262 ]; then
             echo "Unexpectedly shallow server history; refusing to scan."
             exit 1
@@ -63,7 +63,7 @@ jobs:
           set +e
           (
             cd "${RUNNER_TEMP}"
-            trufflehog git "file://${GITHUB_WORKSPACE}" \
+            trufflehog --no-update git "file://${GITHUB_WORKSPACE}" \
               --results=verified,unknown \
               --json \
               --fail \
