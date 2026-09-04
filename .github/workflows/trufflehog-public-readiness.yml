@@ -20,21 +20,27 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify complete history scope
+      - name: Report server-exposed history scope
         shell: bash
         run: |
           set -euo pipefail
-          git fetch origin --prune --tags '+refs/heads/*:refs/remotes/origin/*'
           commits="$(git rev-list --all --count)"
           objects="$(git rev-list --all --objects | wc -l | tr -d ' ')"
+          remote_branches="$(git for-each-ref --format='%(refname)' refs/remotes/origin | wc -l | tr -d ' ')"
+          tags="$(git tag | wc -l | tr -d ' ')"
           echo "Reachable commits: ${commits}"
           echo "Reachable objects: ${objects}"
-          echo "Remote branches: $(git for-each-ref --format='%(refname)' refs/remotes/origin | wc -l | tr -d ' ')"
-          echo "Tags: $(git tag | wc -l | tr -d ' ')"
-          # Previous audited scope was 986 commits. This temporary audit workflow
-          # adds exactly one commit on the audit branch, so the expected superset is 987.
-          if [ "${commits}" -ne 987 ]; then
-            echo "Unexpected history scope: expected 987 reachable commits (986 audited + 1 audit workflow commit)."
+          echo "Remote branches: ${remote_branches}"
+          echo "Tags: ${tags}"
+          echo "Remote refs:"
+          git for-each-ref --format='%(refname) %(objectname)' refs/remotes/origin
+          echo "Tag refs:"
+          git show-ref --tags || true
+          # This runner can only expose refs that actually exist on GitHub.
+          # The prior 986-commit Gitleaks audit included 155 local-only branches;
+          # those local-only refs are not part of the repository's current public exposure surface.
+          if [ "${commits}" -lt 262 ]; then
+            echo "Unexpectedly shallow server history; refusing to scan."
             exit 1
           fi
 
