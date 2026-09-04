@@ -207,7 +207,6 @@ describe("Contact Worker request and upstream error handling", () => {
       body: new URLSearchParams({
         name: "Native User",
         email: "native@example.com",
-        subject: "Native subject",
         message: "Submitted without JavaScript.",
         "cf-turnstile-response": turnstileToken,
       }),
@@ -222,6 +221,7 @@ describe("Contact Worker request and upstream error handling", () => {
     expect(fetchMock.mock.calls[1][1].body.get("email")).toBe(
       "native@example.com",
     );
+    expect(fetchMock.mock.calls[1][1].body.has("subject")).toBe(false);
   });
 
   test("accepts an allowed beta preview and binds Turnstile to its hostname", async () => {
@@ -343,7 +343,7 @@ describe("Contact Worker request and upstream error handling", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  test.each(["name", "email", "subject", "message"])(
+  test.each(["name", "email", "message"])(
     "rejects a missing %s field before upstream requests",
     async (field) => {
       const fetchMock = vi.fn();

@@ -168,6 +168,7 @@ for (const { locale, route, label, placeholder } of contactFieldCases) {
     await expect(page.locator(".contact-intro")).toHaveCount(0);
     await expect(page.locator("input[name='subject']")).toHaveCount(1);
     await expect(page.getByLabel(label)).toHaveAttribute("name", "subject");
+    await expect(page.locator("input[name='subject']")).toHaveAttribute("required", "");
     await expect(page.locator("input[name='subject']")).toHaveAttribute(
       "placeholder",
       placeholder,

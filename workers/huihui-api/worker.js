@@ -2128,7 +2128,7 @@ async function handleContact(request, env) {
   const subject = getTrimmedContactField(formData, "subject");
   const message = getTrimmedContactField(formData, "message");
 
-  if (!name || !email || !subject || !message) {
+  if (!name || !email || !message) {
     return contactJsonResponse(
       { ok: false, message: "Missing required fields" },
       400
@@ -2303,7 +2303,9 @@ async function handleContact(request, env) {
   const forwardData = new FormData();
   forwardData.set("name", name);
   forwardData.set("email", email);
-  forwardData.set("subject", subject);
+  if (subject) {
+    forwardData.set("subject", subject);
+  }
   forwardData.set("message", message);
 
   let forwardRes;
