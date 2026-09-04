@@ -35,6 +35,7 @@ function contactFormData(overrides = {}) {
   const values = {
     name: "Test User",
     email: "test@example.com",
+    subject: "Test subject",
     message: "Hello from the Contact form.",
     "cf-turnstile-response": turnstileToken,
     ...overrides,
@@ -163,6 +164,7 @@ describe("Contact Worker request and upstream error handling", () => {
       body: contactFormData({
         name: "  Test User  ",
         email: "  test@example.com  ",
+        subject: "  Test subject  ",
         message: "  Hello from the Contact form.  ",
         "cf-turnstile-response": `  ${turnstileToken}  `,
       }),
@@ -183,6 +185,9 @@ describe("Contact Worker request and upstream error handling", () => {
     expect(fetchMock.mock.calls[1][1].body.get("name")).toBe("Test User");
     expect(fetchMock.mock.calls[1][1].body.get("email")).toBe(
       "test@example.com",
+    );
+    expect(fetchMock.mock.calls[1][1].body.get("subject")).toBe(
+      "Test subject",
     );
     expect(fetchMock.mock.calls[1][1].body.get("message")).toBe(
       "Hello from the Contact form.",
@@ -216,6 +221,7 @@ describe("Contact Worker request and upstream error handling", () => {
     expect(fetchMock.mock.calls[1][1].body.get("email")).toBe(
       "native@example.com",
     );
+    expect(fetchMock.mock.calls[1][1].body.has("subject")).toBe(false);
   });
 
   test("accepts an allowed beta preview and binds Turnstile to its hostname", async () => {
@@ -388,6 +394,7 @@ describe("Contact Worker request and upstream error handling", () => {
   test.each([
     ["name", "n".repeat(101)],
     ["email", `${"a".repeat(243)}@example.com`],
+    ["subject", "s".repeat(201)],
     ["message", "m".repeat(5001)],
   ])("rejects an oversized %s before upstream requests", async (field, value) => {
     const fetchMock = vi.fn();

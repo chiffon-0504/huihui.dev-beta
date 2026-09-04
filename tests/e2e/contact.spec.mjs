@@ -72,6 +72,7 @@ async function openContactPage(page, route = "/en/contact/") {
 async function fillRequiredFields(page) {
   await page.locator("input[name='name']").fill("Test User");
   await page.locator("input[name='email']").fill("test@example.com");
+  await page.locator("input[name='subject']").fill("Test subject");
   await page.locator("textarea[name='message']").fill("Test message");
 }
 
@@ -138,6 +139,50 @@ for (const { locale, route, viewport } of contactLayoutCases) {
   });
 }
 
+const contactFieldCases = [
+  {
+    locale: "zh",
+    route: "/contact/",
+    label: "主旨",
+    placeholder: "你的主旨",
+  },
+  {
+    locale: "en",
+    route: "/en/contact/",
+    label: "Subject",
+    placeholder: "Your subject",
+  },
+  {
+    locale: "ja",
+    route: "/ja/contact/",
+    label: "件名",
+    placeholder: "件名を入力",
+  },
+];
+
+for (const { locale, route, label, placeholder } of contactFieldCases) {
+  test(`${locale} Contact has a localized Subject field before Message without the old intro`, async ({ page }) => {
+    await stubContactDependencies(page);
+    await openContactPage(page, route);
+
+    await expect(page.locator(".contact-intro")).toHaveCount(0);
+    await expect(page.locator("input[name='subject']")).toHaveCount(1);
+    await expect(page.getByLabel(label)).toHaveAttribute("name", "subject");
+    await expect(page.locator("input[name='subject']")).toHaveAttribute("required", "");
+    await expect(page.locator("input[name='subject']")).toHaveAttribute(
+      "placeholder",
+      placeholder,
+    );
+    const subjectPrecedesMessage = await page.locator("input[name='subject']").evaluate((field) =>
+      Boolean(
+        field.compareDocumentPosition(document.querySelector("textarea[name='message']"))
+        & Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+    );
+    expect(subjectPrecedesMessage).toBe(true);
+  });
+}
+
 test("localized email links open Gmail Compose in a new tab", async ({
   context,
   page,
@@ -201,7 +246,10 @@ test("submits successfully and preserves loading and Turnstile behavior", async 
   await expect(button).toHaveText("Send Message");
   await expect(page.locator("input[name='name']")).toHaveValue("");
   await expect(page.locator("input[name='email']")).toHaveValue("");
+  await expect(page.locator("input[name='subject']")).toHaveValue("");
   await expect(page.locator("textarea[name='message']")).toHaveValue("");
+  expect(api.bodies[0]).toContain('name="subject"');
+  expect(api.bodies[0]).toContain("Test subject");
   expect(await getTurnstileState(page)).toEqual({
     resetCount: 1,
     responseValues: [""],

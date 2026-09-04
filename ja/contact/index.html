@@ -24,7 +24,6 @@
       <div class="contact-page">
         <div class="page-body contact-content">
           <h1 data-i18n="contact.title"></h1>
-          <p class="contact-intro" data-i18n="contact.intro"></p>
 
           <form id="contact-form" class="contact-form" action="https://api.huihui.dev/api/contact" method="POST">
             <div class="contact-field-grid">
@@ -38,6 +37,11 @@
                 <input type="email" name="email" placeholder="your@email.com" autocomplete="email" required>
               </label>
             </div>
+
+            <label>
+              <span data-i18n="contact.subject"></span>
+              <input type="text" name="subject" data-i18n-placeholder="contact.subjectPlaceholder" autocomplete="off" required>
+            </label>
 
             <label>
               <span data-i18n="contact.message"></span>

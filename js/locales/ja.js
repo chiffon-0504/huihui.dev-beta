@@ -139,10 +139,11 @@ window.HUIHUI_I18N.ja = {
   },
   contact: {
     title: "連絡先",
-    intro: "ご質問、コラボレーション、フィードバックなどは、下のフォームからご連絡ください。",
     name: "名前",
     namePlaceholder: "お名前",
     email: "Email",
+    subject: "件名",
+    subjectPlaceholder: "件名を入力",
     message: "メッセージ",
     messagePlaceholder: "メッセージ内容",
     submit: "送信する",

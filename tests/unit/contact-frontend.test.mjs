@@ -28,6 +28,7 @@ function loadContact() {
   const formData = new FormData();
   formData.set("name", " Test User ");
   formData.set("email", "test@example.com");
+  formData.set("subject", "Test subject");
   formData.set("message", "Test message");
   const form = {
     action: "https://contact.example/api/contact",
@@ -101,6 +102,7 @@ describe("Contact frontend submission deadline", () => {
       method: "POST", body: contact.formData, signal: expect.any(AbortSignal),
     });
     expect(contact.formData.get("name")).toBe(" Test User ");
+    expect(contact.formData.get("subject")).toBe("Test subject");
     const signal = contact.fetch.mock.calls[0][1].signal;
 
     // A valid response may need the entire sequential 5s + 10s upstream budget.

@@ -21,6 +21,10 @@
   line-height: 1.8;
 }
 
+.contact-content > h1 {
+  margin-bottom: 32px;
+}
+
 .contact-form {
   display: flex;
   flex-direction: column;
