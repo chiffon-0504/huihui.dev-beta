@@ -37,7 +37,7 @@ The project keeps the frontend deployable as static files while using Cloudflare
 - selected Cloudflare Workers API endpoints
 - Cloudflare Pages Git integration for static publishing and GitHub Actions for validation and Worker deployment
 
-This repository, `huihui.dev-beta`, is the development repository for the beta environment. Stable production is maintained separately in `huihui.dev-stable`.
+This repository, `huihui.dev-beta`, is the **public primary development repository** for the project. Active development, pull requests, issues, CI, and beta validation happen here first and are deployed to `beta.huihui.dev`. Stable production is maintained separately in `huihui.dev-stable` and released to `huihui.dev` only after beta changes are verified.
 
 ---
 
@@ -86,10 +86,10 @@ Browser
 
 | Repository | Role | Deployment Target |
 |---|---|---|
-| `huihui.dev-beta` | Development repository | `beta.huihui.dev` |
+| `huihui.dev-beta` | Public primary development repository | `beta.huihui.dev` |
 | `huihui.dev-stable` | Production repository | `huihui.dev` |
 
-The beta repository is used for active development and validation. Stable production is released through the stable repository after changes are ready for production.
+The public beta repository is the source of active development and validation. Stable production is released through the stable repository after beta changes are verified and ready for production.
 
 ---
 
@@ -139,8 +139,8 @@ The production deployment job is assigned to the GitHub `production` Environment
 ### Stable Release
 
 - `v1.5.0` is the current stable release.
-- The repository model is now split between development and production:
-  - `huihui.dev-beta` for development
+- The repository model is now split between public development and production:
+  - `huihui.dev-beta` for public development
   - `huihui.dev-stable` for production
   - `beta.huihui.dev` for testing
   - `huihui.dev` for stable production
@@ -241,6 +241,7 @@ Legacy redirects preserve backward compatibility from `/posts/`, `/en/posts/`, a
 
 | Item | Status |
 |---|---|
+| Repository visibility | Public |
 | Development repository | `chiffon-0504/huihui.dev-beta` |
 | Production repository | `chiffon-0504/huihui.dev-stable` |
 | Beta environment | <https://beta.huihui.dev> |
