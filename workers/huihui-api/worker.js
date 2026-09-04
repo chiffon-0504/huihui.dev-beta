@@ -1978,6 +1978,7 @@ const CONTACT_FORM_CONTENT_TYPE_PATTERN =
 const CONTACT_FIELD_LIMITS = Object.freeze({
   name: 100,
   email: 254,
+  subject: 200,
   message: 5000,
   turnstileToken: 2048,
 });
@@ -2124,9 +2125,10 @@ async function handleContact(request, env) {
   const token = getTrimmedContactField(formData, "cf-turnstile-response");
   const name = getTrimmedContactField(formData, "name");
   const email = getTrimmedContactField(formData, "email");
+  const subject = getTrimmedContactField(formData, "subject");
   const message = getTrimmedContactField(formData, "message");
 
-  if (!name || !email || !message) {
+  if (!name || !email || !subject || !message) {
     return contactJsonResponse(
       { ok: false, message: "Missing required fields" },
       400
@@ -2143,6 +2145,7 @@ async function handleContact(request, env) {
   if (
     name.length > CONTACT_FIELD_LIMITS.name ||
     email.length > CONTACT_FIELD_LIMITS.email ||
+    subject.length > CONTACT_FIELD_LIMITS.subject ||
     message.length > CONTACT_FIELD_LIMITS.message
   ) {
     return contactJsonResponse(
@@ -2300,6 +2303,7 @@ async function handleContact(request, env) {
   const forwardData = new FormData();
   forwardData.set("name", name);
   forwardData.set("email", email);
+  forwardData.set("subject", subject);
   forwardData.set("message", message);
 
   let forwardRes;

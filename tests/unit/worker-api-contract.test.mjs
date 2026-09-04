@@ -103,6 +103,7 @@ describe("Worker public API contract", () => {
     const formData = new FormData();
     formData.set("name", "Contract Test");
     formData.set("email", "contract@example.com");
+    formData.set("subject", "Contract subject");
     formData.set("message", "Test the existing Contact contract.");
     formData.set("cf-turnstile-response", "test-token");
 
@@ -131,6 +132,9 @@ describe("Worker public API contract", () => {
     );
     expect(fetchMock.mock.calls[1][0]).toBe(
       "https://formspree.example.test/contact",
+    );
+    expect(fetchMock.mock.calls[1][1].body.get("subject")).toBe(
+      "Contract subject",
     );
   });
 

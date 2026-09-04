@@ -131,6 +131,7 @@ function contactFormData(overrides = {}) {
   const values = {
     name: "Test User",
     email: "test@example.com",
+    subject: "Test subject",
     message: "Hello from the Contact form.",
     "cf-turnstile-response": "test-turnstile-token",
     ...overrides,
@@ -811,6 +812,7 @@ describe("Worker structured observability", () => {
     const oversized = new URLSearchParams({
       name: "Oversized",
       email: "oversized@example.com",
+      subject: "Small subject",
       message: "small body",
       "cf-turnstile-response": "token",
     });
@@ -840,6 +842,7 @@ describe("Worker structured observability", () => {
       steamId: "SENSITIVE_STEAM_ID_MARKER",
       contactName: "SENSITIVE_CONTACT_NAME_MARKER",
       contactEmail: "sensitive-contact-email-marker@example.test",
+      contactSubject: "SENSITIVE_CONTACT_SUBJECT_MARKER",
       contactMessage: "SENSITIVE_CONTACT_MESSAGE_MARKER",
       formspreeEndpoint: "SENSITIVE_FORMSPREE_ENDPOINT_MARKER",
       upstreamBody: "SENSITIVE_UPSTREAM_BODY_MARKER",
@@ -849,6 +852,7 @@ describe("Worker structured observability", () => {
     const sensitiveForm = contactFormData({
       name: markers.contactName,
       email: markers.contactEmail,
+      subject: markers.contactSubject,
       message: markers.contactMessage,
       "cf-turnstile-response": markers.turnstileToken,
     });

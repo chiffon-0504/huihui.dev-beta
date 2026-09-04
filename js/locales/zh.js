@@ -139,10 +139,11 @@ window.HUIHUI_I18N.zh = {
   },
   contact: {
     title: "聯絡我",
-    intro: "有問題、合作或回饋，可以用下面的表單聯絡我。",
     name: "名稱",
     namePlaceholder: "你的名稱",
     email: "Email",
+    subject: "主旨",
+    subjectPlaceholder: "你的主旨",
     message: "訊息",
     messagePlaceholder: "想說的內容",
     submit: "送出訊息",

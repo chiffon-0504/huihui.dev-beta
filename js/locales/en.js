@@ -139,10 +139,11 @@ window.HUIHUI_I18N.en = {
   },
   contact: {
     title: "Contact",
-    intro: "For questions, collaborations, or feedback, you can reach me through the form below.",
     name: "Name",
     namePlaceholder: "Your name",
     email: "Email",
+    subject: "Subject",
+    subjectPlaceholder: "Your subject",
     message: "Message",
     messagePlaceholder: "Your message",
     submit: "Send Message",
