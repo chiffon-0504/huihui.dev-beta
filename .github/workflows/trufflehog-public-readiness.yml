@@ -1,0 +1,105 @@
+name: TruffleHog public-readiness audit
+
+on:
+  push:
+    branches:
+      - audit/trufflehog-public-readiness
+
+permissions:
+  contents: read
+
+jobs:
+  full-history-secret-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify complete history scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin --prune --tags '+refs/heads/*:refs/remotes/origin/*'
+          commits="$(git rev-list --all --count)"
+          objects="$(git rev-list --all --objects | wc -l | tr -d ' ')"
+          echo "Reachable commits: ${commits}"
+          echo "Reachable objects: ${objects}"
+          echo "Remote branches: $(git for-each-ref --format='%(refname)' refs/remotes/origin | wc -l | tr -d ' ')"
+          echo "Tags: $(git tag | wc -l | tr -d ' ')"
+          # Previous audited scope was 986 commits. This temporary audit workflow
+          # adds exactly one commit on the audit branch, so the expected superset is 987.
+          if [ "${commits}" -ne 987 ]; then
+            echo "Unexpected history scope: expected 987 reachable commits (986 audited + 1 audit workflow commit)."
+            exit 1
+          fi
+
+      - name: Install pinned TruffleHog
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/363923b901c911a9164f50b6c423f47c15372b1c/scripts/install.sh \
+            | sudo sh -s -- -b /usr/local/bin v3.97.4
+          trufflehog --version
+
+      - name: Run full-history TruffleHog scan
+        shell: bash
+        run: |
+          set -euo pipefail
+          scan_dir="$(mktemp -d)"
+          raw_json="${scan_dir}/results.jsonl"
+          scan_err="${scan_dir}/stderr.log"
+
+          set +e
+          (
+            cd "${RUNNER_TEMP}"
+            trufflehog git "file://${GITHUB_WORKSPACE}" \
+              --results=verified,unknown \
+              --json \
+              --fail \
+              --fail-on-scan-errors \
+              >"${raw_json}" 2>"${scan_err}"
+          )
+          status=$?
+          set -e
+
+          echo "TruffleHog exit code: ${status}"
+
+          if [ -s "${scan_err}" ]; then
+            echo "TruffleHog emitted stderr (redacted summary only):"
+            sed -E 's/([A-Za-z0-9_\-]{8})[A-Za-z0-9_\-]{8,}/\1…[REDACTED]/g' "${scan_err}" | tail -n 40
+          fi
+
+          verified=0
+          unknown=0
+          if [ -s "${raw_json}" ]; then
+            verified="$(jq -s '[.[] | select(.Verified == true)] | length' "${raw_json}")"
+            unknown="$(jq -s '[.[] | select(.Verified != true)] | length' "${raw_json}")"
+            echo "Verified findings: ${verified}"
+            echo "Unknown findings: ${unknown}"
+            echo "Finding metadata (raw values omitted):"
+            jq -r '[.DetectorName, (.Verified|tostring), (.SourceMetadata.Data.Git.file // ""), (.SourceMetadata.Data.Git.commit // "")] | @tsv' "${raw_json}" \
+              | sed -E 's/\t/ | /g'
+          else
+            echo "Verified findings: 0"
+            echo "Unknown findings: 0"
+          fi
+
+          rm -rf "${scan_dir}"
+
+          if [ "${status}" -eq 0 ]; then
+            echo "Scanner executed successfully with no verified/unknown findings."
+            exit 0
+          fi
+
+          if [ "${status}" -eq 183 ]; then
+            echo "Scanner executed successfully and found verified/unknown results."
+            exit 183
+          fi
+
+          echo "Scanner execution failed; this must not be interpreted as a clean scan."
+          exit "${status}"
