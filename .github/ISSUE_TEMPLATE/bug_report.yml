@@ -1,0 +1,53 @@
+name: Bug report
+description: Report a reproducible problem with the site or repository
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do not include credentials, API tokens, secrets, personal data, or sensitive security details. Do not use this form to report a security vulnerability; follow [SECURITY.md](https://github.com/chiffon-0504/huihui.dev-beta/blob/main/SECURITY.md) instead.
+  - type: input
+    id: route
+    attributes:
+      label: Affected page or route
+      placeholder: "/en/works/"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and operating system
+      placeholder: "Firefox 140 on Windows 11"
+    validations:
+      required: false
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots or logs
+      description: Add only non-sensitive evidence that helps explain the problem.
+    validations:
+      required: false

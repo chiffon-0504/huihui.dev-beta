@@ -1,0 +1,38 @@
+name: Feature request
+description: Suggest an improvement or new capability
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please keep the proposal focused and do not include credentials, API tokens, secrets, or sensitive security details.
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Problem or motivation
+      description: What problem would this solve, and for whom?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the result you would like to see.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What other approaches or workarounds have you considered?
+    validations:
+      required: false
+  - type: input
+    id: area
+    attributes:
+      label: Affected area
+      placeholder: "Home page, localization, Worker API, tests"
+    validations:
+      required: true
