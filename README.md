@@ -258,6 +258,13 @@ Source code is licensed under the MIT License.
 
 Images, photographs, artwork, and other media assets are excluded from the MIT License unless otherwise stated.
 
+## Community
+
+- [Contributing](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
+- [Support](SUPPORT.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+
 ---
 
 Actively maintained.
