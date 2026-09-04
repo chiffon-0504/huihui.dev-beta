@@ -250,4 +250,14 @@ Legacy redirects preserve backward compatibility from `/posts/`, `/en/posts/`, a
 | Deployment | Cloudflare Pages Git integration (static site) / GitHub Actions (Workers) |
 | Current direction | Static-first site with Liquid Glass UI, multilingual shared layout, and Workers-backed APIs |
 
+---
+
+## License
+
+Source code is licensed under the MIT License.
+
+Images, photographs, artwork, and other media assets are excluded from the MIT License unless otherwise stated.
+
+---
+
 Actively maintained.
