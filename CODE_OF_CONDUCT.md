@@ -59,11 +59,21 @@ appointed representative at an online or offline event.
 
 ## Enforcement
 
-The project currently has no dedicated private conduct-reporting channel. For
-non-sensitive conduct concerns, use the relevant repository issue or pull
-request discussion and avoid including personal information. Do not use the
-security reporting flow for ordinary conduct concerns; suspected security
-vulnerabilities must follow [SECURITY.md](SECURITY.md).
+For non-sensitive conduct concerns, use the relevant repository issue or pull
+request discussion when appropriate and avoid including personal information.
+
+For sensitive conduct concerns, such as harassment, abuse, threats,
+discrimination, or reports containing personal or private information, email
+the project's publicly listed contact address at [contact@huihui.dev](mailto:contact@huihui.dev).
+This address is published for direct project contact on the localized Contact
+pages. Do not post sensitive conduct reports in public issues or pull
+requests. Include what happened, where it occurred, relevant dates or times,
+the affected participants, and supporting context or evidence where safe.
+Reports will be handled as privately as reasonably possible; this project does
+not promise a response time or a confidentiality guarantee it cannot enforce.
+
+Do not use the security reporting flow for ordinary conduct concerns. Suspected
+security vulnerabilities must follow [SECURITY.md](SECURITY.md).
 
 ## Attribution
 
