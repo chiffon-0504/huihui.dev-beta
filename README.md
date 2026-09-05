@@ -205,6 +205,11 @@ The production deployment job is assigned to the GitHub `production` Environment
 |       |-- en.js
 |       `-- ja.js
 |-- style.css
+|-- tests/
+|   |-- e2e/
+|   `-- scripts/
+|-- workers/
+|   `-- huihui-api/
 `-- README.md
 ```
 
@@ -217,6 +222,9 @@ Key directories:
 | `js/locales/` | Multilingual content modules for ZH / EN / JA |
 | `milestones/` | Milestones listing and article-facing UI structure |
 | `tools/tier-maker/` | Client-side Tier Maker tool |
+| `tests/e2e/` | Playwright end-to-end specs |
+| `tests/scripts/` | Standalone check scripts (e.g. `check-js.mjs`) run via `npm run check:js` |
+| `workers/huihui-api/` | Cloudflare Worker serving the site's API routes (beta/production) |
 | `.github/workflows/` | GitHub Actions deployment workflows |
 
 Legacy redirects preserve backward compatibility from `/posts/`, `/en/posts/`, and `/ja/posts/` to `/milestones/`, `/en/milestones/`, and `/ja/milestones/`, respectively.
