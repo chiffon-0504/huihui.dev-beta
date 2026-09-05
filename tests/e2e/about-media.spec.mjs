@@ -308,12 +308,10 @@ for (const locale of locales) {
         await expect(lightboxTrigger).toHaveAttribute("role", "button");
         await lightboxTrigger.click();
         await expect(page.locator("#lightbox")).toHaveAttribute("open", "");
-        await expect(page.locator("#lightbox")).toHaveAttribute(
-          "aria-label",
+        await expect(page.locator("#lightbox")).toHaveAccessibleName(
           locale.lightboxLabel,
         );
-        await expect(page.locator("#lightboxClose")).toHaveAttribute(
-          "aria-label",
+        await expect(page.locator("#lightboxClose")).toHaveAccessibleName(
           locale.lightboxCloseLabel,
         );
         await expect(page.locator("#lightboxImg")).toHaveAttribute(
