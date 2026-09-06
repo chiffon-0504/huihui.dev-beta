@@ -17,6 +17,7 @@ concurrency:
 jobs:
   synchronize:
     name: Wait for required beta deployments
+    if: github.repository == 'chiffon-0504/huihui.dev-beta'
     runs-on: ubuntu-latest
     timeout-minutes: 35
 
@@ -48,6 +49,7 @@ jobs:
 
   live-smoke:
     name: Live beta smoke
+    if: github.repository == 'chiffon-0504/huihui.dev-beta'
     needs: synchronize
     runs-on: ubuntu-latest
     timeout-minutes: 35

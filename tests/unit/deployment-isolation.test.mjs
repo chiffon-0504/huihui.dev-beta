@@ -5,6 +5,7 @@ import { parseDocument } from "yaml";
 
 const root = path.resolve(import.meta.dirname, "../..");
 let workflow;
+let betaCdWorkflow;
 let workerReadme;
 
 function parseWorkflow(source) {
@@ -29,6 +30,11 @@ beforeAll(async () => {
     "utf8",
   );
   workflow = parseWorkflow(source);
+  const betaCdSource = await readFile(
+    path.join(root, ".github/workflows/beta-cd.yml"),
+    "utf8",
+  );
+  betaCdWorkflow = parseWorkflow(betaCdSource);
   workerReadme = await readFile(
     path.join(root, "workers/huihui-api/README.md"),
     "utf8",
@@ -62,9 +68,15 @@ describe("Worker deployment isolation", () => {
     const deployment = workflow.jobs["deploy-beta"];
 
     expect(validation.uses).toBe("./.github/workflows/validate.yml");
-    expect(validation.if).toBe("github.event_name == 'push'");
+    expect(validation.if).toContain(
+      "github.repository == 'chiffon-0504/huihui.dev-beta'",
+    );
+    expect(validation.if).toContain("github.event_name == 'push'");
     expect(deployment.needs).toBe("validate-beta");
-    expect(deployment.if).toBe("github.event_name == 'push'");
+    expect(deployment.if).toContain(
+      "github.repository == 'chiffon-0504/huihui.dev-beta'",
+    );
+    expect(deployment.if).toContain("github.event_name == 'push'");
 
     const wrangler = jobAction(deployment, "cloudflare/wrangler-action");
     expect(wrangler.with.workingDirectory).toBe("workers/huihui-api");
@@ -94,11 +106,17 @@ describe("Worker deployment isolation", () => {
       "./.github/workflows/main-regression.yml",
     );
     expect(validation.if).toContain("github.event_name == 'workflow_dispatch'");
+    expect(validation.if).toContain(
+      "github.repository == 'chiffon-0504/huihui.dev-stable'",
+    );
     expect(validation.if).toContain("inputs.target == 'production'");
     expect(validation.if).toContain("github.ref == 'refs/heads/main'");
 
     expect(deployment.needs).toBe("validate-production");
     expect(deployment.if).toContain("github.event_name == 'workflow_dispatch'");
+    expect(deployment.if).toContain(
+      "github.repository == 'chiffon-0504/huihui.dev-stable'",
+    );
     expect(deployment.if).toContain("inputs.target == 'production'");
     expect(deployment.if).toContain("github.ref == 'refs/heads/main'");
     expect(deployment.if).not.toContain("github.event_name == 'push'");
@@ -107,6 +125,32 @@ describe("Worker deployment isolation", () => {
     const wrangler = jobAction(deployment, "cloudflare/wrangler-action");
     expect(wrangler.with.workingDirectory).toBe("workers/huihui-api");
     expect(wrangler.with.command).toBe("deploy");
+  });
+
+  test("runs Beta CD only from the beta repository", () => {
+    expect(betaCdWorkflow.on.push.branches).toEqual(["main"]);
+
+    for (const name of ["synchronize", "live-smoke"]) {
+      expect(betaCdWorkflow.jobs[name].if).toBe(
+        "github.repository == 'chiffon-0504/huihui.dev-beta'",
+      );
+    }
+
+    expect(betaCdWorkflow.jobs["live-smoke"].needs).toBe("synchronize");
+  });
+
+  test("keeps production deployment manual, stable-only, and main-only", () => {
+    const validation = workflow.jobs["validate-production"];
+    const deployment = workflow.jobs["deploy-production"];
+
+    for (const job of [validation, deployment]) {
+      expect(job.if).toContain(
+        "github.repository == 'chiffon-0504/huihui.dev-stable'",
+      );
+      expect(job.if).toContain("github.event_name == 'workflow_dispatch'");
+      expect(job.if).toContain("inputs.target == 'production'");
+      expect(job.if).toContain("github.ref == 'refs/heads/main'");
+    }
   });
 
   test("keeps beta and production credentials under the existing secret names", () => {
