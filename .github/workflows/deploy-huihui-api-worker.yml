@@ -29,18 +29,23 @@ concurrency:
 
 jobs:
   validate-beta:
-    if: github.event_name == 'push'
+    if: >-
+      github.repository == 'chiffon-0504/huihui.dev-beta' &&
+      github.event_name == 'push'
     uses: ./.github/workflows/validate.yml
 
   validate-production:
     if: >-
+      github.repository == 'chiffon-0504/huihui.dev-stable' &&
       github.event_name == 'workflow_dispatch' &&
       inputs.target == 'production' &&
       github.ref == 'refs/heads/main'
     uses: ./.github/workflows/main-regression.yml
 
   deploy-beta:
-    if: github.event_name == 'push'
+    if: >-
+      github.repository == 'chiffon-0504/huihui.dev-beta' &&
+      github.event_name == 'push'
     needs: validate-beta
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -59,6 +64,7 @@ jobs:
 
   deploy-production:
     if: >-
+      github.repository == 'chiffon-0504/huihui.dev-stable' &&
       github.event_name == 'workflow_dispatch' &&
       inputs.target == 'production' &&
       github.ref == 'refs/heads/main'
