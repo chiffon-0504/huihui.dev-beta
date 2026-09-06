@@ -3,9 +3,27 @@ import { expect, test } from "@playwright/test";
 const localOrigin = "http://127.0.0.1:4173";
 const steamApiUrl = "https://api.huihui.dev/api/steam-library";
 const locales = [
-  { id: "zh", path: "/about/", htmlLang: "zh-Hant" },
-  { id: "en", path: "/en/about/", htmlLang: "en" },
-  { id: "ja", path: "/ja/about/", htmlLang: "ja" },
+  {
+    id: "zh",
+    path: "/about/",
+    htmlLang: "zh-Hant",
+    lightboxLabel: "放大預覽",
+    lightboxCloseLabel: "關閉預覽",
+  },
+  {
+    id: "en",
+    path: "/en/about/",
+    htmlLang: "en",
+    lightboxLabel: "Image preview",
+    lightboxCloseLabel: "Close preview",
+  },
+  {
+    id: "ja",
+    path: "/ja/about/",
+    htmlLang: "ja",
+    lightboxLabel: "画像プレビュー",
+    lightboxCloseLabel: "プレビューを閉じる",
+  },
 ];
 const viewports = [
   { name: "desktop", width: 1440, height: 900 },
@@ -290,6 +308,12 @@ for (const locale of locales) {
         await expect(lightboxTrigger).toHaveAttribute("role", "button");
         await lightboxTrigger.click();
         await expect(page.locator("#lightbox")).toHaveAttribute("open", "");
+        await expect(page.locator("#lightbox")).toHaveAccessibleName(
+          locale.lightboxLabel,
+        );
+        await expect(page.locator("#lightboxClose")).toHaveAccessibleName(
+          locale.lightboxCloseLabel,
+        );
         await expect(page.locator("#lightboxImg")).toHaveAttribute(
           "src",
           new RegExp(`${profileImages[0].path}$`),
