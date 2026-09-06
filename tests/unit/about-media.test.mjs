@@ -50,7 +50,7 @@ const expectedLocalSources = [
   "/images/1003_amb.webp",
   "/images/1005_aaf.webp",
   "/images/1016_aab.webp",
-  "/images/1014_aa.webp",
+  "/images/1024_aa.webp",
   "/images/1032_a.webp",
   "/images/games/Cafe-Stella-and-the-Reapers-Butterflies.webp",
   "/images/games/Sickly-Days-and-Summer-Traces.webp",

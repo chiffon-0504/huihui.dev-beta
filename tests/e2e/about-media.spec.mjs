@@ -33,7 +33,7 @@ const localImages = [
   { path: "/images/1001_am.webp", width: 1624, height: 689 },
   { path: "/images/1002_amf.webp", width: 800, height: 800 },
   { path: "/images/1003_amb.webp", width: 400, height: 400 },
-  { path: "/images/1014_aa.webp", width: 837, height: 337 },
+  { path: "/images/1024_aa.webp", width: 2796, height: 1290 },
   { path: "/images/1005_aaf.webp", width: 747, height: 747 },
   { path: "/images/1016_aab.webp", width: 400, height: 337 },
   {
