@@ -36,7 +36,7 @@ const ABOUT_LOCAL_IMAGE_METADATA = Object.freeze({
   "/images/1002_amf.webp": Object.freeze({ width: 800, height: 800 }),
   "/images/1003_amb.webp": Object.freeze({ width: 400, height: 400 }),
   "/images/1005_aaf.webp": Object.freeze({ width: 747, height: 747 }),
-  "/images/1006_aab.webp": Object.freeze({ width: 800, height: 677 }),
+  "/images/1016_aab.webp": Object.freeze({ width: 400, height: 337 }),
   "/images/1014_aa.webp": Object.freeze({ width: 837, height: 337 }),
   "/images/1032_a.webp": Object.freeze({ width: 850, height: 347 }),
   "/images/games/Cafe-Stella-and-the-Reapers-Butterflies.webp": Object.freeze({
@@ -77,7 +77,7 @@ const ABOUT_INTEREST_IMAGES = Object.freeze({
   maimaiBest: createLocalAboutImage("/images/1003_amb.webp"),
   arcaeaProfile: createLocalAboutImage("/images/1014_aa.webp"),
   arcaeaFavorite: createLocalAboutImage("/images/1005_aaf.webp"),
-  arcaeaBest: createLocalAboutImage("/images/1006_aab.webp"),
+  arcaeaBest: createLocalAboutImage("/images/1016_aab.webp"),
   galgameBanner: createLocalAboutImage(
     "/images/games/summer-pockets-rb-wide.webp",
   ),
