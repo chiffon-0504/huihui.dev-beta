@@ -11,10 +11,11 @@ const homeRoutes = [
     status: "全部系統運作正常",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
-      "導入根頁面 OverlayScrollbars，並維持原生鍵盤、歷史紀錄與重新載入捲動還原",
-      "新增行動版頁首／頁尾捲動控制，改善 skip link、安全區域與鍵盤導覽體驗",
-      "重製 About 的 VS Code 個人檔案互動，完善響應式版面、鍵盤操作與減少動態效果支援",
-      "新增全站 favicon 與首頁靜態識別，並強化 Cloudflare Pages 精確 SHA 同步及分層 smoke 驗證",
+      "新增 Infrastructure Status 與完整 System Status，提供 Website／API／Contact 即時健康狀態、Cloudflare／GitHub 基礎設施狀態，以及 Better Stack 可用性與事件歷史",
+      "Tech Updates 改用 OpenAI、Anthropic 與 Apple Developer 官方來源，並加入本地化相對時間",
+      "Contact 新增 Subject 欄位，改善 timeout、錯誤復原與舊格式送出相容性",
+      "強化 Worker 上游驗證、fail-closed 行為、結構化 diagnostics 與狀態來源穩定性",
+      "改善 Status UI、文字選取對比、About accessibility，以及 Works／About／Arcaea 媒體內容",
     ],
   },
   {
@@ -23,10 +24,11 @@ const homeRoutes = [
     status: "All Systems Operational",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
-      "Added root-page OverlayScrollbars while preserving native keyboard, history, and reload scroll restoration",
-      "Added mobile top/bottom scroll controls with improved skip-link, safe-area, and keyboard navigation behavior",
-      "Rebuilt the About VS Code profile interaction with responsive layout, keyboard support, and reduced-motion behavior",
-      "Added site-wide favicons and static Home identity while strengthening exact-SHA Cloudflare Pages synchronization and layered smoke verification",
+      "Added Infrastructure Status and expanded System Status with current Website/API/Contact health, Cloudflare/GitHub infrastructure status, and Better Stack availability and incident history",
+      "Updated Tech Updates to official OpenAI, Anthropic, and Apple Developer sources with localized relative times",
+      "Added a Contact Subject field and improved timeout handling, recovery, and legacy submission compatibility",
+      "Strengthened upstream validation, fail-closed Worker behavior, structured diagnostics, and status-source reliability",
+      "Refined Status UI, text-selection contrast, About accessibility, and Works/About/Arcaea media content",
     ],
   },
   {
@@ -35,10 +37,11 @@ const homeRoutes = [
     status: "すべてのシステムが正常稼働中",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
-      "ルートページに OverlayScrollbars を導入し、ネイティブのキーボード操作、履歴、再読み込み時のスクロール復元を維持",
-      "モバイル向けのページ先頭／末尾スクロール操作を追加し、スキップリンク、セーフエリア、キーボードナビゲーションを改善",
-      "About の VS Code プロフィール操作を刷新し、レスポンシブ表示、キーボード操作、視差効果を減らす設定に対応",
-      "サイト全体の favicon と Home の静的識別表示を追加し、Cloudflare Pages の正確な SHA 同期と段階別 smoke 検証を強化",
+      "Infrastructure Status と System Status を拡充し、Website／API／Contact の現在のヘルス、Cloudflare／GitHub のインフラ状態、Better Stack の可用性・インシデント履歴を追加",
+      "Tech Updates を OpenAI、Anthropic、Apple Developer の公式ソースへ更新し、ローカライズされた相対時刻を追加",
+      "Contact に Subject フィールドを追加し、タイムアウト、復旧処理、旧形式送信との互換性を改善",
+      "上流検証、fail-closed な Worker 動作、構造化 diagnostics、status source の安定性を強化",
+      "Status UI、文字選択のコントラスト、About accessibility、Works／About／Arcaea のメディアを改善",
     ],
   },
 ];
@@ -171,7 +174,7 @@ for (const route of homeRoutes) {
     await expect(main.locator(".project-update-card h2")).toContainText(
       route.status,
     );
-    await expect(releaseCard.locator("h2")).toHaveText("v1.5.0");
+    await expect(releaseCard.locator("h2")).toHaveText("v1.6.0");
     await expect(releaseCard.locator(".version-badge")).toHaveText(
       "Stable release",
     );
