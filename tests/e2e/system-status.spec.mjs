@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { systemStatusFixture, systemStatusHistoryFixture, systemStatusIncidentsFixture } from "../support/system-status.mjs";
 
 const apiOrigin = "https://api.huihui.dev";
-const publicStatusPageUrl = "https://huihui-dev.betteruptime.com/";
+const publicStatusPageUrl = "https://status.huihui.dev/";
 const localeCases = [
   {
     home: "/",

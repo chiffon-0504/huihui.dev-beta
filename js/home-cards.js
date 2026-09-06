@@ -37,7 +37,7 @@ const SYSTEM_STATUS_COMPONENTS = Object.freeze([
   { id: "api", labelKey: "components.api", descKey: "descriptions.api" },
   { id: "contact", labelKey: "components.contact", descKey: "descriptions.contact" },
 ]);
-const SYSTEM_STATUS_PAGE_URL = "https://huihui-dev.betteruptime.com/";
+const SYSTEM_STATUS_PAGE_URL = "https://status.huihui.dev/";
 const SYSTEM_STATUS_SYMBOLS = Object.freeze({
   operational: "●",
   degraded_performance: "▲",
