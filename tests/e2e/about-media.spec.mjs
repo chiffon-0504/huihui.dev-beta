@@ -17,7 +17,7 @@ const localImages = [
   { path: "/images/1003_amb.webp", width: 400, height: 400 },
   { path: "/images/1014_aa.webp", width: 837, height: 337 },
   { path: "/images/1005_aaf.webp", width: 747, height: 747 },
-  { path: "/images/1006_aab.webp", width: 800, height: 677 },
+  { path: "/images/1016_aab.webp", width: 400, height: 337 },
   {
     path: "/images/games/summer-pockets-rb-wide.webp",
     width: 1232,

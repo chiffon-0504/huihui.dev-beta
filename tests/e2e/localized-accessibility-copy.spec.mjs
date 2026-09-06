@@ -79,7 +79,7 @@ const secondaryImageSources = [
   "/images/1002_amf.webp",
   "/images/1003_amb.webp",
   "/images/1005_aaf.webp",
-  "/images/1006_aab.webp",
+  "/images/1016_aab.webp",
 ];
 
 async function stubExternalDependencies(page) {
