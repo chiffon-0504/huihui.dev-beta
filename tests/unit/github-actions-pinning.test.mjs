@@ -375,8 +375,43 @@ describe("Playwright cross-browser validation contract", () => {
     const { workflow } = await readWorkflow("validate.yml");
 
     expect(Object.hasOwn(workflow.on, "pull_request")).toBe(true);
+    expect(workflow.on.pull_request.branches).toEqual(["main"]);
     expect(Object.hasOwn(workflow.on, "workflow_call")).toBe(true);
     expect(Object.hasOwn(workflow.on, "push")).toBe(false);
+
+    const freshPrBase = workflow.jobs["fresh-pr-base"];
+    expect(freshPrBase.name).toBe("Fresh PR base");
+    expect(freshPrBase.if).toContain(
+      "github.event_name == 'pull_request'",
+    );
+    expect(freshPrBase.if).toContain(
+      "github.event.pull_request.base.ref == 'main'",
+    );
+    expect(freshPrBase["timeout-minutes"]).toBe(5);
+    const checkout = actionSteps(freshPrBase, "actions/checkout");
+    expect(checkout).toHaveLength(1);
+    expect(checkout[0].with).toEqual({
+      repository: "${{ github.event.pull_request.head.repo.full_name }}",
+      ref: "${{ github.event.pull_request.head.sha }}",
+      "fetch-depth": 0,
+      "persist-credentials": false,
+    });
+    const freshPrBaseCommands = runCommands(freshPrBase).join("\n");
+    expect(freshPrBaseCommands).toContain(
+      'test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"',
+    );
+    expect(freshPrBaseCommands).toContain(
+      'git fetch --no-tags base-origin +refs/heads/main:refs/remotes/origin/main',
+    );
+    expect(freshPrBaseCommands).toContain(
+      'git merge-base --is-ancestor origin/main "$PR_HEAD_SHA"',
+    );
+    expect(freshPrBaseCommands).toContain("PR branch is stale.");
+    expect(freshPrBaseCommands).toContain(
+      "Fetch the latest origin/main and update this branch before merge.",
+    );
+    expect(freshPrBaseCommands).not.toMatch(/git\s+(push|rebase)\b/);
+    expect(freshPrBaseCommands).not.toMatch(/npm\s|playwright/i);
 
     const staticUnit = workflow.jobs["static-unit"];
     expect(staticUnit["timeout-minutes"]).toBe(10);

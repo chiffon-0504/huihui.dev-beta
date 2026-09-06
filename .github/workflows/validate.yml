@@ -2,12 +2,57 @@ name: Validate
 
 on:
   pull_request:
+    branches:
+      - main
   workflow_call:
 
 permissions:
   contents: read
 
 jobs:
+  fresh-pr-base:
+    name: Fresh PR base
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout actual PR head
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify actual PR head
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$PR_HEAD_SHA"
+
+      - name: Fetch latest origin/main
+        env:
+          BASE_REPOSITORY: ${{ github.repository }}
+        run: |
+          git remote add base-origin "https://github.com/$BASE_REPOSITORY.git"
+          git fetch --no-tags base-origin +refs/heads/main:refs/remotes/origin/main
+          echo "origin/main: $(git rev-parse origin/main)"
+
+      - name: Verify PR contains latest origin/main
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if git merge-base --is-ancestor origin/main "$PR_HEAD_SHA"; then
+            echo "PR branch contains the latest origin/main."
+          else
+            echo "PR branch is stale." >&2
+            echo "Fetch the latest origin/main and update this branch before merge." >&2
+            exit 1
+          fi
+
   static-unit:
     name: Static and unit
     runs-on: ubuntu-latest
