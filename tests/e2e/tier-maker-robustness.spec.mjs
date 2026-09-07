@@ -523,3 +523,94 @@ for (const failure of exportFailures) {
     await expect(page.locator(".tier-label-export")).toHaveCount(0);
   });
 }
+
+for (const failure of ["network", "module evaluation"]) {
+  test(`export recovers from ${failure} failure on explicit retry and reuses success`, async ({ page }) => {
+    await installDownloadSpy(page);
+    const requests = [];
+    let releaseRecovery;
+    const recoveryGate = new Promise((resolve) => { releaseRecovery = resolve; });
+    await page.route(`${html2canvasUrl}*`, async (route) => {
+      requests.push(route.request().url());
+      if (requests.length === 1) {
+        if (failure === "network") await route.abort("failed");
+        else await route.fulfill({
+          contentType: "application/javascript",
+          body: 'throw new Error("temporary module failure"); export default function() {}',
+        });
+        return;
+      }
+      await recoveryGate;
+      await route.continue();
+    });
+    await loadTierMaker(page);
+    await uploadBatch(page, [svgFile("keep.svg")], "Images added: 1.");
+    const item = page.locator('.tier-item[alt="keep.svg"]');
+    await item.focus();
+    await page.keyboard.press("ArrowUp");
+    await expect(page.locator('.tier-content[aria-label="B tier"] > .tier-item')).toHaveCount(1);
+    await page.locator(".tier-label").first().fill("Keep label");
+    const arrangement = () => page.locator("#tierBoard, #poolContent").evaluateAll((zones) =>
+      zones.map((zone) => ({
+        items: [...zone.querySelectorAll(".tier-item")].map((image) => [image.alt, image.src, image.parentElement.getAttribute("aria-label")]),
+        labels: [...zone.querySelectorAll("input")].map((input) => input.value),
+      })),
+    );
+    const before = await arrangement();
+    const button = page.locator("#saveBtn");
+    const assertClean = async () => {
+      await expect(button).toBeEnabled();
+      await expect(button).not.toHaveAttribute("aria-busy");
+      await expect(page.locator("#tierBoard")).not.toHaveClass(/\bexporting\b/);
+      await expect(page.locator(".tier-label-export")).toHaveCount(0);
+      expect(await arrangement()).toEqual(before);
+    };
+    expect(requests).toEqual([]);
+    await button.click();
+    await expect(page.locator("#tierStatus")).toHaveText("The PNG could not be created. Please try again.");
+    await assertClean();
+    expect(requests).toEqual([html2canvasUrl]);
+    expect(await page.evaluate(() => window.__tierDownloadCount || 0)).toBe(0);
+
+    await button.click();
+    await expect.poll(() => requests.length).toBe(2);
+    await expect(button).toBeDisabled();
+    await expect(button).toHaveAttribute("aria-busy", "true");
+    await expect(page.locator("#tierBoard")).toHaveClass(/\bexporting\b/);
+    await button.evaluate((element) => {
+      for (let index = 0; index < 5; index += 1) {
+        element.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      }
+    });
+    releaseRecovery();
+    await expect.poll(() => page.evaluate(() => window.__tierDownloadCount || 0)).toBe(1);
+    await expect(page.locator("#tierStatus")).toHaveText("PNG download started.");
+    await assertClean();
+    expect(requests).toEqual([html2canvasUrl, `${html2canvasUrl}?recovery=1`]);
+    expect(await page.evaluate(() => window.__tierDownload.href)).toMatch(/^data:image\/png;base64,/);
+
+    await button.click();
+    await expect.poll(() => page.evaluate(() => window.__tierDownloadCount)).toBe(2);
+    await expect(page.locator("#tierStatus")).toHaveText("PNG download started.");
+    await assertClean();
+    expect(requests).toHaveLength(2);
+  });
+}
+
+test("module recovery is bounded after both load URLs fail", async ({ page }) => {
+  const requests = [];
+  await page.route(`${html2canvasUrl}*`, async (route) => {
+    requests.push(route.request().url());
+    await route.abort("failed");
+  });
+  await loadTierMaker(page);
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    await page.locator("#saveBtn").click();
+    await expect(page.locator("#tierStatus")).toHaveText("The PNG could not be created. Please try again.");
+    await expect(page.locator("#saveBtn")).toBeEnabled();
+    await expect(page.locator("#saveBtn")).not.toHaveAttribute("aria-busy");
+    await expect(page.locator("#tierBoard")).not.toHaveClass(/\bexporting\b/);
+    await expect(page.locator(".tier-label-export")).toHaveCount(0);
+  }
+  expect(requests).toEqual([html2canvasUrl, `${html2canvasUrl}?recovery=1`]);
+});
