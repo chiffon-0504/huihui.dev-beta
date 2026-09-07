@@ -128,6 +128,53 @@ async function expectBytePreservation(filePath, cwd = root) {
   expect(["unset", "-text"], filePath).toContain(effectiveText);
 }
 
+function normalizeManifestPath(filePath) {
+  return filePath.split(path.sep).join("/");
+}
+
+function packageDirectory(filePath) {
+  return filePath.split("/").slice(0, 2).join("/");
+}
+
+function assertLicenseCoverage(manifest, trackedVendorFiles) {
+  const manifestPackageDirectories = new Set();
+  const declaredLicensePaths = [];
+
+  for (const dependency of manifest.dependencies) {
+    const dependencyFiles = dependency.files.map((file) =>
+      normalizeManifestPath(file.path),
+    );
+    const dependencyDirectories = new Set(
+      dependencyFiles.map((filePath) => packageDirectory(filePath)),
+    );
+
+    expect(dependencyDirectories.size, dependency.package).toBe(1);
+    const dependencyDirectory = [...dependencyDirectories][0];
+    manifestPackageDirectories.add(dependencyDirectory);
+
+    const licensePaths = dependency.files
+      .filter((file) => file.role === "license")
+      .map((file) => normalizeManifestPath(file.path));
+
+    expect(licensePaths, dependency.package).toHaveLength(1);
+    expect(packageDirectory(licensePaths[0]), dependency.package).toBe(
+      dependencyDirectory,
+    );
+    declaredLicensePaths.push(licensePaths[0]);
+  }
+
+  expect(new Set(declaredLicensePaths).size).toBe(declaredLicensePaths.length);
+
+  for (const dependencyDirectory of manifestPackageDirectories) {
+    const licensePaths = declaredLicensePaths.filter(
+      (filePath) => packageDirectory(filePath) === dependencyDirectory,
+    );
+
+    expect(licensePaths, dependencyDirectory).toHaveLength(1);
+    expect(trackedVendorFiles, licensePaths[0]).toContain(licensePaths[0]);
+  }
+}
+
 describe("vendored browser dependencies", () => {
   test("raw-byte checksums reject LF and CRLF variants", () => {
     const lfFixture = Buffer.from("first line\nsecond line\n", "utf8");
@@ -179,7 +226,7 @@ describe("vendored browser dependencies", () => {
       dependency.files.map((file) => file.path),
     );
     const normalizedManifestFiles = manifestFiles.map((filePath) =>
-      filePath.split(path.sep).join("/"),
+      normalizeManifestPath(filePath),
     );
     const vendorEntries = await gitTrackedEntries("vendor");
     const vendorFiles = vendorEntries.map((entry) => entry.path);
@@ -222,21 +269,79 @@ describe("vendored browser dependencies", () => {
 
     expect(packageDirectories).toEqual(manifestPackageDirectories);
 
-    const declaredLicenseFiles = new Set(
-      manifest.dependencies.flatMap((dependency) =>
-        dependency.files
-          .filter((file) => file.role === "license")
-          .map((file) => file.path.split(path.sep).join("/")),
-      ),
-    );
-    const localLicenseFiles = vendorFiles.filter((filePath) =>
-      filePath.toLowerCase().endsWith("/license"),
-    );
+    assertLicenseCoverage(manifest, trackedVendorFiles);
+  });
 
-    expect(localLicenseFiles.length).toBe(packageDirectories.length);
-    expect(localLicenseFiles.every((filePath) =>
-      declaredLicenseFiles.has(filePath),
-    )).toBe(true);
+  test("LICENSE coverage is required for each package directory", () => {
+    const validManifest = {
+      dependencies: [
+        {
+          package: "one",
+          files: [
+            { path: "vendor/one/runtime.js", role: "runtime" },
+            { path: "vendor/one/LICENSE", role: "license" },
+          ],
+        },
+        {
+          package: "two",
+          files: [
+            { path: "vendor/two/runtime.js", role: "runtime" },
+            { path: "vendor/two/LICENSE", role: "license" },
+          ],
+        },
+      ],
+    };
+    const validTrackedFiles = [
+      "vendor/one/runtime.js",
+      "vendor/one/LICENSE",
+      "vendor/two/runtime.js",
+      "vendor/two/LICENSE",
+    ];
+
+    expect(() =>
+      assertLicenseCoverage(validManifest, validTrackedFiles),
+    ).not.toThrow();
+
+    const missingLicenseManifest = {
+      dependencies: [
+        validManifest.dependencies[0],
+        {
+          package: "two",
+          files: [{ path: "vendor/two/runtime.js", role: "runtime" }],
+        },
+      ],
+    };
+
+    expect(() =>
+      assertLicenseCoverage(missingLicenseManifest, [
+        "vendor/one/runtime.js",
+        "vendor/one/LICENSE",
+        "vendor/two/runtime.js",
+      ]),
+    ).toThrow();
+
+    const duplicateAndMissingManifest = {
+      dependencies: [
+        {
+          package: "one",
+          files: [
+            { path: "vendor/one/runtime.js", role: "runtime" },
+            { path: "vendor/one/LICENSE", role: "license" },
+            { path: "vendor/one/LICENSE.copy", role: "license" },
+          ],
+        },
+        missingLicenseManifest.dependencies[1],
+      ],
+    };
+
+    expect(() =>
+      assertLicenseCoverage(duplicateAndMissingManifest, [
+        "vendor/one/runtime.js",
+        "vendor/one/LICENSE",
+        "vendor/one/LICENSE.copy",
+        "vendor/two/runtime.js",
+      ]),
+    ).toThrow();
   });
 
   test("tracked vendor inventory includes symlink entries and ignores untracked files", async () => {
