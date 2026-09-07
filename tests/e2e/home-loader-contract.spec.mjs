@@ -11,6 +11,7 @@ const homeRoutes = [
     status: "全部系統運作正常",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
+      "修正 System Status 連結，改用官方 status.huihui.dev 網域",
       "新增 Infrastructure Status 與完整 System Status，提供 Website／API／Contact 即時健康狀態、Cloudflare／GitHub 基礎設施狀態，以及 Better Stack 可用性與事件歷史",
       "Tech Updates 改用 OpenAI、Anthropic 與 Apple Developer 官方來源，並加入本地化相對時間",
       "Contact 新增 Subject 欄位，改善 timeout、錯誤復原與舊格式送出相容性",
@@ -24,6 +25,7 @@ const homeRoutes = [
     status: "All Systems Operational",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
+      "Fixed the System Status link to use the official status.huihui.dev domain.",
       "Added Infrastructure Status and expanded System Status with current Website/API/Contact health, Cloudflare/GitHub infrastructure status, and Better Stack availability and incident history",
       "Updated Tech Updates to official OpenAI, Anthropic, and Apple Developer sources with localized relative times",
       "Added a Contact Subject field and improved timeout handling, recovery, and legacy submission compatibility",
@@ -37,6 +39,7 @@ const homeRoutes = [
     status: "すべてのシステムが正常稼働中",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
+      "System Status のリンクを公式の status.huihui.dev ドメインへ変更しました。",
       "Infrastructure Status と System Status を拡充し、Website／API／Contact の現在のヘルス、Cloudflare／GitHub のインフラ状態、Better Stack の可用性・インシデント履歴を追加",
       "Tech Updates を OpenAI、Anthropic、Apple Developer の公式ソースへ更新し、ローカライズされた相対時刻を追加",
       "Contact に Subject フィールドを追加し、タイムアウト、復旧処理、旧形式送信との互換性を改善",
@@ -174,7 +177,7 @@ for (const route of homeRoutes) {
     await expect(main.locator(".project-update-card h2")).toContainText(
       route.status,
     );
-    await expect(releaseCard.locator("h2")).toHaveText("v1.6.0");
+    await expect(releaseCard.locator("h2")).toHaveText("v1.6.1");
     await expect(releaseCard.locator(".version-badge")).toHaveText(
       "Stable release",
     );

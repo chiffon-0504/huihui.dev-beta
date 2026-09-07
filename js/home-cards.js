@@ -37,7 +37,7 @@ const SYSTEM_STATUS_COMPONENTS = Object.freeze([
   { id: "api", labelKey: "components.api", descKey: "descriptions.api" },
   { id: "contact", labelKey: "components.contact", descKey: "descriptions.contact" },
 ]);
-const SYSTEM_STATUS_PAGE_URL = "https://huihui-dev.betteruptime.com/";
+const SYSTEM_STATUS_PAGE_URL = "https://status.huihui.dev/";
 const SYSTEM_STATUS_SYMBOLS = Object.freeze({
   operational: "●",
   degraded_performance: "▲",
@@ -1049,6 +1049,12 @@ function isSystemStatusIncidentUrl(value) {
   }
 }
 
+function getPublicSystemStatusIncidentUrl(value) {
+  if (!isSystemStatusIncidentUrl(value)) return null;
+  const url = new URL(value);
+  return new URL(url.pathname, SYSTEM_STATUS_PAGE_URL).href;
+}
+
 function getValidSystemStatusIncidents(data) {
   if (!isSystemStatusHistoryObject(data) || data.ok !== true || data.source !== "better_stack" ||
     !Array.isArray(data.reports) || data.reports.length > 20 ||
@@ -1083,8 +1089,10 @@ function getValidSystemStatusIncidents(data) {
     }
     if (previousTime > previousLatest) return null;
     previousLatest = previousTime;
+    const publicUrl = getPublicSystemStatusIncidentUrl(report.url);
+    if (!publicUrl) return null;
     // Keys identify provider records only; they never enter the presentation model.
-    reports.push({ title: report.title, url: report.url, updates });
+    reports.push({ title: report.title, url: publicUrl, updates });
   }
   return { reports, fetchedAt: data.fetchedAt };
 }
