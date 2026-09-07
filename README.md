@@ -260,11 +260,15 @@ Legacy redirects preserve backward compatibility from `/posts/`, `/en/posts/`, a
 
 ---
 
-## License
+## Licensing
 
-Source code is licensed under the MIT License.
+Source code in this repository is licensed under the MIT License unless otherwise stated.
 
-Images, photographs, artwork, and other media assets are excluded from the MIT License unless otherwise stated.
+Website content, including original text, personal profile content, photographs, images, artwork, logos, and other media assets, is © 2026 chiffon-0504. All rights reserved unless otherwise stated.
+
+Third-party libraries, assets, trademarks, and other third-party materials remain subject to their respective licenses and terms.
+
+The MIT License applies to the source code only and does not grant permission to reuse non-code website content, personal media, or branding.
 
 ## Community
 
