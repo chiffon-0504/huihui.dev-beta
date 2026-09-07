@@ -268,6 +268,8 @@ Website content, including original text, personal profile content, photographs,
 
 Third-party libraries, assets, trademarks, and other third-party materials remain subject to their respective licenses and terms.
 
+See the [vendor provenance documentation](vendor/README.md) and its [machine-readable inventory](vendor/manifest.json) for vendored dependencies.
+
 The MIT License applies to the source code only and does not grant permission to reuse non-code website content, personal media, or branding.
 
 ## Community

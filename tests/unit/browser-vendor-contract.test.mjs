@@ -14,7 +14,7 @@ const allowedExternalScripts = new Set([
 ]);
 const removedRuntimeCdn = ["cdn", "jsdelivr", "net"].join(".");
 
-async function listFiles(directory, extension) {
+async function listFiles(directory, extension = null) {
   const entries = await readdir(directory, { withFileTypes: true });
   const files = [];
 
@@ -31,7 +31,10 @@ async function listFiles(directory, extension) {
 
     if (entry.isDirectory()) {
       files.push(...(await listFiles(filePath, extension)));
-    } else if (entry.isFile() && entry.name.endsWith(extension)) {
+    } else if (
+      entry.isFile() &&
+      (extension === null || entry.name.endsWith(extension))
+    ) {
       files.push(filePath);
     }
   }
@@ -110,6 +113,68 @@ describe("vendored browser dependencies", () => {
         expect(await sha256(filePath), file.path).toBe(file.sha256);
       }
     }
+  });
+
+  test("manifest covers the complete tracked vendor tree", async () => {
+    const manifest = JSON.parse(
+      await readFile(path.join(root, "vendor/manifest.json"), "utf8"),
+    );
+    const manifestFiles = manifest.dependencies.flatMap((dependency) =>
+      dependency.files.map((file) => file.path),
+    );
+    const normalizedManifestFiles = manifestFiles.map((filePath) =>
+      filePath.split(path.sep).join("/"),
+    );
+    const vendorFiles = (
+      await listFiles(path.join(root, "vendor"))
+    ).map((filePath) => path.relative(root, filePath).split(path.sep).join("/"));
+    const allowedDocumentation = new Set([
+      "vendor/README.md",
+      "vendor/manifest.json",
+    ]);
+    const trackedVendorFiles = vendorFiles.filter(
+      (filePath) => !allowedDocumentation.has(filePath),
+    );
+
+    expect(new Set(normalizedManifestFiles).size).toBe(
+      normalizedManifestFiles.length,
+    );
+    expect([...normalizedManifestFiles].sort()).toEqual(
+      [...trackedVendorFiles].sort(),
+    );
+
+    const vendorEntries = await readdir(path.join(root, "vendor"), {
+      withFileTypes: true,
+    });
+    const packageDirectories = vendorEntries
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => `vendor/${entry.name}`)
+      .sort();
+    const manifestPackageDirectories = [
+      ...new Set(
+        normalizedManifestFiles.map((filePath) =>
+          filePath.split("/").slice(0, 2).join("/"),
+        ),
+      ),
+    ].sort();
+
+    expect(packageDirectories).toEqual(manifestPackageDirectories);
+
+    const declaredLicenseFiles = new Set(
+      manifest.dependencies.flatMap((dependency) =>
+        dependency.files
+          .filter((file) => file.role === "license")
+          .map((file) => file.path.split(path.sep).join("/")),
+      ),
+    );
+    const localLicenseFiles = vendorFiles.filter((filePath) =>
+      filePath.toLowerCase().endsWith("/license"),
+    );
+
+    expect(localLicenseFiles.length).toBe(packageDirectories.length);
+    expect(localLicenseFiles.every((filePath) =>
+      declaredLicenseFiles.has(filePath),
+    )).toBe(true);
   });
 
   test("localized About pages load only the required Prism files in order", async () => {
