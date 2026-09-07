@@ -3,6 +3,7 @@ let touchGhost = null;
 let uploadQueue = Promise.resolve();
 let exportInProgress = false;
 let html2canvasModulePromise;
+let html2canvasRecoveryUsed = false;
 
 const MAX_IMAGES = 50;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -548,9 +549,15 @@ document.addEventListener("click", (e) => {
 
 function loadHtml2canvas() {
   if (!html2canvasModulePromise) {
-    html2canvasModulePromise = import(
-      "/vendor/html2canvas/html2canvas.esm.js"
-    );
+    // A failed module URL is cached by the browser too. Allow one fresh URL,
+    // only on the next user export; retain success or the final rejection.
+    html2canvasModulePromise = html2canvasRecoveryUsed
+      ? import("/vendor/html2canvas/html2canvas.esm.js?recovery=1")
+      : import("/vendor/html2canvas/html2canvas.esm.js").catch((error) => {
+          html2canvasRecoveryUsed = true;
+          html2canvasModulePromise = undefined;
+          throw error;
+        });
   }
 
   return html2canvasModulePromise;
