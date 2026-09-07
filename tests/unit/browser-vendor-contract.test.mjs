@@ -157,6 +157,9 @@ function assertLicenseCoverage(manifest, trackedVendorFiles) {
       .map((file) => normalizeManifestPath(file.path));
 
     expect(licensePaths, dependency.package).toHaveLength(1);
+    expect(licensePaths[0].split("/").at(-1), dependency.package).toBe(
+      "LICENSE",
+    );
     expect(packageDirectory(licensePaths[0]), dependency.package).toBe(
       dependencyDirectory,
     );
@@ -301,6 +304,21 @@ describe("vendored browser dependencies", () => {
     expect(() =>
       assertLicenseCoverage(validManifest, validTrackedFiles),
     ).not.toThrow();
+
+    const runtimeRelabeledManifest = {
+      dependencies: [
+        {
+          package: "example",
+          files: [{ path: "vendor/example/runtime.js", role: "license" }],
+        },
+      ],
+    };
+
+    expect(() =>
+      assertLicenseCoverage(runtimeRelabeledManifest, [
+        "vendor/example/runtime.js",
+      ]),
+    ).toThrow();
 
     const missingLicenseManifest = {
       dependencies: [
