@@ -1,7 +1,19 @@
+import { execFile as execFileCallback } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readdir, readFile } from "node:fs/promises";
+import {
+  mkdtemp,
+  mkdir,
+  readdir,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
+import { promisify } from "node:util";
 import { describe, expect, test } from "vitest";
+
+const execFile = promisify(execFileCallback);
 
 const root = path.resolve(import.meta.dirname, "../..");
 const aboutPages = [
@@ -14,7 +26,7 @@ const allowedExternalScripts = new Set([
 ]);
 const removedRuntimeCdn = ["cdn", "jsdelivr", "net"].join(".");
 
-async function listFiles(directory, extension) {
+async function listFiles(directory, extension = null) {
   const entries = await readdir(directory, { withFileTypes: true });
   const files = [];
 
@@ -31,7 +43,10 @@ async function listFiles(directory, extension) {
 
     if (entry.isDirectory()) {
       files.push(...(await listFiles(filePath, extension)));
-    } else if (entry.isFile() && entry.name.endsWith(extension)) {
+    } else if (
+      entry.isFile() &&
+      (extension === null || entry.name.endsWith(extension))
+    ) {
       files.push(filePath);
     }
   }
@@ -67,6 +82,100 @@ function sha256Bytes(bytes) {
 
 async function sha256(filePath) {
   return sha256Bytes(await readFile(filePath));
+}
+
+async function effectiveTextAttribute(filePath, cwd = root) {
+  const { stdout } = await execFile(
+    "git",
+    ["-C", cwd, "check-attr", "text", "--", filePath],
+    { encoding: "utf8" },
+  );
+  const match = stdout.trim().match(/^.+: text: (.+)$/);
+
+  if (!match) {
+    throw new Error(`Unexpected git check-attr output for ${filePath}`);
+  }
+
+  return match[1];
+}
+
+async function gitTrackedEntries(directory, cwd = root) {
+  const { stdout } = await execFile(
+    "git",
+    ["-C", cwd, "ls-files", "--stage", "--", directory],
+    { encoding: "utf8" },
+  );
+
+  return stdout
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .map((line) => {
+      const match = line.match(/^(\d+)\s+\S+\s+\d+\t(.+)$/);
+
+      if (!match) {
+        throw new Error(`Unexpected git ls-files --stage output: ${line}`);
+      }
+
+      return {
+        mode: match[1],
+        path: match[2].replaceAll("\\", "/"),
+      };
+    });
+}
+
+async function expectBytePreservation(filePath, cwd = root) {
+  const effectiveText = await effectiveTextAttribute(filePath, cwd);
+  expect(["unset", "-text"], filePath).toContain(effectiveText);
+}
+
+function normalizeManifestPath(filePath) {
+  return filePath.split(path.sep).join("/");
+}
+
+function packageDirectory(filePath) {
+  return filePath.split("/").slice(0, 2).join("/");
+}
+
+function assertLicenseCoverage(manifest, trackedVendorFiles) {
+  const manifestPackageDirectories = new Set();
+  const declaredLicensePaths = [];
+
+  for (const dependency of manifest.dependencies) {
+    const dependencyFiles = dependency.files.map((file) =>
+      normalizeManifestPath(file.path),
+    );
+    const dependencyDirectories = new Set(
+      dependencyFiles.map((filePath) => packageDirectory(filePath)),
+    );
+
+    expect(dependencyDirectories.size, dependency.package).toBe(1);
+    const dependencyDirectory = [...dependencyDirectories][0];
+    manifestPackageDirectories.add(dependencyDirectory);
+
+    const licensePaths = dependency.files
+      .filter((file) => file.role === "license")
+      .map((file) => normalizeManifestPath(file.path));
+
+    expect(licensePaths, dependency.package).toHaveLength(1);
+    expect(licensePaths[0].split("/").at(-1), dependency.package).toBe(
+      "LICENSE",
+    );
+    expect(packageDirectory(licensePaths[0]), dependency.package).toBe(
+      dependencyDirectory,
+    );
+    declaredLicensePaths.push(licensePaths[0]);
+  }
+
+  expect(new Set(declaredLicensePaths).size).toBe(declaredLicensePaths.length);
+
+  for (const dependencyDirectory of manifestPackageDirectories) {
+    const licensePaths = declaredLicensePaths.filter(
+      (filePath) => packageDirectory(filePath) === dependencyDirectory,
+    );
+
+    expect(licensePaths, dependencyDirectory).toHaveLength(1);
+    expect(trackedVendorFiles, licensePaths[0]).toContain(licensePaths[0]);
+  }
 }
 
 describe("vendored browser dependencies", () => {
@@ -109,6 +218,229 @@ describe("vendored browser dependencies", () => {
         expect(filePath.startsWith(`${root}${path.sep}`), file.path).toBe(true);
         expect(await sha256(filePath), file.path).toBe(file.sha256);
       }
+    }
+  });
+
+  test("manifest covers the complete tracked vendor tree", async () => {
+    const manifest = JSON.parse(
+      await readFile(path.join(root, "vendor/manifest.json"), "utf8"),
+    );
+    const manifestFiles = manifest.dependencies.flatMap((dependency) =>
+      dependency.files.map((file) => file.path),
+    );
+    const normalizedManifestFiles = manifestFiles.map((filePath) =>
+      normalizeManifestPath(filePath),
+    );
+    const vendorEntries = await gitTrackedEntries("vendor");
+    const vendorFiles = vendorEntries.map((entry) => entry.path);
+    const vendorModes = new Map(
+      vendorEntries.map((entry) => [entry.path, entry.mode]),
+    );
+    const allowedDocumentation = new Set([
+      "vendor/README.md",
+      "vendor/manifest.json",
+    ]);
+    const trackedVendorFiles = vendorFiles.filter(
+      (filePath) => !allowedDocumentation.has(filePath),
+    );
+
+    expect(new Set(normalizedManifestFiles).size).toBe(
+      normalizedManifestFiles.length,
+    );
+    expect([...normalizedManifestFiles].sort()).toEqual(
+      [...trackedVendorFiles].sort(),
+    );
+
+    for (const filePath of normalizedManifestFiles) {
+      expect(vendorModes.get(filePath), filePath).toMatch(/^100(?:644|755)$/);
+    }
+
+    const packageDirectories = [
+      ...new Set(
+        trackedVendorFiles.map((filePath) =>
+          filePath.split("/").slice(0, 2).join("/"),
+        ),
+      ),
+    ].sort();
+    const manifestPackageDirectories = [
+      ...new Set(
+        normalizedManifestFiles.map((filePath) =>
+          filePath.split("/").slice(0, 2).join("/"),
+        ),
+      ),
+    ].sort();
+
+    expect(packageDirectories).toEqual(manifestPackageDirectories);
+
+    assertLicenseCoverage(manifest, trackedVendorFiles);
+  });
+
+  test("LICENSE coverage is required for each package directory", () => {
+    const validManifest = {
+      dependencies: [
+        {
+          package: "one",
+          files: [
+            { path: "vendor/one/runtime.js", role: "runtime" },
+            { path: "vendor/one/LICENSE", role: "license" },
+          ],
+        },
+        {
+          package: "two",
+          files: [
+            { path: "vendor/two/runtime.js", role: "runtime" },
+            { path: "vendor/two/LICENSE", role: "license" },
+          ],
+        },
+      ],
+    };
+    const validTrackedFiles = [
+      "vendor/one/runtime.js",
+      "vendor/one/LICENSE",
+      "vendor/two/runtime.js",
+      "vendor/two/LICENSE",
+    ];
+
+    expect(() =>
+      assertLicenseCoverage(validManifest, validTrackedFiles),
+    ).not.toThrow();
+
+    const runtimeRelabeledManifest = {
+      dependencies: [
+        {
+          package: "example",
+          files: [{ path: "vendor/example/runtime.js", role: "license" }],
+        },
+      ],
+    };
+
+    expect(() =>
+      assertLicenseCoverage(runtimeRelabeledManifest, [
+        "vendor/example/runtime.js",
+      ]),
+    ).toThrow();
+
+    const missingLicenseManifest = {
+      dependencies: [
+        validManifest.dependencies[0],
+        {
+          package: "two",
+          files: [{ path: "vendor/two/runtime.js", role: "runtime" }],
+        },
+      ],
+    };
+
+    expect(() =>
+      assertLicenseCoverage(missingLicenseManifest, [
+        "vendor/one/runtime.js",
+        "vendor/one/LICENSE",
+        "vendor/two/runtime.js",
+      ]),
+    ).toThrow();
+
+    const duplicateAndMissingManifest = {
+      dependencies: [
+        {
+          package: "one",
+          files: [
+            { path: "vendor/one/runtime.js", role: "runtime" },
+            { path: "vendor/one/LICENSE", role: "license" },
+            { path: "vendor/one/LICENSE.copy", role: "license" },
+          ],
+        },
+        missingLicenseManifest.dependencies[1],
+      ],
+    };
+
+    expect(() =>
+      assertLicenseCoverage(duplicateAndMissingManifest, [
+        "vendor/one/runtime.js",
+        "vendor/one/LICENSE",
+        "vendor/one/LICENSE.copy",
+        "vendor/two/runtime.js",
+      ]),
+    ).toThrow();
+  });
+
+  test("tracked vendor inventory includes symlink entries and ignores untracked files", async () => {
+    const fixtureRoot = await mkdtemp(path.join(tmpdir(), "vendor-index-"));
+
+    try {
+      await mkdir(path.join(fixtureRoot, "vendor"), { recursive: true });
+      await execFile("git", ["init", "--quiet", fixtureRoot]);
+      await writeFile(path.join(fixtureRoot, "vendor/runtime.js"), "runtime\n");
+      await writeFile(path.join(fixtureRoot, "vendor/target"), "target\n");
+      await writeFile(
+        path.join(fixtureRoot, "vendor/untracked.js"),
+        "untracked\n",
+      );
+      await execFile("git", ["-C", fixtureRoot, "add", "--", "vendor/runtime.js"]);
+      const { stdout: objectId } = await execFile(
+        "git",
+        ["-C", fixtureRoot, "hash-object", "-w", "vendor/target"],
+        { encoding: "utf8" },
+      );
+      await execFile("git", [
+        "-C",
+        fixtureRoot,
+        "update-index",
+        "--add",
+        "--cacheinfo",
+        `120000,${objectId.trim()},vendor/tracked-link`,
+      ]);
+
+      const trackedEntries = await gitTrackedEntries("vendor", fixtureRoot);
+
+      expect(trackedEntries.map((entry) => entry.path)).toEqual([
+        "vendor/runtime.js",
+        "vendor/tracked-link",
+      ]);
+      expect(
+        trackedEntries.find((entry) => entry.path === "vendor/runtime.js")?.mode,
+      ).toMatch(/^100(?:644|755)$/);
+      expect(
+        trackedEntries.find((entry) => entry.path === "vendor/tracked-link")?.mode,
+      ).toBe("120000");
+      expect(
+        trackedEntries.some((entry) => entry.path === "vendor/untracked.js"),
+      ).toBe(false);
+    } finally {
+      await rm(fixtureRoot, { recursive: true, force: true });
+    }
+  });
+
+  test("manifest vendor files have effective byte-preservation attributes", async () => {
+    const manifest = JSON.parse(
+      await readFile(path.join(root, "vendor/manifest.json"), "utf8"),
+    );
+    const manifestFiles = manifest.dependencies.flatMap((dependency) =>
+      dependency.files.map((file) => file.path.split(path.sep).join("/")),
+    );
+    for (const filePath of manifestFiles) {
+      await expectBytePreservation(filePath);
+    }
+  });
+
+  test("effective attributes reject a later text normalization rule", async () => {
+    const fixtureRoot = await mkdtemp(path.join(tmpdir(), "vendor-attrs-"));
+
+    try {
+      await mkdir(path.join(fixtureRoot, "vendor"), { recursive: true });
+      await writeFile(
+        path.join(fixtureRoot, ".gitattributes"),
+        "vendor/LICENSE -text\n* text=auto\n",
+      );
+      await writeFile(path.join(fixtureRoot, "vendor/LICENSE"), "license\n");
+      await execFile("git", ["init", "--quiet", fixtureRoot]);
+
+      await expect(
+        expectBytePreservation("vendor/LICENSE", fixtureRoot),
+      ).rejects.toThrow();
+      await expect(effectiveTextAttribute("vendor/LICENSE", fixtureRoot)).resolves.toBe(
+        "auto",
+      );
+    } finally {
+      await rm(fixtureRoot, { recursive: true, force: true });
     }
   });
 
