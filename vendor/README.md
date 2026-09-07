@@ -34,11 +34,16 @@ To update a vendored dependency:
 4. Extract only the required upstream runtime files and LICENSE.
 5. Preserve the upstream file bytes exactly; do not reformat, minify, or
    normalize line endings.
-6. Update `vendor/manifest.json` with the version, source, repository/tag, and
+6. Add or update the corresponding explicit `.gitattributes` rule for every
+   new or replaced upstream file (`binary` for runtime files or `-text` for
+   LICENSE files). Keep `vendor/README.md` and `vendor/manifest.json` outside
+   this byte-preservation list.
+7. Verify with `git check-attr text -- <path>` that Git will not apply text or
+   line-ending normalization, then compute the repository-byte SHA-256 values.
+8. Update `vendor/manifest.json` with the version, source, repository/tag, and
    upstream paths.
-7. Recompute every recorded per-file SHA-256 value from the repository bytes.
-8. Run the vendor contract tests and the applicable JavaScript checks.
-9. Review the diff for unexpected generated, minified, or unrelated files.
+9. Run the vendor contract tests and the applicable JavaScript checks.
+10. Review the diff for unexpected generated, minified, or unrelated files.
 
 Do not add network downloads to normal unit tests or CI merely to re-prove
 provenance. Validation should remain deterministic and offline-capable with

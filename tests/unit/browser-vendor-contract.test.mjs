@@ -72,6 +72,22 @@ async function sha256(filePath) {
   return sha256Bytes(await readFile(filePath));
 }
 
+function parseGitAttributes(source) {
+  const rules = new Map();
+
+  for (const line of source.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) {
+      continue;
+    }
+
+    const [pattern, ...attributes] = trimmed.split(/\s+/);
+    rules.set(pattern, new Set(attributes));
+  }
+
+  return rules;
+}
+
 describe("vendored browser dependencies", () => {
   test("raw-byte checksums reject LF and CRLF variants", () => {
     const lfFixture = Buffer.from("first line\nsecond line\n", "utf8");
@@ -175,6 +191,37 @@ describe("vendored browser dependencies", () => {
     expect(localLicenseFiles.every((filePath) =>
       declaredLicenseFiles.has(filePath),
     )).toBe(true);
+  });
+
+  test("manifest vendor files have explicit byte-preservation attributes", async () => {
+    const manifest = JSON.parse(
+      await readFile(path.join(root, "vendor/manifest.json"), "utf8"),
+    );
+    const manifestFiles = manifest.dependencies.flatMap((dependency) =>
+      dependency.files.map((file) => file.path.split(path.sep).join("/")),
+    );
+    const rules = parseGitAttributes(
+      await readFile(path.join(root, ".gitattributes"), "utf8"),
+    );
+    const protectedPaths = [...rules.entries()]
+      .filter(([, attributes]) =>
+        attributes.has("binary") || attributes.has("-text"),
+      )
+      .map(([filePath]) => filePath)
+      .sort();
+
+    expect(protectedPaths).toEqual([...manifestFiles].sort());
+
+    for (const filePath of manifestFiles) {
+      const attributes = rules.get(filePath);
+
+      expect(attributes, filePath).toBeDefined();
+      expect(
+        attributes.has("binary") || attributes.has("-text"),
+        filePath,
+      ).toBe(true);
+      expect(attributes.has("text"), filePath).toBe(false);
+    }
   });
 
   test("localized About pages load only the required Prism files in order", async () => {
