@@ -21,8 +21,10 @@ unexpected replacements detectable.
 | `overlayscrollbars` | `2.16.0` | [KingSora/OverlayScrollbars](https://github.com/KingSora/OverlayScrollbars/tree/v2.16.0) | [npm tarball](https://registry.npmjs.org/overlayscrollbars/-/overlayscrollbars-2.16.0.tgz) | MIT ([local text](overlayscrollbars/LICENSE)) |
 
 The included runtime files are intended to remain byte-for-byte copies of the
-recorded upstream package files. The local LICENSE files are included for the
-corresponding package and are also recorded in the manifest.
+recorded upstream package files. Vendored upstream artifacts must be committed
+as regular Git files; symbolic links are not supported. The local LICENSE files
+are included for the corresponding package and are also recorded in the
+manifest.
 
 ## Safe update procedure
 

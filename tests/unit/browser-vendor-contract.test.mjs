@@ -99,17 +99,28 @@ async function effectiveTextAttribute(filePath, cwd = root) {
   return match[1];
 }
 
-async function gitTrackedFiles(directory, cwd = root) {
+async function gitTrackedEntries(directory, cwd = root) {
   const { stdout } = await execFile(
     "git",
-    ["-C", cwd, "ls-files", "--", directory],
+    ["-C", cwd, "ls-files", "--stage", "--", directory],
     { encoding: "utf8" },
   );
 
   return stdout
     .split(/\r?\n/)
     .filter(Boolean)
-    .map((filePath) => filePath.replaceAll("\\", "/"));
+    .map((line) => {
+      const match = line.match(/^(\d+)\s+\S+\s+\d+\t(.+)$/);
+
+      if (!match) {
+        throw new Error(`Unexpected git ls-files --stage output: ${line}`);
+      }
+
+      return {
+        mode: match[1],
+        path: match[2].replaceAll("\\", "/"),
+      };
+    });
 }
 
 async function expectBytePreservation(filePath, cwd = root) {
@@ -170,7 +181,11 @@ describe("vendored browser dependencies", () => {
     const normalizedManifestFiles = manifestFiles.map((filePath) =>
       filePath.split(path.sep).join("/"),
     );
-    const vendorFiles = await gitTrackedFiles("vendor");
+    const vendorEntries = await gitTrackedEntries("vendor");
+    const vendorFiles = vendorEntries.map((entry) => entry.path);
+    const vendorModes = new Map(
+      vendorEntries.map((entry) => [entry.path, entry.mode]),
+    );
     const allowedDocumentation = new Set([
       "vendor/README.md",
       "vendor/manifest.json",
@@ -185,6 +200,10 @@ describe("vendored browser dependencies", () => {
     expect([...normalizedManifestFiles].sort()).toEqual(
       [...trackedVendorFiles].sort(),
     );
+
+    for (const filePath of normalizedManifestFiles) {
+      expect(vendorModes.get(filePath), filePath).toMatch(/^100(?:644|755)$/);
+    }
 
     const packageDirectories = [
       ...new Set(
@@ -247,10 +266,21 @@ describe("vendored browser dependencies", () => {
         `120000,${objectId.trim()},vendor/tracked-link`,
       ]);
 
-      await expect(gitTrackedFiles("vendor", fixtureRoot)).resolves.toEqual([
+      const trackedEntries = await gitTrackedEntries("vendor", fixtureRoot);
+
+      expect(trackedEntries.map((entry) => entry.path)).toEqual([
         "vendor/runtime.js",
         "vendor/tracked-link",
       ]);
+      expect(
+        trackedEntries.find((entry) => entry.path === "vendor/runtime.js")?.mode,
+      ).toMatch(/^100(?:644|755)$/);
+      expect(
+        trackedEntries.find((entry) => entry.path === "vendor/tracked-link")?.mode,
+      ).toBe("120000");
+      expect(
+        trackedEntries.some((entry) => entry.path === "vendor/untracked.js"),
+      ).toBe(false);
     } finally {
       await rm(fixtureRoot, { recursive: true, force: true });
     }
