@@ -41,6 +41,10 @@ function expectClean(diagnostics) {
   expect(diagnostics.errors).toEqual([]);
 }
 
+function publicIncidentUrl(url) {
+  return `https://status.huihui.dev${new URL(url).pathname}`;
+}
+
 async function noOverflow(page) {
   expect(await page.evaluate(() => Math.max(document.body.scrollWidth, document.documentElement.scrollWidth) <= document.documentElement.clientWidth + 1)).toBe(true);
 }
@@ -134,7 +138,7 @@ test.describe("B3 localized UI", () => {
             timeZoneName: "short", timeZone: "America/Los_Angeles",
           }).format(new Date(update.publishedAt)));
           await expect(times).toHaveText(expected);
-          await expect(article.getByRole("link", { name: `${copy.link}: ${report.title}`, exact: true })).toHaveAttribute("href", report.url);
+          await expect(article.getByRole("link", { name: `${copy.link}: ${report.title}`, exact: true })).toHaveAttribute("href", publicIncidentUrl(report.url));
           await expect(article.locator("a")).toHaveAttribute("rel", "noopener noreferrer");
           await expect(article.locator("a")).toHaveAttribute("target", "_blank");
           await expect(section).not.toContainText(report.key);
@@ -205,7 +209,7 @@ test.describe("B3 localized UI", () => {
         rel: node.getAttribute("rel"),
         role: node.getAttribute("role"),
       })));
-      expect(linkContract.map(({ href }) => href)).toEqual(reports.map(({ url }) => url));
+      expect(linkContract.map(({ href }) => href)).toEqual(reports.map(({ url }) => publicIncidentUrl(url)));
       expect(linkContract.every(({ tagName, href, tabIndex, target, rel, role }) =>
         tagName === "A" && typeof href === "string" && tabIndex === 0 && target === "_blank" &&
         rel === "noopener noreferrer" && role === null)).toBe(true);
@@ -240,7 +244,7 @@ test.describe("B3 localized UI", () => {
       await expect(section.locator("article")).toHaveCount(2);
       for (const report of reports) {
         await expect(section.getByRole("link", { name: `${copy.link}: ${report.title}`, exact: true }))
-          .toHaveAttribute("href", report.url);
+          .toHaveAttribute("href", publicIncidentUrl(report.url));
       }
       await expectIndependent(page);
       reports[1].url = "https://huihui-dev.betteruptime.com/incident/def";

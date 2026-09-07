@@ -56,13 +56,17 @@ function validate(mutation = "", payload = systemStatusIncidentsFixture([systemS
   return run(`${mutation}; getValidSystemStatusIncidents(data)`);
 }
 
+function publicIncidentUrl(url) {
+  return `https://status.huihui.dev${new URL(url).pathname}`;
+}
+
 afterEach(() => vi.useRealTimers());
 
 describe("B3 frontend contract", () => {
   test.each([[], [systemStatusIncidentReport()], [systemStatusIncidentReport(0, 3)],
     [systemStatusIncidentReport(0, 3), systemStatusIncidentReport(1, 2)]].map((reports) => ({ reports })))("preserves valid reports and chronology %#", ({ reports }) => {
     const result = validate("", systemStatusIncidentsFixture(reports));
-    expect(result.reports).toEqual(reports.map(({ key, ...report }) => report));
+    expect(result.reports).toEqual(reports.map(({ key, ...report }) => ({ ...report, url: publicIncidentUrl(report.url) })));
   });
 
   test("accepts valid empty success and exact maximum bounds", () => {
@@ -76,12 +80,18 @@ describe("B3 frontend contract", () => {
   test.each([
     "https://huihui-dev.betteruptime.com", "https://status.huihui.dev",
     "https://another.betteruptime.com", "https://status.example.org",
-  ])("accepts same-origin reports from %s without rewriting URLs", (origin) => {
+  ])("accepts same-origin reports from %s and rewrites URLs for public navigation", (origin) => {
     const reports = [systemStatusIncidentReport(), systemStatusIncidentReport(1)];
     reports[0].url = `${origin}/incident/abc`;
     reports[1].url = `${origin}/incident/${"A0_-".repeat(32)}`;
     expect(validate("", systemStatusIncidentsFixture(reports)).reports)
-      .toEqual(reports.map(({ key, ...report }) => report));
+      .toEqual(reports.map(({ key, ...report }) => ({ ...report, url: publicIncidentUrl(report.url) })));
+  });
+
+  test("rewrites the canonical Better Stack incident while preserving its exact path", () => {
+    const report = systemStatusIncidentReport();
+    expect(validate("", systemStatusIncidentsFixture([report])).reports[0].url)
+      .toBe("https://status.huihui.dev/incident/test_1");
   });
 
   test.each([
@@ -189,7 +199,7 @@ describe("B3 rendering and independent requests", () => {
     const article = container.children[1].children[0];
     expect(article.tagName).toBe("article");
     expect(article.children[0].children[0].tagName).toBe("h3");
-    expect(article.children[0].children[1].href).toBe(report.url);
+    expect(article.children[0].children[1].href).toBe(publicIncidentUrl(report.url));
     expect(article.children[1].tagName).toBe("ol");
     expect(article.children[1].children.map((li) => li.children[0].dateTime)).toEqual(report.updates.map((u) => u.publishedAt));
     expect(container.children[0].textContent).toBe("Incident history loaded.");

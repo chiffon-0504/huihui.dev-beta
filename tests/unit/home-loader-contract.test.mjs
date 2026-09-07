@@ -55,6 +55,7 @@ const liveHomeFunctionNames = [
   "loadSystemStatusHistory",
   "isSystemStatusIncidentInstant",
   "isSystemStatusIncidentUrl",
+  "getPublicSystemStatusIncidentUrl",
   "getValidSystemStatusIncidents",
   "formatSystemStatusIncidentTime",
   "createSystemStatusIncidentText",
