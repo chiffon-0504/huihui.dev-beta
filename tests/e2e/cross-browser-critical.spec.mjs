@@ -332,9 +332,14 @@ test("native Lightbox blocks background interaction and restores focus", async (
   await expect(trigger).toHaveAttribute("tabindex", "0");
   await expect(trigger).toHaveAttribute("role", "button");
   await expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
+  // Lazy images must enter the viewport before waiting for candidate selection.
+  await trigger.scrollIntoViewIfNeeded();
+  await expect.poll(() => trigger.evaluate((image) =>
+    Boolean(image.currentSrc) && image.complete && image.naturalWidth > 0,
+  )).toBe(true);
   const triggerState = await trigger.evaluate((image) => ({
     alt: image.alt,
-    displayPath: new URL(image.currentSrc || image.src).pathname,
+    displayPath: new URL(image.currentSrc).pathname,
     fullPath: new URL(image.dataset.fullSrc, window.location.href).pathname,
   }));
 
@@ -347,11 +352,14 @@ test("native Lightbox blocks background interaction and restores focus", async (
   await expect(dialog).toHaveAttribute("open", "");
   await expect(accessibleDialog).toHaveAccessibleName("Image preview");
   await expect(lightboxImage).toHaveAttribute("alt", triggerState.alt);
-  expect(
-    await lightboxImage.evaluate(
-      (image) => new URL(image.currentSrc || image.src).pathname,
-    ),
-  ).toBe(triggerState.fullPath);
+  // Verify the original is usable before closing can cancel its request.
+  const expectLoadedPreview = () => expect.poll(() =>
+    lightboxImage.evaluate((image) => ({
+      path: image.currentSrc ? new URL(image.currentSrc).pathname : null,
+      loaded: image.complete && image.naturalWidth > 0,
+    })),
+  ).toEqual({ path: triggerState.fullPath, loaded: true });
+  await expectLoadedPreview();
   expect(await dialog.evaluate((element) => element.contains(document.activeElement))).toBe(
     true,
   );
@@ -371,6 +379,7 @@ test("native Lightbox blocks background interaction and restores focus", async (
   await page.keyboard.press("Enter");
   await expect(dialog).toHaveAttribute("open", "");
   await expect(closeButton).toBeFocused();
+  await expectLoadedPreview();
   await closeButton.click();
   await expect(dialog).not.toHaveAttribute("open", "");
   await expect(dialog).not.toHaveClass(/\bshow\b/);
