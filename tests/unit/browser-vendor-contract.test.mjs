@@ -99,6 +99,19 @@ async function effectiveTextAttribute(filePath, cwd = root) {
   return match[1];
 }
 
+async function gitTrackedFiles(directory, cwd = root) {
+  const { stdout } = await execFile(
+    "git",
+    ["-C", cwd, "ls-files", "--", directory],
+    { encoding: "utf8" },
+  );
+
+  return stdout
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .map((filePath) => filePath.replaceAll("\\", "/"));
+}
+
 async function expectBytePreservation(filePath, cwd = root) {
   const effectiveText = await effectiveTextAttribute(filePath, cwd);
   expect(["unset", "-text"], filePath).toContain(effectiveText);
@@ -157,9 +170,7 @@ describe("vendored browser dependencies", () => {
     const normalizedManifestFiles = manifestFiles.map((filePath) =>
       filePath.split(path.sep).join("/"),
     );
-    const vendorFiles = (
-      await listFiles(path.join(root, "vendor"))
-    ).map((filePath) => path.relative(root, filePath).split(path.sep).join("/"));
+    const vendorFiles = await gitTrackedFiles("vendor");
     const allowedDocumentation = new Set([
       "vendor/README.md",
       "vendor/manifest.json",
@@ -175,13 +186,13 @@ describe("vendored browser dependencies", () => {
       [...trackedVendorFiles].sort(),
     );
 
-    const vendorEntries = await readdir(path.join(root, "vendor"), {
-      withFileTypes: true,
-    });
-    const packageDirectories = vendorEntries
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => `vendor/${entry.name}`)
-      .sort();
+    const packageDirectories = [
+      ...new Set(
+        trackedVendorFiles.map((filePath) =>
+          filePath.split("/").slice(0, 2).join("/"),
+        ),
+      ),
+    ].sort();
     const manifestPackageDirectories = [
       ...new Set(
         normalizedManifestFiles.map((filePath) =>
@@ -207,6 +218,42 @@ describe("vendored browser dependencies", () => {
     expect(localLicenseFiles.every((filePath) =>
       declaredLicenseFiles.has(filePath),
     )).toBe(true);
+  });
+
+  test("tracked vendor inventory includes symlink entries and ignores untracked files", async () => {
+    const fixtureRoot = await mkdtemp(path.join(tmpdir(), "vendor-index-"));
+
+    try {
+      await mkdir(path.join(fixtureRoot, "vendor"), { recursive: true });
+      await execFile("git", ["init", "--quiet", fixtureRoot]);
+      await writeFile(path.join(fixtureRoot, "vendor/runtime.js"), "runtime\n");
+      await writeFile(path.join(fixtureRoot, "vendor/target"), "target\n");
+      await writeFile(
+        path.join(fixtureRoot, "vendor/untracked.js"),
+        "untracked\n",
+      );
+      await execFile("git", ["-C", fixtureRoot, "add", "--", "vendor/runtime.js"]);
+      const { stdout: objectId } = await execFile(
+        "git",
+        ["-C", fixtureRoot, "hash-object", "-w", "vendor/target"],
+        { encoding: "utf8" },
+      );
+      await execFile("git", [
+        "-C",
+        fixtureRoot,
+        "update-index",
+        "--add",
+        "--cacheinfo",
+        `120000,${objectId.trim()},vendor/tracked-link`,
+      ]);
+
+      await expect(gitTrackedFiles("vendor", fixtureRoot)).resolves.toEqual([
+        "vendor/runtime.js",
+        "vendor/tracked-link",
+      ]);
+    } finally {
+      await rm(fixtureRoot, { recursive: true, force: true });
+    }
   });
 
   test("manifest vendor files have effective byte-preservation attributes", async () => {
