@@ -1,7 +1,19 @@
+import { execFile as execFileCallback } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readdir, readFile } from "node:fs/promises";
+import {
+  mkdtemp,
+  mkdir,
+  readdir,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
+import { promisify } from "node:util";
 import { describe, expect, test } from "vitest";
+
+const execFile = promisify(execFileCallback);
 
 const root = path.resolve(import.meta.dirname, "../..");
 const aboutPages = [
@@ -72,20 +84,24 @@ async function sha256(filePath) {
   return sha256Bytes(await readFile(filePath));
 }
 
-function parseGitAttributes(source) {
-  const rules = new Map();
+async function effectiveTextAttribute(filePath, cwd = root) {
+  const { stdout } = await execFile(
+    "git",
+    ["-C", cwd, "check-attr", "text", "--", filePath],
+    { encoding: "utf8" },
+  );
+  const match = stdout.trim().match(/^.+: text: (.+)$/);
 
-  for (const line of source.split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) {
-      continue;
-    }
-
-    const [pattern, ...attributes] = trimmed.split(/\s+/);
-    rules.set(pattern, new Set(attributes));
+  if (!match) {
+    throw new Error(`Unexpected git check-attr output for ${filePath}`);
   }
 
-  return rules;
+  return match[1];
+}
+
+async function expectBytePreservation(filePath, cwd = root) {
+  const effectiveText = await effectiveTextAttribute(filePath, cwd);
+  expect(["unset", "-text"], filePath).toContain(effectiveText);
 }
 
 describe("vendored browser dependencies", () => {
@@ -193,34 +209,38 @@ describe("vendored browser dependencies", () => {
     )).toBe(true);
   });
 
-  test("manifest vendor files have explicit byte-preservation attributes", async () => {
+  test("manifest vendor files have effective byte-preservation attributes", async () => {
     const manifest = JSON.parse(
       await readFile(path.join(root, "vendor/manifest.json"), "utf8"),
     );
     const manifestFiles = manifest.dependencies.flatMap((dependency) =>
       dependency.files.map((file) => file.path.split(path.sep).join("/")),
     );
-    const rules = parseGitAttributes(
-      await readFile(path.join(root, ".gitattributes"), "utf8"),
-    );
-    const protectedPaths = [...rules.entries()]
-      .filter(([, attributes]) =>
-        attributes.has("binary") || attributes.has("-text"),
-      )
-      .map(([filePath]) => filePath)
-      .sort();
-
-    expect(protectedPaths).toEqual([...manifestFiles].sort());
-
     for (const filePath of manifestFiles) {
-      const attributes = rules.get(filePath);
+      await expectBytePreservation(filePath);
+    }
+  });
 
-      expect(attributes, filePath).toBeDefined();
-      expect(
-        attributes.has("binary") || attributes.has("-text"),
-        filePath,
-      ).toBe(true);
-      expect(attributes.has("text"), filePath).toBe(false);
+  test("effective attributes reject a later text normalization rule", async () => {
+    const fixtureRoot = await mkdtemp(path.join(tmpdir(), "vendor-attrs-"));
+
+    try {
+      await mkdir(path.join(fixtureRoot, "vendor"), { recursive: true });
+      await writeFile(
+        path.join(fixtureRoot, ".gitattributes"),
+        "vendor/LICENSE -text\n* text=auto\n",
+      );
+      await writeFile(path.join(fixtureRoot, "vendor/LICENSE"), "license\n");
+      await execFile("git", ["init", "--quiet", fixtureRoot]);
+
+      await expect(
+        expectBytePreservation("vendor/LICENSE", fixtureRoot),
+      ).rejects.toThrow();
+      await expect(effectiveTextAttribute("vendor/LICENSE", fixtureRoot)).resolves.toBe(
+        "auto",
+      );
+    } finally {
+      await rm(fixtureRoot, { recursive: true, force: true });
     }
   });
 
