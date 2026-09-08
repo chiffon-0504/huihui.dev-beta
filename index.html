@@ -44,19 +44,16 @@
         <div class="apod-content">
           <p class="apod-label">Website Version</p>
           <div class="version-heading">
-            <h2 id="websiteVersionTitle">v1.6.1</h2>
+            <h2 id="websiteVersionTitle">v1.6.2</h2>
             <span class="version-badge">Stable release</span>
           </div>
 
           <div class="apod-date release-notes">
             <p>Release notes:</p>
             <ul>
-              <li>修正 System Status 連結，改用官方 status.huihui.dev 網域</li>
-              <li>新增 Infrastructure Status 與完整 System Status，提供 Website／API／Contact 即時健康狀態、Cloudflare／GitHub 基礎設施狀態，以及 Better Stack 可用性與事件歷史</li>
-              <li>Tech Updates 改用 OpenAI、Anthropic 與 Apple Developer 官方來源，並加入本地化相對時間</li>
-              <li>Contact 新增 Subject 欄位，改善 timeout、錯誤復原與舊格式送出相容性</li>
-              <li>強化 Worker 上游驗證、fail-closed 行為、結構化 diagnostics 與狀態來源穩定性</li>
-              <li>改善 Status UI、文字選取對比、About accessibility，以及 Works／About／Arcaea 媒體內容</li>
+              <li>修正 Contact 表單輸入長度限制，使前端與 Worker 驗證一致。</li>
+              <li>修正 Tier Maker 首次匯出模組載入失敗後無法正常恢復的問題。</li>
+              <li>強化 CSP、Tier Maker 匯出、Lightbox 與 vendor provenance 等自動化驗證。</li>
             </ul>
           </div>
         </div>
