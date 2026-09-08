@@ -29,12 +29,12 @@
             <div class="contact-field-grid">
               <label>
                 <span data-i18n="contact.name"></span>
-                <input type="text" name="name" data-i18n-placeholder="contact.namePlaceholder" autocomplete="name" required>
+                <input type="text" name="name" maxlength="100" data-i18n-placeholder="contact.namePlaceholder" autocomplete="name" required>
               </label>
 
               <label>
                 <span data-i18n="contact.email"></span>
-                <input type="email" name="email" placeholder="your@email.com" autocomplete="email" required>
+                <input type="email" name="email" maxlength="254" placeholder="your@email.com" autocomplete="email" required>
               </label>
             </div>
 
@@ -45,7 +45,7 @@
 
             <label>
               <span data-i18n="contact.message"></span>
-              <textarea name="message" rows="7" data-i18n-placeholder="contact.messagePlaceholder" required></textarea>
+              <textarea name="message" maxlength="5000" rows="7" data-i18n-placeholder="contact.messagePlaceholder" required></textarea>
             </label>
 
             <div

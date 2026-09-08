@@ -32,6 +32,30 @@ async function listFiles(directory, extension) {
 }
 
 describe("contact module and CSP contracts", () => {
+  test.each(contactPages)("%s preserves Contact field maxlength contracts", async (relativePath) => {
+    const html = await readFile(path.join(root, relativePath), "utf8");
+    const form = html.match(
+      /<form\b[^>]*\bid="contact-form"[^>]*>([\s\S]*?)<\/form>/,
+    )?.[1];
+
+    expect(form).toBeDefined();
+
+    const limits = { name: "100", email: "254", message: "5000", subject: undefined };
+    for (const [name, limit] of Object.entries(limits)) {
+      const fields = [...form.matchAll(
+        new RegExp(`<(?:input|textarea)\\b[^>]*\\bname="${name}"[^>]*>`, "g"),
+      )];
+
+      expect(fields, name).toHaveLength(1);
+      const field = fields[0][0];
+      if (limit === undefined) {
+        expect(field, name).not.toMatch(/\smaxlength\b/i);
+      } else {
+        expect(field.match(/\smaxlength="([^"]*)"/i)?.[1], name).toBe(limit);
+      }
+    }
+  });
+
   test("all localized contact pages open Gmail Compose in a new tab", async () => {
     const expectedLink =
       '<a href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=contact%40huihui.dev" target="_blank" rel="noopener noreferrer">contact@huihui.dev</a>';
