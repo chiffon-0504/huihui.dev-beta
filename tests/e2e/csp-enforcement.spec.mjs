@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { openCspProbe, readPagesCspHeaders } from "../support/csp-enforcement.mjs";
+import { applyPagesCsp, openCspProbe, readPagesCspHeaders } from "../support/csp-enforcement.mjs";
 
 const enforcingHeader = "content-security-policy";
 const reportOnlyHeader = "content-security-policy-report-only";
@@ -57,21 +57,7 @@ test("repository Pages CSP enforces the inline-script contract", async ({ page }
 });
 
 test("real homepage drawer works with the repository Pages CSP applied", async ({ page, baseURL }) => {
-  const headers = await readPagesCspHeaders();
-  const localOrigin = new URL(baseURL).origin;
-  // The shared static server intentionally does not emulate Pages headers.
-  // Apply the unmodified policy only to this test's real document response.
-  await page.route("**/*", async (route) => {
-    const request = route.request();
-    if (new URL(request.url()).origin !== localOrigin) {
-      await route.abort();
-    } else if (request.isNavigationRequest() && request.resourceType() === "document") {
-      const response = await route.fetch();
-      await route.fulfill({ response, headers: { ...response.headers(), ...headers } });
-    } else {
-      await route.continue();
-    }
-  });
+  await applyPagesCsp(page, baseURL);
   await page.setViewportSize({ width: 390, height: 844 });
   const response = await page.goto("/", { waitUntil: "load" });
   expect(response.status()).toBe(200);
