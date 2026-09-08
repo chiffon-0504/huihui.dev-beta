@@ -44,19 +44,16 @@
         <div class="apod-content">
           <p class="apod-label">Website Version</p>
           <div class="version-heading">
-            <h2 id="websiteVersionTitle">v1.6.1</h2>
+            <h2 id="websiteVersionTitle">v1.6.2</h2>
             <span class="version-badge">Stable release</span>
           </div>
 
           <div class="apod-date release-notes">
             <p>Release notes:</p>
             <ul>
-              <li>System Status のリンクを公式の status.huihui.dev ドメインへ変更しました。</li>
-              <li>Infrastructure Status と System Status を拡充し、Website／API／Contact の現在のヘルス、Cloudflare／GitHub のインフラ状態、Better Stack の可用性・インシデント履歴を追加</li>
-              <li>Tech Updates を OpenAI、Anthropic、Apple Developer の公式ソースへ更新し、ローカライズされた相対時刻を追加</li>
-              <li>Contact に Subject フィールドを追加し、タイムアウト、復旧処理、旧形式送信との互換性を改善</li>
-              <li>上流検証、fail-closed な Worker 動作、構造化 diagnostics、status source の安定性を強化</li>
-              <li>Status UI、文字選択のコントラスト、About accessibility、Works／About／Arcaea のメディアを改善</li>
+              <li>Contact フォームの入力文字数制限を修正し、ブラウザー側の制限を Worker の検証と一致させました。</li>
+              <li>Tier Maker で初回のエクスポート用モジュールの読み込みに失敗した後、再試行で復旧できない問題を修正しました。</li>
+              <li>CSP、Tier Maker のエクスポート、Lightbox、vendor provenance に関する自動検証を強化しました。</li>
             </ul>
           </div>
         </div>

@@ -11,12 +11,9 @@ const homeRoutes = [
     status: "全部系統運作正常",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
-      "修正 System Status 連結，改用官方 status.huihui.dev 網域",
-      "新增 Infrastructure Status 與完整 System Status，提供 Website／API／Contact 即時健康狀態、Cloudflare／GitHub 基礎設施狀態，以及 Better Stack 可用性與事件歷史",
-      "Tech Updates 改用 OpenAI、Anthropic 與 Apple Developer 官方來源，並加入本地化相對時間",
-      "Contact 新增 Subject 欄位，改善 timeout、錯誤復原與舊格式送出相容性",
-      "強化 Worker 上游驗證、fail-closed 行為、結構化 diagnostics 與狀態來源穩定性",
-      "改善 Status UI、文字選取對比、About accessibility，以及 Works／About／Arcaea 媒體內容",
+      "修正 Contact 表單輸入長度限制，使前端與 Worker 驗證一致。",
+      "修正 Tier Maker 首次匯出模組載入失敗後無法正常恢復的問題。",
+      "強化 CSP、Tier Maker 匯出、Lightbox 與 vendor provenance 等自動化驗證。",
     ],
   },
   {
@@ -25,12 +22,9 @@ const homeRoutes = [
     status: "All Systems Operational",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
-      "Fixed the System Status link to use the official status.huihui.dev domain.",
-      "Added Infrastructure Status and expanded System Status with current Website/API/Contact health, Cloudflare/GitHub infrastructure status, and Better Stack availability and incident history",
-      "Updated Tech Updates to official OpenAI, Anthropic, and Apple Developer sources with localized relative times",
-      "Added a Contact Subject field and improved timeout handling, recovery, and legacy submission compatibility",
-      "Strengthened upstream validation, fail-closed Worker behavior, structured diagnostics, and status-source reliability",
-      "Refined Status UI, text-selection contrast, About accessibility, and Works/About/Arcaea media content",
+      "Fixed Contact form input limits so browser-side constraints match Worker validation.",
+      "Fixed Tier Maker export recovery after an initial module loading failure.",
+      "Strengthened automated CSP, Tier Maker export, Lightbox, and vendor provenance validation.",
     ],
   },
   {
@@ -39,12 +33,9 @@ const homeRoutes = [
     status: "すべてのシステムが正常稼働中",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
-      "System Status のリンクを公式の status.huihui.dev ドメインへ変更しました。",
-      "Infrastructure Status と System Status を拡充し、Website／API／Contact の現在のヘルス、Cloudflare／GitHub のインフラ状態、Better Stack の可用性・インシデント履歴を追加",
-      "Tech Updates を OpenAI、Anthropic、Apple Developer の公式ソースへ更新し、ローカライズされた相対時刻を追加",
-      "Contact に Subject フィールドを追加し、タイムアウト、復旧処理、旧形式送信との互換性を改善",
-      "上流検証、fail-closed な Worker 動作、構造化 diagnostics、status source の安定性を強化",
-      "Status UI、文字選択のコントラスト、About accessibility、Works／About／Arcaea のメディアを改善",
+      "Contact フォームの入力文字数制限を修正し、ブラウザー側の制限を Worker の検証と一致させました。",
+      "Tier Maker で初回のエクスポート用モジュールの読み込みに失敗した後、再試行で復旧できない問題を修正しました。",
+      "CSP、Tier Maker のエクスポート、Lightbox、vendor provenance に関する自動検証を強化しました。",
     ],
   },
 ];
@@ -177,7 +168,7 @@ for (const route of homeRoutes) {
     await expect(main.locator(".project-update-card h2")).toContainText(
       route.status,
     );
-    await expect(releaseCard.locator("h2")).toHaveText("v1.6.1");
+    await expect(releaseCard.locator("h2")).toHaveText("v1.6.2");
     await expect(releaseCard.locator(".version-badge")).toHaveText(
       "Stable release",
     );
