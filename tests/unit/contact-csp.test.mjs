@@ -40,7 +40,7 @@ describe("contact module and CSP contracts", () => {
 
     expect(form).toBeDefined();
 
-    const limits = { name: "100", email: "254", message: "5000", subject: undefined };
+    const limits = { name: "100", email: "254", message: "5000", subject: "200" };
     for (const [name, limit] of Object.entries(limits)) {
       const fields = [...form.matchAll(
         new RegExp(`<(?:input|textarea)\\b[^>]*\\bname="${name}"[^>]*>`, "g"),
