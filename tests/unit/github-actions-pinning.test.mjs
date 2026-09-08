@@ -434,6 +434,7 @@ describe("Playwright cross-browser validation contract", () => {
       "npm ci",
       "npx playwright install --with-deps chromium",
       "npx playwright test tests/e2e/cross-browser-critical.spec.mjs --project=chromium --workers=1 --retries=0",
+      "npx playwright test tests/e2e/csp-enforcement.spec.mjs --project=chromium --workers=1 --retries=0",
     ]);
     expect(runCommands(chromiumCritical).join("\n")).not.toMatch(
       /install --with-deps .*\b(?:firefox|webkit)\b/,
