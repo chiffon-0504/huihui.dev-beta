@@ -105,6 +105,9 @@ jobs:
       - name: Run Chromium critical smoke tests
         run: npx playwright test tests/e2e/cross-browser-critical.spec.mjs --project=chromium --workers=1 --retries=0
 
+      - name: Run Chromium CSP enforcement contract
+        run: npx playwright test tests/e2e/csp-enforcement.spec.mjs --project=chromium --workers=1 --retries=0
+
       - name: Upload Playwright failure diagnostics
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
