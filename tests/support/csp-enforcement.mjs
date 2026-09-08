@@ -20,7 +20,7 @@ export async function readPagesCspHeaders() {
     }
     headers[name] = match[2];
   }
-  if (!Object.keys(headers).length) throw new Error("Pages CSP header is missing");
+  if (!headers["content-security-policy"]) throw new Error("Pages enforcing CSP header is missing");
   return headers;
 }
 
@@ -62,4 +62,23 @@ export async function openCspProbe(page, headers) {
     }
   });
   return page.goto(origin, { waitUntil: "load" });
+}
+
+export async function applyPagesCsp(page, baseURL) {
+  const headers = await readPagesCspHeaders();
+  const localOrigin = new URL(baseURL).origin;
+  // The shared static server intentionally does not emulate Pages headers.
+  // Apply the unmodified policy only to this test's real document response.
+  await page.route("**/*", async (route) => {
+    const request = route.request();
+    if (new URL(request.url()).origin !== localOrigin) {
+      await route.abort();
+    } else if (request.isNavigationRequest() && request.resourceType() === "document") {
+      const response = await route.fetch();
+      await route.fulfill({ response, headers: { ...response.headers(), ...headers } });
+    } else {
+      await route.continue();
+    }
+  });
+  return headers;
 }
