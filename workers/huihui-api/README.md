@@ -4,8 +4,8 @@ This directory contains the Cloudflare Worker that serves the site's existing AP
 
 | Environment | Worker name | Public API base | Deployment entry point |
 | --- | --- | --- | --- |
-| Beta | `huihui-api-beta` | `https://huihui-api-beta.huihuigames01.workers.dev` | Relevant push to `main` |
-| Production | `huihui-api` | `https://api.huihui.dev` | `workflow_dispatch` from `main` with `target=production` |
+| Beta | `huihui-api-beta` | `https://huihui-api-beta.huihuigames01.workers.dev` | Relevant push to `huihui.dev-beta/main` |
+| Production | `huihui-api` | `https://api.huihui.dev` | `workflow_dispatch` from released `huihui.dev-stable/main` with `target=production` |
 
 GitHub Actions supplies deployment credentials. Do not commit secrets.
 
@@ -13,10 +13,12 @@ GitHub Actions supplies deployment credentials. Do not commit secrets.
 
 The `Deploy huihui API Worker` workflow keeps the environments explicit and separate:
 
-- A relevant push to `main` runs validation and automatically deploys only the beta Worker.
+- A relevant push to `main` in `chiffon-0504/huihui.dev-beta` runs validation and automatically deploys only the beta Worker.
 - Manual workflow dispatch is production-only; beta has no manual deployment entry point that can bypass post-deployment verification.
-- Production deploys only when a manual run selects `production` from the `main` branch. The production job references the GitHub environment named `production`.
+- Production deploys only in `chiffon-0504/huihui.dev-stable` when a manual run selects `target=production` from `main` (`refs/heads/main`). `validate-production` runs Main regression; `deploy-production` requires it to pass and references the GitHub environment named `production`.
 - Pull requests run validation but do not deploy either Worker.
+
+Follow the root README's [release order](../../README.md#deployment-flow): verify beta, freshly check beta/stable ancestry, promote the exact release SHA to stable `main` by fast-forward (never force push), and verify production Pages before dispatching a required production Worker deployment. Confirm stable `main` and the dispatched run's commit match the release SHA so checkout deploys the released code, not an older stable state. These promotion and Pages checks are operator gates, not checks performed by the Worker workflow. Complete production smoke verification before publishing the GitHub Release.
 
 Configure required reviewers and any other deployment protection rules for the `production` environment manually in the GitHub repository settings. Referencing the environment in workflow YAML does not create those rules.
 
@@ -312,7 +314,7 @@ Its PASS criterion is correct retrieval and normalization, not all-green status:
 current API/Contact `not_monitored` can legitimately yield `ok: false`,
 `complete: false`, and `X-Cache: BYPASS` while retaining their real downtime days.
 Deterministic fixtures alone do not prove the live contract, account configuration,
-or deployed behavior. Keep the B1 PR Draft unless separately authorized otherwise.
+or deployed behavior. Record the live verification result when validating adapter changes.
 Do not assume newly created monitors have 90 days of observations.
 Do not create/modify monitors, use authenticated APIs, or deploy as part of this check.
 
