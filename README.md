@@ -112,21 +112,27 @@ relevant Worker changes merged to beta main
   -> GitHub Actions
   -> beta Worker
 
-manual workflow_dispatch from refs/heads/main with target=production
-  -> validation
+released huihui.dev-stable/main
+  -> manual workflow_dispatch from refs/heads/main with target=production
+  -> Main regression validation
   -> GitHub Actions
   -> production Worker
 ```
 
 Expected release flow:
 
-1. Changes are developed and validated in `huihui.dev-beta`.
-2. Cloudflare Pages publishes the beta static site through Git integration.
-3. Relevant Worker changes deploy automatically to the isolated beta Worker.
-4. The production Worker is deployed manually from `refs/heads/main` through `workflow_dispatch` with `target=production`, after the validation job passes.
-5. Verified beta `main` is synchronized to `huihui.dev-stable/main`.
-6. Cloudflare Pages publishes the stable static site from the production repository.
-7. The stable tag and GitHub Release are created after production verification.
+1. Merge the release PR into `huihui.dev-beta/main` and record the exact release commit SHA.
+2. Wait for that commit's **Main regression** and **Beta CD verification** workflows to pass. Cloudflare Pages publishes beta through Git integration; relevant Worker changes deploy automatically to the isolated beta Worker after validation. Beta CD verifies the exact Pages commit, the required beta Worker deployment, and live beta smoke checks.
+3. Freshly fetch `origin` (beta) and `stable` (production). Confirm `origin/main` still matches the verified release SHA and `stable/main` is its ancestor (`git merge-base --is-ancestor stable/main <release-sha>`). Stop on a mismatch or divergence; do not promote an unverified newer beta commit.
+4. For a versioned release, create the beta version tag at that exact release SHA after confirming the tag does not already exist.
+5. Promote that exact SHA to `huihui.dev-stable/main` with a normal fast-forward push, never a force push. Verify the remote stable `main` SHA matches the release SHA. Cloudflare Pages starts the production static-site deployment from this push; tags do not trigger this publication path.
+6. If production Worker deployment is required, immediately dispatch **Deploy huihui API Worker** in `chiffon-0504/huihui.dev-stable`, selecting `main` (`refs/heads/main`) and `target=production`, without waiting for production Pages verification. Confirm stable `main` and the dispatched run's commit match the release SHA. The workflow checks out that run's commit and requires **Main regression** (`validate-production`) to pass before `deploy-production` runs. Never dispatch before promotion or from an older stable state. If no Worker runtime/configuration change requires deployment, record that it is skipped.
+7. For a versioned release, create the matching stable tag at the same release commit; do not move or overwrite existing tags. Verify the successful production Pages deployment and any required production Worker deployment both match the release SHA.
+8. Complete production smoke verification of the released Pages site and production API, then publish the GitHub Release for the matching version tag.
+
+Pages and Worker deployments are not atomic: Pages can expose the new frontend while the Worker still runs the previous API during validation and deployment. Coupled frontend and Worker/API changes must remain backward-compatible throughout this rollout window, regardless of which deployment finishes first. If compatibility cannot be guaranteed, use a staged rollout planned before promotion, such as releasing a compatible API extension before the frontend that depends on it and removing old API behavior only after old clients no longer need it.
+
+The [Worker workflow](.github/workflows/deploy-huihui-api-worker.yml) enforces stable-only, main-only manual production deployment and its regression dependency. The [Beta CD workflow](.github/workflows/beta-cd.yml) verifies beta deployments. Ancestry, tag identity, exact promotion, production Pages verification, smoke checks, and GitHub Release ordering are operator release gates; the Worker workflow does not automate or enforce those steps.
 
 GitHub remains the source of truth. Cloudflare Pages Git integration publishes static content. GitHub Actions validates the repository and deploys Workers. The beta Worker uses the named Wrangler `beta` environment, while the production Worker uses the default production Wrangler environment, keeping the deployment targets separate.
 
