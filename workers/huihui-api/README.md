@@ -18,7 +18,9 @@ The `Deploy huihui API Worker` workflow keeps the environments explicit and sepa
 - Production deploys only in `chiffon-0504/huihui.dev-stable` when a manual run selects `target=production` from `main` (`refs/heads/main`). `validate-production` runs Main regression; `deploy-production` requires it to pass and references the GitHub environment named `production`.
 - Pull requests run validation but do not deploy either Worker.
 
-Follow the root README's [release order](../../README.md#deployment-flow): verify beta, freshly check beta/stable ancestry, promote the exact release SHA to stable `main` by fast-forward (never force push), and verify production Pages before dispatching a required production Worker deployment. Confirm stable `main` and the dispatched run's commit match the release SHA so checkout deploys the released code, not an older stable state. These promotion and Pages checks are operator gates, not checks performed by the Worker workflow. Complete production smoke verification before publishing the GitHub Release.
+Follow the root README's [release order](../../README.md#deployment-flow): verify beta, freshly check beta/stable ancestry, promote the exact release SHA to stable `main` by fast-forward (never force push), and immediately dispatch a required production Worker deployment without waiting for production Pages verification. Confirm stable `main` and the dispatched run's commit match the release SHA so checkout deploys the released code, not an older stable state. Then verify both the Pages deployment and any required Worker deployment against the release SHA and complete production smoke verification before publishing the GitHub Release. These promotion and deployment identity checks are operator gates, not checks performed by the Worker workflow.
+
+Pages starts deploying on the stable push while the Worker requires manual dispatch and Main regression. Coupled frontend and Worker/API changes must remain backward-compatible throughout the rollout window, regardless of which deployment finishes first; if compatibility cannot be guaranteed, plan a staged rollout before promotion as described in the root release instructions.
 
 Configure required reviewers and any other deployment protection rules for the `production` environment manually in the GitHub repository settings. Referencing the environment in workflow YAML does not create those rules.
 
@@ -314,7 +316,9 @@ Its PASS criterion is correct retrieval and normalization, not all-green status:
 current API/Contact `not_monitored` can legitimately yield `ok: false`,
 `complete: false`, and `X-Cache: BYPASS` while retaining their real downtime days.
 Deterministic fixtures alone do not prove the live contract, account configuration,
-or deployed behavior. Record the live verification result when validating adapter changes.
+or deployed behavior. Adapter changes that depend on live contract behavior must
+remain Draft until the required read-only live verification passes, unless
+separately authorized otherwise. Record the live verification result in the PR.
 Do not assume newly created monitors have 90 days of observations.
 Do not create/modify monitors, use authenticated APIs, or deploy as part of this check.
 
