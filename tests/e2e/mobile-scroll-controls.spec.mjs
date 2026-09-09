@@ -83,7 +83,7 @@ test("mobile skip link is pointer-hidden and keyboard-visible with native hash n
   await page.keyboard.press("Enter");
   await expect(main).toBeFocused();
   expect(new URL(page.url()).hash).toBe("#main-content");
-  expect((await getScrollPosition(page)).scrollY).toBe(0);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
 
   await page.reload({ waitUntil: "load" });
   await expect(skipLink).toHaveCSS("opacity", "0");
