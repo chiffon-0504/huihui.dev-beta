@@ -22,35 +22,36 @@ async function getScrollPosition(page) {
   }));
 }
 
-test("mobile skip link is pointer-hidden and keyboard-visible with native hash navigation", async ({
+async function getSkipLinkState(skipLink) {
+  return skipLink.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
+
+    return {
+      bottom: rect.bottom,
+      keyboardNavigation:
+        document.documentElement.dataset.keyboardNavigation === "true",
+      opacity: style.opacity,
+      outlineStyle: style.outlineStyle,
+      outlineWidth: style.outlineWidth,
+      top: rect.top,
+    };
+  });
+}
+
+test("mobile skip link remains pointer-hidden with programmatic focus", async ({
   page,
 }) => {
   await loadPage(page, "/en/about/");
   const skipLink = page.getByRole("link", { name: "Skip to main content" });
   const main = page.locator("#main-content");
 
-  const getSkipLinkState = () =>
-    skipLink.evaluate((element) => {
-      const rect = element.getBoundingClientRect();
-      const style = getComputedStyle(element);
-
-      return {
-        bottom: rect.bottom,
-        keyboardNavigation:
-          document.documentElement.dataset.keyboardNavigation === "true",
-        opacity: style.opacity,
-        outlineStyle: style.outlineStyle,
-        outlineWidth: style.outlineWidth,
-        top: rect.top,
-      };
-    });
-
   await expect(skipLink).toHaveCSS("opacity", "0");
-  expect((await getSkipLinkState()).bottom).toBeLessThanOrEqual(0);
+  expect((await getSkipLinkState(skipLink)).bottom).toBeLessThanOrEqual(0);
 
   await skipLink.focus();
   await expect(skipLink).toBeFocused();
-  expect(await getSkipLinkState()).toMatchObject({
+  expect(await getSkipLinkState(skipLink)).toMatchObject({
     keyboardNavigation: false,
     opacity: "0",
   });
@@ -64,19 +65,30 @@ test("mobile skip link is pointer-hidden and keyboard-visible with native hash n
     element.dispatchEvent(new Event("touchstart", { bubbles: true })),
   );
   await expect(skipLink).toBeFocused();
-  expect(await getSkipLinkState()).toMatchObject({
+  expect(await getSkipLinkState(skipLink)).toMatchObject({
     keyboardNavigation: false,
     opacity: "0",
   });
 
   await main.click({ position: { x: 20, y: 100 } });
   await expect(skipLink).not.toBeFocused();
-  expect((await getSkipLinkState()).bottom).toBeLessThanOrEqual(0);
+  expect((await getSkipLinkState(skipLink)).bottom).toBeLessThanOrEqual(0);
+});
 
-  await page.reload({ waitUntil: "load" });
+test("mobile skip link is keyboard-visible with native hash navigation", async ({
+  page,
+}) => {
+  await loadPage(page, "/en/about/");
+  const skipLink = page.getByRole("link", { name: "Skip to main content" });
+  const main = page.locator("#main-content");
+
+  expect(new URL(page.url()).hash).toBe("");
+  await expect(skipLink).toHaveCSS("opacity", "0");
+  expect((await getSkipLinkState(skipLink)).keyboardNavigation).toBe(false);
+  expect((await getSkipLinkState(skipLink)).bottom).toBeLessThanOrEqual(0);
   await page.keyboard.press("Tab");
   await expect(skipLink).toBeFocused();
-  const focusedState = await getSkipLinkState();
+  const focusedState = await getSkipLinkState(skipLink);
   expect(focusedState.keyboardNavigation).toBe(true);
   expect(focusedState.opacity).toBe("1");
   expect(focusedState.top).toBeGreaterThanOrEqual(12);
@@ -87,22 +99,49 @@ test("mobile skip link is pointer-hidden and keyboard-visible with native hash n
   await expect(main).toBeFocused();
   expect(new URL(page.url()).hash).toBe("#main-content");
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+});
 
-  await page.reload({ waitUntil: "load" });
-  await expect(skipLink).toHaveCSS("opacity", "0");
-  expect((await getSkipLinkState()).keyboardNavigation).toBe(false);
+test("mobile skip link hides on pointer input without moving keyboard focus", async ({
+  page,
+}) => {
+  // Skip-link activation leaves a fragment that changes native Tab order on reload.
+  await loadPage(page, "/en/about/");
+  const skipLink = page.getByRole("link", { name: "Skip to main content" });
+  const main = page.locator("#main-content");
+
+  expect(new URL(page.url()).hash).toBe("");
   await page.keyboard.press("Tab");
   await expect(skipLink).toBeFocused();
-  await expect(skipLink).toHaveCSS("opacity", "1");
+  expect(await getSkipLinkState(skipLink)).toMatchObject({
+    keyboardNavigation: true,
+    opacity: "1",
+  });
   await main.dispatchEvent("pointerdown", {
     pointerId: 8,
     pointerType: "touch",
   });
   await expect(skipLink).toBeFocused();
-  expect(await getSkipLinkState()).toMatchObject({
+  expect(await getSkipLinkState(skipLink)).toMatchObject({
     keyboardNavigation: false,
     opacity: "0",
   });
+  expect((await getSkipLinkState(skipLink)).bottom).toBeLessThanOrEqual(0);
+});
+
+test("mobile skip link reload clears keyboard modality", async ({ page }) => {
+  await loadPage(page, "/en/about/");
+  const skipLink = page.getByRole("link", { name: "Skip to main content" });
+
+  await page.keyboard.press("Tab");
+  await expect(skipLink).toBeFocused();
+  expect(await getSkipLinkState(skipLink)).toMatchObject({
+    keyboardNavigation: true,
+    opacity: "1",
+  });
+
+  await page.reload({ waitUntil: "load" });
+  await expect(skipLink).toHaveCSS("opacity", "0");
+  expect((await getSkipLinkState(skipLink)).keyboardNavigation).toBe(false);
 });
 
 test("scroll controls use localized native buttons and remain mobile-only", async ({
