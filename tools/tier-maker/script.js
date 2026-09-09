@@ -538,12 +538,19 @@ document.addEventListener("click", (e) => {
 
     if (!row) return;
 
+    const focusTarget = row.contains(document.activeElement)
+      ? row.nextElementSibling?.querySelector(".delete-tier") ||
+        row.previousElementSibling?.querySelector(".delete-tier") ||
+        addBtn
+      : null;
+
     if (dragged && row.contains(dragged)) {
       cleanupTouchDrag();
     }
 
     row.querySelectorAll(".tier-item").forEach(releaseTierItem);
     row.remove();
+    focusTarget?.focus();
   }
 });
 

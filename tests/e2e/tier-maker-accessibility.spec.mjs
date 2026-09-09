@@ -72,6 +72,73 @@ async function uploadImage(page, name) {
 }
 
 for (const locale of locales) {
+  for (const { position, removed, destination } of [
+    { position: "first", removed: "S", destination: "A" },
+    { position: "middle", removed: "A", destination: "B" },
+    { position: "last", removed: "B", destination: "A" },
+  ]) {
+    test(`${locale.route} deleting the ${position} tier focuses the adjacent Delete button`, async ({ page }) => {
+      await loadTierMaker(page, locale.route);
+      const deleteButton = page.getByRole("button", { name: locale.deleteLabel(removed), exact: true });
+      const target = page.getByRole("button", { name: locale.deleteLabel(destination), exact: true });
+
+      await deleteButton.focus();
+      await expect(deleteButton).toBeFocused();
+      await page.keyboard.press("Enter");
+
+      await expect(deleteButton).toHaveCount(0);
+      await expect(page.locator(".tier-row")).toHaveCount(2);
+      await expect(target).toBeVisible();
+      await expect(target).toBeFocused();
+    });
+  }
+
+  test(`${locale.route} deleting the only tier focuses Add Tier and allows keyboard creation`, async ({ page }) => {
+    await loadTierMaker(page, locale.route);
+    for (const name of ["S", "A", "B"]) {
+      const deleteButton = page.getByRole("button", { name: locale.deleteLabel(name), exact: true });
+      await deleteButton.focus();
+      await page.keyboard.press("Space");
+      await expect(deleteButton).toHaveCount(0);
+    }
+
+    const addButton = page.locator("#addTierBtn");
+    await expect(page.locator(".tier-row")).toHaveCount(0);
+    await expect(addButton).toBeVisible();
+    await expect(addButton).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(page.locator(".tier-row")).toHaveCount(1);
+    await expect(page.locator(".tier-label")).toHaveValue(locale.newTier);
+    await expect(addButton).toBeFocused();
+  });
+
+  test(`${locale.route} deleting tiers preserves focus outside the removed row`, async ({ page }) => {
+    await loadTierMaker(page, locale.route);
+    const outsideControl = page.locator("#uploadBtn");
+    await outsideControl.focus();
+
+    for (const name of ["S", "A", "B"]) {
+      const deleteButton = page.getByRole("button", { name: locale.deleteLabel(name), exact: true });
+      // Programmatic activation preserves the outside focus before the handler runs.
+      await deleteButton.evaluate((button) => button.click());
+      await expect(deleteButton).toHaveCount(0);
+      await expect(outsideControl).toBeFocused();
+    }
+    await expect(page.locator(".tier-row")).toHaveCount(0);
+  });
+
+  test(`${locale.route} deleting a tier with focus in its name field restores focus`, async ({ page }) => {
+    await loadTierMaker(page, locale.route);
+    await page.locator(".tier-label").first().focus();
+    await page.getByRole("button", { name: locale.deleteLabel("S"), exact: true })
+      .evaluate((button) => button.click());
+
+    const target = page.getByRole("button", { name: locale.deleteLabel("A"), exact: true });
+    await expect(page.locator(".tier-row")).toHaveCount(2);
+    await expect(target).toBeVisible();
+    await expect(target).toBeFocused();
+  });
+
   test(`${locale.route} exposes localized controls and keyboard movement`, async ({
     page,
   }) => {
