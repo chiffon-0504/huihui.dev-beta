@@ -59,7 +59,10 @@ test("mobile skip link is pointer-hidden and keyboard-visible with native hash n
     pointerId: 7,
     pointerType: "touch",
   });
-  await main.dispatchEvent("touchstart");
+  // Exercise the listener without requiring a desktop TouchEvent constructor.
+  await main.evaluate((element) =>
+    element.dispatchEvent(new Event("touchstart", { bubbles: true })),
+  );
   await expect(skipLink).toBeFocused();
   expect(await getSkipLinkState()).toMatchObject({
     keyboardNavigation: false,
@@ -176,7 +179,7 @@ test("active pointer interaction postpones the inactivity timeout", async ({
   await expect(controls).toHaveCSS("opacity", "0");
 });
 
-test("Top and Bottom scroll the native document without URL or overflow changes", async ({
+test("mouse clicks on Top and Bottom scroll the native document without URL or overflow changes", async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -204,7 +207,6 @@ test("Top and Bottom scroll the native document without URL or overflow changes"
       return Math.abs(maxScrollTop - scrollY);
     })
     .toBeLessThanOrEqual(1);
-  await expect(bottomButton).toBeFocused();
   expect(page.url()).toBe(initialUrl);
   expect(
     await page.evaluate(
@@ -216,11 +218,49 @@ test("Top and Bottom scroll the native document without URL or overflow changes"
 
   await topButton.click();
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
-  await expect(topButton).toBeFocused();
   expect(page.url()).toBe(initialUrl);
   expect(
     await page.evaluate(() => window.__scrollControlCalls.at(-1)?.behavior),
   ).toBe("smooth");
+});
+
+test("keyboard activation of Top and Bottom scrolls the native document and retains focus", async ({
+  page,
+}) => {
+  await loadPage(page);
+  const topButton = page.getByRole("button", { name: "回到頂端" });
+  const bottomButton = page.getByRole("button", { name: "前往底部" });
+  const initialUrl = page.url();
+
+  // The controls are last in document order; reach them using native navigation.
+  await page.keyboard.press("Shift+Tab");
+  await expect(bottomButton).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect
+    .poll(() => getScrollPosition(page))
+    .toMatchObject({ scrollingElement: "HTML", scrollX: 0 });
+  await expect
+    .poll(async () => {
+      const { maxScrollTop, scrollY } = await getScrollPosition(page);
+      return Math.abs(maxScrollTop - scrollY);
+    })
+    .toBeLessThanOrEqual(1);
+  await expect(bottomButton).toBeFocused();
+  expect(page.url()).toBe(initialUrl);
+  expect(
+    await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth -
+        document.documentElement.clientWidth,
+    ),
+  ).toBe(0);
+
+  await page.keyboard.press("Shift+Tab");
+  await expect(topButton).toBeFocused();
+  await page.keyboard.press("Space");
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await expect(topButton).toBeFocused();
+  expect(page.url()).toBe(initialUrl);
 });
 
 test("reduced motion keeps controls functional without fade or smooth scrolling", async ({
