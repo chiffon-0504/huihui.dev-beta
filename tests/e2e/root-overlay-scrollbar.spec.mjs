@@ -389,7 +389,9 @@ test("forced colors keeps the custom root scrollbar visible and interactive", as
   );
   expect(rootScrollState.scrollingElement).toBe("HTML");
 
-  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  await runAndWaitForScrollEnd(page, () =>
+    page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" })),
+  );
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   expect((await getRootScrollState(page)).activeElement).toBe("BODY");
   await runAndWaitForScrollEnd(page, () => page.keyboard.press("PageDown"));
@@ -403,7 +405,9 @@ test("forced colors keeps the custom root scrollbar visible and interactive", as
   );
   expect(rootScrollState.scrollingElement).toBe("HTML");
 
-  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  await runAndWaitForScrollEnd(page, () =>
+    page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" })),
+  );
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   const handle = page.locator(
     ".os-scrollbar-vertical .os-scrollbar-handle",
