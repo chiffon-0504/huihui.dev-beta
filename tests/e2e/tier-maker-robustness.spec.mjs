@@ -115,6 +115,43 @@ async function installDownloadSpy(page) {
 }
 
 for (const locale of localizedSummaries) {
+  test(`${locale.route} newly uploaded images use the current image size`, async ({ page }) => {
+    await loadTierMaker(page, locale.route);
+    const slider = page.getByRole("slider");
+    const items = page.locator("#poolContent > .tier-item");
+
+    await slider.fill("120");
+    await page.locator("#imageUpload").setInputFiles(svgFile("first.svg"));
+    await expect(items).toHaveCount(1);
+    await expect(items.first()).toHaveCSS("height", "120px");
+
+    for (const size of [180, 100]) {
+      await slider.fill(String(size));
+      await expect(items.first()).toHaveCSS("height", `${size}px`);
+    }
+    await page.locator("#imageUpload").setInputFiles([
+      svgFile("second.svg"),
+      svgFile("third.svg"),
+    ]);
+    await expect(items).toHaveCount(3);
+    for (const item of await items.all()) {
+      await expect(item).toHaveCSS("height", "100px");
+    }
+  });
+
+  test(`${locale.route} default image size is preserved and existing images resize`, async ({ page }) => {
+    await loadTierMaker(page, locale.route);
+    const slider = page.getByRole("slider");
+    await expect(slider).toHaveValue("150");
+    await page.locator("#imageUpload").setInputFiles(svgFile("default.svg"));
+    const item = page.locator("#poolContent > .tier-item");
+    await expect(item).toHaveCount(1);
+    await expect(item).toHaveCSS("height", "150px");
+
+    await slider.fill("120");
+    await expect(item).toHaveCSS("height", "120px");
+  });
+
   test(`${locale.route} reports one localized plain-text batch summary`, async ({
     page,
   }) => {
