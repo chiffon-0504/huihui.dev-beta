@@ -348,6 +348,7 @@ function appendTierItem(file, thumbnailUrl) {
   img.src = thumbnailUrl;
   img.alt = file.name || getTierMakerText("uploadedImageAlt", "Uploaded image");
   img.dataset.thumbnailUrl = thumbnailUrl;
+  img.style.height = `${slider.value}px`;
 
   try {
     setupTierItem(img);
