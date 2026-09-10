@@ -2054,29 +2054,30 @@ function sanitizeTurnstileErrorCodes(errorCodes) {
     .slice(0, 10);
 }
 
-function contactCorsHeaders() {
+function contactResponseHeaders() {
   return {
+    "Cache-Control": "no-store",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   };
 }
 
 function contactJsonResponse(data, status = 200) {
-  return jsonResponse(data, contactCorsHeaders(), status);
+  return jsonResponse(data, contactResponseHeaders(), status);
 }
 
 async function handleContact(request, env) {
   if (request.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
-      headers: contactCorsHeaders(),
+      headers: contactResponseHeaders(),
     });
   }
 
   if (request.method !== "POST") {
     return jsonResponse(
       { ok: false, message: "Method Not Allowed" },
-      { ...contactCorsHeaders(), Allow: "POST, OPTIONS" },
+      { ...contactResponseHeaders(), Allow: "POST, OPTIONS" },
       405
     );
   }
