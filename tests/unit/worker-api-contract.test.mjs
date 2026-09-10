@@ -8,27 +8,32 @@ const readRoutes = [
   {
     path: "/api/tech-news",
     cachePath: "/api/tech-news?v4",
+    cacheControl: "public, max-age=300",
     payload: { ok: true, techNews: [{ source: "Tech News route" }] },
   },
   {
     path: "/api/infrastructure-status",
     cachePath: "/api/infrastructure-status?v2",
+    cacheControl: "public, max-age=60",
     payload: { ok: true, providers: [] },
   },
   {
     path: "/api/system-status/incidents",
     cachePath: "/api/system-status/incidents?v1&source=https%3A%2F%2Fstatus.example.test%2Ffeed.rss",
+    cacheControl: "public, max-age=60",
     payload: { ok: true, source: "better_stack", reports: [], fetchedAt: "2026-08-31T00:00:00.000Z" },
     env: { BETTER_STACK_STATUS_PAGE_JSON_URL: "https://status.example.test/index.json" },
   },
   {
     path: "/api/apod",
     cachePath: "/api/apod-v2",
+    cacheControl: "public, max-age=3600",
     payload: { ok: true, title: "APOD route" },
   },
   {
     path: "/api/steam-library",
     cachePath: "/api/steam-library-v6",
+    cacheControl: "public, max-age=3600",
     payload: { ok: true, source: "Steam route", games: [] },
   },
 ];
@@ -60,7 +65,7 @@ afterEach(() => {
 describe("Worker public API contract", () => {
   test.each(readRoutes)(
     "$path keeps routing GET requests to its existing handler",
-    async ({ path, cachePath, payload, env = {} }) => {
+    async ({ path, cachePath, cacheControl, payload, env = {} }) => {
       const fetchMock = vi.fn();
       vi.stubGlobal("fetch", fetchMock);
       const cache = stubCache(async (cacheKey) => {
@@ -68,7 +73,10 @@ describe("Worker public API contract", () => {
         expect(`${url.pathname}${url.search}`).toBe(cachePath);
 
         return new Response(JSON.stringify(payload), {
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": cacheControl,
+          },
         });
       });
 
@@ -76,6 +84,7 @@ describe("Worker public API contract", () => {
 
       expect(response.status).toBe(200);
       expect(response.headers.get("X-Cache")).toBe("HIT");
+      expect(response.headers.get("Cache-Control")).toBe(cacheControl);
       expect(await response.json()).toEqual(payload);
       expect(cache.match).toHaveBeenCalledOnce();
       expect(cache.put).not.toHaveBeenCalled();

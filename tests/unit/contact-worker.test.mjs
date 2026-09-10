@@ -119,6 +119,7 @@ async function expectContactResponse(
   { origin = productionOrigin, corsAllowed = true } = {},
 ) {
   expect(response.status).toBe(status);
+  expect(response.headers.get("Cache-Control")).toBe("no-store");
   expect(response.headers.get("Content-Type")).toBe(
     "application/json; charset=utf-8",
   );
@@ -691,18 +692,27 @@ describe("Contact Worker request and upstream error handling", () => {
     },
   );
 
-  test("keeps the existing Contact OPTIONS response unchanged", async () => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal("fetch", fetchMock);
+  test.each([productionOrigin, "https://attacker.example", null])(
+    "keeps Contact OPTIONS bodyless and no-store for Origin %s",
+    async (origin) => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal("fetch", fetchMock);
 
-    const response = await callContact({ method: "OPTIONS" });
+      const response = await callContact({ method: "OPTIONS", origin });
 
-    expect(response.status).toBe(204);
-    expectAllowedCors(response);
-    expect(response.headers.has("Content-Type")).toBe(false);
-    expect(await response.text()).toBe("");
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(204);
+      expect(response.headers.get("Cache-Control")).toBe("no-store");
+      expect(response.headers.has("Access-Control-Max-Age")).toBe(false);
+      if (origin === productionOrigin) {
+        expectAllowedCors(response);
+      } else {
+        expectRejectedCors(response);
+      }
+      expect(response.headers.has("Content-Type")).toBe(false);
+      expect(await response.text()).toBe("");
+      expect(fetchMock).not.toHaveBeenCalled();
+    },
+  );
 
   test("rejects a beta Origin at the production Worker before upstream requests", async () => {
     const fetchMock = vi.fn();
