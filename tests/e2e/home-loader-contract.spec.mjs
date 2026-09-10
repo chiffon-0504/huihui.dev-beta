@@ -11,9 +11,9 @@ const homeRoutes = [
     status: "全部系統運作正常",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
-      "修正 Contact 表單輸入長度限制，使前端與 Worker 驗證一致。",
-      "修正 Tier Maker 首次匯出模組載入失敗後無法正常恢復的問題。",
-      "強化 CSP、Tier Maker 匯出、Lightbox 與 vendor provenance 等自動化驗證。",
+      "改善 Tier Maker 刪除層級後的鍵盤焦點。",
+      "修正 Tier Maker 新上傳圖片未套用目前圖片大小的問題。",
+      "更新安全性相依套件，並強化跨瀏覽器回歸測試與同步可靠性。",
     ],
   },
   {
@@ -22,9 +22,9 @@ const homeRoutes = [
     status: "All Systems Operational",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
-      "Fixed Contact form input limits so browser-side constraints match Worker validation.",
-      "Fixed Tier Maker export recovery after an initial module loading failure.",
-      "Strengthened automated CSP, Tier Maker export, Lightbox, and vendor provenance validation.",
+      "Improved Tier Maker keyboard focus after deleting tiers.",
+      "Fixed newly uploaded Tier Maker images to respect the current image size.",
+      "Updated security dependencies and strengthened cross-browser regression tests and synchronization reliability.",
     ],
   },
   {
@@ -33,9 +33,9 @@ const homeRoutes = [
     status: "すべてのシステムが正常稼働中",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
-      "Contact フォームの入力文字数制限を修正し、ブラウザー側の制限を Worker の検証と一致させました。",
-      "Tier Maker で初回のエクスポート用モジュールの読み込みに失敗した後、再試行で復旧できない問題を修正しました。",
-      "CSP、Tier Maker のエクスポート、Lightbox、vendor provenance に関する自動検証を強化しました。",
+      "Tier Maker で階層を削除した後のキーボードフォーカスを改善しました。",
+      "Tier Maker で新しくアップロードした画像に現在の画像サイズが適用されるよう修正しました。",
+      "セキュリティ関連の依存関係を更新し、ブラウザー間の回帰テストと同期の信頼性を強化しました。",
     ],
   },
 ];
@@ -168,7 +168,7 @@ for (const route of homeRoutes) {
     await expect(main.locator(".project-update-card h2")).toContainText(
       route.status,
     );
-    await expect(releaseCard.locator("h2")).toHaveText("v1.6.2");
+    await expect(releaseCard.locator("h2")).toHaveText("v1.6.3");
     await expect(releaseCard.locator(".version-badge")).toHaveText(
       "Stable release",
     );

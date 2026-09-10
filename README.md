@@ -144,7 +144,7 @@ The production deployment job is assigned to the GitHub `production` Environment
 
 ### Stable Release
 
-- `v1.6.2` is the current stable release.
+- `v1.6.3` is the current stable release.
 - The repository model is now split between public development and production:
   - `huihui.dev-beta` for public development
   - `huihui.dev-stable` for production
@@ -260,7 +260,7 @@ Legacy redirects preserve backward compatibility from `/posts/`, `/en/posts/`, a
 | Production repository | `chiffon-0504/huihui.dev-stable` |
 | Beta environment | <https://beta.huihui.dev> |
 | Stable production | <https://huihui.dev> |
-| Current stable release | `v1.6.2` |
+| Current stable release | `v1.6.3` |
 | Deployment | Cloudflare Pages Git integration (static site) / GitHub Actions (Workers) |
 | Current direction | Static-first site with Liquid Glass UI, multilingual shared layout, and Workers-backed APIs |
 
