@@ -3,6 +3,7 @@ coverage/
 debug.log
 playwright-report/
 test-results/
+v2/dist/
 
 # Local environment and Cloudflare secrets
 .env

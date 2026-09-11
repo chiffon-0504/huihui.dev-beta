@@ -1,0 +1,20 @@
+import { content, localeLinks, type Locale } from "../content";
+import { element, link } from "../dom";
+
+export function createNavbar(locale: Locale): HTMLElement {
+  const header = element("header", "site-header");
+  const nav = element("nav", "navbar container");
+  nav.setAttribute("aria-label", content[locale].navigation);
+  const brand = link("huihui.dev", localeLinks[locale].href, "brand");
+  const primary = element("ul", "navbar-primary");
+  for (const [label, href] of [["Works", "#works"], ["About", "#about"]] as const) {
+    const item = element("li", "");
+    item.append(link(label, href, "nav-link"));
+    primary.append(item);
+  }
+  const actions = element("div", "navbar-actions");
+  actions.append(link("GitHub", "https://github.com/chiffon-0504", "nav-link"));
+  nav.append(brand, primary, actions);
+  header.append(nav);
+  return header;
+}
