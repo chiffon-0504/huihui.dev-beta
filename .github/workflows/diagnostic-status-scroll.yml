@@ -1,0 +1,50 @@
+name: Diagnostic status scroll Linux (DO NOT MERGE)
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'tests/diagnostic/**'
+      - 'playwright.diagnostic.config.mjs'
+      - '.github/workflows/diagnostic-status-scroll.yml'
+permissions:
+  contents: read
+jobs:
+  observe:
+    if: github.head_ref == 'diagnostic/v164-status-scroll-linux' && github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify immutable release baseline and diagnostic-only scope
+        run: |
+          release=e10c90083d3ba00564012dfcb6fdb7cc239a2667
+          test "$(git ls-remote https://github.com/chiffon-0504/huihui.dev-beta.git refs/heads/main | cut -f1)" = "$release"
+          test "$(git ls-remote https://github.com/chiffon-0504/huihui.dev-stable.git refs/heads/main | cut -f1)" = "$release"
+          git merge-base --is-ancestor "$release" HEAD
+          git diff --exit-code "$release" HEAD -- . ':!tests/diagnostic' ':!playwright.diagnostic.config.mjs' ':!.github/workflows/diagnostic-status-scroll.yml'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Record environment
+        run: |
+          { cat /etc/os-release; echo "$ImageOS $ImageVersion"; node --version; npx playwright --version; cat node_modules/playwright-core/browsers.json; fc-list; } > diagnostic-environment.txt
+      - name: Original sequence 20 ZH, 20 EN, 40 JA; no retries
+        run: npx playwright test --config=playwright.diagnostic.config.mjs --workers=1 --retries=0
+      - name: Preserve every iteration including failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: status-scroll-linux-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            diagnostic-results/
+            diagnostic-report.json
+            diagnostic-environment.txt
+          retention-days: 14
+          if-no-files-found: error
