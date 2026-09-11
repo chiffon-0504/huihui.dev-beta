@@ -11,9 +11,9 @@ const homeRoutes = [
     status: "全部系統運作正常",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
-      "改善 Tier Maker 刪除層級後的鍵盤焦點。",
-      "修正 Tier Maker 新上傳圖片未套用目前圖片大小的問題。",
-      "更新安全性相依套件，並強化跨瀏覽器回歸測試與同步可靠性。",
+      "Contact API 回應現在使用 Cache-Control: no-store。",
+      "防止 Contact 回應被快取。",
+      "補強相關單元測試與 API 契約測試覆蓋。",
     ],
   },
   {
@@ -22,9 +22,9 @@ const homeRoutes = [
     status: "All Systems Operational",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
-      "Improved Tier Maker keyboard focus after deleting tiers.",
-      "Fixed newly uploaded Tier Maker images to respect the current image size.",
-      "Updated security dependencies and strengthened cross-browser regression tests and synchronization reliability.",
+      "Contact API responses now use Cache-Control: no-store.",
+      "Prevents Contact responses from being cached.",
+      "Added associated unit and API contract coverage.",
     ],
   },
   {
@@ -33,9 +33,9 @@ const homeRoutes = [
     status: "すべてのシステムが正常稼働中",
     languagePaths: ["/", "/en/", "/ja/"],
     releaseNotes: [
-      "Tier Maker で階層を削除した後のキーボードフォーカスを改善しました。",
-      "Tier Maker で新しくアップロードした画像に現在の画像サイズが適用されるよう修正しました。",
-      "セキュリティ関連の依存関係を更新し、ブラウザー間の回帰テストと同期の信頼性を強化しました。",
+      "Contact API のレスポンスに Cache-Control: no-store を設定しました。",
+      "Contact のレスポンスがキャッシュされることを防ぎます。",
+      "関連するユニットテストと API 契約テストのカバレッジを追加しました。",
     ],
   },
 ];
@@ -168,7 +168,7 @@ for (const route of homeRoutes) {
     await expect(main.locator(".project-update-card h2")).toContainText(
       route.status,
     );
-    await expect(releaseCard.locator("h2")).toHaveText("v1.6.3");
+    await expect(releaseCard.locator("h2")).toHaveText("v1.6.4");
     await expect(releaseCard.locator(".version-badge")).toHaveText(
       "Stable release",
     );
