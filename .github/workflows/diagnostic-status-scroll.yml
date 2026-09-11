@@ -23,7 +23,8 @@ jobs:
         run: |
           release=e10c90083d3ba00564012dfcb6fdb7cc239a2667
           test "$(git ls-remote https://github.com/chiffon-0504/huihui.dev-beta.git refs/heads/main | cut -f1)" = "$release"
-          test "$(git ls-remote https://github.com/chiffon-0504/huihui.dev-stable.git refs/heads/main | cut -f1)" = "$release"
+          # Private stable/main is verified locally before publication; this
+          # diagnostic runner intentionally has no cross-repository credential.
           git merge-base --is-ancestor "$release" HEAD
           git diff --exit-code "$release" HEAD -- . ':!tests/diagnostic' ':!playwright.diagnostic.config.mjs' ':!.github/workflows/diagnostic-status-scroll.yml'
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
