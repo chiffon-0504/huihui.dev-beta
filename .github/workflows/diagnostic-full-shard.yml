@@ -1,0 +1,56 @@
+name: Diagnostic original Chromium shard (DO NOT MERGE)
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths: ['.github/workflows/diagnostic-full-shard.yml']
+permissions:
+  contents: read
+jobs:
+  original:
+    if: github.head_ref == 'diagnostic/v164-full-shard-linux' && github.event.pull_request.draft
+    name: Original shard run ${{ matrix.run }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        run: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: e10c90083d3ba00564012dfcb6fdb7cc239a2667
+          persist-credentials: false
+      - name: Verify exact release checkout and public main
+        run: |
+          test "$(git rev-parse HEAD)" = e10c90083d3ba00564012dfcb6fdb7cc239a2667
+          test "$(git ls-remote https://github.com/chiffon-0504/huihui.dev-beta.git refs/heads/main | cut -f1)" = e10c90083d3ba00564012dfcb6fdb7cc239a2667
+          # Private stable main is freshly verified locally before publication.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Record environment without browser instrumentation
+        run: |
+          { cat /etc/os-release; echo "$ImageOS $ImageVersion"; node --version; npx playwright --version; cat node_modules/playwright-core/browsers.json; fc-list; } > diagnostic-environment.txt
+      - name: Original complete shard command
+        run: npx playwright test --shard=2/2 --workers=1 --retries=0
+      - name: Preserve failure artifacts per run
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: full-shard-failure-${{ matrix.run }}-${{ github.run_id }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+          if-no-files-found: ignore
+      - name: Preserve environment per run
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: full-shard-environment-${{ matrix.run }}-${{ github.run_id }}
+          path: diagnostic-environment.txt
+          retention-days: 14
+          if-no-files-found: ignore
