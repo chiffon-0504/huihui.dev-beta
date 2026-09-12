@@ -1,6 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { calculateSolarTimes } from "../../v2/src/theme/solar.ts";
-import { applyPagesCsp } from "../support/csp-enforcement.mjs";
+import { calculateSolarTimes } from "../../v2/src/theme/solar";
+
+// Keep the shared ESM helper on the native import path. The spec and application
+// TypeScript use Playwright's transform in this repository's CommonJS package.
+async function applyPagesCsp(...args: Parameters<typeof import("../support/csp-enforcement.mjs").applyPagesCsp>) {
+  const { applyPagesCsp: apply } = await import("../support/csp-enforcement.mjs");
+  return apply(...args);
+}
 
 const storageKey = "huihui-v2-theme";
 const daytime = new Date("2026-09-12T12:00:00+08:00");

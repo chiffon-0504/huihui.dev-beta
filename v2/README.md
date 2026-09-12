@@ -17,6 +17,16 @@ Use Node.js 24 and install dependencies from the repository root with `npm ci`.
   locale, contrast, theme lifecycle and solar calculation coverage.
 - `npm run test:unit` also includes these contracts.
 
+Browser specs that import application TypeScript use `.spec.ts`, allowing
+Playwright's [TypeScript transform](https://playwright.dev/docs/test-typescript)
+to load both the spec and its source
+dependencies in the same module mode. Playwright transforms specs without type
+checking; `check:ts` continues to check the application. The theme spec loads the
+shared `.mjs` CSP helper with native asynchronous `import()` so it remains ESM
+instead of passing through a CommonJS `require`. Pure solar and timezone tests
+remain in the focused Vitest suite. The theme browser spec uses the production calculator
+only to exercise real sunrise/sunset transitions.
+
 The v2 server serves `/`, `/en/`, and `/ja/`. The generated `v2/dist/` is a
 standalone site root; opening the source HTML directly or using the v1 static
 server does not compile TypeScript. No Pages or production build settings are
