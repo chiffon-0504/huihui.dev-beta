@@ -14,18 +14,47 @@ Install the repository's development dependencies with:
 npm ci
 ```
 
-The validation commands defined by this repository are:
+## Validation coverage
 
-```text
-npm run check:js
-npm run test:unit
-npm run test:e2e
-npm test
-```
+This section is the canonical catalog of validation commands and their coverage.
+Repository-wide [selection principles](AGENTS.md#validation) and
+[authorization rules](AGENTS.md#git-safety) belong to AGENTS.md; subsystem documents
+own their specific contracts.
 
-Run the checks relevant to your change. `npm test` runs the complete configured check, unit-test, and E2E sequence.
+Choose existing checks covering the changed behavior and affected contracts.
+The entries below describe coverage, not a checklist to run for every change.
+
+| Existing command or suite | Coverage |
+| --- | --- |
+| `npm run check:js` | Configured JavaScript syntax checks for v1 browser code and the API Worker. |
+| `npm run test:unit` | Unit and static contracts, including the existing v2 unit contracts. |
+| `npm run test:e2e` | Default local Chromium E2E suite in `playwright.config.mjs`. |
+| `npm test` | Runs `check:js`, `test:unit`, then `test:e2e`; it does not include every validation surface below. |
+| `npm run check:ts` | v2 TypeScript checking. |
+| `npm run build:v2` | Includes `check:ts`, then builds v2 with Vite. |
+| `npm run test:e2e:v2` | Includes `build:v2`, then v2 Chromium, Firefox and WebKit tests; see [v2 guidance](v2/README.md). |
+| Cross-browser critical | Separate Firefox/WebKit subset via [playwright.cross-browser.config.mjs](playwright.cross-browser.config.mjs). |
+| Full-compatible | Separate Firefox/WebKit coverage via [playwright.full-cross-browser.config.mjs](playwright.full-cross-browser.config.mjs), with that config's existing exclusions. |
+| Live beta smoke | Separate deployment checks in [Beta CD](.github/workflows/beta-cd.yml); local E2E does not prove live deployment identity or behavior. |
+
+After a successful `npm test`, do not immediately rerun its unchanged subcommands
+without a reason. The same coverage accounting applies to the nested v2 commands.
+Broaden or repeat validation when failures, shared contracts, browser risk,
+security boundaries or unresolved uncertainty justify it; record the reason and
+observed results. Required CI and applicable security negative controls remain
+mandatory. For CSP work, follow the [enforcement verification guidance](tests/support/csp-enforcement.md),
+including enforcing, Report-Only and no-CSP controls.
+
+Use `git diff --check` as the normal post-edit whitespace check. Report checks
+actually run and any limits on their coverage; never report an unrun check as
+passed. Validation guidance does not authorize deployments or new external writes.
 
 ## Contribution workflow
+
+For agent-assisted work, the canonical [Git safety](AGENTS.md#git-safety) and
+[Fresh baseline](AGENTS.md#fresh-baseline-requirement) policies apply; the human
+fork workflow below does not replace those requirements or grant agent write
+authorization. Authorized release work follows the root [Deployment Flow](README.md#deployment-flow).
 
 1. Fork this repository.
 2. Create a branch from `main` in your fork.
