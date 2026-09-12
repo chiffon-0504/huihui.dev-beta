@@ -18,12 +18,12 @@ export function createHome(locale: Locale): HTMLElement {
   );
 
   const placeholders = element("div", "home-sections");
-  for (const [id, label] of [["works", "Works"], ["about", "About"]] as const) {
+  for (const id of ["works", "about"] as const) {
     const section = element("section", "placeholder-section");
     section.id = id;
     section.tabIndex = -1;
     section.setAttribute("aria-labelledby", `${id}-title`);
-    const heading = element("h2", "section-title", label);
+    const heading = element("h2", "section-title", copy[`${id}Label`]);
     heading.id = `${id}-title`;
     const headingRow = element("div", "section-heading");
     headingRow.append(heading, element("span", "placeholder-label", copy.upcoming));

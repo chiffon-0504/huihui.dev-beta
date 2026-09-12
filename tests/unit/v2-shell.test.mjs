@@ -3,6 +3,15 @@ import { describe, expect, test } from "vitest";
 import { content, localeLinks, locales, resolveLocale } from "../../v2/src/content.ts";
 
 describe("v2 localized shell", () => {
+  test.each([
+    ["zh-Hant", "作品", "關於"],
+    ["en", "Works", "About"],
+    ["ja", "制作実績", "プロフィール"],
+  ])("%s defines shared navigation and section labels", (locale, worksLabel, aboutLabel) => {
+    expect(content[locale].worksLabel).toBe(worksLabel);
+    expect(content[locale].aboutLabel).toBe(aboutLabel);
+  });
+
   for (const locale of locales) {
     test(`${locale} has a matching entry and complete shared content`, async () => {
       expect(resolveLocale(locale)).toBe(locale);

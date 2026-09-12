@@ -7,9 +7,9 @@ export function createNavbar(locale: Locale): HTMLElement {
   nav.setAttribute("aria-label", content[locale].navigation);
   const brand = link("huihui.dev", localeLinks[locale].href, "brand");
   const primary = element("ul", "navbar-primary");
-  for (const [label, href] of [["Works", "#works"], ["About", "#about"]] as const) {
+  for (const id of ["works", "about"] as const) {
     const item = element("li", "");
-    item.append(link(label, href, "nav-link"));
+    item.append(link(content[locale][`${id}Label`], `#${id}`, "nav-link"));
     primary.append(item);
   }
   const actions = element("div", "navbar-actions");
