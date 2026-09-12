@@ -47,7 +47,7 @@ for (const locale of locales) {
         await expect(option).toHaveAttribute("hreflang", target.lang);
         if (target.lang === locale.lang) {
           await expect(option).toHaveAttribute("aria-current", "page");
-          await expect(option.locator("span")).toHaveText("✓");
+          await expect(option.locator('span svg[data-icon="check"]')).toHaveCount(1);
           await expect(option.locator("span")).toHaveAttribute("aria-hidden", "true");
         } else {
           await expect(option).not.toHaveAttribute("aria-current");
@@ -127,7 +127,7 @@ for (const locale of locales) {
     const dropdown = page.locator(".language-switcher");
     await dropdown.locator("summary").click();
     await expectContained(page, dropdown);
-    await expect(dropdown.locator('[aria-current="page"] span')).toHaveText("✓");
+    await expect(dropdown.locator('[aria-current="page"] svg[data-icon="check"]')).toBeVisible();
   });
 }
 

@@ -98,8 +98,8 @@ NOAA calculation. The [dataset documentation](src/theme/data/README.md) records
 IANA provenance, generation/update instructions, approximation limits and the
 independent solar reference used by tests. There is no new runtime dependency.
 
-The compact navbar button displays `☀︎` for effective Light and `☾` for effective
-Dark, even in Auto. Its localized accessible name describes the effective theme;
+The compact navbar button displays a Sun SVG for effective Light and a Moon SVG
+for effective Dark, even in Auto. Its localized accessible name describes the effective theme;
 the menu's checkmark and `menuitemradio` `aria-checked` describe the configured
 preference. The menu follows the language control in desktop/mobile Tab order.
 Enter/Space opens or selects; arrows, Home and End move among options; Escape
@@ -107,6 +107,19 @@ restores trigger focus. Tab, outside click and focus leaving close the menu.
 ZH/EN/JA labels live in `content.ts`; no permanent Theme text label is displayed.
 All pages share Light/Dark semantic tokens and matching `color-scheme` in
 `styles/tokens.css`, including visible focus colors tested on both surfaces.
+Dark uses a black page background and neutral near-black surfaces; Auto resolving
+to Dark uses the same tokens. Light's color palette is unchanged.
+
+Navbar action links, language summaries and theme buttons share the
+`navbar-control` height, typography, padding and flex alignment. The language
+summary retains native disclosure behavior while its standard/WebKit markers
+are visually suppressed. `components/icons.ts` provides four local Tabler
+outline SVGs (Sun, Moon, GitHub and selected-item check) from `components/icons.svg`,
+which includes the pinned upstream source and MIT notice. The asset import uses
+`?no-inline` so Vite emits a same-origin sprite instead of a data URL that SVG
+`use` would reject. All use the same 24-unit viewBox, 2-unit stroke
+and 1.25rem box, `currentColor`, `aria-hidden` and `focusable="false"`. The GitHub
+link retains its visible label; no icon adds a tab stop or remote request.
 
 An external, same-origin classic `theme/bootstrap.ts` bundle runs synchronously
 in the document head before styles and the application module. It uses the same
