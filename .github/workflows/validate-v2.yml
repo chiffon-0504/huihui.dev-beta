@@ -6,9 +6,13 @@ on:
     paths:
       - "v2/**"
       - "tests/v2/**"
+      - "tests/v2-preview/**"
+      - "tests/scripts/v2-preview-deployment.mjs"
+      - "tests/scripts/v2-preview-server.mjs"
       - "tests/unit/v2-*.test.mjs"
       - "tests/support/csp-enforcement.mjs"
       - "playwright.v2.config.mjs"
+      - "playwright.v2-preview.config.mjs"
       - "playwright.base.config.mjs"
       - "vite.v2.config.mjs"
       - "tsconfig.json"
@@ -16,6 +20,7 @@ on:
       - "package-lock.json"
       - "_headers"
       - ".github/workflows/validate-v2.yml"
+      - ".github/workflows/deploy-v2-beta.yml"
 
 permissions:
   contents: read
@@ -41,6 +46,10 @@ jobs:
         run: npx playwright install --with-deps chromium firefox webkit
       - name: Build and test v2 shell
         run: npm run test:e2e:v2
+      - name: Verify built preview with delivered CSP
+        env:
+          V2_PREVIEW_LOCAL: "1"
+        run: npx playwright test --config=playwright.v2-preview.config.mjs
       - name: Upload failure diagnostics
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

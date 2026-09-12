@@ -1,0 +1,83 @@
+name: Deploy v2 beta preview
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Serialize uploads: canceling a runner cannot cancel an in-flight Pages upload.
+concurrency:
+  group: huihuidev-v2-beta
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      github.repository == 'chiffon-0504/huihui.dev-beta' &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TARGET_SHA: ${{ github.sha }}
+    steps:
+      - name: Checkout exact main commit
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run v2 contracts
+        run: npx vitest run tests/unit/v2-
+      - name: Build v2
+        run: npm run build:v2
+      - name: Prepare deployment identity
+        run: node tests/scripts/v2-preview-deployment.mjs prepare
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Verify current main and independent Pages project
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node tests/scripts/v2-preview-deployment.mjs preflight
+      - name: Deploy only built v2 assets
+        id: pages
+        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4.131.1"
+          workingDirectory: v2
+          command: pages deploy dist --project-name=huihuidev-v2-beta --branch=main --commit-hash=${{ github.sha }} --commit-dirty=false
+      - name: Verify exact deployment and custom-domain bytes
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DEPLOYMENT_ID: ${{ steps.pages.outputs.pages-deployment-id }}
+        run: node tests/scripts/v2-preview-deployment.mjs verify
+      - name: Verify live v2 browser behavior
+        run: npx playwright test --config=playwright.v2-preview.config.mjs
+      - name: Recheck active deployment after browser verification
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DEPLOYMENT_ID: ${{ steps.pages.outputs.pages-deployment-id }}
+        run: node tests/scripts/v2-preview-deployment.mjs verify
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-v2-preview
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7

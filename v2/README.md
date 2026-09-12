@@ -29,10 +29,105 @@ only to exercise real sunrise/sunset transitions.
 
 The v2 server serves `/`, `/en/`, and `/ja/`. The generated `v2/dist/` is a
 standalone site root; opening the source HTML directly or using the v1 static
-server does not compile TypeScript. No Pages or production build settings are
-changed by this PR. Hosting configuration and security-header delivery must be
-reviewed when v2 is selected for deployment; browser tests currently enforce the
-existing root `_headers` CSP on the locally built pages.
+server does not compile TypeScript. Vite copies `public/_headers` into the build
+for the independent preview described below. Existing shell browser tests retain
+their root `_headers` CSP coverage; preview smoke tests additionally exercise
+the v2 policy delivered as HTTP headers.
+
+## Independent online beta preview
+
+The [v2 deployment workflow](../.github/workflows/deploy-v2-beta.yml) builds every
+push to `chiffon-0504/huihui.dev-beta/main` with Node.js 24, `npm ci`, v2 unit
+contracts and `npm run build:v2`. It uploads only **`v2/dist/`** using the pinned
+Wrangler action/version to the separate Direct Upload Pages project
+**`huihuidev-v2-beta`**, production branch `main`. In this project, Cloudflare's
+"production" deployment environment means the v2 preview's main branch; it is
+unrelated to the production site or GitHub `production` Environment.
+
+The stable preview routes are:
+
+- <https://v2.beta.huihui.dev/>
+- <https://v2.beta.huihui.dev/en/>
+- <https://v2.beta.huihui.dev/ja/>
+
+These are target URLs until the external setup below is complete. A manual
+workflow dispatch on beta `main` can initialize or recover the preview after
+external setup; dispatches on other branches or repositories cannot deploy.
+PRs validate without deploying v2. The workflow is serialized, checks that its
+SHA is still the current main immediately before upload, and never cancels an
+in-flight upload to make room for another run.
+
+The upload specifies `--branch=main`, the full `github.sha`, and a clean commit.
+`deployment.json` records the project, repository and exact checkout SHA. After
+upload, bounded polling reads the action's exact Pages deployment ID until it
+succeeds; the verifier checks project, main branch, clean SHA, active canonical
+deployment and custom-domain status. It compares the served manifest, all three
+HTML entries and every asset byte-for-byte with the build, including enforcing
+CSP delivery. The same identity check runs again after Chromium smoke.
+There is no fixed wait pretending a deployment has completed.
+
+The preview's self-only CSP permits the compiled external theme bootstrap and
+application/CSS bundles, without inline/eval permissions or production API access.
+The site sends `X-Robots-Tag: noindex, nofollow` and revalidation cache headers.
+ZH/EN/JA desktop/mobile smoke covers initialization, CSS, Light/Dark/Auto, the
+initial Auto theme before app content, language navigation, overflow and browser
+errors. CSP enforcement has Report-Only and no-CSP negative controls using an
+isolated probe. Live pages themselves never receive replacement CSP headers.
+Requests to Contact, unrelated APIs and other origins are blocked by the smoke.
+
+Run the focused preview validation locally after `npm run build:v2`:
+
+```powershell
+npx vitest run tests/unit/v2-
+$env:V2_PREVIEW_LOCAL = "1"
+npx playwright test --config=playwright.v2-preview.config.mjs
+Remove-Item Env:V2_PREVIEW_LOCAL
+```
+
+Local mode uses Vite on `127.0.0.1:4176`, delivering the built `_headers` through
+a small global-rule adapter. It does not prove live DNS/TLS or edge deployment.
+Without local mode the smoke uses only `https://v2.beta.huihui.dev`.
+
+### External setup and permission blocker
+
+On 2026-09-12, read-only inspection found no `huihuidev-v2-beta` project or
+`v2.beta.huihui.dev` DNS record. Creating the separate project through the
+available Cloudflare connector failed with **10000: Authentication error**;
+re-reading confirmed that no project was created. No credential was replaced,
+rotated, printed or requested. Wrangler was unavailable on the local PATH and no
+Cloudflare token environment variable was present; no local upload was attempted.
+
+An authorized Cloudflare account operator must complete these exact actions:
+
+1. Create a **Direct Upload** Pages project named `huihuidev-v2-beta` in the same
+   account as the existing beta project, with production branch `main`, no Git
+   integration and no Functions/Worker bindings. GitHub runs the build from the
+   repository root; Pages receives `v2/dist/`, so it needs no hosted build command.
+2. Add `v2.beta.huihui.dev` under that project's **Custom domains** and create only
+   its CNAME to `huihuidev-v2-beta.pages.dev`. Complete Pages domain verification
+   and certificate activation. Do not change existing apex, www or beta records.
+3. Confirm the existing GitHub `CLOUDFLARE_ACCOUNT_ID` identifies that account and
+   `CLOUDFLARE_API_TOKEN` has **Account / Cloudflare Pages / Edit** there. The secret
+   exists, but its value and scopes cannot be retrieved from GitHub; successful
+   Worker deployment or Pages reads do not prove Pages upload permission. The
+   connector's rejected write does not establish the separately stored GitHub
+   token's scope. Additional permission is required for the connector; whether
+   the existing GitHub token also needs it is unverified. Do not use the existing
+   `CLOUDFLARE_PAGES_READ_API_TOKEN` to upload, weaken controls or rotate tokens.
+4. After this PR is reviewed and merged by the owner, allow the main push workflow
+   to run, or dispatch **Deploy v2 beta preview** on the current beta `main` after
+   setup. Require deployment identity and live smoke success before treating the
+   target URLs as verified. The agent does not merge the PR.
+
+Cloudflare documents [Direct Upload CI](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/)
+and [custom-domain association before DNS](https://developers.cloudflare.com/pages/configuration/custom-domains/).
+DNS configuration requires permission to edit the `huihui.dev` zone's DNS; the
+CI upload token does not need DNS Edit merely to deploy to an associated domain.
+
+This flow does not change `huihuidev-beta`, `beta.huihui.dev`, `huihui.dev`,
+`huihui.dev-stable`, existing v1 build/deployment behavior, production Pages,
+Workers, production DNS/routes, release tags or versions. Existing v1 Pages
+Git-integration branch previews may still run when this PR branch is pushed.
 
 ## Structure
 
