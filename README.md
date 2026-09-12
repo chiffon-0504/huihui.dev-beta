@@ -95,6 +95,15 @@ The public beta repository is the source of active development and validation. S
 
 ## Deployment Flow
 
+This section is the single canonical release and promotion sequence, including
+candidate SHA identity, Pages/Worker ordering, tags, GitHub Releases and rollout
+compatibility. Apply the repository [Git and authorization policy](AGENTS.md#git-safety),
+[Fresh baseline policy](AGENTS.md#fresh-baseline-requirement) and
+[release safety boundaries](AGENTS.md#release-stage-boundaries) when executing it.
+Subsystem documentation and Skills reference this sequence rather than maintaining
+their own copy. See [CONTRIBUTING.md](CONTRIBUTING.md#validation-coverage) for
+validation command coverage.
+
 Static-site and Worker deployments use separate paths.
 
 ```text

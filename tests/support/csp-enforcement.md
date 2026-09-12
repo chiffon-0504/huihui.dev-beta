@@ -56,11 +56,21 @@ behavior; it must not inject a replacement policy like the local adapter does.
   also exercise these browser-independent tests.
 - Beta CD/live smoke: unchanged; this PR does not claim deployment verification.
 
-Run the focused deterministic sample (50 cases, ten repeats per test):
+For ordinary CSP changes, run the focused deterministic contract once (five
+tests), retaining one worker and zero retries:
 
 ```sh
-npx playwright test tests/e2e/csp-enforcement.spec.mjs --project=chromium --workers=1 --retries=0 --repeat-each=10
+npx playwright test tests/e2e/csp-enforcement.spec.mjs --project=chromium --workers=1 --retries=0
 ```
+
+Use repeated execution only to investigate flakiness, timing, synchronization or
+a specific nondeterministic hypothesis. State the hypothesis before running,
+then record the command, repetition count and observed results. For such an
+investigation, adding `--repeat-each=10` to the command above runs 50 cases; it
+is not the default for ordinary changes. Repeated passes alone do not explain
+a prior failure or establish its cause. Retain zero retries, the enforcing versus
+Report-Only distinction, no-CSP negative control and all existing security
+assertions during both ordinary and repeated validation.
 
 The normal `npm run test:e2e` also discovers this file. There are no sleeps,
 skips, dependencies, production header changes, or application changes.

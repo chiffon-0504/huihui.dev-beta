@@ -18,11 +18,25 @@ The `Deploy huihui API Worker` workflow keeps the environments explicit and sepa
 - Production deploys only in `chiffon-0504/huihui.dev-stable` when a manual run selects `target=production` from `main` (`refs/heads/main`). `validate-production` runs Main regression; `deploy-production` requires it to pass and references the GitHub environment named `production`.
 - Pull requests run validation but do not deploy either Worker.
 
-Follow the root README's [release order](../../README.md#deployment-flow): verify beta, freshly check beta/stable ancestry, promote the exact release SHA to stable `main` by fast-forward (never force push), and immediately dispatch a required production Worker deployment without waiting for production Pages verification. Confirm stable `main` and the dispatched run's commit match the release SHA so checkout deploys the released code, not an older stable state. Then verify both the Pages deployment and any required Worker deployment against the release SHA and complete production smoke verification before publishing the GitHub Release. These promotion and deployment identity checks are operator gates, not checks performed by the Worker workflow.
+Follow the root README's canonical [Deployment Flow](../../README.md#deployment-flow)
+for candidate identity, stable promotion, dispatch timing, deployment acceptance
+and tag/Release ordering. Repository [Git safety](../../AGENTS.md#git-safety) and
+[Fresh baseline](../../AGENTS.md#fresh-baseline-requirement) rules apply;
+[CONTRIBUTING.md](../../CONTRIBUTING.md#validation-coverage) owns general validation
+command coverage. This document owns Worker-specific triggers, environments,
+runtime contracts and acceptance checks.
 
-Pages starts deploying on the stable push while the Worker requires manual dispatch and Main regression. Coupled frontend and Worker/API changes must remain backward-compatible throughout the rollout window, regardless of which deployment finishes first; if compatibility cannot be guaranteed, plan a staged rollout before promotion as described in the root release instructions.
+Pages and Worker completion can differ; coupled frontend/API changes must remain
+backward-compatible throughout that window. Follow the canonical
+[rollout compatibility requirements](../../README.md#deployment-flow) for staged
+rollout planning. Worker acceptance must verify that the dispatched run and
+successful deployment match the release SHA; workflow validation alone does not
+prove deployment identity.
 
-Configure required reviewers and any other deployment protection rules for the `production` environment manually in the GitHub repository settings. Referencing the environment in workflow YAML does not create those rules.
+The root [Deployment Flow](../../README.md#deployment-flow) documents production
+Environment protection and optional hardening; changes require the repository's
+[explicit authorization](../../AGENTS.md#git-safety). Referencing the environment
+in workflow YAML does not create protection rules.
 
 The workflow uses the existing `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` GitHub secrets for Wrangler authentication.
 
