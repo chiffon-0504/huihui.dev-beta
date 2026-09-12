@@ -2,6 +2,11 @@
   "name": "huihui-dev-beta",
   "private": true,
   "scripts": {
+    "dev:v2": "vite --config vite.v2.config.mjs",
+    "check:ts": "tsc --noEmit",
+    "build:v2": "npm run check:ts && vite build --config vite.v2.config.mjs",
+    "preview:v2": "vite preview --config vite.v2.config.mjs",
+    "test:e2e:v2": "npm run build:v2 && playwright test --config playwright.v2.config.mjs",
     "check:js": "node tests/scripts/check-js.mjs",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
@@ -9,6 +14,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
+    "typescript": "7.0.2",
+    "vite": "8.1.4",
     "vitest": "^4.1.11",
     "yaml": "2.8.3"
   }

@@ -1,0 +1,21 @@
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+.container {
+  width: min(var(--content-width), calc(100% - var(--space-12)));
+  margin-inline: auto;
+}
+
+main {
+  flex: 1;
+}
+
+@media (max-width: 40rem) {
+  .container {
+    width: calc(100% - var(--space-8));
+  }
+}
