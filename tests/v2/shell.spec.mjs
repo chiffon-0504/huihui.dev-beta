@@ -42,7 +42,8 @@ for (const locale of locales) {
       await expect(nav.getByRole("link", { name: locale.worksLabel, exact: true })).toHaveAttribute("href", "#works");
       await expect(nav.getByRole("link", { name: locale.aboutLabel, exact: true })).toHaveAttribute("href", "#about");
       await expect(nav.getByRole("link", { name: "GitHub", exact: true })).toHaveAttribute("href", "https://github.com/chiffon-0504");
-      await expect(page.getByRole("contentinfo").locator('a[aria-current="page"]')).toHaveAttribute("hreflang", locale.lang);
+      await expect(nav.locator('a[aria-current="page"]')).toHaveAttribute("hreflang", locale.lang);
+      await expect(page.getByRole("contentinfo").getByRole("link")).toHaveCount(0);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
       if (testInfo.project.name === "chromium") {
         await page.screenshot({ path: testInfo.outputPath(`${locale.lang}-${viewport.width}.png`), fullPage: true });
@@ -76,9 +77,12 @@ for (const locale of locales) {
           await expect(current).toBeFocused();
         }
       }
+      await page.keyboard.press("Tab");
+      await expect(nav.locator("summary")).toBeFocused();
+      await page.keyboard.press("Enter");
       for (const label of ["繁體中文", "English", "日本語"]) {
         await page.keyboard.press("Tab");
-        await expect(page.getByRole("contentinfo").getByRole("link", { name: label, exact: true })).toBeFocused();
+        await expect(nav.getByRole("link", { name: label, exact: true })).toBeFocused();
       }
       await page.keyboard.press("Enter");
       await expect(page.locator("html")).toHaveAttribute("lang", "ja");

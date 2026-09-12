@@ -19,5 +19,5 @@ app.replaceChildren(
   link(content[locale].skip, "#main-content", "skip-link"),
   createNavbar(locale),
   createHome(locale),
-  createFooter(locale),
+  createFooter(),
 );

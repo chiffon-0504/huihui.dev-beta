@@ -57,11 +57,15 @@ export const content: Readonly<Record<Locale, Content>> = {
   },
 };
 
-export const localeLinks: Readonly<Record<Locale, { readonly href: string; readonly label: string }>> = {
-  "zh-Hant": { href: "/", label: "繁體中文" },
-  en: { href: "/en/", label: "English" },
-  ja: { href: "/ja/", label: "日本語" },
+export const localeLinks: Readonly<Record<Locale, { readonly href: string; readonly label: string; readonly shortLabel: string }>> = {
+  "zh-Hant": { href: "/", label: "繁體中文", shortLabel: "中文" },
+  en: { href: "/en/", label: "English", shortLabel: "English" },
+  ja: { href: "/ja/", label: "日本語", shortLabel: "日本語" },
 };
+
+export function localeHref(locale: Locale, hash = ""): string {
+  return `${localeLinks[locale].href}${hash}`;
+}
 
 export function resolveLocale(language: string): Locale {
   return locales.find((locale) => locale === language) ?? "zh-Hant";

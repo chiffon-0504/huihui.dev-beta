@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, test } from "vitest";
-import { content, localeLinks, locales, resolveLocale } from "../../v2/src/content.ts";
+import { content, localeHref, localeLinks, locales, resolveLocale } from "../../v2/src/content.ts";
 
 describe("v2 localized shell", () => {
   test.each([
@@ -28,6 +28,17 @@ describe("v2 localized shell", () => {
 
   test("unknown languages fall back to the default locale", () => {
     expect(resolveLocale("fr")).toBe("zh-Hant");
+  });
+
+  test.each([
+    ["zh-Hant", "/", "中文", "繁體中文"],
+    ["en", "/en/", "English", "English"],
+    ["ja", "/ja/", "日本語", "日本語"],
+  ])("%s language links preserve localized Home sections", (locale, route, trigger, label) => {
+    expect(localeLinks[locale].shortLabel).toBe(trigger);
+    expect(localeLinks[locale].label).toBe(label);
+    expect(localeHref(locale)).toBe(route);
+    for (const hash of ["#works", "#about"]) expect(localeHref(locale, hash)).toBe(`${route}${hash}`);
   });
 });
 

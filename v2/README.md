@@ -39,6 +39,15 @@ those pages are implemented. All navigation remains visible on mobile and wraps
 at narrow widths or enlarged text. The actions area can later accommodate search
 without adding a search control or reserving a visible empty slot now.
 
-The footer contains copyright and language links. Home copy and both content
+The navbar language switcher uses native `details`/`summary` and localized links
+from `content.ts`. It preserves the current Home fragment across the three locale
+entries, including `#works` and `#about`; v2 has no separate localized subpages yet.
+The same control remains in the wrapping mobile navbar (there is no drawer).
+Escape restores trigger focus; outside clicks and focus leaving the disclosure
+close it. Tab follows native document order. The disclosure and links work if
+enhancement listeners fail after rendering; the application shell itself still
+requires JavaScript, with the existing HTML `noscript` fallback.
+
+The footer contains copyright. Home copy and both content
 sections are provisional. No v1 regression assertion is replaced: v2 has its own
 Playwright configuration and PR validation job.

@@ -1,5 +1,6 @@
 import { content, localeLinks, type Locale } from "../content";
 import { element, link } from "../dom";
+import { createLanguageSwitcher } from "./language-switcher";
 
 export function createNavbar(locale: Locale): HTMLElement {
   const header = element("header", "site-header");
@@ -13,7 +14,7 @@ export function createNavbar(locale: Locale): HTMLElement {
     primary.append(item);
   }
   const actions = element("div", "navbar-actions");
-  actions.append(link("GitHub", "https://github.com/chiffon-0504", "nav-link"));
+  actions.append(link("GitHub", "https://github.com/chiffon-0504", "nav-link"), createLanguageSwitcher(locale));
   nav.append(brand, primary, actions);
   header.append(nav);
   return header;
