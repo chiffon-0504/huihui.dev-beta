@@ -31,6 +31,14 @@ describe("v2 localized shell", () => {
   });
 
   test.each([
+    ["zh-Hant", "主題", "自動", "淺色", "深色"],
+    ["en", "Theme", "Auto", "Light", "Dark"],
+    ["ja", "テーマ", "自動", "ライト", "ダーク"],
+  ])("%s defines theme labels independently from the navbar", (locale, theme, auto, light, dark) => {
+    expect(content[locale]).toMatchObject({ theme, themeAuto: auto, themeLight: light, themeDark: dark });
+  });
+
+  test.each([
     ["zh-Hant", "/", "中文", "繁體中文"],
     ["en", "/en/", "English", "English"],
     ["ja", "/ja/", "日本語", "日本語"],
@@ -50,9 +58,11 @@ function luminance(hex) {
   return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722;
 }
 
-test("v2 text and focus tokens meet contrast requirements on both surfaces", async () => {
+test.each(["light", "dark"])("v2 %s text and focus tokens meet contrast requirements on both surfaces", async (theme) => {
   const css = await readFile(new URL("../../v2/src/styles/tokens.css", import.meta.url), "utf8");
-  const colors = Object.fromEntries([...css.matchAll(/--color-([\w-]+):\s*(#[0-9a-f]{6})/g)].map((match) => [match[1], match[2]]));
+  const palette = css.match(new RegExp(`\\[data-theme="${theme}"\\]\\s*\\{([^}]+)\\}`))?.[1];
+  expect(palette).toBeDefined();
+  const colors = Object.fromEntries([...palette.matchAll(/--color-([\w-]+):\s*(#[0-9a-f]{6})/g)].map((match) => [match[1], match[2]]));
   for (const foreground of ["text", "muted", "accent", "focus"]) {
     for (const background of ["background", "surface"]) {
       const values = [luminance(colors[foreground]), luminance(colors[background])].sort((a, b) => b - a);

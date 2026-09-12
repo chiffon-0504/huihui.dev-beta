@@ -42,7 +42,8 @@
   text-decoration: none;
 }
 
-.language-switcher {
+.language-switcher,
+.theme-switcher {
   position: relative;
   font-size: var(--text-small);
 }
@@ -53,7 +54,8 @@
   cursor: pointer;
 }
 
-.language-options {
+.language-options,
+.theme-options {
   position: absolute;
   z-index: 1;
   inset-inline-end: 0;
@@ -66,7 +68,8 @@
   background: var(--color-surface);
 }
 
-.language-option {
+.language-option,
+.theme-option {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -75,12 +78,43 @@
   text-decoration: none;
 }
 
-.language-option[aria-current="page"] {
+.language-option[aria-current="page"],
+.theme-option[aria-checked="true"] {
   font-weight: 650;
 }
 
-.language-selected {
+.language-selected,
+.theme-selected {
   flex: 0 0 1em;
+}
+
+.theme-trigger,
+.theme-option {
+  color: inherit;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.theme-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: var(--space-1);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.theme-option {
+  width: 100%;
+  text-align: start;
+}
+
+.theme-trigger:hover,
+.theme-option:hover {
+  color: var(--color-accent);
 }
 
 @media (max-width: 40rem) {
@@ -95,7 +129,13 @@
   }
 
   .navbar-actions {
+    position: relative;
     gap: var(--space-2) var(--space-3);
+  }
+
+  .language-switcher {
+    /* Keep the panel inside the viewport with Theme after this trigger. */
+    position: static;
   }
 
   .brand {
