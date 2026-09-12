@@ -24,13 +24,29 @@ describe("v2 bundled timezone coordinates", () => {
     expect(lookupCoordinates("Atlantic/Reykjavik")).not.toEqual(lookupCoordinates("Africa/Abidjan"));
   });
 
+  test.each([
+    ["Pacific/Ponape", "Pacific/Pohnpei", "Pacific/Guadalcanal", 6.966667, 158.216667],
+    ["Pacific/Truk", "Pacific/Chuuk", "Pacific/Port_Moresby", 7.416667, 151.783333],
+    ["Africa/Asmera", "Africa/Asmara", "Africa/Nairobi", 15.333333, 38.883333],
+    ["Iceland", "Atlantic/Reykjavik", "Africa/Abidjan", 64.15, -21.85],
+  ])("%s retains its geographic location instead of a clock-equivalent target", (alias, location, clockTarget, latitude, longitude) => {
+    expect(lookupCoordinates(alias)).toEqual({ latitude, longitude });
+    expect(lookupCoordinates(alias)).toEqual(lookupCoordinates(location));
+    expect(lookupCoordinates(alias)).not.toEqual(lookupCoordinates(clockTarget));
+  });
+
+  test("clock-only aliases without a sourced geographic point use the existing fallback", () => {
+    expect(lookupCoordinates("Pacific/Yap")).toBeUndefined();
+    expect(lookupCoordinates("Asia/Chungking")).toBeUndefined();
+  });
+
   test.each(["Unknown/Zone", "UTC", "Etc/GMT-8", "", "__proto__", "constructor"])("leaves %s to the caller's fallback", (zone) => {
     expect(lookupCoordinates(zone)).toBeUndefined();
   });
 
   test("all generated locations are valid and available without an Intl lookup", () => {
     vi.spyOn(Intl, "DateTimeFormat").mockImplementation(() => { throw new Error("unavailable"); });
-    expect(Object.keys(timezoneCoordinates)).toHaveLength(549);
+    expect(Object.keys(timezoneCoordinates)).toHaveLength(512);
     for (const zone of Object.keys(timezoneCoordinates)) expect(lookupCoordinates(zone), zone).toBeDefined();
   });
 

@@ -1,7 +1,7 @@
 # Representative timezone coordinates
 
 `timezone-coordinates.ts` is a generated, bundled coordinate table. It contains
-549 timezone names from the public-domain IANA tz database release **2026d**.
+512 timezone names from the public-domain IANA tz database release **2026d**.
 It does not contain user location data, timezone boundaries, or UTC-offset rules.
 The browser's `Intl` implementation continues to supply the device timezone and
 civil-calendar conversion. A representative location can be far from the actual
@@ -23,9 +23,27 @@ chooses an approximate theme without locating the visitor.
 2. `zone.tab` supplies names absent from the first table, preserving their own
    location rather than mapping every country sharing post-1970 clock rules to
    another country's location (for example, `Atlantic/Reykjavik`).
-3. `backward` supplies missing compatibility aliases, including older names
-   returned by browser `Intl` implementations. Explicit table locations win over
-   aliases; remaining alias chains use their target's coordinates.
+3. `backward` supplies naming compatibility from its **Pre-1993 naming
+   conventions**, **Two-part names ... renamed ... in 1995**, and **Alternate
+   names for the same location** sections. Country/region names such as
+   `US/Eastern` use their named representative location. The clock-merger
+   sections (**Pre-2013 practice** and **Non-zone.tab locations**) do not supply
+   geographic aliases. Explicit table coordinates always win.
+4. Within the naming sections, `#= TARGET1` restores the original target before
+   IANA flattened links to links for older parsers. Thus `Pacific/Ponape` uses
+   the explicit `Pacific/Pohnpei` coordinates (`6.966667, 158.216667`), and
+   `Pacific/Truk` uses `Pacific/Chuuk` (`7.416667, 151.783333`). Their flattened
+   clock targets, Guadalcanal and Port Moresby, are different places. Naming
+   chains resolve only through these approved links to a table-backed point.
+
+Timezone rule aliasing is not geographic aliasing. If a naming target has no
+coordinate in either table, generation leaves it unsupported; it never retries
+the flattened clock target. For example, `Asia/Chungking` points to Chongqing,
+whose coordinates are absent from these release tables, rather than Shanghai.
+This removes 37 previously guessed entries (including `Pacific/Yap` and
+`Australia/Canberra`); they now use Auto's existing deterministic Light fallback.
+No runtime exceptions or new coordinate guesses are introduced. `backzone`
+contains historical clock definitions, not an alternative coordinate table.
 
 Coordinates are converted to decimal degrees, rounded to six decimal places and
 sorted by timezone name. Non-geographic names with no table-backed target, such
@@ -40,7 +58,11 @@ node v2/src/theme/data/generate-timezones.mjs <extracted-tzdata-directory>
 ```
 
 Review the generated diff, update this version/count/archive/checksum record,
-and run the v2 solar/theme unit tests and TypeScript check. Generation is an
+and run the v2 solar/theme/generation unit tests and TypeScript check. The
+generator requires the documented source section boundaries; if they change,
+generation fails so the geographic policy must be reviewed with the new release.
+Regenerate twice and compare with the checked-in file to verify byte-for-byte
+reproducibility. Generation is an
 explicit maintenance step; builds and browser startup never download data.
 
 ## Solar approximation and date contract
