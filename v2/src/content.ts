@@ -5,6 +5,10 @@ interface Content {
   readonly skip: string;
   readonly navigation: string;
   readonly languages: string;
+  readonly theme: string;
+  readonly themeAuto: string;
+  readonly themeLight: string;
+  readonly themeDark: string;
   readonly eyebrow: string;
   readonly title: string;
   readonly introduction: string;
@@ -20,6 +24,10 @@ export const content: Readonly<Record<Locale, Content>> = {
     skip: "跳至主要內容",
     navigation: "主要導覽",
     languages: "語言",
+    theme: "主題",
+    themeAuto: "自動",
+    themeLight: "淺色",
+    themeDark: "深色",
     eyebrow: "開發者作品集",
     title: "以程式解決問題，讓想法成為作品。",
     introduction: "這裡將分享精選專案、開發實踐，以及作品背後的思考。",
@@ -33,6 +41,10 @@ export const content: Readonly<Record<Locale, Content>> = {
     skip: "Skip to main content",
     navigation: "Main navigation",
     languages: "Language",
+    theme: "Theme",
+    themeAuto: "Auto",
+    themeLight: "Light",
+    themeDark: "Dark",
     eyebrow: "Developer portfolio",
     title: "Solving problems. Building ideas.",
     introduction: "A space for selected projects, development practice, and the thinking behind the work.",
@@ -46,6 +58,10 @@ export const content: Readonly<Record<Locale, Content>> = {
     skip: "メインコンテンツへ移動",
     navigation: "メインナビゲーション",
     languages: "言語",
+    theme: "テーマ",
+    themeAuto: "自動",
+    themeLight: "ライト",
+    themeDark: "ダーク",
     eyebrow: "開発者ポートフォリオ",
     title: "コードで課題を解き、アイデアを形に。",
     introduction: "制作したプロジェクト、開発の実践、そして作品に込めた考えを紹介していきます。",
