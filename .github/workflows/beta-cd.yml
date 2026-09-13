@@ -70,6 +70,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build expected v2 assets
+        run: npm run build:v2
+
       - name: Wait for quiescent Pages deployment before live smoke
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -77,14 +80,14 @@ jobs:
           TARGET_SHA: ${{ github.sha }}
         run: node tests/scripts/beta-deployment-sync.mjs wait-pages-quiescent
 
-      - name: Run live HTTP and beta Worker API smoke checks
+      - name: Run beta Worker API smoke checks
         run: node tests/scripts/beta-http-smoke.mjs
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Run live Chromium deployment smoke
-        run: npx playwright test --config=playwright.beta-smoke.config.mjs --project=chromium --workers=1 --retries=0
+      - name: Run live v2 Chromium deployment smoke
+        run: npx playwright test --config=playwright.v2-beta.config.mjs --project=chromium --workers=1 --retries=0
 
       - name: Re-verify active Pages deployment after live smoke
         env:
