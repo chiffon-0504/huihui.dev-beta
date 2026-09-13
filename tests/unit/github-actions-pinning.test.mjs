@@ -637,10 +637,11 @@ describe("Playwright cross-browser validation contract", () => {
     });
     expect(runCommands(liveSmoke)).toEqual([
       "npm ci",
+      "npm run build:v2",
       "node tests/scripts/beta-deployment-sync.mjs wait-pages-quiescent",
       "node tests/scripts/beta-http-smoke.mjs",
       "npx playwright install --with-deps chromium",
-      "npx playwright test --config=playwright.beta-smoke.config.mjs --project=chromium --workers=1 --retries=0",
+      "npx playwright test --config=playwright.v2-beta.config.mjs --project=chromium --workers=1 --retries=0",
       "node tests/scripts/beta-deployment-sync.mjs verify-pages-active",
     ]);
     const waitForQuiescentPages = liveSmoke.steps.find(
@@ -663,7 +664,7 @@ describe("Playwright cross-browser validation contract", () => {
     expect(verifyActivePages.env).toEqual(pagesReadEnv);
     expect(liveSmoke.steps.indexOf(verifyActivePages)).toBeGreaterThan(
       liveSmoke.steps.findIndex(({ run }) =>
-        run?.startsWith("npx playwright test --config=playwright.beta-smoke"),
+        run?.startsWith("npx playwright test --config=playwright.v2-beta"),
       ),
     );
     expectFailureArtifact(

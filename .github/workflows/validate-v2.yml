@@ -6,6 +6,11 @@ on:
     paths:
       - "v2/**"
       - "tests/v2/**"
+      - "tests/v2-beta/**"
+      - "tests/scripts/v2-beta-server.mjs"
+      - "tests/support/v2-beta-contract.mjs"
+      - "playwright.v2-beta.config.mjs"
+      - ".github/workflows/beta-cd.yml"
       - "tests/unit/v2-*.test.mjs"
       - "tests/support/csp-enforcement.mjs"
       - "playwright.v2.config.mjs"
@@ -41,6 +46,10 @@ jobs:
         run: npx playwright install --with-deps chromium firefox webkit
       - name: Build and test v2 shell
         run: npm run test:e2e:v2
+      - name: Verify built beta with delivered CSP
+        env:
+          V2_BETA_LOCAL: "1"
+        run: npx playwright test --config=playwright.v2-beta.config.mjs
       - name: Upload failure diagnostics
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

@@ -1,8 +1,9 @@
 # v2 application shell
 
-An independent Vanilla TypeScript application. The existing v1 site and its
-deployment configuration remain in place while v2 is built. Nothing from the v1
-CSS, scripts, widgets, or vendor bundle is imported by this application.
+A Vanilla TypeScript application for v2 development in `huihui.dev-beta`.
+The existing beta Pages project hosts this application. The separate stable
+repository and `huihui.dev` remain on v1.6.4. Nothing from the v1 CSS, scripts,
+widgets, or vendor bundle is imported by this application.
 
 ## Local development
 
@@ -29,10 +30,57 @@ only to exercise real sunrise/sunset transitions.
 
 The v2 server serves `/`, `/en/`, and `/ja/`. The generated `v2/dist/` is a
 standalone site root; opening the source HTML directly or using the v1 static
-server does not compile TypeScript. No Pages or production build settings are
-changed by this PR. Hosting configuration and security-header delivery must be
-reviewed when v2 is selected for deployment; browser tests currently enforce the
-existing root `_headers` CSP on the locally built pages.
+server does not compile TypeScript. Vite copies `public/_headers` into the build.
+This self-only CSP, noindex policy and revalidation headers apply to v2 beta.
+Existing shell tests also retain coverage under the root v1 `_headers` policy.
+
+## Beta deployment
+
+Use the existing Cloudflare Pages Git integration:
+
+| Setting | Required value |
+| --- | --- |
+| Repository | `chiffon-0504/huihui.dev-beta` |
+| Pages project | `huihuidev-beta` |
+| Production branch | `main` (beta project terminology only) |
+| Root directory | repository root (empty) |
+| Build command | `npm run build:v2` |
+| Build output directory | `v2/dist` |
+| Node.js | `24` |
+| Custom domain | `beta.huihui.dev` |
+| Pages domain | `huihuidev-beta.pages.dev` |
+
+Cloudflare installs the repository dependencies and builds the three routes
+`/`, `/en/`, and `/ja/`. Git integration is the only Pages publication path;
+there is no separate Direct Upload project or manual GitHub Pages deploy job.
+The Dashboard build settings must be updated by an authorized account operator;
+repository changes alone do not switch the hosted build from the root v1 site.
+
+[Beta CD](../.github/workflows/beta-cd.yml) retains the existing exact commit,
+canonical Pages deployment, active domain and required beta Worker gates. It
+builds the expected v2 assets and runs the v2 Chromium smoke on the custom domain,
+then rechecks the active Pages identity. The smoke compares the served asset
+names with that checkout's build, checks all three locales at desktop/mobile
+sizes, theme/language interactions and delivered CSP. Challenges, redirects,
+missing headers, unexpected requests and browser errors fail closed. It never
+submits Contact, replaces live CSP headers, solves challenges or retries failures.
+The existing independent beta Worker API health checks remain in Beta CD.
+
+Run the same browser contracts locally after `npm run build:v2`:
+
+```powershell
+$env:V2_BETA_LOCAL = "1"
+npx playwright test --config=playwright.v2-beta.config.mjs
+Remove-Item Env:V2_BETA_LOCAL
+```
+
+Local mode serves the built headers on `127.0.0.1:4176`; it does not prove live
+DNS, TLS or deployment identity. PR validation runs this coverage, including
+enforcing, Report-Only and no-CSP controls and rejected navigation fixtures.
+No deployment manifest, upload token or separate Pages resolver is required.
+
+The v2 application, these build settings and this workflow are beta-only. They
+do not change the stable repository, production Pages/Worker, tags or releases.
 
 ## Structure
 
