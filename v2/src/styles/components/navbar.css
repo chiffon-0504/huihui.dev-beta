@@ -1,6 +1,14 @@
 .site-header {
   border-bottom: var(--border-width) solid var(--color-border);
   background: var(--color-surface);
+  background-image: var(--surface-background-image);
+  backdrop-filter: var(--surface-backdrop-filter);
+}
+
+.navbar :where(ul) {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .navbar {
@@ -13,7 +21,7 @@
 
 .brand {
   font-size: var(--text-large);
-  font-weight: 650;
+  font-weight: var(--font-weight-strong);
   letter-spacing: -0.04em;
   text-decoration: none;
   padding-block: var(--space-2);
@@ -36,7 +44,7 @@
 .nav-link {
   display: inline-flex;
   align-items: center;
-  min-height: 2.75rem;
+  min-height: var(--control-size);
   padding-inline: var(--space-1);
   font-size: var(--text-small);
   text-decoration: none;
@@ -55,11 +63,11 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  min-width: 2.75rem;
-  min-height: 2.75rem;
+  min-width: var(--control-size);
+  min-height: var(--control-size);
   padding: var(--space-2) var(--space-1);
   font-size: var(--text-small);
-  line-height: 1.5;
+  line-height: var(--line-height-control);
   cursor: pointer;
 }
 
@@ -78,8 +86,8 @@
 .icon {
   display: block;
   flex: none;
-  width: 1.25rem;
-  height: 1.25rem;
+  width: var(--icon-size);
+  height: var(--icon-size);
 }
 
 .theme-icon {
@@ -90,7 +98,7 @@
 .language-options,
 .theme-options {
   position: absolute;
-  z-index: 1;
+  z-index: var(--z-dropdown);
   inset-inline-end: 0;
   top: 100%;
   width: max-content;
@@ -99,6 +107,9 @@
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-small);
   background: var(--color-surface);
+  background-image: var(--surface-background-image);
+  backdrop-filter: var(--surface-backdrop-filter);
+  box-shadow: var(--shadow-popover);
 }
 
 .language-option,
@@ -106,21 +117,21 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: 2.75rem;
+  min-height: var(--control-size);
   padding: var(--space-2);
   text-decoration: none;
 }
 
 .language-option[aria-current="page"],
 .theme-option[aria-checked="true"] {
-  font-weight: 650;
+  font-weight: var(--font-weight-strong);
 }
 
 .language-selected,
 .theme-selected {
   display: flex;
   align-items: center;
-  flex: 0 0 1.25rem;
+  flex: 0 0 var(--icon-size);
 }
 
 .theme-trigger,
@@ -137,7 +148,9 @@
 }
 
 .navbar-control:hover,
-.theme-option:hover {
+.navbar-control:focus-visible,
+.theme-option:hover,
+.theme-option:focus-visible {
   color: var(--color-accent);
 }
 

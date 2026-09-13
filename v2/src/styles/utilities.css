@@ -1,0 +1,15 @@
+/* Keep the keyboard entry point above open navigation panels. */
+.skip-link {
+  position: absolute;
+  z-index: var(--z-skip-link);
+  top: var(--space-4);
+  inset-inline-start: var(--space-4);
+  max-width: calc(100% - var(--space-8));
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  transform: translateY(calc(-100% - var(--space-8)));
+}
+
+.skip-link:focus {
+  transform: none;
+}

@@ -1,0 +1,10 @@
+/* Global defaults precede components; page composition comes last. */
+@import "./tokens.css";
+@import "./reset.css";
+@import "./base.css";
+@import "./typography.css";
+@import "./layout.css";
+@import "./utilities.css";
+@import "./components/navbar.css";
+@import "./components/footer.css";
+@import "./pages/home.css";
