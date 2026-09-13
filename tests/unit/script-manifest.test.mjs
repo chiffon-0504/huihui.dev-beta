@@ -5,7 +5,9 @@ import { primaryRoutes } from "../support/routes.mjs";
 
 const root = path.resolve(import.meta.dirname, "../..");
 const localOrigin = "https://huihui.dev";
+const analyticsScript = "https://static.cloudflareinsights.com/beacon.min.js";
 const sharedPrimaryScripts = [
+  analyticsScript,
   "/js/layout.js",
   "/js/glass-material.js",
   "/js/mobile-drawer.js",
@@ -154,6 +156,31 @@ function expectBefore(scripts, dependency, consumer, relativePath) {
 }
 
 describe("route-specific JavaScript manifests", () => {
+  test("every primary v1 page embeds one matching analytics module before body end", async () => {
+    for (const { file } of primaryRoutes) {
+      const html = await readFile(path.join(root, file), "utf8");
+      const scripts = [...html.matchAll(/<script\b[^>]*>[\s\S]*?<\/script>/gi)];
+      const beacons = scripts.filter(([tag]) =>
+        /cloudflareinsights\.com|data-cf-beacon/i.test(tag),
+      );
+
+      expect(beacons, file).toHaveLength(1);
+      const [beacon] = beacons[0];
+      expect(getAttribute(beacon, "src"), file).toBe(analyticsScript);
+      expect(getAttribute(beacon, "type"), file).toBe("module");
+      expect(JSON.parse(getAttribute(beacon, "data-cf-beacon")), file).toEqual({
+        token: "298ff619afa14bec87874056c3a96a44",
+      });
+      expect(beacon.slice(beacon.indexOf(">") + 1, beacon.lastIndexOf("</script>")).trim(), file).toBe("");
+      expect(html.slice(0, beacons[0].index), file).toMatch(
+        /<!-- Cloudflare Web Analytics -->\s*$/,
+      );
+      expect(html.slice(beacons[0].index + beacon.length), file).toMatch(
+        /^\s*<!-- End Cloudflare Web Analytics -->\s*<\/body>/,
+      );
+    }
+  });
+
   for (const family of routeFamilies) {
     test(`${family.name} has one exact feature manifest with locale parity`, async () => {
       const localizedManifests = [];

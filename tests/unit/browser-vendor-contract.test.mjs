@@ -23,6 +23,7 @@ const aboutPages = [
 ];
 const allowedExternalScripts = new Set([
   "https://challenges.cloudflare.com/turnstile/v0/api.js",
+  "https://static.cloudflareinsights.com/beacon.min.js",
 ]);
 const removedRuntimeCdn = ["cdn", "jsdelivr", "net"].join(".");
 
@@ -542,6 +543,15 @@ describe("vendored browser dependencies", () => {
     );
   });
 
+  test("v2 sources and any local build remain free of the analytics beacon", async () => {
+    for (const filePath of await listFiles(path.join(root, "v2"))) {
+      const source = await readFile(filePath, "utf8");
+      expect(source, path.relative(root, filePath)).not.toMatch(
+        /cloudflareinsights\.com|data-cf-beacon|298ff619afa14bec87874056c3a96a44/i,
+      );
+    }
+  });
+
   test("CSP permits only the required browser runtime sources", async () => {
     const headers = await readFile(path.join(root, "_headers"), "utf8");
     const scriptSources = getCspSources(headers, "script-src");
@@ -559,6 +569,7 @@ describe("vendored browser dependencies", () => {
       "'self'",
       "https://api.huihui.dev",
       "https://huihui-api-beta.huihuigames01.workers.dev",
+      "https://cloudflareinsights.com",
     ]);
     expect(connectSources).not.toContain(
       "https://huihui-api.huihuigames01.workers.dev",
