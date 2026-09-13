@@ -642,6 +642,7 @@ describe("Playwright cross-browser validation contract", () => {
       "node tests/scripts/beta-http-smoke.mjs",
       "npx playwright install --with-deps chromium",
       "npx playwright test --config=playwright.v2-beta.config.mjs --project=chromium --workers=1 --retries=0",
+      "npx playwright test --config=playwright.v2-beta.config.mjs --project=chromium --workers=1 --retries=0",
       "node tests/scripts/beta-deployment-sync.mjs verify-pages-active",
     ]);
     const waitForQuiescentPages = liveSmoke.steps.find(

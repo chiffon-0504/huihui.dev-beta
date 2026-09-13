@@ -58,12 +58,34 @@ repository changes alone do not switch the hosted build from the root v1 site.
 
 [Beta CD](../.github/workflows/beta-cd.yml) retains the existing exact commit,
 canonical Pages deployment, active domain and required beta Worker gates. It
-builds the expected v2 assets and runs the v2 Chromium smoke on the custom domain,
-then rechecks the active Pages identity. The smoke compares the served asset
-names with that checkout's build, checks all three locales at desktop/mobile
-sizes, theme/language interactions and delivered CSP. Challenges, redirects,
-missing headers, unexpected requests and browser errors fail closed. It never
-submits Contact, replaces live CSP headers, solves challenges or retries failures.
+builds the expected v2 assets and runs two Chromium security contracts, then
+rechecks the active Pages identity:
+
+- **Native Pages strict contract:** the quiescence gate supplies the immutable
+  URL of the successful canonical deployment for the exact workflow SHA. The
+  browser compares HTML and loaded JS/CSS/SVG bytes with the checkout build,
+  verifies delivered security headers, and rejects every CSP violation and
+  console error. Enforce, Report-Only and no-CSP isolated probes run here.
+- **Custom-domain contract:** `https://beta.huihui.dev` runs the same three-locale
+  desktop/mobile, theme, language, build-byte and security-header checks. The
+  only platform exception is the Cloudflare Free-plan JSD bootstrap observed on
+  2026-09-13. Its entire executable text is pinned, including the iframe bootstrap
+  and `/cdn-cgi/challenge-platform/scripts/jsd/main.js`; only a hexadecimal Ray ID
+  and base64 decimal timestamp vary. Removing exactly that script must restore
+  the repository HTML byte for byte. Exactly one enforcing inline CSP event must
+  match its document, directive, policy and line, with exactly one console error
+  matching the script's SHA-256 and source location. Missing evidence, changed
+  injection, extra scripts/resources or unrelated errors fail closed. The
+  exception is unavailable on every other origin, including native Pages.
+
+Strict CSP blocks the injected bootstrap; the smoke never permits JSD execution
+or challenge requests. Challenges, redirects and missing headers remain hard
+failures. Neither contract submits Contact, replaces live CSP headers, solves
+challenges or retries failures. A future Cloudflare bootstrap or Chromium
+diagnostic change requires fresh evidence and a reviewed contract update.
+The same observation also found `/cdn-cgi/speculation` on the custom domain.
+That additional edge resource is outside the JSD exception and remains a hard
+failure; passing local fixtures or native Pages does not clear this live blocker.
 The existing independent beta Worker API health checks remain in Beta CD.
 
 Run the same browser contracts locally after `npm run build:v2`:
@@ -78,6 +100,14 @@ Local mode serves the built headers on `127.0.0.1:4176`; it does not prove live
 DNS, TLS or deployment identity. PR validation runs this coverage, including
 enforcing, Report-Only and no-CSP controls and rejected navigation fixtures.
 No deployment manifest, upload token or separate Pages resolver is required.
+Live runs select `V2_BETA_CONTRACT=pages` with the API-verified
+`V2_BETA_PAGES_URL`, or `V2_BETA_CONTRACT=custom` for the fixed beta origin.
+Build inputs must have the same bytes as the Git/Linux Pages checkout; Windows
+CRLF conversion can change emitted asset hashes and correctly fails live byte
+comparison. Local fixture tests do not prove the current edge injection or
+deployment identity. Beta CD runs on `main` pushes, so pre-merge live validation
+of test-only changes uses the verified current deployment and its unchanged
+application build; it is not a Beta CD execution for the PR SHA.
 
 The v2 application, these build settings and this workflow are beta-only. They
 do not change the stable repository, production Pages/Worker, tags or releases.

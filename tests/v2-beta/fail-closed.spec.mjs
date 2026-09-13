@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { guardBrowser, navigate } from "./browser.mjs";
-import { securityHeaders } from "../support/v2-beta-contract.mjs";
+import { cloudflareJsdBootstrap, securityHeaders } from "../support/v2-beta-contract.mjs";
 
 const origin = "http://v2-beta-fixture.test";
 const headers = securityHeaders(await readFile(new URL("../../v2/public/_headers", import.meta.url), "utf8"));
@@ -25,6 +25,49 @@ for (const scenario of ["challenge", "403", "missing-csp", "network"]) {
   });
 }
 
+// The actual browser must block the pinned bootstrap without requesting JSD.
+// No live response is intercepted by this local-only fixture suite.
+for (const scenario of ["known-jsd", "pages-jsd", "wrong-host", "changed-jsd", "extra-inline", "extra-external", "extra-console", "application-csp", "missing-fingerprint", "speculation-resource"]) {
+  test(`JSD browser evidence: ${scenario}`, async ({ page }) => {
+    const baseURL = scenario === "wrong-host" ? "https://other.test" : "https://beta.huihui.dev";
+    const builtHtml = await readFile(new URL("../../v2/dist/index.html", import.meta.url), "utf8");
+    const bootstrap = cloudflareJsdBootstrap("0123456789abcdef", "MTc4OTI4OTcwOQ==");
+    let html = builtHtml.replace("</body>", `<script>${bootstrap}</script></body>`);
+    if (scenario === "changed-jsd") html = html.replace("a.height=1", "a.height=2");
+    if (scenario === "extra-inline") html = html.replace("</body>", "<script>window.unexpected=true</script></body>");
+    if (scenario === "extra-external") html = html.replace("</body>", '<script src="https://other.test/unexpected.js"></script></body>');
+    if (scenario === "missing-fingerprint") html = builtHtml.replace("</body>", "<script>window.unexpected=true</script></body>");
+    const requests = [];
+    await page.route("**/*", async (route) => {
+      const path = new URL(route.request().url()).pathname;
+      requests.push(path);
+      if (path === "/") return route.fulfill({ headers: { ...headers, ...(scenario === "speculation-resource" ? { "Speculation-Rules": '"/cdn-cgi/speculation"' } : {}) }, contentType: "text/html", body: html });
+      if (path === "/cdn-cgi/speculation") return route.fulfill({ contentType: "application/speculationrules+json", body: '{"prefetch":[]}' });
+      if (!/^\/assets\/[\w.-]+\.(js|css|svg)$/.test(path)) return route.abort();
+      const contentType = path.endsWith(".js") ? "text/javascript" : path.endsWith(".css") ? "text/css" : "image/svg+xml";
+      await route.fulfill({ contentType, body: await readFile(new URL(`../../v2/dist${path}`, import.meta.url)) });
+    });
+    const checkErrors = await guardBrowser(page, baseURL, { contract: scenario === "pages-jsd" ? "pages" : "custom", verifyBuild: true });
+    await navigate(page, `${baseURL}/`, headers);
+    await expect(page.getByRole("main")).toBeVisible();
+    if (scenario === "extra-console") await page.evaluate(() => console.error("unrelated runtime error"));
+    if (scenario === "application-csp") await page.evaluate(() => {
+      const script = document.createElement("script");
+      script.textContent = "window.unexpected=true";
+      document.body.append(script);
+    });
+    if (scenario === "known-jsd") {
+      await checkErrors();
+      expect(await page.evaluate(() => window.unexpected)).toBeUndefined();
+      expect(await page.locator("iframe").count()).toBe(0);
+      expect(requests.some((path) => path.startsWith("/cdn-cgi/"))).toBe(false);
+    } else {
+      await expect(checkErrors()).rejects.toThrow();
+      if (scenario === "speculation-resource") expect(requests).toContain("/cdn-cgi/speculation");
+    }
+  });
+}
+
 test("browser rejects a real redirect even when the final page has valid security headers", async ({ page }) => {
   // Playwright routing does not intercept the subsequent request in a redirect chain.
   const server = createServer((request, response) => {
@@ -44,6 +87,6 @@ for (const scenario of ["console", "challenge-resource"]) {
     await navigate(page, `${origin}/`, headers);
     if (scenario === "console") await page.evaluate(() => console.error("fixture console error"));
     else await page.evaluate(() => fetch("/cdn-cgi/challenge-platform/fixture").catch(() => {}));
-    expect(checkErrors).toThrow(/Browser\/custom-domain/);
+    await expect(checkErrors()).rejects.toThrow(/Browser\/custom-domain|console error/);
   });
 }

@@ -74,6 +74,7 @@ jobs:
         run: npm run build:v2
 
       - name: Wait for quiescent Pages deployment before live smoke
+        id: pages
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_PAGES_READ_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_READ_API_TOKEN }}
@@ -86,7 +87,15 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Run live v2 Chromium deployment smoke
+      - name: Run native Pages strict CSP and application smoke
+        env:
+          V2_BETA_CONTRACT: pages
+          V2_BETA_PAGES_URL: ${{ steps.pages.outputs.pages_url }}
+        run: npx playwright test --config=playwright.v2-beta.config.mjs --project=chromium --workers=1 --retries=0
+
+      - name: Run custom beta domain application and edge smoke
+        env:
+          V2_BETA_CONTRACT: custom
         run: npx playwright test --config=playwright.v2-beta.config.mjs --project=chromium --workers=1 --retries=0
 
       - name: Re-verify active Pages deployment after live smoke

@@ -18,10 +18,7 @@ for (const locale of locales) {
       await page.setViewportSize({ width, height: 900 });
       await page.clock.setFixedTime(new Date("2026-09-12T23:00:00+08:00"));
       await page.addInitScript(() => {
-        window.previewObservations = { firstContent: null, violations: [] };
-        document.addEventListener("securitypolicyviolation", (event) => {
-          window.previewObservations.violations.push(event.effectiveDirective);
-        });
+        window.previewObservations = { firstContent: null };
         const observer = new MutationObserver(() => {
           if (!document.querySelector("#app > *")) return;
           window.previewObservations.firstContent = {
@@ -32,7 +29,7 @@ for (const locale of locales) {
         });
         observer.observe(document, { subtree: true, childList: true });
       });
-      const checkErrors = await guardBrowser(page, baseURL);
+      const checkErrors = await guardBrowser(page, baseURL, { contract: testInfo.config.metadata.contract, verifyBuild: true });
       await navigate(page, new URL(locale.route, baseURL).href, expectedHeaders);
       await expect(page.locator("html")).toHaveAttribute("lang", locale.lang);
       await expect(page.getByRole("main")).toBeVisible();
@@ -55,7 +52,7 @@ for (const locale of locales) {
         await expect(page.locator("html")).toHaveCSS("color-scheme", effective);
       }
       await page.screenshot({ path: testInfo.outputPath(`${locale.lang}-${width}-auto-dark.png`), fullPage: true });
-      expect(await page.evaluate(() => window.previewObservations.violations)).toEqual([]);
+      await checkErrors();
       await page.locator(".language-switcher summary").click();
       const destination = locale.lang === "en" ? "/ja/" : "/en/";
       const navigation = page.waitForResponse((response) => response.request().isNavigationRequest() && response.request().frame() === page.mainFrame());
@@ -63,17 +60,18 @@ for (const locale of locales) {
       await checkNavigation(await navigation, new URL(destination, baseURL).href, expectedHeaders);
       await expect(page).toHaveURL(new URL(destination, baseURL).href);
       await expect(page.getByRole("main")).toBeVisible();
-      checkErrors();
+      await checkErrors();
     });
   }
 }
 
-for (const mode of ["enforce", "report", "none"]) {
+// Custom-domain behavior is covered above. Canonical probes belong to Pages.
+for (const mode of process.env.V2_BETA_CONTRACT === "custom" ? [] : ["enforce", "report", "none"]) {
   test(`served preview CSP probe: ${mode}`, async ({ page, baseURL, context }) => {
-    const checkErrors = await guardBrowser(page, baseURL);
+    const checkErrors = await guardBrowser(page, baseURL, { verifyBuild: true });
     const delivered = await navigate(page, new URL("/", baseURL).href, expectedHeaders);
     await expect(page.getByRole("main")).toBeVisible();
-    checkErrors();
+    await checkErrors();
     const policy = delivered["content-security-policy"];
     const headers = mode === "none" ? {} : { [mode === "enforce" ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only"]: policy };
     // Only the isolated probe gets a policy override; live responses above are unmodified.
@@ -87,6 +85,6 @@ for (const mode of ["enforce", "report", "none"]) {
     if (mode === "none") expect(violations).toEqual([]);
     else expect(violations).toEqual(expect.arrayContaining([expect.objectContaining({ disposition: mode, blockedURI: "inline" })]));
     await probe.close();
-    checkErrors();
+    await checkErrors();
   });
 }
