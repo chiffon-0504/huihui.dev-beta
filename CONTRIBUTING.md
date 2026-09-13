@@ -30,8 +30,8 @@ The entries below describe coverage, not a checklist to run for every change.
 | `npm run test:unit` | Unit and static contracts, including the existing v2 unit contracts. |
 | `npm run test:e2e` | Default local Chromium E2E suite in `playwright.config.mjs`. |
 | `npm test` | Runs `check:js`, `test:unit`, then `test:e2e`; it does not include every validation surface below. |
-| `npm run check:ts` | v2 TypeScript checking. |
-| `npm run build:v2` | Includes `check:ts`, then builds v2 with Vite. |
+| `npm run check:v2:types` | Strict v2 TypeScript checking using `v2/tsconfig.json`; `check:ts` remains a compatibility alias. |
+| `npm run build:v2` | Includes `check:v2:types`, then builds v2 with Vite. |
 | `npm run test:e2e:v2` | Includes `build:v2`, then v2 Chromium, Firefox and WebKit tests; see [v2 guidance](v2/README.md). |
 | Cross-browser critical | Separate Firefox/WebKit subset via [playwright.cross-browser.config.mjs](playwright.cross-browser.config.mjs). |
 | Full-compatible | Separate Firefox/WebKit coverage via [playwright.full-cross-browser.config.mjs](playwright.full-cross-browser.config.mjs), with that config's existing exclusions. |
