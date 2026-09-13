@@ -66,13 +66,13 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           DEPLOYMENT_URL: ${{ steps.pages.outputs.deployment-url }}
         run: node tests/scripts/v2-preview-deployment.mjs resolve
-      - name: Verify exact deployment and custom-domain bytes
+      - name: Verify exact Pages identity and immutable artifact bytes
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           DEPLOYMENT_ID: ${{ steps.deployment.outputs.deployment-id }}
         run: node tests/scripts/v2-preview-deployment.mjs verify
-      - name: Verify live v2 browser behavior
+      - name: Verify custom-domain identity and behavior in Chromium
         run: npx playwright test --config=playwright.v2-preview.config.mjs
       - name: Recheck active deployment after browser verification
         env:

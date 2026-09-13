@@ -1,9 +1,11 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { parseDocument } from "yaml";
-import { PROJECT, findDeploymentId, resolve, validateDeployment, validateProject, validateSha } from "../scripts/v2-preview-deployment.mjs";
+import { DOMAIN, PROJECT, cloudflare, findDeploymentId, resolve, validateDeployment, validateProject, validateSha, verify } from "../scripts/v2-preview-deployment.mjs";
+import { responseMetadata, securityHeaders, validateManifest, validateResponse } from "../support/v2-preview-contract.mjs";
 
 const sha = "a".repeat(40);
 const id = "12345678-1234-1234-1234-123456789abc";
@@ -39,6 +41,8 @@ describe("Pages API resolves the exact upload without latest-deployment guessing
     ["project_name", "huihuidev-beta"], ["url", `https://${PROJECT}.pages.dev`],
     ["id", "invalid\ndeployment-id=injected"], ["environment", "preview"],
     ["latest_stage", { name: "deploy", status: "failure" }],
+    ["url", `https://87654321.${PROJECT}.pages.dev`],
+    ["url", `${uploadUrl}/path`], ["url", `${uploadUrl}?token=hidden`],
   ])("rejects an upload with wrong %s", async (key, value) => {
     await expect(findDeploymentId(sha, uploadUrl, async () => pageResponse([{ ...deployment(), [key]: value }]))).rejects.toThrow();
   });
@@ -150,9 +154,128 @@ test("v2 workflow isolates writes and verifies uploaded identity before and afte
     expect(steps.indexOf(step)).toBeGreaterThan(resolveIndex);
     expect(step.env.DEPLOYMENT_ID).toBe("${{ steps.deployment.outputs.deployment-id }}");
   }
+  const browserIndex = steps.findIndex((step) => step.run === "npx playwright test --config=playwright.v2-preview.config.mjs");
+  expect(steps.indexOf(verifySteps[0])).toBeLessThan(browserIndex);
+  expect(steps.indexOf(verifySteps[1])).toBeGreaterThan(browserIndex);
+  for (const step of [...verifySteps, steps[browserIndex]]) {
+    expect(step["continue-on-error"]).toBeUndefined();
+    expect(step.if).toBeUndefined();
+  }
   expect(source).not.toContain("pages-deployment-id");
   expect(steps.filter((step) => step.uses)).toSatisfy((actions) => actions.every((step) => /@[a-f0-9]{40}$/.test(step.uses)));
   expect(source).not.toMatch(/workers\/huihui-api|huihui\.dev-stable|environment: production|secrets: inherit/);
+});
+
+describe("immutable bytes and active Pages identity", () => {
+  async function fixture(run) {
+    const root = await mkdtemp(join(tmpdir(), "v2-immutable-"));
+    const directory = pathToFileURL(`${root}/`);
+    const headerSource = await readFile(new URL("../../v2/public/_headers", import.meta.url), "utf8");
+    const headers = securityHeaders(headerSource);
+    const files = ["deployment.json", "index.html", "en/index.html", "ja/index.html", "assets/app.js", "assets/app.css"];
+    try {
+      for (const subdir of ["en", "ja", "assets"]) await mkdir(join(root, subdir));
+      await writeFile(new URL("_headers", directory), headerSource);
+      for (const file of files) await writeFile(new URL(file, directory), `bytes:${file}`);
+      vi.stubEnv("DEPLOYMENT_ID", id);
+      const project = { name: PROJECT, production_branch: "main", canonical_deployment: deployment() };
+      const domain = { name: DOMAIN, status: "active" };
+      const candidate = deployment();
+      const request = vi.fn(async (path) => {
+        if (path === `/deployments/${id}`) return candidate;
+        if (path === "") return project;
+        if (path === `/domains/${DOMAIN}`) return domain;
+        throw new Error("Unexpected API path");
+      });
+      const artifactFetch = vi.fn(async (url) => {
+        const route = new URL(url).pathname.slice(1);
+        const file = route.endsWith("/") || !route ? `${route}index.html` : route;
+        const response = new Response(await readFile(new URL(file, directory)), { headers });
+        Object.defineProperty(response, "url", { value: url });
+        return response;
+      });
+      await run({ directory, request, artifactFetch, candidate, project, domain, headers, files });
+    } finally { await rm(root, { recursive: true, force: true }); }
+  }
+
+  test("compares manifest, three HTML entries and all assets only at the API-verified immutable URL", async () => {
+    await fixture(async ({ directory, request, artifactFetch }) => {
+      await verify(sha, { directory, request, artifactFetch });
+      expect(request.mock.calls.map(([path]) => path)).toEqual([`/deployments/${id}`, "", `/domains/${DOMAIN}`]);
+      expect(artifactFetch.mock.calls.map(([url]) => url)).toEqual([
+        `${uploadUrl}/deployment.json`, `${uploadUrl}/`, `${uploadUrl}/en/`, `${uploadUrl}/ja/`, `${uploadUrl}/assets/app.css`, `${uploadUrl}/assets/app.js`,
+      ]);
+      for (const [, options] of artifactFetch.mock.calls) {
+        expect(options.redirect).toBe("error");
+        expect(options.headers).toBeUndefined();
+      }
+    });
+  });
+
+  test.each(["inactive-domain", "wrong-domain", "canonical-id", "canonical-sha", "canonical-url", "wrong-url", "in-progress", "dirty"])("blocks bytes before an invalid API identity: %s", async (scenario) => {
+    await fixture(async ({ directory, request, artifactFetch, candidate, project, domain }) => {
+      if (scenario === "inactive-domain") domain.status = "pending";
+      if (scenario === "wrong-domain") domain.name = "beta.huihui.dev";
+      if (scenario === "canonical-id") project.canonical_deployment.id = "87654321-1234-1234-1234-123456789abc";
+      if (scenario === "canonical-sha") project.canonical_deployment.deployment_trigger.metadata.commit_hash = "b".repeat(40);
+      if (scenario === "canonical-url") project.canonical_deployment.url = `https://${PROJECT}.pages.dev`;
+      if (scenario === "wrong-url") candidate.url = `https://${DOMAIN}`;
+      if (scenario === "in-progress") candidate.latest_stage.status = "active";
+      if (scenario === "dirty") candidate.deployment_trigger.metadata.commit_dirty = true;
+      await expect(verify(sha, { directory, request, artifactFetch })).rejects.toThrow();
+      expect(artifactFetch).not.toHaveBeenCalled();
+    });
+  });
+
+  test.each(["bytes", "csp", "nosniff", "challenge", "redirect", "network"])("fails immediately on immutable %s failure without logging bodies", async (scenario) => {
+    await fixture(async ({ directory, request, artifactFetch, headers }) => {
+      artifactFetch.mockImplementation(async (url) => {
+        if (scenario === "network") throw new Error("secret network detail");
+        const altered = { ...headers };
+        if (scenario === "csp") delete altered["content-security-policy"];
+        if (scenario === "nosniff") altered["x-content-type-options"] = "wrong";
+        if (scenario === "challenge") altered["cf-mitigated"] = "challenge";
+        const response = new Response(scenario === "bytes" ? "secret response body" : "bytes:deployment.json", { headers: altered, status: scenario === "challenge" ? 403 : 200 });
+        Object.defineProperty(response, "url", { value: scenario === "redirect" ? `${uploadUrl}/other` : url });
+        return response;
+      });
+      await expect(verify(sha, { directory, request, artifactFetch })).rejects.toThrow(/Immutable/);
+      expect(artifactFetch).toHaveBeenCalledOnce();
+    });
+  });
+});
+
+test.each([["", "project lookup"], [`/deployments/${id}`, "deployment lookup"], [`/domains/${DOMAIN}`, "custom-domain lookup"]])("API 404 identifies its lookup context: %s", async (path, context) => {
+  vi.stubEnv("CLOUDFLARE_ACCOUNT_ID", "a".repeat(32));
+  vi.stubEnv("CLOUDFLARE_API_TOKEN", "unit-test-token");
+  const json = vi.fn();
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 404, json }));
+  await expect(cloudflare(path)).rejects.toThrow(`Pages API ${context}: HTTP 404`);
+  expect(json).not.toHaveBeenCalled();
+});
+
+test("diagnostics exclude cookies, auth, bodies and secret redirect query strings", () => {
+  const headers = { server: "cloudflare", "cf-ray": "safe-ray", "cf-mitigated": "challenge", "set-cookie": "secret-cookie", authorization: "secret-token", location: "https://example.com/?token=secret" };
+  expect(responseMetadata(403, headers)).toBe('{"status":403,"server":"cloudflare","cf-ray":"safe-ray","cf-mitigated":"challenge"}');
+  expect(() => validateResponse({ status: 403, headers }, uploadUrl, "Browser/custom-domain")).toThrow("challenge/security response");
+  expect(() => validateResponse({ status: 200, headers: {}, url: "secret-url", redirected: true }, uploadUrl, "Browser/custom-domain")).toThrow("unexpected redirect");
+  expect(() => validateManifest({ project: "secret", repository: "secret", sha: "secret" }, { project: PROJECT })).toThrow("manifest project identity mismatch");
+});
+
+test("custom-domain acceptance uses browser evaluation and navigation with no raw HTTP or bypass", async () => {
+  const browser = await readFile(new URL("../v2-preview/browser.mjs", import.meta.url), "utf8");
+  const smoke = await readFile(new URL("../v2-preview/smoke.spec.mjs", import.meta.url), "utf8");
+  const config = await readFile(new URL("../../playwright.v2-preview.config.mjs", import.meta.url), "utf8");
+  const node = await readFile(new URL("../scripts/v2-preview-deployment.mjs", import.meta.url), "utf8");
+  expect(browser).toContain("page.evaluate(async () =>");
+  expect(browser).toContain('fetch("/deployment.json"');
+  expect(smoke).toContain("checkBrowserManifest(page, expectedManifest, expectedHeaders)");
+  expect(smoke).toContain("const policy = delivered[\"content-security-policy\"]");
+  expect(`${browser}\n${smoke}`).not.toMatch(/(?:request|context\.request|page\.request)\.(?:get|fetch|newContext)\s*\(|route\.fetch\s*\(/);
+  expect(node).not.toContain("fetch(`https://${DOMAIN}");
+  expect(`${browser}\n${smoke}`).not.toMatch(/userAgent\s*:|setExtraHTTPHeaders|ignoreHTTPSErrors|waitForTimeout|setTimeout|test\.(?:skip|fixme)/);
+  expect(config).toContain("retries: 0");
+  expect(config).toContain('trace: "off"');
 });
 
 test("built preview policy has no inline/dynamic code or production API permission", async () => {
