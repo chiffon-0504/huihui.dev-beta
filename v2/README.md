@@ -1,8 +1,9 @@
 # v2 application shell
 
-An independent Vanilla TypeScript application. The existing v1 site and its
-deployment configuration remain in place while v2 is built. Nothing from the v1
-CSS, scripts, widgets, or vendor bundle is imported by this application.
+A Vanilla TypeScript application for v2 development in `huihui.dev-beta`.
+The existing beta Pages project hosts this application. The separate stable
+repository and `huihui.dev` remain on v1.6.4. Nothing from the v1 CSS, scripts,
+widgets, or vendor bundle is imported by this application.
 
 ## Local development
 
@@ -29,128 +30,57 @@ only to exercise real sunrise/sunset transitions.
 
 The v2 server serves `/`, `/en/`, and `/ja/`. The generated `v2/dist/` is a
 standalone site root; opening the source HTML directly or using the v1 static
-server does not compile TypeScript. Vite copies `public/_headers` into the build
-for the independent preview described below. Existing shell browser tests retain
-their root `_headers` CSP coverage; preview smoke tests additionally exercise
-the v2 policy delivered as HTTP headers.
+server does not compile TypeScript. Vite copies `public/_headers` into the build.
+This self-only CSP, noindex policy and revalidation headers apply to v2 beta.
+Existing shell tests also retain coverage under the root v1 `_headers` policy.
 
-## Independent online beta preview
+## Beta deployment
 
-The [v2 deployment workflow](../.github/workflows/deploy-v2-beta.yml) builds every
-push to `chiffon-0504/huihui.dev-beta/main` with Node.js 24, `npm ci`, v2 unit
-contracts and `npm run build:v2`. It uploads only **`v2/dist/`** using the pinned
-Wrangler action/version to the separate Direct Upload Pages project
-**`huihuidev-v2-beta`**, production branch `main`. In this project, Cloudflare's
-"production" deployment environment means the v2 preview's main branch; it is
-unrelated to the production site or GitHub `production` Environment.
+Use the existing Cloudflare Pages Git integration:
 
-The stable preview routes are:
+| Setting | Required value |
+| --- | --- |
+| Repository | `chiffon-0504/huihui.dev-beta` |
+| Pages project | `huihuidev-beta` |
+| Production branch | `main` (beta project terminology only) |
+| Root directory | repository root (empty) |
+| Build command | `npm run build:v2` |
+| Build output directory | `v2/dist` |
+| Node.js | `24` |
+| Custom domain | `beta.huihui.dev` |
+| Pages domain | `huihuidev-beta.pages.dev` |
 
-- <https://v2.beta.huihui.dev/>
-- <https://v2.beta.huihui.dev/en/>
-- <https://v2.beta.huihui.dev/ja/>
+Cloudflare installs the repository dependencies and builds the three routes
+`/`, `/en/`, and `/ja/`. Git integration is the only Pages publication path;
+there is no separate Direct Upload project or manual GitHub Pages deploy job.
+The Dashboard build settings must be updated by an authorized account operator;
+repository changes alone do not switch the hosted build from the root v1 site.
 
-These are target URLs until the external setup below is complete. A manual
-workflow dispatch on beta `main` can initialize or recover the preview after
-external setup; dispatches on other branches or repositories cannot deploy.
-PRs validate without deploying v2. The workflow is serialized, checks that its
-SHA is still the current main immediately before upload, and never cancels an
-in-flight upload to make room for another run.
+[Beta CD](../.github/workflows/beta-cd.yml) retains the existing exact commit,
+canonical Pages deployment, active domain and required beta Worker gates. It
+builds the expected v2 assets and runs the v2 Chromium smoke on the custom domain,
+then rechecks the active Pages identity. The smoke compares the served asset
+names with that checkout's build, checks all three locales at desktop/mobile
+sizes, theme/language interactions and delivered CSP. Challenges, redirects,
+missing headers, unexpected requests and browser errors fail closed. It never
+submits Contact, replaces live CSP headers, solves challenges or retries failures.
+The existing independent beta Worker API health checks remain in Beta CD.
 
-The upload specifies `--branch=main`, the full `github.sha`, and a clean commit.
-`deployment.json` records the project, repository and exact checkout SHA. After
-upload, the Pages API resolves the deployment ID by matching the action's immutable
-upload URL, project, main branch and full SHA across all result pages (at most 100).
-Zero or multiple matches, incomplete pagination or an unsuccessful deployment fail
-closed. Both verification steps receive this API-resolved ID and require successful
-state immediately. The verifier checks project, main branch, clean SHA, active
-canonical deployment and custom-domain status. The API-returned immutable URL must
-match the exact deployment ID; project/branch aliases and latest-deployment shortcuts
-are rejected. Only that immutable URL serves the manifest, all three HTML entries
-and every asset for byte-for-byte comparison with the build, including the expected
-CSP and security/cache headers. These checks run again after Chromium smoke.
-
-The custom domain is verified exclusively through Chromium navigation and an
-in-page same-origin manifest fetch under the actual enforcing CSP. Its manifest
-must match the project, repository and full `TARGET_SHA`. Node fetch and Playwright
-APIRequestContext are not custom-domain acceptance layers: Cloudflare Bot Fight
-Mode can legitimately challenge those clients. The CSP probe takes its policy from
-the real browser navigation response, with no raw HTTP request or replacement
-header on the live page. API errors identify project, deployment or domain lookup;
-HTTP/security diagnostics allow only status and selected non-secret edge headers.
-Traces and automatic failure DOM snapshots are disabled to avoid retaining cookies
-or challenge bodies. Console/script errors remain blocking without logging their text.
-
-Challenges, 403s, redirects, missing security headers, manifest mismatch and browser
-failures all fail closed. There are no retries, sleeps, user-agent spoofing, security
-bypasses or attempts to solve challenges. A challenged Chromium runner still fails;
-moving browser acceptance does not guarantee Cloudflare will admit automation.
-
-The preview's self-only CSP permits the compiled external theme bootstrap and
-application/CSS bundles, without inline/eval permissions or production API access.
-The site sends `X-Robots-Tag: noindex, nofollow` and revalidation cache headers.
-ZH/EN/JA desktop/mobile smoke covers initialization, CSS, Light/Dark/Auto, the
-initial Auto theme before app content, language navigation, overflow and browser
-errors. CSP enforcement has Report-Only and no-CSP negative controls using an
-isolated probe. Live pages themselves never receive replacement CSP headers.
-Requests to Contact, unrelated APIs and other origins are blocked by the smoke.
-
-Run the focused preview validation locally after `npm run build:v2`:
+Run the same browser contracts locally after `npm run build:v2`:
 
 ```powershell
-npx vitest run tests/unit/v2-
-$env:V2_PREVIEW_LOCAL = "1"
-npx playwright test --config=playwright.v2-preview.config.mjs
-Remove-Item Env:V2_PREVIEW_LOCAL
+$env:V2_BETA_LOCAL = "1"
+npx playwright test --config=playwright.v2-beta.config.mjs
+Remove-Item Env:V2_BETA_LOCAL
 ```
 
-Local mode uses Vite on `127.0.0.1:4176`, delivering the built `_headers` through
-a small global-rule adapter and an explicitly local-only manifest fixture using
-the checkout SHA. Negative browser fixtures prove challenge/403/redirect failure,
-manifest rejection and that enforcing CSP can block the in-page manifest request.
-Local mode does not prove live DNS/TLS or edge deployment. Without local mode,
-`TARGET_SHA` is mandatory and smoke uses only `https://v2.beta.huihui.dev`.
+Local mode serves the built headers on `127.0.0.1:4176`; it does not prove live
+DNS, TLS or deployment identity. PR validation runs this coverage, including
+enforcing, Report-Only and no-CSP controls and rejected navigation fixtures.
+No deployment manifest, upload token or separate Pages resolver is required.
 
-### External setup and permission blocker
-
-On 2026-09-12, read-only inspection found no `huihuidev-v2-beta` project or
-`v2.beta.huihui.dev` DNS record. Creating the separate project through the
-available Cloudflare connector failed with **10000: Authentication error**;
-re-reading confirmed that no project was created. No credential was replaced,
-rotated, printed or requested. Wrangler was unavailable on the local PATH and no
-Cloudflare token environment variable was present; no local upload was attempted.
-
-An authorized Cloudflare account operator must complete these exact actions:
-
-1. Create a **Direct Upload** Pages project named `huihuidev-v2-beta` in the same
-   account as the existing beta project, with production branch `main`, no Git
-   integration and no Functions/Worker bindings. GitHub runs the build from the
-   repository root; Pages receives `v2/dist/`, so it needs no hosted build command.
-2. Add `v2.beta.huihui.dev` under that project's **Custom domains** and create only
-   its CNAME to `huihuidev-v2-beta.pages.dev`. Complete Pages domain verification
-   and certificate activation. Do not change existing apex, www or beta records.
-3. Confirm the existing GitHub `CLOUDFLARE_ACCOUNT_ID` identifies that account and
-   `CLOUDFLARE_API_TOKEN` has **Account / Cloudflare Pages / Edit** there. The secret
-   exists, but its value and scopes cannot be retrieved from GitHub; successful
-   Worker deployment or Pages reads do not prove Pages upload permission. The
-   connector's rejected write does not establish the separately stored GitHub
-   token's scope. Additional permission is required for the connector; whether
-   the existing GitHub token also needs it is unverified. Do not use the existing
-   `CLOUDFLARE_PAGES_READ_API_TOKEN` to upload, weaken controls or rotate tokens.
-4. After this PR is reviewed and merged by the owner, allow the main push workflow
-   to run, or dispatch **Deploy v2 beta preview** on the current beta `main` after
-   setup. Require deployment identity and live smoke success before treating the
-   target URLs as verified. The agent does not merge the PR.
-
-Cloudflare documents [Direct Upload CI](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/)
-and [custom-domain association before DNS](https://developers.cloudflare.com/pages/configuration/custom-domains/).
-DNS configuration requires permission to edit the `huihui.dev` zone's DNS; the
-CI upload token does not need DNS Edit merely to deploy to an associated domain.
-
-This flow does not change `huihuidev-beta`, `beta.huihui.dev`, `huihui.dev`,
-`huihui.dev-stable`, existing v1 build/deployment behavior, production Pages,
-Workers, production DNS/routes, release tags or versions. Existing v1 Pages
-Git-integration branch previews may still run when this PR branch is pushed.
+The v2 application, these build settings and this workflow are beta-only. They
+do not change the stable repository, production Pages/Worker, tags or releases.
 
 ## Structure
 

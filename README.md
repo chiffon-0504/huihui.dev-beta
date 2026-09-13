@@ -145,6 +145,14 @@ The [Worker workflow](.github/workflows/deploy-huihui-api-worker.yml) enforces s
 
 GitHub remains the source of truth. Cloudflare Pages Git integration publishes static content. GitHub Actions validates the repository and deploys Workers. The beta Worker uses the named Wrangler `beta` environment, while the production Worker uses the default production Wrangler environment, keeping the deployment targets separate.
 
+Beta now targets v2 development through the existing `huihuidev-beta` Pages
+project at `beta.huihui.dev` and `huihuidev-beta.pages.dev`. Its Git integration
+must build from the repository root with `npm run build:v2` on Node.js 24 and
+publish `v2/dist`; see the [v2 deployment settings](v2/README.md#beta-deployment).
+Beta CD verifies the v2 site and the existing beta Worker state. The stable
+repository and `huihui.dev` remain on v1.6.4; this beta architecture change does
+not authorize or perform a stable promotion or production release.
+
 The production deployment job is assigned to the GitHub `production` Environment, but that Environment currently has no required reviewers, deployment branch policy, or other protection rules. Those controls are therefore not current deployment gates. Required reviewers and Environment protection rules can be added as optional hardening if approval-based production releases are needed.
 
 ---

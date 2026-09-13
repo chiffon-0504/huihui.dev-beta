@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { validateManifest, validateResponse, validateSecurityHeaders } from "../support/v2-preview-contract.mjs";
+import { validateResponse, validateSecurityHeaders } from "../support/v2-beta-contract.mjs";
 
 export async function checkNavigation(response, expectedUrl, expectedHeaders) {
   assert(response, "Browser/custom-domain navigation: missing response");
@@ -15,29 +15,6 @@ export async function navigate(page, url, expectedHeaders) {
   try { response = await page.goto(url, { waitUntil: "domcontentloaded" }); }
   catch { throw new Error("Browser/custom-domain navigation: network, timeout or blocked redirect; verification failed"); }
   return checkNavigation(response, url, expectedHeaders);
-}
-
-export async function checkBrowserManifest(page, expected, expectedHeaders) {
-  // This fetch executes inside the real page under its delivered enforcing CSP.
-  // APIRequestContext and Node fetch must never own custom-domain acceptance.
-  let result;
-  try {
-    result = await page.evaluate(async () => {
-      const response = await fetch("/deployment.json", { cache: "no-store", redirect: "error", signal: AbortSignal.timeout(15_000) });
-      const headers = Object.fromEntries([...response.headers].filter(([name]) => [
-        "server", "content-type", "cf-ray", "cf-cache-status", "cf-mitigated",
-        "content-security-policy", "x-content-type-options", "referrer-policy", "x-robots-tag", "cache-control",
-      ].includes(name)));
-      const metadata = { status: response.status, url: response.url, redirected: response.redirected, headers };
-      if (response.status !== 200 || headers["cf-mitigated"] || !headers["content-type"]?.includes("application/json")) return metadata;
-      try { return { ...metadata, manifest: await response.json() }; }
-      catch { return metadata; }
-    });
-  } catch { throw new Error("Browser/custom-domain manifest: network, CSP, timeout or redirect failure"); }
-  validateResponse(result, new URL("/deployment.json", page.url()).href, "Browser/custom-domain manifest");
-  validateSecurityHeaders(result.headers, expectedHeaders, "Browser/custom-domain manifest");
-  assert(result.headers["content-type"]?.includes("application/json"), "Browser/custom-domain manifest: expected JSON; possible security response");
-  validateManifest(result.manifest, expected);
 }
 
 export async function guardBrowser(page, baseURL) {

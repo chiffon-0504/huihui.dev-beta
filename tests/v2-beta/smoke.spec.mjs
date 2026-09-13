@@ -1,11 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { openCspProbe } from "../support/csp-enforcement.mjs";
 import { readFile } from "node:fs/promises";
-import { PROJECT, REPOSITORY, validateSha } from "../scripts/v2-preview-deployment.mjs";
-import { securityHeaders } from "../support/v2-preview-contract.mjs";
-import { checkBrowserManifest, checkNavigation, guardBrowser, navigate } from "./browser.mjs";
+import { securityHeaders } from "../support/v2-beta-contract.mjs";
+import { checkNavigation, guardBrowser, navigate } from "./browser.mjs";
 
-const expectedManifest = { project: PROJECT, repository: REPOSITORY, sha: validateSha(process.env.TARGET_SHA) };
 const expectedHeaders = securityHeaders(await readFile(new URL("../../v2/public/_headers", import.meta.url), "utf8"));
 
 const locales = [
@@ -36,13 +34,15 @@ for (const locale of locales) {
       });
       const checkErrors = await guardBrowser(page, baseURL);
       await navigate(page, new URL(locale.route, baseURL).href, expectedHeaders);
-      await checkBrowserManifest(page, expectedManifest, expectedHeaders);
       await expect(page.locator("html")).toHaveAttribute("lang", locale.lang);
       await expect(page.getByRole("main")).toBeVisible();
       await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
       await expect(page.locator("html")).toHaveCSS("color-scheme", "dark");
       expect(await page.evaluate(() => window.previewObservations.firstContent)).toEqual({ theme: "dark", colorScheme: "dark" });
       const assets = await page.locator("script[src], link[rel=stylesheet]").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("src") || node.getAttribute("href")));
+      const builtHtml = await readFile(new URL(`../../v2/dist${locale.route}index.html`, import.meta.url), "utf8");
+      const builtAssets = [...builtHtml.matchAll(/(?:src|href)="(\/assets\/[^"\s]+\.(?:js|css))"/g)].map((match) => match[1]);
+      expect(assets.sort()).toEqual(builtAssets.sort());
       expect(assets.some((asset) => /\/assets\/.*\.css$/.test(asset))).toBe(true);
       expect(assets.some((asset) => /\/assets\/theme-bootstrap-.*\.js$/.test(asset))).toBe(true);
       for (const asset of assets) expect(asset).toMatch(/^\/assets\/[\w.-]+\.(js|css)$/);

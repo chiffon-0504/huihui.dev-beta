@@ -37,10 +37,3 @@ export function validateSecurityHeaders(actual, expected, context) {
     assert(actual[name] === value, `${context}: ${name} delivery mismatch`);
   }
 }
-
-export function validateManifest(manifest, expected) {
-  assert(manifest && Object.keys(manifest).sort().join(",") === "project,repository,sha", "Browser/custom-domain manifest schema mismatch");
-  for (const key of ["project", "repository", "sha"]) {
-    assert(manifest[key] === expected[key], `Browser/custom-domain manifest ${key} identity mismatch`);
-  }
-}
