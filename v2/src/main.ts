@@ -4,13 +4,7 @@ import { createHome } from "./pages/home";
 import { content, resolveLocale } from "./content";
 import { link } from "./dom";
 import { createThemeController } from "./theme/controller";
-import "./styles/tokens.css";
-import "./styles/reset.css";
-import "./styles/base.css";
-import "./styles/layout.css";
-import "./styles/components/navbar.css";
-import "./styles/components/footer.css";
-import "./styles/pages/home.css";
+import "./styles/index.css";
 
 const theme = createThemeController();
 const app = document.querySelector<HTMLElement>("#app");

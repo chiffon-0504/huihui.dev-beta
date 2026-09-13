@@ -140,7 +140,7 @@ v2/
 │  ├─ types/          # Reserved for future shared application types
 │  ├─ pages/          # Existing page modules
 │  ├─ theme/          # Existing theme implementation
-│  ├─ styles/         # Existing v2 CSS
+│  ├─ styles/         # Canonical v2 CSS foundation
 │  ├─ content.ts      # Current typed localized content
 │  └─ dom.ts          # Current DOM helpers
 ├─ en/index.html
@@ -164,10 +164,56 @@ flow remain independent of these TypeScript commands.
 framework or API request. A root-owned theme controller is passed to the navbar;
 theme preference, solar calculation and presentation have separate modules.
 
-`styles/` separates tokens, reset, base, layout, component styles, and Home
-styles. The sole initial responsive breakpoint is `40rem`, documented in
-`tokens.css` and used directly in media queries because CSS custom properties
-cannot supply media-query conditions. No animation or transition is included.
+### CSS design system
+
+`src/main.ts` imports only `styles/index.css`, which owns the explicit cascade
+order below. No CSS framework, preprocessor or v1 stylesheet is imported.
+
+```text
+styles/
+├─ index.css           # Ordered imports: foundations, utilities, components, pages
+├─ tokens.css          # Canonical primitives and Light/Dark semantic palettes
+├─ reset.css           # Sizing, margins, media and native control inheritance
+├─ base.css            # Document colors, links and shared visible focus
+├─ typography.css      # Body, heading, label, small text and code defaults
+├─ layout.css          # Full-height shell and responsive container
+├─ utilities.css       # Keyboard skip link only
+├─ components/
+│  ├─ navbar.css       # Existing navigation and native theme/language controls
+│  └─ footer.css       # Existing footer
+└─ pages/
+   └─ home.css         # Provisional Home composition only
+```
+
+Only `tokens.css` owns global design values: semantic colors, opaque surface
+treatment, popover shadows, spacing, radii, font families/sizes/weights/leading,
+content widths, control/icon sizes, stacking, focus and motion. The existing
+`--color-background`, `--color-surface`, `--color-text`, `--color-muted`,
+`--color-border`, `--color-accent` and `--color-focus` names remain canonical;
+do not add a second palette or aliases for the same roles. Light/Dark values
+and native `color-scheme` remain paired. Surfaces deliberately use no gradient
+or glass blur. Add tokens for shared needs, not individual page adjustments.
+
+The single breakpoint is `40rem`: tokens reduce gutters from 1.5rem to 1rem
+and section spacing from 6rem to 4rem; the existing navbar wraps and Home
+placeholders stack. Use that literal in media queries because custom properties
+cannot supply query conditions. Font sizes use rem; the display heading mixes
+rem and viewport sizing within rem bounds so enlarged text can grow. Do not
+lock root text sizing or hide horizontal overflow to mask reflow defects.
+
+Native controls keep their appearance unless the existing navigation component
+provides its own treatment. List-marker removal is scoped to navigation, leaving
+future content lists intact. Keyboard focus uses shared color/width/offset/radius
+tokens; the skip link sits above dropdowns. The shell has no transitions,
+animations or smooth scrolling. Future optional motion must consume the duration
+tokens (zero under `prefers-reduced-motion: reduce`); nonessential keyframes and
+smooth scrolling also need an explicit reduced-motion alternative.
+
+Add reusable component styles under `components/` only with a real consumer.
+Future page composition belongs in `pages/`, after the shared layers; generic
+typography and layout must not acquire page selectors. Keep utilities small.
+V1 CSS is reference material only: do not incrementally copy legacy blocks into
+this system. This foundation does not reconstruct any individual page.
 
 The primary links point to the Home `#works` and `#about` placeholders until
 those pages are implemented. All navigation remains visible on mobile and wraps

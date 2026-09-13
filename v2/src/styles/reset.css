@@ -4,15 +4,24 @@
   box-sizing: border-box;
 }
 
-body, h1, h2, p, ul {
+:where(body, h1, h2, h3, h4, h5, h6, p, figure, blockquote, pre) {
   margin: 0;
 }
 
-ul {
-  padding: 0;
-  list-style: none;
+html {
+  min-height: 100%;
 }
 
-button, input, select, textarea {
+:where(button, input, select, textarea) {
   font: inherit;
+  letter-spacing: inherit;
+}
+
+:where(img, video, canvas, svg) {
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+:where(img, video) {
+  height: auto;
 }

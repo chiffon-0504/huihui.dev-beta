@@ -6,16 +6,10 @@
 }
 
 .container {
-  width: min(var(--content-width), calc(100% - var(--space-12)));
+  width: min(var(--content-width), calc(100% - 2 * var(--gutter)));
   margin-inline: auto;
 }
 
 main {
   flex: 1;
-}
-
-@media (max-width: 40rem) {
-  .container {
-    width: calc(100% - var(--space-8));
-  }
 }

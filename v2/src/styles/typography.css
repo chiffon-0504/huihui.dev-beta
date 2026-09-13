@@ -1,0 +1,50 @@
+html {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height);
+}
+
+body {
+  font-size: var(--text-base);
+}
+
+:where(h1, h2, h3, h4, h5, h6) {
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-heading);
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: var(--text-display);
+  line-height: var(--line-height-heading);
+  letter-spacing: var(--tracking-display);
+}
+
+h2 {
+  font-size: var(--text-heading);
+}
+
+h3 {
+  font-size: var(--text-subheading);
+}
+
+:where(h4, h5, h6) {
+  font-size: var(--text-base);
+}
+
+:where(label, legend) {
+  font-weight: var(--font-weight-medium);
+}
+
+small {
+  font-size: var(--text-small);
+}
+
+:where(code, kbd, samp, pre) {
+  font-family: var(--font-mono);
+}
+
+pre {
+  max-width: 100%;
+  overflow-x: auto;
+}

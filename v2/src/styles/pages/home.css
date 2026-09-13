@@ -1,27 +1,22 @@
 .hero {
-  padding-block: var(--space-24);
-  max-width: 54rem;
+  padding-block: var(--section-space);
+  max-width: var(--content-width-narrow);
 }
 
 .eyebrow {
   color: var(--color-accent);
   font-size: var(--text-small);
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-label);
   margin-bottom: var(--space-6);
 }
 
 .hero-title {
   max-width: 17ch;
-  font-size: clamp(2.25rem, 4.5vw, 4rem);
-  line-height: 1.2;
-  letter-spacing: -0.045em;
-  font-weight: 600;
-  text-wrap: balance;
 }
 
 .hero-introduction {
-  max-width: 44rem;
+  max-width: var(--content-width-prose);
   margin-top: var(--space-6);
   color: var(--color-muted);
   font-size: var(--text-large);
@@ -31,7 +26,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-12);
-  padding-bottom: var(--space-24);
+  padding-bottom: var(--section-space);
 }
 
 .placeholder-section {
@@ -48,12 +43,6 @@
   gap: var(--space-2) var(--space-4);
 }
 
-.section-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  letter-spacing: -0.025em;
-}
-
 .placeholder-label {
   color: var(--color-muted);
   font-size: var(--text-small);
@@ -65,13 +54,7 @@
 }
 
 @media (max-width: 40rem) {
-  .hero {
-    padding-block: var(--space-16);
-  }
-
   .home-sections {
     grid-template-columns: 1fr;
-    gap: var(--space-12);
-    padding-bottom: var(--space-16);
   }
 }
