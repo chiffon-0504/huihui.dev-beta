@@ -27,7 +27,7 @@ for (const scenario of ["challenge", "403", "missing-csp", "network"]) {
 
 // The actual browser must block the pinned bootstrap without requesting JSD.
 // No live response is intercepted by this local-only fixture suite.
-for (const scenario of ["known-jsd", "pages-jsd", "wrong-host", "changed-jsd", "extra-inline", "extra-external", "extra-console", "application-csp", "missing-fingerprint", "speculation-resource", "unknown-build-request"]) {
+for (const scenario of ["known-jsd", "pages-jsd", "wrong-host", "changed-jsd", "extra-inline", "extra-external", "extra-console", "application-csp", "missing-fingerprint", "speculation-resource", "unknown-build-request", "asset-bytes"]) {
   test(`JSD browser evidence: ${scenario}`, async ({ page }) => {
     const baseURL = scenario === "wrong-host" ? "https://other.test" : "https://beta.huihui.dev";
     const builtHtml = await readFile(new URL("../../v2/dist/index.html", import.meta.url), "utf8");
@@ -50,7 +50,9 @@ for (const scenario of ["known-jsd", "pages-jsd", "wrong-host", "changed-jsd", "
       }
       if (!/^\/assets\/[\w.-]+\.(js|css|svg)$/.test(path)) return route.abort();
       const contentType = path.endsWith(".js") ? "text/javascript" : path.endsWith(".css") ? "text/css" : "image/svg+xml";
-      await route.fulfill({ contentType, body: await readFile(new URL(`../../v2/dist${path}`, import.meta.url)) });
+      let body = await readFile(new URL(`../../v2/dist${path}`, import.meta.url));
+      if (scenario === "asset-bytes" && path.endsWith(".js")) body = Buffer.concat([body, Buffer.from("\n/* altered served bytes */")]);
+      await route.fulfill({ contentType, body });
     });
     const checkErrors = await guardBrowser(page, baseURL, { contract: scenario === "pages-jsd" ? "pages" : "custom", verifyBuild: true });
     await navigate(page, `${baseURL}/`, headers);

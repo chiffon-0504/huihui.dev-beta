@@ -63,7 +63,10 @@ rechecks the active Pages identity:
 
 - **Native Pages strict contract:** the quiescence gate supplies the immutable
   URL of the successful canonical deployment for the exact workflow SHA. The
-  browser compares HTML and loaded JS/CSS/SVG bytes with the checkout build,
+  browser compares navigation HTML with the checkout build and reads every
+  emitted JS/CSS/SVG asset through same-origin fetch under delivered CSP to
+  compare SHA-256 digests with build bytes. It rejects non-build requests before
+  dispatch,
   verifies delivered security headers, and rejects every CSP violation and
   console error. Enforce, Report-Only and no-CSP isolated probes run here.
 - **Custom-domain contract:** `https://beta.huihui.dev` runs the same three-locale

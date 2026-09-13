@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { inspectDocument, validateBrowserEvidence, validateResponse, validateSecurityHeaders } from "../support/v2-beta-contract.mjs";
 
 export async function checkNavigation(response, expectedUrl, expectedHeaders) {
@@ -25,6 +26,7 @@ export async function guardBrowser(page, baseURL, { contract = "pages", verifyBu
   const documents = [];
   const pending = [];
   const builtAssets = verifyBuild ? new Set((await readdir(new URL("../../v2/dist/assets/", import.meta.url))).map((name) => `/assets/${name}`)) : null;
+  const assetHashes = new Map(verifyBuild ? await Promise.all([...builtAssets].map(async (path) => [path, createHash("sha256").update(await readFile(new URL(`../../v2/dist${path}`, import.meta.url))).digest("hex")])) : []);
   await page.exposeBinding("recordBetaCspViolation", (source, event) => {
     if (source.frame !== page.mainFrame()) errors.push("Browser/custom-domain unexpected frame CSP violation");
     violations.push(event);
@@ -58,11 +60,6 @@ export async function guardBrowser(page, baseURL, { contract = "pages", verifyBu
         documents.push(inspectDocument({ html, builtHtml, url: url.href, contract, policy: delivered["content-security-policy"] }));
       } else {
         assert(/^\/assets\/[\w.-]+\.(js|css|svg)$/.test(url.pathname) && !url.search, "Unexpected resource outside repository build");
-        // Start reading the browser body immediately, independently of disk IO.
-        const [actual, expected] = await Promise.all([
-          response.body(), readFile(new URL(`../../v2/dist${url.pathname}`, import.meta.url)),
-        ]);
-        assert(actual.equals(expected), "Served asset bytes differ from repository build");
       }
     })().catch((error) => errors.push(error.code === "ENOENT" ? "Resource absent from repository build" : error.message)));
   });
@@ -81,6 +78,18 @@ export async function guardBrowser(page, baseURL, { contract = "pages", verifyBu
   });
   return async () => {
     await page.waitForLoadState("load");
+    if (verifyBuild) {
+      // Read every emitted asset through the browser's same-origin fetch under
+      // delivered CSP, independently of DevTools body retention across
+      // navigations. Any fetch or digest failure remains a hard failure.
+      const assets = await page.evaluate(async (paths) => Promise.all(paths.map(async (path) => {
+        const response = await fetch(path, { redirect: "error", cache: "no-store" });
+        if (response.status !== 200 || response.headers.has("cf-mitigated") || response.url !== new URL(path, location.origin).href) throw new Error("Browser build asset fetch failed");
+        const digest = await crypto.subtle.digest("SHA-256", await response.arrayBuffer());
+        return { path, hash: [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("") };
+      })), [...builtAssets]);
+      for (const asset of assets) assert(asset.hash === assetHashes.get(asset.path), "Served asset bytes differ from repository build");
+    }
     // A browser round trip flushes binding deliveries before checking evidence.
     await page.evaluate(() => undefined);
     await Promise.all(pending);
