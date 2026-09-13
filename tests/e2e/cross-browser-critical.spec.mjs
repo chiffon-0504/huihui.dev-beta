@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { systemStatusFixture, systemStatusHistoryFixture, systemStatusIncidentsFixture } from "../support/system-status.mjs";
 
 const localOrigin = "http://127.0.0.1:4173";
+const analyticsScript = "https://static.cloudflareinsights.com/beacon.min.js";
 const apiOrigins = [
   "https://api.huihui.dev",
   "https://huihui-api-beta.huihuigames01.workers.dev",
@@ -49,6 +50,7 @@ function observePage(page) {
     if (
       url.origin !== localOrigin &&
       !stubbedExternalOrigins.has(url.origin) &&
+      request.url() !== analyticsScript &&
       !["blob:", "data:"].includes(url.protocol)
     ) {
       diagnostics.unexpectedExternalRequests.push(request.url());
@@ -75,6 +77,16 @@ function observePage(page) {
 async function preparePage(page) {
   const apiRequests = [];
   const unexpectedApiRequests = [];
+
+  // UI smoke tests must not load third-party analytics or submit real RUM data.
+  await page.route(analyticsScript, (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/javascript",
+      headers: { "access-control-allow-origin": "*" },
+      body: "",
+    }),
+  );
 
   await page.route("https://challenges.cloudflare.com/**", (route) =>
     route.fulfill({
