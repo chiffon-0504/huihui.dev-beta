@@ -11,6 +11,7 @@ on:
       - "tests/scripts/v2-preview-server.mjs"
       - "tests/unit/v2-*.test.mjs"
       - "tests/support/csp-enforcement.mjs"
+      - "tests/support/v2-preview-contract.mjs"
       - "playwright.v2.config.mjs"
       - "playwright.v2-preview.config.mjs"
       - "playwright.base.config.mjs"
