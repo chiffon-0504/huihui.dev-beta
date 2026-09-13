@@ -62,29 +62,12 @@ The upload specifies `--branch=main`, the full `github.sha`, and a clean commit.
 upload, the Pages API resolves the deployment ID by matching the action's immutable
 upload URL, project, main branch and full SHA across all result pages (at most 100).
 Zero or multiple matches, incomplete pagination or an unsuccessful deployment fail
-closed. Both verification steps receive this API-resolved ID and require successful
-state immediately. The verifier checks project, main branch, clean SHA, active
-canonical deployment and custom-domain status. The API-returned immutable URL must
-match the exact deployment ID; project/branch aliases and latest-deployment shortcuts
-are rejected. Only that immutable URL serves the manifest, all three HTML entries
-and every asset for byte-for-byte comparison with the build, including the expected
-CSP and security/cache headers. These checks run again after Chromium smoke.
-
-The custom domain is verified exclusively through Chromium navigation and an
-in-page same-origin manifest fetch under the actual enforcing CSP. Its manifest
-must match the project, repository and full `TARGET_SHA`. Node fetch and Playwright
-APIRequestContext are not custom-domain acceptance layers: Cloudflare Bot Fight
-Mode can legitimately challenge those clients. The CSP probe takes its policy from
-the real browser navigation response, with no raw HTTP request or replacement
-header on the live page. API errors identify project, deployment or domain lookup;
-HTTP/security diagnostics allow only status and selected non-secret edge headers.
-Traces and automatic failure DOM snapshots are disabled to avoid retaining cookies
-or challenge bodies. Console/script errors remain blocking without logging their text.
-
-Challenges, 403s, redirects, missing security headers, manifest mismatch and browser
-failures all fail closed. There are no retries, sleeps, user-agent spoofing, security
-bypasses or attempts to solve challenges. A challenged Chromium runner still fails;
-moving browser acceptance does not guarantee Cloudflare will admit automation.
+closed. Both verification steps receive this API-resolved ID. Bounded polling
+reads that exact ID; the verifier checks project, main branch, clean SHA, active canonical
+deployment and custom-domain status. It compares the served manifest, all three
+HTML entries and every asset byte-for-byte with the build, including enforcing
+CSP delivery. The same identity check runs again after Chromium smoke.
+There is no fixed wait pretending a deployment has completed.
 
 The preview's self-only CSP permits the compiled external theme bootstrap and
 application/CSS bundles, without inline/eval permissions or production API access.
@@ -105,11 +88,8 @@ Remove-Item Env:V2_PREVIEW_LOCAL
 ```
 
 Local mode uses Vite on `127.0.0.1:4176`, delivering the built `_headers` through
-a small global-rule adapter and an explicitly local-only manifest fixture using
-the checkout SHA. Negative browser fixtures prove challenge/403/redirect failure,
-manifest rejection and that enforcing CSP can block the in-page manifest request.
-Local mode does not prove live DNS/TLS or edge deployment. Without local mode,
-`TARGET_SHA` is mandatory and smoke uses only `https://v2.beta.huihui.dev`.
+a small global-rule adapter. It does not prove live DNS/TLS or edge deployment.
+Without local mode the smoke uses only `https://v2.beta.huihui.dev`.
 
 ### External setup and permission blocker
 

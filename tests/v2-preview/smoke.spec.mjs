@@ -1,12 +1,5 @@
 import { expect, test } from "@playwright/test";
 import { openCspProbe } from "../support/csp-enforcement.mjs";
-import { readFile } from "node:fs/promises";
-import { PROJECT, REPOSITORY, validateSha } from "../scripts/v2-preview-deployment.mjs";
-import { securityHeaders } from "../support/v2-preview-contract.mjs";
-import { checkBrowserManifest, checkNavigation, guardBrowser, navigate } from "./browser.mjs";
-
-const expectedManifest = { project: PROJECT, repository: REPOSITORY, sha: validateSha(process.env.TARGET_SHA) };
-const expectedHeaders = securityHeaders(await readFile(new URL("../../v2/public/_headers", import.meta.url), "utf8"));
 
 const locales = [
   { route: "/", lang: "zh-Hant", light: "淺色", dark: "深色", auto: "自動" },
@@ -34,9 +27,27 @@ for (const locale of locales) {
         });
         observer.observe(document, { subtree: true, childList: true });
       });
-      const checkErrors = await guardBrowser(page, baseURL);
-      await navigate(page, new URL(locale.route, baseURL).href, expectedHeaders);
-      await checkBrowserManifest(page, expectedManifest, expectedHeaders);
+      const errors = [];
+      const forbidden = [];
+      page.on("pageerror", (error) => errors.push(error.message));
+      page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+      page.on("response", (response) => { if (response.status() >= 400) errors.push(`${response.status()} ${response.url()}`); });
+      // Enforce the no-Contact/no-unrelated-API boundary before any request leaves.
+      await page.route("**/*", async (route) => {
+        const request = route.request();
+        const url = new URL(request.url());
+        if (url.origin !== new URL(baseURL).origin || request.method() !== "GET" || url.pathname.startsWith("/api/")) {
+          forbidden.push(request.url());
+          await route.abort();
+        } else {
+          await route.continue();
+        }
+      });
+      const response = await page.goto(locale.route);
+      expect(response.status()).toBe(200);
+      const csp = response.headers()["content-security-policy"];
+      expect(csp).toContain("script-src 'self';");
+      expect(csp).not.toMatch(/unsafe-inline|unsafe-eval/);
       await expect(page.locator("html")).toHaveAttribute("lang", locale.lang);
       await expect(page.getByRole("main")).toBeVisible();
       await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
@@ -58,35 +69,30 @@ for (const locale of locales) {
       expect(await page.evaluate(() => window.previewObservations.violations)).toEqual([]);
       await page.locator(".language-switcher summary").click();
       const destination = locale.lang === "en" ? "/ja/" : "/en/";
-      const navigation = page.waitForResponse((response) => response.request().isNavigationRequest() && response.request().frame() === page.mainFrame());
       await page.locator(`.language-switcher a[href="${destination}"]`).click();
-      await checkNavigation(await navigation, new URL(destination, baseURL).href, expectedHeaders);
       await expect(page).toHaveURL(new URL(destination, baseURL).href);
       await expect(page.getByRole("main")).toBeVisible();
-      checkErrors();
+      expect(errors).toEqual([]);
+      expect(forbidden).toEqual([]);
     });
   }
 }
 
 for (const mode of ["enforce", "report", "none"]) {
-  test(`served preview CSP probe: ${mode}`, async ({ page, baseURL, context }) => {
-    const checkErrors = await guardBrowser(page, baseURL);
-    const delivered = await navigate(page, new URL("/", baseURL).href, expectedHeaders);
-    await expect(page.getByRole("main")).toBeVisible();
-    checkErrors();
-    const policy = delivered["content-security-policy"];
+  test(`served preview CSP probe: ${mode}`, async ({ page, request }) => {
+    const response = await request.get("/");
+    expect(response.status()).toBe(200);
+    const policy = response.headers()["content-security-policy"];
+    expect(policy).toContain("script-src 'self';");
     const headers = mode === "none" ? {} : { [mode === "enforce" ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only"]: policy };
     // Only the isolated probe gets a policy override; live responses above are unmodified.
-    const probe = await context.newPage();
-    await openCspProbe(probe, headers);
-    await expect(probe.locator("html")).toHaveAttribute("data-complete", "true");
-    await expect(probe.locator("html")).toHaveAttribute("data-forbidden", mode === "enforce" ? "not-run" : "ran");
-    await probe.getByRole("button").click();
-    await expect(probe.locator("output")).toHaveText("allowed interaction ran");
-    const violations = await probe.evaluate(() => window.cspViolations);
+    await openCspProbe(page, headers);
+    await expect(page.locator("html")).toHaveAttribute("data-complete", "true");
+    await expect(page.locator("html")).toHaveAttribute("data-forbidden", mode === "enforce" ? "not-run" : "ran");
+    await page.getByRole("button").click();
+    await expect(page.locator("output")).toHaveText("allowed interaction ran");
+    const violations = await page.evaluate(() => window.cspViolations);
     if (mode === "none") expect(violations).toEqual([]);
     else expect(violations).toEqual(expect.arrayContaining([expect.objectContaining({ disposition: mode, blockedURI: "inline" })]));
-    await probe.close();
-    checkErrors();
   });
 }

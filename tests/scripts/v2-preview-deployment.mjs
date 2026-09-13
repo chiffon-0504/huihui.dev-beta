@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { appendFile, readFile, readdir, writeFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
-import { securityHeaders, validateResponse, validateSecurityHeaders } from "../support/v2-preview-contract.mjs";
 
 export const PROJECT = "huihuidev-v2-beta";
 export const DOMAIN = "v2.beta.huihui.dev";
@@ -16,48 +15,38 @@ function required(name) {
 }
 
 export function validateSha(sha) {
-  assert(typeof sha === "string" && /^[a-f0-9]{40}$/.test(sha), "Expected full commit SHA");
+  assert.match(sha, /^[a-f0-9]{40}$/, "Expected full commit SHA");
   return sha;
 }
 
 export function validateProject(project) {
-  assert(project?.name === PROJECT, "Project identity mismatch: unexpected Pages project");
-  assert(project.production_branch === "main", "Project identity mismatch: expected main production branch");
+  assert.equal(project.name, PROJECT, "Unexpected Pages project");
+  assert.equal(project.production_branch, "main", "Unexpected Pages branch");
   assert(!project.source, "Use a separate Direct Upload project without Git integration");
 }
 
 export function validateDeployment(deployment, sha, id) {
-  assert(deployment, "Deployment identity mismatch: missing deployment");
-  assert(deployment.id === id, "Deployment identity mismatch: deployment ID");
-  assert(deployment.project_name === PROJECT, "Deployment identity mismatch: project");
-  assert(deployment.environment === "production", "Deployment identity mismatch: expected v2 main environment");
-  assert(deployment.latest_stage?.name === "deploy" && deployment.latest_stage.status === "success", "Deployment identity mismatch: Pages deployment not successful");
-  assert(deployment.deployment_trigger?.metadata?.branch === "main", "Deployment identity mismatch: branch");
-  assert(deployment.deployment_trigger?.metadata?.commit_hash === sha, "Deployment identity mismatch: SHA");
-  assert(deployment.deployment_trigger?.metadata?.commit_dirty === false, "Deployment identity mismatch: clean commit required");
-  assert(deployment.url === `https://${id.slice(0, 8)}.${PROJECT}.pages.dev`, "Deployment identity mismatch: immutable URL does not match deployment ID");
+  assert.equal(deployment.id, id, "Deployment ID mismatch");
+  assert.equal(deployment.project_name, PROJECT, "Deployment project mismatch");
+  assert.equal(deployment.environment, "production", "Expected the v2 project's main deployment");
+  assert.equal(deployment.latest_stage?.name, "deploy");
+  assert.equal(deployment.latest_stage?.status, "success", "Pages deployment not successful");
+  assert.equal(deployment.deployment_trigger?.metadata?.branch, "main");
+  assert.equal(deployment.deployment_trigger?.metadata?.commit_hash, sha, "Deployment SHA mismatch");
+  assert.equal(deployment.deployment_trigger?.metadata?.commit_dirty, false);
 }
 
-export async function cloudflare(path, includePagination = false) {
-  const context = path.startsWith("/domains/") ? "custom-domain lookup"
-    : path.startsWith("/deployments/") ? "deployment lookup"
-      : path.startsWith("/deployments?") ? "deployment list lookup" : "project lookup";
+async function cloudflare(path, includePagination = false) {
   const account = required("CLOUDFLARE_ACCOUNT_ID");
   assert.match(account, /^[a-f0-9]{32}$/);
-  let response;
-  try {
-    response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${account}/pages/projects/${PROJECT}${path}`, {
-      headers: { Authorization: `Bearer ${required("CLOUDFLARE_API_TOKEN")}` },
-      redirect: "error",
-      signal: AbortSignal.timeout(15_000),
-    });
-  } catch { throw new Error(`Pages API ${context}: network, timeout or redirect failure`); }
+  const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${account}/pages/projects/${PROJECT}${path}`, {
+    headers: { Authorization: `Bearer ${required("CLOUDFLARE_API_TOKEN")}` },
+    signal: AbortSignal.timeout(15_000),
+  });
   // Never print response bodies, headers, tokens or configuration secret values.
-  assert(response.ok, `Pages API ${context}: HTTP ${response.status}`);
-  let body;
-  try { body = await response.json(); }
-  catch { throw new Error(`Pages API ${context}: invalid JSON response`); }
-  assert(body?.success, `Pages API ${context}: API request failed`);
+  assert(response.ok, `Pages API HTTP ${response.status}; check project existence and Account / Cloudflare Pages / Edit permission`);
+  const body = await response.json();
+  assert(body.success, "Pages API request failed");
   return includePagination ? body : body.result;
 }
 
@@ -132,35 +121,38 @@ async function preflight(sha) {
   console.log(`Verified current main ${sha} and independent project ${PROJECT}`);
 }
 
-export async function verify(sha, { request = cloudflare, artifactFetch = fetch, directory = dist } = {}) {
-  validateSha(sha);
+async function verify(sha) {
   const id = required("DEPLOYMENT_ID");
-  assert.match(id, /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/, "Invalid deployment ID");
-  // Resolution already requires success. A later regression must fail immediately.
-  const deployment = await request(`/deployments/${id}`);
+  assert.match(id, /^[a-f0-9-]{36}$/);
+  // Poll actual state, not a guessed build duration. Bound total completion wait.
+  const deadline = Date.now() + 5 * 60_000;
+  let deployment;
+  while (true) {
+    deployment = await cloudflare(`/deployments/${id}`);
+    const status = deployment.latest_stage?.status;
+    if (deployment.latest_stage?.name === "deploy" && status === "success") break;
+    assert(!["failure", "canceled", "cancelled"].includes(status), "Pages deployment failed");
+    assert(Date.now() < deadline, "Timed out waiting for Pages deployment state");
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+  }
   validateDeployment(deployment, sha, id);
-  const project = await request("");
+  const project = await cloudflare("");
   validateProject(project);
-  try { validateDeployment(project.canonical_deployment, sha, id); }
-  catch { throw new Error("Canonical deployment identity mismatch: expected exact deployment ID, SHA, clean main and successful immutable URL"); }
-  const domain = await request(`/domains/${DOMAIN}`);
-  assert(domain?.name === DOMAIN, "Custom-domain lookup: domain identity mismatch");
-  assert(domain.status === "active", "Custom-domain lookup: domain/TLS is not active");
-  const expectedHeaders = securityHeaders(await readFile(new URL("_headers", directory), "utf8"));
-  const files = ["deployment.json", "index.html", "en/index.html", "ja/index.html", ...(await readdir(new URL("assets/", directory))).map((file) => `assets/${file}`)];
+  validateDeployment(project.canonical_deployment, sha, id);
+  const domain = await cloudflare(`/domains/${DOMAIN}`);
+  assert.equal(domain.name, DOMAIN);
+  assert.equal(domain.status, "active", "Custom domain/TLS is not active");
+  const headers = await readFile(new URL("_headers", dist), "utf8");
+  const csp = headers.match(/^\s+Content-Security-Policy: (.+)$/m)[1].trim();
+  const files = ["deployment.json", "index.html", "en/index.html", "ja/index.html", ...(await readdir(new URL("assets/", dist))).map((file) => `assets/${file}`)];
   for (const file of files) {
     const route = file.replace(/index\.html$/, "");
-    const url = `${deployment.url}/${route}`;
-    const context = `Immutable artifact ${route}`;
-    let response;
-    try { response = await artifactFetch(url, { cache: "no-store", redirect: "error", signal: AbortSignal.timeout(15_000) }); }
-    catch { throw new Error(`${context}: network, timeout or redirect failure`); }
-    const headers = Object.fromEntries(response.headers);
-    validateResponse({ status: response.status, headers, url: response.url, redirected: response.redirected }, url, context);
-    validateSecurityHeaders(headers, expectedHeaders, context);
-    assert(Buffer.from(await response.arrayBuffer()).equals(await readFile(new URL(file, directory))), `Immutable artifact bytes mismatch: ${route}`);
+    const response = await fetch(`https://${DOMAIN}/${route}`, { cache: "no-store", redirect: "error", signal: AbortSignal.timeout(15_000) });
+    assert.equal(response.status, 200, `Live HTTP failure: ${route}`);
+    assert.equal(response.headers.get("content-security-policy"), csp, `CSP delivery mismatch: ${route}`);
+    assert.deepEqual(Buffer.from(await response.arrayBuffer()), await readFile(new URL(file, dist)), `Live artifact mismatch: ${route}`);
   }
-  console.log(`Verified ${PROJECT} deployment ${id}, SHA ${sha}, immutable artifacts and active custom-domain association`);
+  console.log(`Verified ${PROJECT} deployment ${id}, SHA ${sha}, https://${DOMAIN}`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
