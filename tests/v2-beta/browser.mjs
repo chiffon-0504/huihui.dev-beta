@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
-import { validateResponse, validateSecurityHeaders } from "../support/v2-beta-contract.mjs";
+import { readFile, readdir } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { inspectDocument, validateBrowserEvidence, validateResponse, validateSecurityHeaders } from "../support/v2-beta-contract.mjs";
 
 export async function checkNavigation(response, expectedUrl, expectedHeaders) {
   assert(response, "Browser/custom-domain navigation: missing response");
@@ -17,10 +19,25 @@ export async function navigate(page, url, expectedHeaders) {
   return checkNavigation(response, url, expectedHeaders);
 }
 
-export async function guardBrowser(page, baseURL) {
+export async function guardBrowser(page, baseURL, { contract = "pages", verifyBuild = false } = {}) {
   const errors = [];
+  const consoles = [];
+  const violations = [];
+  const documents = [];
+  const pending = [];
+  const builtAssets = verifyBuild ? new Set((await readdir(new URL("../../v2/dist/assets/", import.meta.url))).map((name) => `/assets/${name}`)) : null;
+  const assetHashes = new Map(verifyBuild ? await Promise.all([...builtAssets].map(async (path) => [path, createHash("sha256").update(await readFile(new URL(`../../v2/dist${path}`, import.meta.url))).digest("hex")])) : []);
+  await page.exposeBinding("recordBetaCspViolation", (source, event) => {
+    if (source.frame !== page.mainFrame()) errors.push("Browser/custom-domain unexpected frame CSP violation");
+    violations.push(event);
+  });
+  await page.addInitScript(() => {
+    document.addEventListener("securitypolicyviolation", (event) => {
+      void window.recordBetaCspViolation(Object.fromEntries(["effectiveDirective", "violatedDirective", "blockedURI", "disposition", "sourceFile", "documentURI", "lineNumber", "columnNumber", "sample", "originalPolicy"].map((key) => [key, event[key]])));
+    });
+  });
   page.on("pageerror", () => errors.push("Browser/custom-domain script error"));
-  page.on("console", (message) => { if (message.type() === "error") errors.push("Browser/custom-domain console error"); });
+  page.on("console", (message) => { if (message.type() === "error") consoles.push({ text: message.text(), location: message.location() }); });
   page.on("requestfailed", () => errors.push("Browser/custom-domain request failed"));
   page.on("response", (response) => {
     const headers = response.headers();
@@ -29,16 +46,55 @@ export async function guardBrowser(page, baseURL) {
         validateResponse({ status: response.status(), headers, url: response.url() }, response.url(), "Browser/custom-domain resource");
       } catch (error) { errors.push(error.message); }
     }
+    if (verifyBuild) pending.push((async () => {
+      const url = new URL(response.url());
+      const request = response.request();
+      if (request.isNavigationRequest()) {
+        assert(request.frame() === page.mainFrame(), "Unexpected frame navigation");
+        assert(["/", "/en/", "/ja/"].includes(url.pathname), "Unexpected application route");
+        const [html, builtHtml, delivered] = await Promise.all([
+          response.text(),
+          readFile(new URL(`../../v2/dist${url.pathname}index.html`, import.meta.url), "utf8"),
+          response.allHeaders(),
+        ]);
+        documents.push(inspectDocument({ html, builtHtml, url: url.href, contract, policy: delivered["content-security-policy"] }));
+      } else {
+        assert(/^\/assets\/[\w.-]+\.(js|css|svg)$/.test(url.pathname) && !url.search, "Unexpected resource outside repository build");
+      }
+    })().catch((error) => errors.push(error.code === "ENOENT" ? "Resource absent from repository build" : error.message)));
   });
   await page.route("**/*", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
-    if (url.origin !== new URL(baseURL).origin || request.method() !== "GET" || url.pathname.startsWith("/api/") || url.pathname.startsWith("/cdn-cgi/challenge-platform/")) {
+    const unexpectedBuildRequest = verifyBuild && (url.search || (request.isNavigationRequest()
+      ? request.frame() !== page.mainFrame() || !["/", "/en/", "/ja/"].includes(url.pathname)
+      : !builtAssets.has(url.pathname)));
+    if (unexpectedBuildRequest || url.origin !== new URL(baseURL).origin || request.method() !== "GET" || url.pathname.startsWith("/api/") || url.pathname.startsWith("/cdn-cgi/challenge-platform/")) {
       errors.push("Browser/custom-domain forbidden request or challenge resource; no challenge solving allowed");
       await route.abort();
     } else {
       await route.fallback();
     }
   });
-  return () => assert(errors.length === 0, errors.join("\n"));
+  return async () => {
+    await page.waitForLoadState("load");
+    if (verifyBuild) {
+      // Read every emitted asset through the browser's same-origin fetch under
+      // delivered CSP, independently of DevTools body retention across
+      // navigations. Any fetch or digest failure remains a hard failure.
+      const assets = await page.evaluate(async (paths) => Promise.all(paths.map(async (path) => {
+        const response = await fetch(path, { redirect: "error", cache: "no-store" });
+        if (response.status !== 200 || response.headers.has("cf-mitigated") || response.url !== new URL(path, location.origin).href) throw new Error("Browser build asset fetch failed");
+        const digest = await crypto.subtle.digest("SHA-256", await response.arrayBuffer());
+        return { path, hash: [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("") };
+      })), [...builtAssets]);
+      for (const asset of assets) assert(asset.hash === assetHashes.get(asset.path), "Served asset bytes differ from repository build");
+    }
+    // A browser round trip flushes binding deliveries before checking evidence.
+    await page.evaluate(() => undefined);
+    await Promise.all(pending);
+    assert(errors.length === 0, errors.join("\n"));
+    const classified = validateBrowserEvidence({ contract, documents, violations, consoles });
+    if (classified) console.log(`Classified ${classified} pinned Cloudflare JSD bootstrap block(s); application CSP remains enforcing.`);
+  };
 }

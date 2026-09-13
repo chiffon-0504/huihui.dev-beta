@@ -232,6 +232,18 @@ export function inspectCanonicalPagesDeployment(project, targetSha) {
   };
 }
 
+export function canonicalPagesUrl(project, targetSha) {
+  if (!inspectCanonicalPagesDeployment(project, targetSha).complete) {
+    throw new Error("Cannot select a Pages URL for an unverified SHA");
+  }
+  const deployment = project.canonical_deployment;
+  if (!/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(deployment.id || "") ||
+      deployment.url !== `https://${deployment.id.slice(0, 8)}.${PAGES_PROJECT_NAME}.pages.dev`) {
+    throw new Error("Canonical Pages immutable deployment URL is invalid");
+  }
+  return deployment.url;
+}
+
 export function assertActivePagesDomain(domain) {
   if (!domain || typeof domain !== "object") {
     throw new Error("Cloudflare Pages domain response did not contain a domain.");
@@ -382,7 +394,8 @@ async function getQuiescentPagesState(accountId, apiToken, targetSha) {
     getProductionPagesDeployments(accountId, apiToken),
   ]);
 
-  return inspectQuiescentPagesState(project, domain, deployments, targetSha);
+  const state = inspectQuiescentPagesState(project, domain, deployments, targetSha);
+  return { ...state, ...(state.complete ? { pagesUrl: canonicalPagesUrl(project, targetSha) } : {}) };
 }
 
 export function completedFailure(label, item, subject) {
@@ -410,7 +423,7 @@ export async function pollExactDeployment({
       console.log(`${label}: ${result.diagnostic}`);
       lastDiagnostic = result.diagnostic;
     }
-    if (result.complete) return;
+    if (result.complete) return result;
 
     const remainingMs = deadline - Date.now();
     if (remainingMs <= 0) break;
@@ -508,13 +521,14 @@ async function waitForPagesQuiescence() {
     Number(process.env.DEPLOYMENT_POLL_INTERVAL_MS) ||
     DEFAULT_POLL_INTERVAL_MS;
 
-  await pollExactDeployment({
+  const state = await pollExactDeployment({
     label: "Cloudflare Pages quiescence",
     timeoutSubject: `for target SHA ${targetSha}`,
     timeoutMs,
     intervalMs,
     inspect: () => getQuiescentPagesState(accountId, apiToken, targetSha),
   });
+  await appendFile(requiredEnvironment("GITHUB_OUTPUT"), `pages_url=${state.pagesUrl}\n`, "utf8");
 }
 
 async function waitForWorker(

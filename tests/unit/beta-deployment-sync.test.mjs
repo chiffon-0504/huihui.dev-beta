@@ -4,6 +4,7 @@ import {
   PAGES_PROJECT_NAME,
   WORKER_DEPLOYMENT_PATHS,
   assertActivePagesDomain,
+  canonicalPagesUrl,
   cloudflareApiResult,
   completedFailure,
   getProductionPagesDeployments,
@@ -21,6 +22,18 @@ const B = "b".repeat(40);
 const C = "c".repeat(40);
 const D = "d".repeat(40);
 const X = "e".repeat(40);
+
+test("immutable Pages URL comes only from the exact successful canonical deployment", () => {
+  const project = pagesProject();
+  project.canonical_deployment.id = "12345678-1234-1234-1234-123456789abc";
+  project.canonical_deployment.url = "https://12345678.huihuidev-beta.pages.dev";
+  expect(canonicalPagesUrl(project, A)).toBe(project.canonical_deployment.url);
+  expect(() => canonicalPagesUrl(project, B)).toThrow("unverified SHA");
+  for (const url of ["https://huihuidev-beta.pages.dev", "https://87654321.huihuidev-beta.pages.dev", "https://beta.huihui.dev", "https://12345678.huihuidev-beta.pages.dev.evil.test"]) {
+    project.canonical_deployment.url = url;
+    expect(() => canonicalPagesUrl(project, A)).toThrow("immutable deployment URL");
+  }
+});
 
 afterEach(() => {
   vi.useRealTimers();
