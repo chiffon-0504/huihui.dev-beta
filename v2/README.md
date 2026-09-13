@@ -10,7 +10,8 @@ widgets, or vendor bundle is imported by this application.
 Use Node.js 24 and install dependencies from the repository root with `npm ci`.
 
 - `npm run dev:v2` starts the v2 development server.
-- `npm run check:ts` checks the strict TypeScript application.
+- `npm run check:v2:types` checks the strict TypeScript application;
+  `npm run check:ts` remains a compatibility alias.
 - `npm run build:v2` typechecks and builds the three HTML entries into `v2/dist/`.
 - `npm run preview:v2` serves that build locally.
 - `npm run test:e2e:v2` builds and tests Chromium, Firefox, and WebKit.
@@ -22,7 +23,7 @@ Browser specs that import application TypeScript use `.spec.ts`, allowing
 Playwright's [TypeScript transform](https://playwright.dev/docs/test-typescript)
 to load both the spec and its source
 dependencies in the same module mode. Playwright transforms specs without type
-checking; `check:ts` continues to check the application. The theme spec loads the
+checking; `check:v2:types` checks the application. The theme spec loads the
 shared `.mjs` CSP helper with native asynchronous `import()` so it remains ESM
 instead of passing through a CommonJS `require`. Pure solar and timezone tests
 remain in the focused Vitest suite. The theme browser spec uses the production calculator
@@ -116,6 +117,46 @@ The v2 application, these build settings and this workflow are beta-only. They
 do not change the stable repository, production Pages/Worker, tags or releases.
 
 ## Structure
+
+The TypeScript foundation lives in `src/`, with compiler settings owned by
+`v2/tsconfig.json`. The root `tsconfig.json` extends that configuration for
+existing editor and compiler entry points. Strict checking targets ES2022 with
+DOM typings and ES modules; `moduleDetection: "force"` gives source files module
+scope even before they have imports or exports. Shared state should be owned by
+modules or passed explicitly, rather than attached to browser globals.
+TypeScript checks without emitting files. The existing Vite configuration at
+`../vite.v2.config.mjs` handles browser bundles, CSS/SVG imports, the classic theme
+bootstrap and the three HTML entries. No additional compiler, bundler or
+framework dependency is needed.
+
+```text
+v2/
+├─ src/
+│  ├─ main.ts          # Existing application bootstrap
+│  ├─ components/     # Existing shared UI components
+│  ├─ services/       # Reserved for future service clients
+│  ├─ utils/          # Reserved for future reusable utilities
+│  ├─ locales/        # Reserved for future i18n modules
+│  ├─ types/          # Reserved for future shared application types
+│  ├─ pages/          # Existing page modules
+│  ├─ theme/          # Existing theme implementation
+│  ├─ styles/         # Existing v2 CSS
+│  ├─ content.ts      # Current typed localized content
+│  └─ dom.ts          # Current DOM helpers
+├─ en/index.html
+├─ ja/index.html
+├─ index.html
+├─ public/
+├─ tsconfig.json
+└─ README.md
+```
+
+The latest main already includes a v2 shell, styles and localized content. The
+foundation follow-up preserves those implementations and reserves the missing
+module boundaries with documentation only. It does not migrate content or DOM
+helpers, add service clients, or rebuild pages. V1 remains the active production
+site while v2 development continues; its root HTML/CSS/JavaScript and release
+flow remain independent of these TypeScript commands.
 
 `src/main.ts` composes DOM components from `components/navbar.ts`,
 `components/footer.ts`, and `pages/home.ts`. Shared localized copy lives in
