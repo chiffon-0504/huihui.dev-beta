@@ -24,6 +24,7 @@ export async function guardBrowser(page, baseURL, { contract = "pages", verifyBu
   const consoles = [];
   const violations = [];
   const documents = [];
+  const responsePolicies = [];
   const pending = [];
   const builtAssets = verifyBuild ? new Set((await readdir(new URL("../../v2/dist/assets/", import.meta.url))).map((name) => `/assets/${name}`)) : null;
   const assetHashes = new Map(verifyBuild ? await Promise.all([...builtAssets].map(async (path) => [path, createHash("sha256").update(await readFile(new URL(`../../v2/dist${path}`, import.meta.url))).digest("hex")])) : []);
@@ -58,6 +59,7 @@ export async function guardBrowser(page, baseURL, { contract = "pages", verifyBu
           response.allHeaders(),
         ]);
         documents.push(inspectDocument({ html, builtHtml, url: url.href, contract, policy: delivered["content-security-policy"] }));
+        responsePolicies.push({ url: url.href, enforcingPolicy: delivered["content-security-policy"], reportOnlyPolicy: delivered["content-security-policy-report-only"] });
       } else {
         assert(/^\/assets\/[\w.-]+\.(js|css|svg)$/.test(url.pathname) && !url.search, "Unexpected resource outside repository build");
       }
@@ -90,11 +92,15 @@ export async function guardBrowser(page, baseURL, { contract = "pages", verifyBu
       })), [...builtAssets]);
       for (const asset of assets) assert(asset.hash === assetHashes.get(asset.path), "Served asset bytes differ from repository build");
     }
-    // A browser round trip flushes binding deliveries before checking evidence.
+    // Preserve the existing round trip; edge telemetry is classified separately
+    // from enforcing evidence, not resolved by additional synchronization.
     await page.evaluate(() => undefined);
     await Promise.all(pending);
     assert(errors.length === 0, errors.join("\n"));
-    const classified = validateBrowserEvidence({ contract, documents, violations, consoles });
+    const classified = validateBrowserEvidence({ contract, url: page.url(), documents, violations, consoles, responsePolicies, assetUrls: [...(builtAssets || [])].map((path) => new URL(path, baseURL).href) });
     if (classified) console.log(`Classified ${classified} pinned Cloudflare JSD bootstrap block(s); application CSP remains enforcing.`);
+    const reports = violations.filter((event) => event.disposition === "report").length;
+    if (reports) console.log(`Classified ${reports} Cloudflare Report-Only monitoring event(s) attributed to delivered beta response policies; enforcing evidence validated separately.`);
+    return { jsdBlocks: classified, reportOnlyEvents: reports };
   };
 }
