@@ -63,6 +63,105 @@ test("custom accepts exactly the pinned JSD response plus corresponding enforced
   expect(validateBrowserEvidence({ contract: "pages", documents: [], violations: [], consoles: [] })).toBe(0);
 });
 
+test.each(["violations", "consoles"])("%s count failures include only sanitized evidence metadata", (missing) => {
+  const data = evidence();
+  data.url = "https://user:secret@beta.huihui.dev/ja/?token=secret#secret";
+  data.documents[0].url += "?token=secret";
+  data.violations[0].sample = "secret script contents";
+  data.violations[0].originalPolicy = "secret policy";
+  data.violations[0].sourceFile = "data:text/javascript,secret";
+  data.violations[0].documentURI += "?token=secret";
+  data.consoles[0].text = "secret console contents";
+  data.consoles[0].location.url = "https://other.test/secret?token=secret";
+  data[missing] = [];
+  let message;
+  try { validateBrowserEvidence(data); } catch (error) { message = error.message; }
+  expect(message).not.toContain("secret");
+  const metadata = JSON.parse(message.slice(message.indexOf(": ") + 2));
+  expect(metadata).toMatchObject({ contract: "custom", url: "https://beta.huihui.dev/ja/", documentCount: 1, expectedDocumentCount: 1, violationCount: missing === "violations" ? 0 : 1, consoleErrorCount: missing === "consoles" ? 0 : 1 });
+  expect(metadata.expected).toEqual([{ url: "https://beta.huihui.dev/", line: 2 }]);
+  if (missing === "consoles") expect(metadata.violations[0]).toMatchObject({ effectiveDirective: "script-src-elem", sourceFile: "[redacted URL]", documentURI: "https://beta.huihui.dev/", lineNumber: 2 });
+  else expect(metadata.consoles[0].url).toBe("[redacted URL]");
+});
+
+const monitoringPolicy = "script-src 'unsafe-inline' 'unsafe-eval'; connect-src 'none'; report-uri https://csp-reporting.cloudflare.com/cdn-cgi/script_monitor/report?token=secret; report-to cf-csp-endpoint";
+function monitoringEvidence(count = 1) {
+  const data = evidence();
+  data.assetUrls = ["https://beta.huihui.dev/assets/main-fixture.js", "https://beta.huihui.dev/assets/style-fixture.css"];
+  data.responsePolicies = [{ url: data.documents[0].url, enforcingPolicy: policy, reportOnlyPolicy: monitoringPolicy }];
+  for (let index = 0; index < count; index++) data.violations.push({
+    effectiveDirective: "connect-src", violatedDirective: "connect-src", disposition: "report",
+    documentURI: data.documents[0].url, originalPolicy: monitoringPolicy, blockedURI: data.assetUrls[index % 2],
+    sourceFile: "", lineNumber: 2, columnNumber: 32, sample: "",
+  });
+  return data;
+}
+
+test.each([0, 1, 7, 13])("classifies %i attributed monitoring events separately from enforcing JSD", (count) => {
+  expect(validateBrowserEvidence(monitoringEvidence(count))).toBe(1);
+});
+
+test("monitoring also works on a sampled document without a JSD injection", () => {
+  const data = monitoringEvidence();
+  data.documents = [null];
+  data.violations.shift();
+  data.consoles = [];
+  expect(validateBrowserEvidence(data)).toBe(0);
+});
+
+test("script monitoring is limited to emitted JavaScript and navigation/build sources", () => {
+  for (const sourceFile of ["", "https://beta.huihui.dev/", "https://beta.huihui.dev/assets/main-fixture.js"]) {
+    const data = monitoringEvidence();
+    Object.assign(data.violations[1], { effectiveDirective: "script-src-elem", violatedDirective: "script-src-elem", sourceFile });
+    expect(validateBrowserEvidence(data)).toBe(1);
+  }
+});
+
+test.each([
+  ["no delivered header", (data) => { data.responsePolicies[0].reportOnlyPolicy = undefined; }],
+  ["no response", (data) => { data.responsePolicies = []; }],
+  ["changed originalPolicy", (data) => { data.violations[1].originalPolicy += " "; }],
+  ["wrong endpoint", (data) => { data.responsePolicies[0].reportOnlyPolicy = data.violations[1].originalPolicy = monitoringPolicy.replace("csp-reporting.cloudflare.com", "other.test"); }],
+  ["spoofed policy", (data) => { data.responsePolicies[0].reportOnlyPolicy = data.violations[1].originalPolicy = monitoringPolicy.replace("connect-src 'none'", "connect-src 'self'"); }],
+  ["additional directive", (data) => { data.responsePolicies[0].reportOnlyPolicy = data.violations[1].originalPolicy = monitoringPolicy + "; img-src 'none'"; }],
+  ["changed report group", (data) => { data.responsePolicies[0].reportOnlyPolicy = data.violations[1].originalPolicy = monitoringPolicy.replace("cf-csp-endpoint", "other-group"); }],
+  ["no enforcing policy", (data) => { data.responsePolicies[0].enforcingPolicy = undefined; }],
+  ["report replaces enforcing policy", (data) => { data.responsePolicies[0].enforcingPolicy = monitoringPolicy; }],
+  ["report used as JSD evidence", (data) => { data.violations[0] = { ...data.violations[1] }; }],
+  ["extra enforcing", (data) => { data.violations.push({ ...data.violations[0] }); }],
+  ["missing enforcing", (data) => { data.violations.shift(); }],
+  ["unrelated console", (data) => { data.consoles.push({ text: "unrelated", location: {} }); }],
+  ["unknown disposition", (data) => { data.violations[1].disposition = "unknown"; }],
+  ["wrong document", (data) => { data.violations[1].documentURI = "https://beta.huihui.dev/en/"; }],
+  ["wrong source", (data) => { data.violations[1].sourceFile = "https://other.test/"; }],
+  ["unknown source asset", (data) => { data.violations[1].sourceFile = "https://beta.huihui.dev/assets/unknown.js"; }],
+  ["unknown build resource", (data) => { data.violations[1].blockedURI = "https://beta.huihui.dev/assets/unknown.js"; }],
+  ["inline report", (data) => { data.violations[1].blockedURI = "inline"; }],
+  ["unrelated directive", (data) => { data.violations[1].effectiveDirective = data.violations[1].violatedDirective = "img-src"; }],
+  ["inconsistent directive", (data) => { data.violations[1].violatedDirective = "script-src-elem"; }],
+  ["sample contents", (data) => { data.violations[1].sample = "unexpected"; }],
+  ["ambiguous repeated navigation", (data) => { data.responsePolicies.push({ ...data.responsePolicies[0], reportOnlyPolicy: undefined }); }],
+  ["other response host", (data) => { data.responsePolicies[0].url = data.violations[1].documentURI = "https://other.test/"; }],
+  ["native Pages telemetry", (data) => { data.contract = "pages"; data.documents = []; data.violations.shift(); data.consoles = []; }],
+  ["native Pages header without events", (data) => { data.contract = "pages"; data.documents = []; data.violations = []; data.consoles = []; }],
+])("rejects monitoring attribution: %s", (_name, mutate) => {
+  const data = monitoringEvidence();
+  mutate(data);
+  expect(() => validateBrowserEvidence(data)).toThrow();
+});
+
+test("report-only failure diagnostics retain policy association without exposing query values", () => {
+  const data = monitoringEvidence();
+  data.violations[1].blockedURI = "https://other.test/secret";
+  let message;
+  try { validateBrowserEvidence(data); } catch (error) { message = error.message; }
+  expect(message).not.toContain("secret");
+  const metadata = JSON.parse(message.slice(message.indexOf(": ") + 2));
+  expect(metadata).toMatchObject({ expectedDocumentCount: 1, enforcingViolationCount: 1, reportOnlyViolationCount: 1, consoleErrorCount: 1 });
+  expect(metadata.violations[1]).toMatchObject({ disposition: "report", reportOnlyPolicyMatchesResponse: true });
+  expect(metadata.responsePolicies[0].reportOnly[2]).toEqual({ directive: "report-uri", values: ["https://csp-reporting.cloudflare.com/cdn-cgi/script_monitor/report?[redacted]"] });
+});
+
 test.each([
   ["Pages never accepts an exception", (data) => { data.contract = "pages"; }],
   ["non-beta host", (data) => { data.documents[0].url = "https://other.test/"; }],
@@ -71,6 +170,10 @@ test.each([
   ["external resource", (data) => { data.violations[0].blockedURI = "https://evil.test/script.js"; }],
   ["unknown inline line", (data) => { data.violations[0].lineNumber++; }],
   ["application JS source", (data) => { data.violations[0].sourceFile = "https://beta.huihui.dev/assets/main.js"; }],
+  ["wrong enforcing document", (data) => { data.violations[0].documentURI = "https://beta.huihui.dev/en/"; }],
+  ["wrong enforcing policy", (data) => { data.violations[0].originalPolicy = monitoringPolicy; }],
+  ["wrong enforcing column", (data) => { data.violations[0].columnNumber++; }],
+  ["unexpected enforcing sample", (data) => { data.violations[0].sample = "unexpected"; }],
   ["report-only", (data) => { data.violations[0].disposition = "report"; }],
   ["extra inline", (data) => { data.violations.push({ ...data.violations[0] }); }],
   ["extra console error", (data) => { data.consoles.push({ text: "unrelated error", location: {} }); }],

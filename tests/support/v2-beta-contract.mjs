@@ -27,14 +27,92 @@ export function jsdConsoleText(hash) {
   return `Executing inline script violates the following Content Security Policy directive 'script-src 'self''. Either the 'unsafe-inline' keyword, a hash ('sha256-${hash}'), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.`;
 }
 
+// Whitelist diagnostic fields and values; never serialize raw policy queries,
+// console text, samples, or response bodies.
+function browserEvidenceMetadata({ contract, url, documents, violations, consoles, responsePolicies = [] }) {
+  const safeUrl = (value) => {
+    if (value === "inline" || value === "") return value;
+    try {
+      const parsed = new URL(value);
+      const known = parsed.origin === BETA_ORIGIN || /^https:\/\/[0-9a-f]{8}\.huihuidev-beta\.pages\.dev$/.test(parsed.origin) || parsed.origin === "http://127.0.0.1:4176";
+      if (!known) return "[redacted URL]";
+      return parsed.origin + (["/", "/en/", "/ja/"].includes(parsed.pathname) || /^\/assets\/[\w.-]+\.(js|css|svg)$/.test(parsed.pathname) ? parsed.pathname : "/[redacted path]");
+    } catch { return "[redacted URL]"; }
+  };
+  const number = (value) => Number.isSafeInteger(value) ? value : null;
+  const directive = (value) => /^(default|script|style|img|connect|font|media|object|frame|child|worker|manifest|prefetch)-src(-elem|-attr)?$|^(base-uri|form-action|frame-ancestors)$/.test(value) ? value : "[unknown directive]";
+  // Diagnostic identification only, never an exception or evidence filter.
+  const policyMetadata = (value) => typeof value !== "string" ? [] : value.split(";").filter((part) => part.trim()).map((part) => {
+    const [name, ...values] = part.trim().split(/\s+/);
+    return {
+      directive: ["report-uri", "report-to"].includes(name) ? name : directive(name),
+      values: values.map((item) => {
+        if (["'self'", "'none'", "'unsafe-inline'", "'unsafe-eval'"].includes(item)) return item;
+        if (name === "report-uri") {
+          try {
+            const target = new URL(item);
+            if (target.origin === "https://csp-reporting.cloudflare.com" && target.pathname === "/cdn-cgi/script_monitor/report") return `${target.origin}${target.pathname}?[redacted]`;
+          } catch { /* Unknown policy values stay redacted. */ }
+        }
+        return "[redacted]";
+      }),
+    };
+  });
+  const expected = documents.filter(Boolean);
+  return JSON.stringify({
+    contract: ["custom", "pages"].includes(contract) ? contract : "[unknown contract]",
+    url: safeUrl(url), documentCount: documents.length, expectedDocumentCount: expected.length,
+    violationCount: violations.length, enforcingViolationCount: violations.filter((event) => event.disposition === "enforce").length,
+    reportOnlyViolationCount: violations.filter((event) => event.disposition === "report").length, consoleErrorCount: consoles.length,
+    expected: expected.map((item) => ({ url: safeUrl(item.url), line: number(item.line) })),
+    violations: violations.map((event) => ({
+      effectiveDirective: directive(event.effectiveDirective), violatedDirective: directive(event.violatedDirective),
+      blockedURI: safeUrl(event.blockedURI), disposition: ["enforce", "report"].includes(event.disposition) ? event.disposition : "[unknown disposition]",
+      sourceFile: safeUrl(event.sourceFile), documentURI: safeUrl(event.documentURI), lineNumber: number(event.lineNumber), columnNumber: number(event.columnNumber),
+      reportOnlyPolicyMatchesResponse: event.disposition === "report" && responsePolicies.some((item) => item.url === event.documentURI && item.reportOnlyPolicy === event.originalPolicy),
+      policy: policyMetadata(event.originalPolicy),
+    })),
+    consoles: consoles.map((event) => ({ url: safeUrl(event.location?.url), lineNumber: number(event.location?.lineNumber), columnNumber: number(event.location?.columnNumber) })),
+    responsePolicies: responsePolicies.map((item) => ({ url: safeUrl(item.url), enforcing: policyMetadata(item.enforcingPolicy), reportOnly: policyMetadata(item.reportOnlyPolicy) })),
+  });
+}
+
+// Observed beta monitoring form; only the opaque reporting query varies.
+// This recognizes telemetry, never permissions for application execution.
+function isCloudflareMonitoringPolicy(policy) {
+  return typeof policy === "string" && /^script-src 'unsafe-inline' 'unsafe-eval'; connect-src 'none'; report-uri https:\/\/csp-reporting\.cloudflare\.com\/cdn-cgi\/script_monitor\/report\?[^\s;,#"'<>]+; report-to cf-csp-endpoint$/.test(policy);
+}
+
 // A bijection is required: one delivered pinned bootstrap, one enforced block,
 // and one matching browser diagnostic. Extra or missing evidence fails closed.
-export function validateBrowserEvidence({ contract, documents, violations, consoles }) {
+export function validateBrowserEvidence({ contract, url, documents, violations, consoles, responsePolicies = [], assetUrls = [] }) {
   const expected = documents.filter(Boolean);
+  const check = (condition, message) => {
+    if (!condition) assert.fail(`${message}: ${browserEvidenceMetadata({ contract, url, documents, violations, consoles, responsePolicies })}`);
+  };
+  const betaNavigation = (value) => ["/", "/en/", "/ja/"].some((path) => value === BETA_ORIGIN + path);
+  const assets = new Set(assetUrls.filter((value) => typeof value === "string" && /^https:\/\/beta\.huihui\.dev\/assets\/[\w.-]+\.(js|css|svg)$/.test(value)));
+  for (const response of responsePolicies.filter((item) => item.reportOnlyPolicy)) {
+    check(contract === "custom" && betaNavigation(response.url), "Report-Only edge exception is beta custom-domain only");
+    check(isCloudflareMonitoringPolicy(response.reportOnlyPolicy) && Boolean(response.enforcingPolicy) && response.enforcingPolicy !== response.reportOnlyPolicy, "Unexpected delivered Report-Only policy");
+  }
+  const enforcing = [];
+  for (const event of violations) {
+    if (event.disposition === "enforce") { enforcing.push(event); continue; }
+    check(event.disposition === "report", "Unknown CSP violation disposition");
+    const responses = responsePolicies.filter((item) => item.url === event.documentURI);
+    // Reject ambiguous repeated navigation URLs instead of attributing an event
+    // to a stale policy from an earlier response at that URL.
+    check(contract === "custom" && betaNavigation(event.documentURI) && responses.length === 1 && responses[0].reportOnlyPolicy === event.originalPolicy && isCloudflareMonitoringPolicy(event.originalPolicy), "Report-Only violation has no attributable Cloudflare response policy");
+    check(event.effectiveDirective === event.violatedDirective && ["script-src-elem", "connect-src"].includes(event.effectiveDirective), "Unexpected monitoring violation directive");
+    check(assets.has(event.blockedURI) && (event.effectiveDirective !== "script-src-elem" || event.blockedURI.endsWith(".js")), "Monitoring violation is outside repository build resources");
+    check(event.sourceFile === "" || event.sourceFile === event.documentURI || (assets.has(event.sourceFile) && event.sourceFile.endsWith(".js")), "Monitoring violation has an unrelated source");
+    check(event.sample === "" && Number.isSafeInteger(event.lineNumber) && event.lineNumber >= 0 && Number.isSafeInteger(event.columnNumber) && event.columnNumber >= 0, "Unexpected monitoring violation metadata");
+  }
   assert(expected.length === 0 || (contract === "custom" && expected.every((item) => new URL(item.url).origin === BETA_ORIGIN)), "JSD exception is beta custom-domain only");
-  assert(violations.length === expected.length, "Unexpected CSP violation count");
-  assert(consoles.length === expected.length, "Unexpected console error count");
-  const remainingViolations = [...violations];
+  check(enforcing.length === expected.length, "Unexpected enforcing CSP violation count");
+  check(consoles.length === expected.length, "Unexpected console error count");
+  const remainingViolations = [...enforcing];
   const remainingConsoles = [...consoles];
   for (const item of expected) {
     const violation = remainingViolations.findIndex((event) => event.effectiveDirective === "script-src-elem" && event.violatedDirective === "script-src-elem" && event.blockedURI === "inline" && event.disposition === "enforce" && event.sourceFile === item.url && event.documentURI === item.url && event.lineNumber === item.line && event.columnNumber === 0 && event.sample === "" && event.originalPolicy === item.policy);
