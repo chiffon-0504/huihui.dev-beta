@@ -1,11 +1,97 @@
-import { readFile } from "node:fs/promises";
-import { describe, expect, test } from "vitest";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { parseDocument } from "yaml";
-import { PROJECT, validateDeployment, validateProject, validateSha } from "../scripts/v2-preview-deployment.mjs";
+import { PROJECT, findDeploymentId, resolve, validateDeployment, validateProject, validateSha } from "../scripts/v2-preview-deployment.mjs";
 
 const sha = "a".repeat(40);
 const id = "12345678-1234-1234-1234-123456789abc";
-const deployment = () => ({ id, project_name: PROJECT, environment: "production", latest_stage: { name: "deploy", status: "success" }, deployment_trigger: { metadata: { branch: "main", commit_hash: sha, commit_dirty: false } } });
+const uploadUrl = `https://12345678.${PROJECT}.pages.dev`;
+const deployment = () => ({ id, url: uploadUrl, project_name: PROJECT, environment: "production", latest_stage: { name: "deploy", status: "success" }, deployment_trigger: { metadata: { branch: "main", commit_hash: sha, commit_dirty: false } } });
+const pageResponse = (result, page = 1, totalPages = 1) => ({ success: true, result, result_info: { page, total_pages: totalPages } });
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+});
+
+describe("Pages API resolves the exact upload without latest-deployment guessing", () => {
+  test("finds a later-page upload despite other deployments of the same SHA", async () => {
+    const request = vi.fn()
+      .mockResolvedValueOnce(pageResponse([{ ...deployment(), id: "other", url: `https://87654321.${PROJECT}.pages.dev` }], 1, 2))
+      .mockResolvedValueOnce(pageResponse([deployment()], 2, 2));
+    await expect(findDeploymentId(sha, `${uploadUrl}/`, request)).resolves.toBe(id);
+    expect(request.mock.calls).toEqual([
+      ["/deployments?env=production&page=1&per_page=25", true],
+      ["/deployments?env=production&page=2&per_page=25", true],
+    ]);
+  });
+  test("rejects zero matches and ambiguity on a later page", async () => {
+    await expect(findDeploymentId(sha, uploadUrl, async () => pageResponse([]))).rejects.toThrow("exactly one");
+    const request = vi.fn()
+      .mockResolvedValueOnce(pageResponse([deployment()], 1, 2))
+      .mockResolvedValueOnce(pageResponse([{ ...deployment(), id: "87654321-1234-1234-1234-123456789abc" }], 2, 2));
+    await expect(findDeploymentId(sha, uploadUrl, request)).rejects.toThrow("exactly one");
+    expect(request).toHaveBeenCalledTimes(2);
+  });
+  test.each([
+    ["project_name", "huihuidev-beta"], ["url", `https://${PROJECT}.pages.dev`],
+    ["id", "invalid\ndeployment-id=injected"], ["environment", "preview"],
+    ["latest_stage", { name: "deploy", status: "failure" }],
+  ])("rejects an upload with wrong %s", async (key, value) => {
+    await expect(findDeploymentId(sha, uploadUrl, async () => pageResponse([{ ...deployment(), [key]: value }]))).rejects.toThrow();
+  });
+  test.each([["branch", "dev"], ["commit_hash", "b".repeat(40)], ["commit_dirty", true]])("rejects upload metadata %s", async (key, value) => {
+    const candidate = deployment();
+    candidate.deployment_trigger.metadata[key] = value;
+    await expect(findDeploymentId(sha, uploadUrl, async () => pageResponse([candidate]))).rejects.toThrow();
+  });
+  test.each(["", `https://${PROJECT}.pages.dev`, `https://main.${PROJECT}.pages.dev`, "https://12345678.huihuidev-beta.pages.dev", `${uploadUrl}/path`, `${uploadUrl}?x=1`])("rejects missing or non-immutable upload URL %s", async (url) => {
+    const request = vi.fn();
+    await expect(findDeploymentId(sha, url, request)).rejects.toThrow("immutable");
+    expect(request).not.toHaveBeenCalled();
+  });
+  test.each([
+    { result: [] }, pageResponse(null), pageResponse([], 2), pageResponse([], 1, 101),
+    pageResponse([], 1, -1), pageResponse([], 1, 1.5), pageResponse([deployment()], 1, 0),
+  ])("rejects incomplete or malformed pagination %#", async (response) => {
+    await expect(findDeploymentId(sha, uploadUrl, async () => response)).rejects.toThrow();
+  });
+  test("rejects changing or repeated pages instead of accepting an early match", async () => {
+    for (const secondPage of [pageResponse([], 2, 3), pageResponse([deployment()], 2, 2)]) {
+      const request = vi.fn().mockResolvedValueOnce(pageResponse([deployment()], 1, 2)).mockResolvedValueOnce(secondPage);
+      await expect(findDeploymentId(sha, uploadUrl, request)).rejects.toThrow(/pagination/);
+    }
+  });
+  test.each(["success", "zero", "ambiguous", "http-error", "api-error"])("writes GITHUB_OUTPUT only after successful API resolution: %s", async (scenario) => {
+    const directory = await mkdtemp(join(tmpdir(), "v2-deployment-"));
+    const output = join(directory, "output");
+    try {
+      await writeFile(output, "");
+      vi.stubEnv("GITHUB_OUTPUT", output);
+      vi.stubEnv("DEPLOYMENT_URL", uploadUrl);
+      vi.stubEnv("CLOUDFLARE_ACCOUNT_ID", "a".repeat(32));
+      vi.stubEnv("CLOUDFLARE_API_TOKEN", "unit-test-token");
+      const candidates = scenario === "zero" ? [] : [deployment()];
+      if (scenario === "ambiguous") candidates.push({ ...deployment(), id: "87654321-1234-1234-1234-123456789abc" });
+      const body = { ...pageResponse(candidates), success: scenario !== "api-error" };
+      const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status: scenario === "http-error" ? 403 : 200 }));
+      vi.stubGlobal("fetch", fetchMock);
+      if (scenario === "success") {
+        await resolve(sha);
+        expect(await readFile(output, "utf8")).toBe(`deployment-id=${id}\n`);
+      } else {
+        await expect(resolve(sha)).rejects.toThrow();
+        expect(await readFile(output, "utf8")).toBe("");
+      }
+      expect(fetchMock).toHaveBeenCalledOnce();
+      expect(fetchMock.mock.calls[0][0]).toBe(`https://api.cloudflare.com/client/v4/accounts/${"a".repeat(32)}/pages/projects/${PROJECT}/deployments?env=production&page=1&per_page=25`);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+});
 
 describe("v2 preview deployment identity fails closed", () => {
   test("accepts an exact successful v2 main deployment", () => {
@@ -53,7 +139,18 @@ test("v2 workflow isolates writes and verifies uploaded identity before and afte
   expect(deploy.with.workingDirectory).toBe("v2");
   expect(deploy.with.command).toBe("pages deploy dist --project-name=huihuidev-v2-beta --branch=main --commit-hash=${{ github.sha }} --commit-dirty=false");
   expect(steps.slice(0, deployIndex).map((step) => step.run)).toEqual(expect.arrayContaining(["npm ci", "npm run build:v2", "node tests/scripts/v2-preview-deployment.mjs prepare", "node tests/scripts/v2-preview-deployment.mjs preflight"]));
-  expect(steps.filter((step) => step.run === "node tests/scripts/v2-preview-deployment.mjs verify")).toHaveLength(2);
+  const resolveIndex = steps.findIndex((step) => step.id === "deployment");
+  expect(resolveIndex).toBe(deployIndex + 1);
+  expect(steps[resolveIndex].run).toBe("node tests/scripts/v2-preview-deployment.mjs resolve");
+  expect(steps[resolveIndex].env.DEPLOYMENT_URL).toBe("${{ steps.pages.outputs.deployment-url }}");
+  expect(job.env.TARGET_SHA).toBe("${{ github.sha }}");
+  const verifySteps = steps.filter((step) => step.run === "node tests/scripts/v2-preview-deployment.mjs verify");
+  expect(verifySteps).toHaveLength(2);
+  for (const step of verifySteps) {
+    expect(steps.indexOf(step)).toBeGreaterThan(resolveIndex);
+    expect(step.env.DEPLOYMENT_ID).toBe("${{ steps.deployment.outputs.deployment-id }}");
+  }
+  expect(source).not.toContain("pages-deployment-id");
   expect(steps.filter((step) => step.uses)).toSatisfy((actions) => actions.every((step) => /@[a-f0-9]{40}$/.test(step.uses)));
   expect(source).not.toMatch(/workers\/huihui-api|huihui\.dev-stable|environment: production|secrets: inherit/);
 });

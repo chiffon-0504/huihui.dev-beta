@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { readFile, readdir, writeFile } from "node:fs/promises";
+import { appendFile, readFile, readdir, writeFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
 export const PROJECT = "huihuidev-v2-beta";
@@ -36,7 +36,7 @@ export function validateDeployment(deployment, sha, id) {
   assert.equal(deployment.deployment_trigger?.metadata?.commit_dirty, false);
 }
 
-async function cloudflare(path) {
+async function cloudflare(path, includePagination = false) {
   const account = required("CLOUDFLARE_ACCOUNT_ID");
   assert.match(account, /^[a-f0-9]{32}$/);
   const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${account}/pages/projects/${PROJECT}${path}`, {
@@ -47,7 +47,45 @@ async function cloudflare(path) {
   assert(response.ok, `Pages API HTTP ${response.status}; check project existence and Account / Cloudflare Pages / Edit permission`);
   const body = await response.json();
   assert(body.success, "Pages API request failed");
-  return body.result;
+  return includePagination ? body : body.result;
+}
+
+export async function findDeploymentId(sha, uploadUrl, request = cloudflare) {
+  validateSha(sha);
+  // Use the immutable upload URL, never the project/branch alias or list order.
+  assert.match(uploadUrl, /^https:\/\/[a-f0-9]{8}\.huihuidev-v2-beta\.pages\.dev\/?$/, "Expected immutable v2 upload URL");
+  const url = uploadUrl.replace(/\/$/, "");
+  const matches = [];
+  const seen = new Set();
+  let totalPages;
+  for (let page = 1; page <= (totalPages ?? 1); page++) {
+    const { result, result_info: info } = await request(`/deployments?env=production&page=${page}&per_page=25`, true);
+    assert(Array.isArray(result), "Invalid Pages deployment list");
+    assert.equal(info?.page, page, "Pages pagination mismatch");
+    assert(Number.isInteger(info.total_pages) && info.total_pages >= 0 && info.total_pages <= 100, "Incomplete or unbounded Pages pagination");
+    assert(info.total_pages >= page || (info.total_pages === 0 && result.length === 0), "Inconsistent Pages pagination");
+    totalPages ??= info.total_pages;
+    assert.equal(info.total_pages, totalPages, "Pages pagination changed during lookup");
+    for (const deployment of result) {
+      assert(!seen.has(deployment.id), "Repeated deployment in Pages pagination");
+      seen.add(deployment.id);
+      const metadata = deployment.deployment_trigger?.metadata;
+      if (deployment.url?.replace(/\/$/, "") === url && deployment.project_name === PROJECT && metadata?.branch === "main" && metadata.commit_hash === sha) {
+        matches.push(deployment);
+      }
+    }
+  }
+  assert.equal(matches.length, 1, "Expected exactly one Pages deployment matching upload URL, project, main and TARGET_SHA");
+  const deployment = matches[0];
+  assert.match(deployment.id, /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/, "Invalid Pages deployment ID");
+  validateDeployment(deployment, sha, deployment.id);
+  return deployment.id;
+}
+
+export async function resolve(sha) {
+  const id = await findDeploymentId(sha, required("DEPLOYMENT_URL"));
+  await appendFile(required("GITHUB_OUTPUT"), `deployment-id=${id}\n`);
+  console.log(`Resolved ${PROJECT} deployment ${id} for ${sha}`);
 }
 
 export async function prepare(sha) {
@@ -120,8 +158,8 @@ async function verify(sha) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
     const sha = validateSha(required("TARGET_SHA"));
-    const commands = { prepare, preflight, verify };
-    assert(Object.hasOwn(commands, process.argv[2]), "Expected prepare, preflight or verify");
+    const commands = { prepare, preflight, resolve, verify };
+    assert(Object.hasOwn(commands, process.argv[2]), "Expected prepare, preflight, resolve or verify");
     await commands[process.argv[2]](sha);
   } catch (error) {
     console.error(error.message);

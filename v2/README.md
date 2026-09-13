@@ -59,8 +59,11 @@ in-flight upload to make room for another run.
 
 The upload specifies `--branch=main`, the full `github.sha`, and a clean commit.
 `deployment.json` records the project, repository and exact checkout SHA. After
-upload, bounded polling reads the action's exact Pages deployment ID until it
-succeeds; the verifier checks project, main branch, clean SHA, active canonical
+upload, the Pages API resolves the deployment ID by matching the action's immutable
+upload URL, project, main branch and full SHA across all result pages (at most 100).
+Zero or multiple matches, incomplete pagination or an unsuccessful deployment fail
+closed. Both verification steps receive this API-resolved ID. Bounded polling
+reads that exact ID; the verifier checks project, main branch, clean SHA, active canonical
 deployment and custom-domain status. It compares the served manifest, all three
 HTML entries and every asset byte-for-byte with the build, including enforcing
 CSP delivery. The same identity check runs again after Chromium smoke.
