@@ -1,11 +1,12 @@
 import { content, type Locale } from "../content";
 import { element } from "../dom";
 import type { ThemeController, ThemePreference, ThemeState } from "../theme/controller";
+import { createIcon } from "./icons";
 
 export function createThemeSwitcher(locale: Locale, theme: ThemeController): HTMLDivElement {
   const copy = content[locale];
   const dropdown = element("div", "theme-switcher");
-  const trigger = element("button", "theme-trigger");
+  const trigger = element("button", "theme-trigger navbar-control");
   trigger.type = "button";
   trigger.setAttribute("aria-haspopup", "menu");
   trigger.setAttribute("aria-expanded", "false");
@@ -83,12 +84,12 @@ export function createThemeSwitcher(locale: Locale, theme: ThemeController): HTM
   });
 
   const render = (state: ThemeState): void => {
-    icon.textContent = state.effective === "light" ? "☀︎" : "☾";
+    icon.replaceChildren(createIcon(state.effective === "light" ? "sun" : "moon"));
     trigger.setAttribute("aria-label", `${copy.theme}: ${labels[state.effective]}`);
     for (const { option, selected, mode } of options) {
       const checked = mode === state.preference;
       option.setAttribute("aria-checked", String(checked));
-      selected.textContent = checked ? "✓" : "";
+      selected.replaceChildren(...(checked ? [createIcon("check")] : []));
     }
   };
   theme.subscribe(render);

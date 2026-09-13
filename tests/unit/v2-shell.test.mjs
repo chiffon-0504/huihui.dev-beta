@@ -58,6 +58,13 @@ function luminance(hex) {
   return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722;
 }
 
+test("v2 dark foundation and large surfaces are neutral while light tokens stay unchanged", async () => {
+  const css = await readFile(new URL("../../v2/src/styles/tokens.css", import.meta.url), "utf8");
+  const palette = (theme) => Object.fromEntries([...css.match(new RegExp(`\\[data-theme="${theme}"\\]\\s*\\{([^}]+)\\}`))[1].matchAll(/--color-([\w-]+):\s*(#[0-9a-f]{6})/g)].map((match) => [match[1], match[2]]));
+  expect(palette("dark")).toMatchObject({ background: "#000000", surface: "#0a0a0a", border: "#404040", text: "#ededed", muted: "#b8b8b8" });
+  expect(palette("light")).toEqual({ background: "#fafaf9", surface: "#ffffff", text: "#202522", muted: "#5b625d", border: "#d9ddd8", accent: "#294e3b", focus: "#1264a3" });
+});
+
 test.each(["light", "dark"])("v2 %s text and focus tokens meet contrast requirements on both surfaces", async (theme) => {
   const css = await readFile(new URL("../../v2/src/styles/tokens.css", import.meta.url), "utf8");
   const palette = css.match(new RegExp(`\\[data-theme="${theme}"\\]\\s*\\{([^}]+)\\}`))?.[1];

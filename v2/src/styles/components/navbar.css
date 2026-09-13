@@ -44,14 +44,47 @@
 
 .language-switcher,
 .theme-switcher {
+  display: flex;
+  align-items: center;
   position: relative;
   font-size: var(--text-small);
 }
 
-.language-trigger {
+.navbar-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-width: 2.75rem;
   min-height: 2.75rem;
   padding: var(--space-2) var(--space-1);
+  font-size: var(--text-small);
+  line-height: 1.5;
   cursor: pointer;
+}
+
+.language-trigger {
+  list-style: none;
+}
+
+.language-trigger::marker {
+  content: "";
+}
+
+.language-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.icon {
+  display: block;
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.theme-icon {
+  display: flex;
+  align-items: center;
 }
 
 .language-options,
@@ -85,7 +118,9 @@
 
 .language-selected,
 .theme-selected {
-  flex: 0 0 1em;
+  display: flex;
+  align-items: center;
+  flex: 0 0 1.25rem;
 }
 
 .theme-trigger,
@@ -96,23 +131,12 @@
   cursor: pointer;
 }
 
-.theme-trigger {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 2.75rem;
-  min-height: 2.75rem;
-  padding: var(--space-1);
-  font-size: 1.5rem;
-  line-height: 1;
-}
-
 .theme-option {
   width: 100%;
   text-align: start;
 }
 
-.theme-trigger:hover,
+.navbar-control:hover,
 .theme-option:hover {
   color: var(--color-accent);
 }

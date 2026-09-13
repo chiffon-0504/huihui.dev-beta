@@ -1,9 +1,10 @@
 import { content, localeHref, localeLinks, locales, type Locale } from "../content";
 import { element, link } from "../dom";
+import { createIcon } from "./icons";
 
 export function createLanguageSwitcher(locale: Locale): HTMLDetailsElement {
   const dropdown = element("details", "language-switcher");
-  const trigger = element("summary", "language-trigger", localeLinks[locale].shortLabel);
+  const trigger = element("summary", "language-trigger navbar-control", localeLinks[locale].shortLabel);
   trigger.setAttribute("aria-label", `${content[locale].languages}: ${localeLinks[locale].shortLabel}`);
   const options = element("ul", "language-options");
   const links = locales.map((language) => {
@@ -17,8 +18,9 @@ export function createLanguageSwitcher(locale: Locale): HTMLDetailsElement {
       if (language === locale) trigger.focus();
       dropdown.open = false;
     });
-    const selected = element("span", "language-selected", language === locale ? "✓" : "");
+    const selected = element("span", "language-selected");
     selected.setAttribute("aria-hidden", "true");
+    if (language === locale) selected.append(createIcon("check"));
     option.prepend(selected);
     item.append(option);
     options.append(item);

@@ -33,11 +33,11 @@
 
 [data-theme="dark"] {
   color-scheme: dark;
-  --color-background: #151a17;
-  --color-surface: #1e2621;
-  --color-text: #edf1eb;
-  --color-muted: #b1bdb2;
-  --color-border: #465349;
+  --color-background: #000000;
+  --color-surface: #0a0a0a;
+  --color-text: #ededed;
+  --color-muted: #b8b8b8;
+  --color-border: #404040;
   --color-accent: #a3d5af;
   --color-focus: #85c8ff;
 }

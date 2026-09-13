@@ -30,7 +30,8 @@ function control(page) {
 
 async function expectEffective(page, effective) {
   await expect(page.locator("html")).toHaveAttribute("data-theme", effective);
-  await expect(page.locator(".theme-icon")).toHaveText(effective === "light" ? "☀︎" : "☾");
+  await expect(page.locator(".theme-icon svg")).toHaveAttribute("data-icon", effective === "light" ? "sun" : "moon");
+  await expect(page.locator(".theme-icon")).toHaveText("");
   expect(await page.locator("html").evaluate((node) => getComputedStyle(node).colorScheme)).toBe(effective);
 }
 
@@ -47,7 +48,7 @@ async function expectPreference(page, selected, labels = ["Auto", "Light", "Dark
   for (const label of labels) {
     const item = root.getByRole("menuitemradio", { name: label, exact: true });
     await expect(item).toHaveAttribute("aria-checked", label === selected ? "true" : "false");
-    await expect(item.locator(".theme-selected")).toHaveText(label === selected ? "✓" : "");
+    await expect(item.locator('.theme-selected svg[data-icon="check"]')).toHaveCount(label === selected ? 1 : 0);
     await expect(item.locator(".theme-selected")).toHaveAttribute("aria-hidden", "true");
   }
   await expect(root.locator('[role="menuitemradio"][aria-checked="true"]')).toHaveCount(1);
@@ -64,7 +65,9 @@ for (const locale of locales) {
       await expectEffective(page, "light");
       const { root, trigger, menu } = control(page);
       await expect(trigger).toHaveAccessibleName(`${locale.theme}: ${locale.light}`);
-      await expect(trigger).toHaveText("☀︎");
+      await expect(trigger).toHaveText("");
+      await expect(trigger.locator("svg")).toHaveAttribute("aria-hidden", "true");
+      await expect(trigger.locator("svg")).toHaveAttribute("focusable", "false");
       await expect(trigger).toHaveAttribute("aria-haspopup", "menu");
       await expect(trigger).toHaveAttribute("aria-expanded", "false");
       await expectPreference(page, locale.auto, [locale.auto, locale.light, locale.dark]);
@@ -319,7 +322,7 @@ for (const saved of [null, "dark"]) {
       // application module arrives, even with its request deliberately held.
       await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
       await expect(page.locator("html")).toHaveCSS("color-scheme", "dark");
-      await expect(page.locator("html")).toHaveCSS("background-color", "rgb(21, 26, 23)");
+      await expect(page.locator("html")).toHaveCSS("background-color", "rgb(0, 0, 0)");
       await expect(page.locator("#app > *")).toHaveCount(0);
     } finally {
       releaseMain();
