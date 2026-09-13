@@ -64,7 +64,7 @@ function themeBootstrap() {
 
 export default defineConfig({
   root: fromRoot("./v2/"),
-  publicDir: "public",
+  publicDir: false,
   appType: "mpa",
   plugins: [themeBootstrap()],
   build: {
