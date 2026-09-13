@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { inspectDocument, validateBrowserEvidence, validateResponse, validateSecurityHeaders } from "../support/v2-beta-contract.mjs";
 
 export async function checkNavigation(response, expectedUrl, expectedHeaders) {
@@ -24,6 +24,7 @@ export async function guardBrowser(page, baseURL, { contract = "pages", verifyBu
   const violations = [];
   const documents = [];
   const pending = [];
+  const builtAssets = verifyBuild ? new Set((await readdir(new URL("../../v2/dist/assets/", import.meta.url))).map((name) => `/assets/${name}`)) : null;
   await page.exposeBinding("recordBetaCspViolation", (source, event) => {
     if (source.frame !== page.mainFrame()) errors.push("Browser/custom-domain unexpected frame CSP violation");
     violations.push(event);
@@ -68,7 +69,10 @@ export async function guardBrowser(page, baseURL, { contract = "pages", verifyBu
   await page.route("**/*", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
-    if (url.origin !== new URL(baseURL).origin || request.method() !== "GET" || url.pathname.startsWith("/api/") || url.pathname.startsWith("/cdn-cgi/challenge-platform/")) {
+    const unexpectedBuildRequest = verifyBuild && (url.search || (request.isNavigationRequest()
+      ? request.frame() !== page.mainFrame() || !["/", "/en/", "/ja/"].includes(url.pathname)
+      : !builtAssets.has(url.pathname)));
+    if (unexpectedBuildRequest || url.origin !== new URL(baseURL).origin || request.method() !== "GET" || url.pathname.startsWith("/api/") || url.pathname.startsWith("/cdn-cgi/challenge-platform/")) {
       errors.push("Browser/custom-domain forbidden request or challenge resource; no challenge solving allowed");
       await route.abort();
     } else {

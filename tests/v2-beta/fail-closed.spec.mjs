@@ -27,7 +27,7 @@ for (const scenario of ["challenge", "403", "missing-csp", "network"]) {
 
 // The actual browser must block the pinned bootstrap without requesting JSD.
 // No live response is intercepted by this local-only fixture suite.
-for (const scenario of ["known-jsd", "pages-jsd", "wrong-host", "changed-jsd", "extra-inline", "extra-external", "extra-console", "application-csp", "missing-fingerprint", "speculation-resource"]) {
+for (const scenario of ["known-jsd", "pages-jsd", "wrong-host", "changed-jsd", "extra-inline", "extra-external", "extra-console", "application-csp", "missing-fingerprint", "speculation-resource", "unknown-build-request"]) {
   test(`JSD browser evidence: ${scenario}`, async ({ page }) => {
     const baseURL = scenario === "wrong-host" ? "https://other.test" : "https://beta.huihui.dev";
     const builtHtml = await readFile(new URL("../../v2/dist/index.html", import.meta.url), "utf8");
@@ -38,11 +38,16 @@ for (const scenario of ["known-jsd", "pages-jsd", "wrong-host", "changed-jsd", "
     if (scenario === "extra-external") html = html.replace("</body>", '<script src="https://other.test/unexpected.js"></script></body>');
     if (scenario === "missing-fingerprint") html = builtHtml.replace("</body>", "<script>window.unexpected=true</script></body>");
     const requests = [];
+    let unknownDispatched = false;
+    page.on("request", (request) => requests.push(new URL(request.url()).pathname));
     await page.route("**/*", async (route) => {
       const path = new URL(route.request().url()).pathname;
-      requests.push(path);
       if (path === "/") return route.fulfill({ headers: { ...headers, ...(scenario === "speculation-resource" ? { "Speculation-Rules": '"/cdn-cgi/speculation"' } : {}) }, contentType: "text/html", body: html });
       if (path === "/cdn-cgi/speculation") return route.fulfill({ contentType: "application/speculationrules+json", body: '{"prefetch":[]}' });
+      if (path === "/assets/not-in-build.js") {
+        unknownDispatched = true;
+        return route.fulfill({ contentType: "text/javascript", body: "/* unexpected */" });
+      }
       if (!/^\/assets\/[\w.-]+\.(js|css|svg)$/.test(path)) return route.abort();
       const contentType = path.endsWith(".js") ? "text/javascript" : path.endsWith(".css") ? "text/css" : "image/svg+xml";
       await route.fulfill({ contentType, body: await readFile(new URL(`../../v2/dist${path}`, import.meta.url)) });
@@ -51,6 +56,7 @@ for (const scenario of ["known-jsd", "pages-jsd", "wrong-host", "changed-jsd", "
     await navigate(page, `${baseURL}/`, headers);
     await expect(page.getByRole("main")).toBeVisible();
     if (scenario === "extra-console") await page.evaluate(() => console.error("unrelated runtime error"));
+    if (scenario === "unknown-build-request") await page.evaluate(() => fetch("/assets/not-in-build.js").catch(() => {}));
     if (scenario === "application-csp") await page.evaluate(() => {
       const script = document.createElement("script");
       script.textContent = "window.unexpected=true";
@@ -64,6 +70,10 @@ for (const scenario of ["known-jsd", "pages-jsd", "wrong-host", "changed-jsd", "
     } else {
       await expect(checkErrors()).rejects.toThrow();
       if (scenario === "speculation-resource") expect(requests).toContain("/cdn-cgi/speculation");
+      if (scenario === "unknown-build-request") {
+        expect(requests).toContain("/assets/not-in-build.js");
+        expect(unknownDispatched).toBe(false);
+      }
     }
   });
 }
