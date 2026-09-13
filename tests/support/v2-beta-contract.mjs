@@ -92,7 +92,7 @@ export function validateBrowserEvidence({ contract, url, documents, violations, 
   };
   const betaNavigation = (value) => ["/", "/en/", "/ja/"].some((path) => value === BETA_ORIGIN + path);
   const assets = new Set(assetUrls.filter((value) => typeof value === "string" && /^https:\/\/beta\.huihui\.dev\/assets\/[\w.-]+\.(js|css|svg)$/.test(value)));
-  for (const response of responsePolicies.filter((item) => item.reportOnlyPolicy)) {
+  for (const response of responsePolicies.filter((item) => item.reportOnlyPolicy !== undefined)) {
     check(contract === "custom" && betaNavigation(response.url), "Report-Only edge exception is beta custom-domain only");
     check(isCloudflareMonitoringPolicy(response.reportOnlyPolicy) && Boolean(response.enforcingPolicy) && response.enforcingPolicy !== response.reportOnlyPolicy, "Unexpected delivered Report-Only policy");
   }

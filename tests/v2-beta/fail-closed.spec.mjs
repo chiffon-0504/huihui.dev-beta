@@ -27,14 +27,15 @@ for (const scenario of ["challenge", "403", "missing-csp", "network"]) {
 
 // The actual browser must block the pinned bootstrap without requesting JSD.
 // No live response is intercepted by this local-only fixture suite.
-for (const scenario of ["known-jsd", "pages-jsd", "wrong-host", "changed-jsd", "extra-inline", "extra-external", "extra-console", "application-csp", "missing-fingerprint", "speculation-resource", "unknown-build-request", "asset-bytes", "sampled-report-policy", "monitoring-jsd", "monitoring-no-jsd", "pages-monitoring", "monitoring-extra-enforce", "monitoring-extra-console"]) {
+for (const scenario of ["known-jsd", "pages-jsd", "wrong-host", "changed-jsd", "extra-inline", "extra-external", "extra-console", "application-csp", "missing-fingerprint", "speculation-resource", "unknown-build-request", "asset-bytes", "sampled-report-policy", "monitoring-jsd", "monitoring-no-jsd", "pages-monitoring", "monitoring-extra-enforce", "monitoring-extra-console", "empty-report", "pages-empty-report"]) {
   test(`JSD browser evidence: ${scenario}`, async ({ page }) => {
     const baseURL = scenario === "wrong-host" ? "https://other.test" : "https://beta.huihui.dev";
     const builtHtml = await readFile(new URL("../../v2/dist/index.html", import.meta.url), "utf8");
     const bootstrap = cloudflareJsdBootstrap("0123456789abcdef", "MTc4OTI4OTcwOQ==");
     let html = builtHtml.replace("</body>", `<script>${bootstrap}</script></body>`);
     const monitoring = scenario.startsWith("monitoring-") || scenario === "pages-monitoring";
-    if (["monitoring-no-jsd", "pages-monitoring"].includes(scenario)) html = builtHtml;
+    const emptyReport = ["empty-report", "pages-empty-report"].includes(scenario);
+    if (["monitoring-no-jsd", "pages-monitoring"].includes(scenario) || emptyReport) html = builtHtml;
     if (scenario === "changed-jsd") html = html.replace("a.height=1", "a.height=2");
     if (scenario === "extra-inline") html = html.replace("</body>", "<script>window.unexpected=true</script></body>");
     if (scenario === "extra-external") html = html.replace("</body>", '<script src="https://other.test/unexpected.js"></script></body>');
@@ -44,6 +45,7 @@ for (const scenario of ["known-jsd", "pages-jsd", "wrong-host", "changed-jsd", "
     page.on("request", (request) => requests.push(new URL(request.url()).pathname));
     await page.route("**/*", async (route) => {
       const path = new URL(route.request().url()).pathname;
+      if (path === "/" && emptyReport) return route.fulfill({ headers: { ...headers, "content-security-policy-report-only": "" }, contentType: "text/html", body: html });
       if (path === "/" && monitoring) return route.fulfill({ headers: { ...headers, "content-security-policy-report-only": "script-src 'unsafe-inline' 'unsafe-eval'; connect-src 'none'; report-uri https://csp-reporting.cloudflare.com/cdn-cgi/script_monitor/report?v=fixture; report-to cf-csp-endpoint" }, contentType: "text/html", body: html });
       // Omit a reporting endpoint in this isolated fixture so it exercises
       // evidence counting without first failing the outbound-request guard.
@@ -60,7 +62,7 @@ for (const scenario of ["known-jsd", "pages-jsd", "wrong-host", "changed-jsd", "
       if (scenario === "asset-bytes" && path.endsWith(".js")) body = Buffer.concat([body, Buffer.from("\n/* altered served bytes */")]);
       await route.fulfill({ contentType, body });
     });
-    const checkErrors = await guardBrowser(page, baseURL, { contract: ["pages-jsd", "pages-monitoring"].includes(scenario) ? "pages" : "custom", verifyBuild: true });
+    const checkErrors = await guardBrowser(page, baseURL, { contract: ["pages-jsd", "pages-monitoring", "pages-empty-report"].includes(scenario) ? "pages" : "custom", verifyBuild: true });
     await navigate(page, `${baseURL}/`, headers);
     await expect(page.getByRole("main")).toBeVisible();
     if (["extra-console", "monitoring-extra-console"].includes(scenario)) await page.evaluate(() => console.error("unrelated runtime error"));
@@ -83,7 +85,8 @@ for (const scenario of ["known-jsd", "pages-jsd", "wrong-host", "changed-jsd", "
         try { await checkErrors(); } catch (error) { failure = error.message; }
         expect(failure).toContain("Unexpected delivered Report-Only policy");
         expect(failure).toContain('"reportOnlyPolicyMatchesResponse":true');
-      } else await expect(checkErrors()).rejects.toThrow();
+      } else if (emptyReport) await expect(checkErrors()).rejects.toThrow(/Report-Only/);
+      else await expect(checkErrors()).rejects.toThrow();
       if (scenario === "speculation-resource") expect(requests).toContain("/cdn-cgi/speculation");
       if (scenario === "unknown-build-request") {
         expect(requests).toContain("/assets/not-in-build.js");

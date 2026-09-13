@@ -101,6 +101,22 @@ test.each([0, 1, 7, 13])("classifies %i attributed monitoring events separately 
   expect(validateBrowserEvidence(monitoringEvidence(count))).toBe(1);
 });
 
+for (const contract of ["custom", "pages"]) {
+  test.each([
+    ["absent", undefined],
+    ["empty", ""],
+    ["malformed", "not-a-csp-policy"],
+    ["recognized", monitoringPolicy],
+  ])(`${contract} validates Report-Only header presence: %s`, (_name, reportOnlyPolicy) => {
+    const data = monitoringEvidence(0);
+    Object.assign(data, { contract, documents: [null], violations: [], consoles: [] });
+    data.responsePolicies[0].reportOnlyPolicy = reportOnlyPolicy;
+    if (reportOnlyPolicy === undefined || (contract === "custom" && reportOnlyPolicy === monitoringPolicy)) {
+      expect(validateBrowserEvidence(data)).toBe(0);
+    } else expect(() => validateBrowserEvidence(data)).toThrow(/Report-Only/);
+  });
+}
+
 test("monitoring also works on a sampled document without a JSD injection", () => {
   const data = monitoringEvidence();
   data.documents = [null];
