@@ -3,8 +3,8 @@ import { getContent, localeHref, supportedLocales } from "../../v2/src/locales";
 
 async function expectReflow(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  // Catch clipping inside a card or CTA even when the document itself fits.
-  const clipped = await page.locator("main h1, main h2, main h3, main p, main a").evaluateAll((nodes) =>
+  // Catch intrinsic grid overflow into the gutter even when the document fits.
+  const clipped = await page.locator(".home-topic-list, main h1, main h2, main h3, main p, main a").evaluateAll((nodes) =>
     // Glyph ink can extend past a line box without clipping when overflow is visible.
     nodes.filter((node) => node.scrollWidth > node.clientWidth ||
       (getComputedStyle(node).overflowY !== "visible" && node.scrollHeight > node.clientHeight))

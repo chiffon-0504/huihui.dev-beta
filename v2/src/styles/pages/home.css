@@ -129,6 +129,7 @@
 
 .home-topic-list {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-8);
   margin-top: var(--space-8);
 }
