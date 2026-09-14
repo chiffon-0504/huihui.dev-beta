@@ -5,6 +5,7 @@
 @import "./typography.css";
 @import "./layout.css";
 @import "./utilities.css";
+@import "./components/button.css";
 @import "./components/navbar.css";
 @import "./components/footer.css";
 @import "./pages/home.css";

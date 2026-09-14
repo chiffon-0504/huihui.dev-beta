@@ -83,11 +83,11 @@ function luminance(hex) {
   return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722;
 }
 
-test("v2 dark foundation and large surfaces are neutral while light tokens stay unchanged", async () => {
+test("v2 palettes preserve existing accents and isolate the light button color", async () => {
   const css = await readFile(new URL("../../v2/src/styles/tokens.css", import.meta.url), "utf8");
   const palette = (theme) => Object.fromEntries([...css.match(new RegExp(`\\[data-theme="${theme}"\\]\\s*\\{([^}]+)\\}`))[1].matchAll(/--color-([\w-]+):\s*(#[0-9a-f]{6})/g)].map((match) => [match[1], match[2]]));
-  expect(palette("dark")).toMatchObject({ background: "#000000", surface: "#0a0a0a", border: "#404040", text: "#ededed", muted: "#b8b8b8" });
-  expect(palette("light")).toEqual({ background: "#fafaf9", surface: "#ffffff", text: "#202522", muted: "#5b625d", border: "#d9ddd8", accent: "#294e3b", focus: "#1264a3" });
+  expect(palette("dark")).toMatchObject({ background: "#000000", surface: "#0a0a0a", border: "#404040", text: "#ededed", muted: "#b8b8b8", accent: "#8fd3ff", focus: "#85c8ff" });
+  expect(palette("light")).toEqual({ background: "#fafaf9", surface: "#ffffff", text: "#202522", muted: "#5b625d", border: "#d9ddd8", accent: "#294e3b", button: "#006fde", focus: "#1264a3" });
 });
 
 test.each(["light", "dark"])("v2 %s text and focus tokens meet contrast requirements on both surfaces", async (theme) => {
@@ -95,7 +95,10 @@ test.each(["light", "dark"])("v2 %s text and focus tokens meet contrast requirem
   const palette = css.match(new RegExp(`\\[data-theme="${theme}"\\]\\s*\\{([^}]+)\\}`))?.[1];
   expect(palette).toBeDefined();
   const colors = Object.fromEntries([...palette.matchAll(/--color-([\w-]+):\s*(#[0-9a-f]{6})/g)].map((match) => [match[1], match[2]]));
-  for (const foreground of ["text", "muted", "accent", "focus"]) {
+  const button = palette.match(/--color-button:\s*(#[0-9a-f]{6}|var\(--color-accent\))/)?.[1];
+  expect(button).toBeDefined();
+  colors.button = button === "var(--color-accent)" ? colors.accent : button;
+  for (const foreground of ["text", "muted", "accent", "button", "focus"]) {
     for (const background of ["background", "surface"]) {
       const values = [luminance(colors[foreground]), luminance(colors[background])].sort((a, b) => b - a);
       const ratio = (values[0] + 0.05) / (values[1] + 0.05);

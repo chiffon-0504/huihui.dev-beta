@@ -27,6 +27,17 @@
   padding-block: var(--space-2);
 }
 
+.brand:hover,
+.brand:focus-visible {
+  color: var(--color-button);
+  text-decoration: none;
+}
+
+.navbar .button--quiet:is(:hover, :focus-visible) {
+  background: transparent;
+  box-shadow: none;
+}
+
 .navbar-primary,
 .navbar-actions {
   display: flex;
@@ -132,26 +143,13 @@
   display: flex;
   align-items: center;
   flex: 0 0 var(--icon-size);
-}
-
-.theme-trigger,
-.theme-option {
-  color: inherit;
-  background: transparent;
-  border: 0;
-  cursor: pointer;
+  /* Include empty checkmark slots in the menu's intrinsic width. */
+  width: var(--icon-size);
 }
 
 .theme-option {
   width: 100%;
   text-align: start;
-}
-
-.navbar-control:hover,
-.navbar-control:focus-visible,
-.theme-option:hover,
-.theme-option:focus-visible {
-  color: var(--color-accent);
 }
 
 @media (max-width: 40rem) {

@@ -5,12 +5,12 @@ import { createIcon } from "./icons";
 export function createLanguageSwitcher(locale: Locale): HTMLDetailsElement {
   const copy = getContent(locale);
   const dropdown = element("details", "language-switcher");
-  const trigger = element("summary", "language-trigger navbar-control", copy.language.shortLabel);
+  const trigger = element("summary", "language-trigger navbar-control button button--quiet", copy.language.shortLabel);
   trigger.setAttribute("aria-label", `${copy.languages}: ${copy.language.shortLabel}`);
   const options = element("ul", "language-options");
   const links = supportedLocales.map((language) => {
     const item = element("li", "");
-    const option = link(getContent(language).language.label, localeHref(language, window.location.hash), "language-option");
+    const option = link(getContent(language).language.label, localeHref(language, window.location.hash), "language-option button button--quiet");
     option.lang = language;
     option.hreflang = language;
     if (language === locale) option.setAttribute("aria-current", "page");

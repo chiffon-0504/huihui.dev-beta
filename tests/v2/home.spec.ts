@@ -55,6 +55,7 @@ for (const locale of supportedLocales) {
         const action = page.locator(`.hero-actions a[href='#${id}']`);
         await action.focus();
         expect(await action.evaluate((node) => getComputedStyle(node).outlineStyle)).toBe("solid");
+        await expect(action).toHaveCSS("border-radius", "9999px");
         await page.keyboard.press("Enter");
         await expect(page.locator(`#${id}`)).toBeFocused();
         await expect(page.locator(`#${id} h2`)).toBeInViewport();
@@ -66,6 +67,19 @@ for (const locale of supportedLocales) {
         await page.locator(".theme-trigger").click();
         await page.getByRole("menuitemradio", { name: theme === "light" ? copy.themeLight : copy.themeDark, exact: true }).click();
         await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+        const buttonColor = theme === "light" ? "rgb(0, 111, 222)" : "rgb(143, 211, 255)";
+        await expect(page.locator(".button--primary")).toHaveCSS("background-color", buttonColor);
+        await expect(page.locator(".button--primary")).toHaveCSS("color", theme === "light" ? "rgb(250, 250, 249)" : "rgb(0, 0, 0)");
+        await expect(page.locator("main a.button")).toHaveCount(6);
+        for (const action of await page.locator("main a").all()) {
+          await expect(action).toHaveCSS("border-radius", "9999px");
+          await expect(action).toHaveCSS("text-decoration-line", "none");
+          await expect(action).toHaveCSS("border-color", buttonColor);
+          await action.hover();
+          await expect(action).toHaveCSS("text-decoration-line", "none");
+          await expect(action).toHaveCSS("border-radius", "9999px");
+        }
+        await page.locator(".theme-trigger").focus();
         await expectReflow(page);
         const cards = await page.locator(".home-project").evaluateAll((nodes) => nodes.map((node) => {
           const rect = node.getBoundingClientRect();
@@ -93,6 +107,7 @@ for (const locale of supportedLocales) {
       await action.focus();
       await expect(action).toBeInViewport();
       expect(await action.evaluate((node) => getComputedStyle(node).outlineStyle)).toBe("solid");
+      await expect(action).toHaveCSS("border-radius", "9999px");
     }
     expect(await page.locator("main, main *").evaluateAll((nodes) => nodes.every((node) => {
       const style = getComputedStyle(node);
@@ -100,3 +115,47 @@ for (const locale of supportedLocales) {
     }))).toBe(true);
   });
 }
+
+test.describe("shared pill controls follow the effective Auto theme", () => {
+  test.use({ timezoneId: "Asia/Taipei" });
+  for (const locale of supportedLocales) {
+    for (const width of [1440, 320]) {
+      test(`${locale} Auto and manual button palettes at ${width}px`, async ({ page }) => {
+        const copy = getContent(locale);
+        await page.setViewportSize({ width, height: 900 });
+        await page.emulateMedia({ reducedMotion: "reduce" });
+        for (const [hour, effective, system] of [[12, "light", "dark"], [23, "dark", "light"]] as const) {
+          // Auto is solar-based. An opposing OS scheme must not override it.
+          await page.emulateMedia({ colorScheme: system });
+          await page.clock.setFixedTime(new Date(`2026-09-14T${hour}:00:00+08:00`));
+          await page.goto(localeHref(locale));
+          await page.locator(".theme-trigger").click();
+          await page.getByRole("menuitemradio", { name: copy.themeAuto, exact: true }).click();
+          await expect(page.locator("html")).toHaveAttribute("data-theme", effective);
+          // Closed menu options can retain pointer hover at the last clicked row.
+          // Compare rendered controls; open-menu geometry is checked below.
+          const appearance = () => page.locator(".button:visible").evaluateAll((nodes) => nodes.map((node) => {
+            const css = getComputedStyle(node);
+            return { color: css.color, background: css.backgroundColor, border: css.borderColor, radius: css.borderRadius };
+          }));
+          const auto = await appearance();
+          await page.locator(".theme-trigger").click();
+          await page.getByRole("menuitemradio", { name: effective === "light" ? copy.themeLight : copy.themeDark, exact: true }).click();
+          expect(await appearance()).toEqual(auto);
+          await expect(page.locator(".button--primary")).toHaveCSS("background-color", effective === "light" ? "rgb(0, 111, 222)" : "rgb(143, 211, 255)");
+          for (const selector of [".theme-trigger", ".language-trigger"]) {
+            await page.locator(selector).click();
+            for (const control of await page.locator(".button:visible").all()) {
+              await expect(control).toHaveCSS("border-radius", "9999px");
+              await expect(control).toHaveCSS("text-decoration-line", "none");
+              expect(await control.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+            }
+            await page.keyboard.press("Escape");
+            await expect(page.locator(selector)).toBeFocused();
+          }
+          await expectReflow(page);
+        }
+      });
+    }
+  }
+});

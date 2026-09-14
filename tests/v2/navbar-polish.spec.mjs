@@ -10,6 +10,55 @@ const locales = [
 test.use({ timezoneId: "Asia/Taipei" });
 
 for (const locale of locales) {
+  for (const width of [1440, 390]) {
+    test(`${locale.lang} navbar hover changes only color at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      for (const [preference, hour, effective] of [
+        [locale.light, 12, "light"], [locale.dark, 12, "dark"],
+        [locale.auto, 12, "light"], [locale.auto, 23, "dark"],
+      ]) {
+        await page.clock.setFixedTime(new Date(`2026-09-14T${hour}:00:00+08:00`));
+        await page.goto(locale.route);
+        await page.locator(".theme-trigger").click();
+        await page.getByRole("menuitemradio", { name: preference, exact: true }).click();
+        await expect(page.locator("html")).toHaveAttribute("data-theme", effective);
+        const color = effective === "light" ? "rgb(0, 111, 222)" : "rgb(143, 211, 255)";
+        const expectHover = async (control) => {
+          const before = await control.boundingBox();
+          await control.hover();
+          await expect(control).toHaveCSS("color", color);
+          await expect(control).toHaveCSS("text-decoration-line", "none");
+          await expect(control).toHaveCSS("box-shadow", "none");
+          await expect(control).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+          expect(await control.evaluate((node) => {
+            const css = getComputedStyle(node);
+            return ["Top", "Right", "Bottom", "Left"].every((side) =>
+              css[`border${side}Width`] === "0px" || css[`border${side}Color`] === "rgba(0, 0, 0, 0)");
+          })).toBe(true);
+          expect(await control.boundingBox()).toEqual(before);
+        };
+        for (const control of await page.locator(".navbar .brand, .navbar .button:visible").all()) {
+          await expectHover(control);
+        }
+        for (const [trigger, options] of [[".language-trigger", ".language-option"], [".theme-trigger", ".theme-option"]]) {
+          await page.locator(trigger).click();
+          for (const option of await page.locator(options).all()) await expectHover(option);
+          await page.keyboard.press("Escape");
+          await expect(page.locator(trigger)).toBeFocused();
+        }
+        // Establish keyboard modality separately from pointer-opened disclosures.
+        await page.goto(locale.route);
+        await page.keyboard.press("Tab");
+        for (const control of await page.locator(".navbar .brand, .navbar .button:visible").all()) {
+          await control.focus();
+          await expect(control).toHaveCSS("outline-style", "solid");
+        }
+      }
+    });
+  }
+}
+
+for (const locale of locales) {
   for (const [width, textScale] of [[1440, 1], [390, 1], [320, 2]]) {
     test(`${locale.lang} neutral themes and aligned SVG controls at ${width}px / ${textScale}x text`, async ({ page, baseURL }, testInfo) => {
       await page.setViewportSize({ width, height: 1000 });

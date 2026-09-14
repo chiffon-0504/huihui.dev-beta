@@ -25,29 +25,6 @@
   margin-top: var(--space-8);
 }
 
-.home-primary-link,
-.home-text-link {
-  display: inline-block;
-  max-width: 100%;
-  min-height: var(--control-size);
-  padding-block: var(--space-2);
-  font-weight: var(--font-weight-medium);
-}
-
-.home-primary-link {
-  padding-inline: var(--space-6);
-  border: var(--border-width) solid var(--color-accent);
-  border-radius: var(--radius-small);
-  background: var(--color-accent);
-  color: var(--color-background);
-  text-decoration: none;
-}
-
-.home-primary-link:hover,
-.home-primary-link:focus-visible {
-  color: var(--color-background);
-}
-
 .home-link-context {
   font-weight: var(--font-weight-normal);
 }
