@@ -136,12 +136,11 @@ v2/
 │  ├─ components/     # Existing shared UI components
 │  ├─ services/       # Reserved for future service clients
 │  ├─ utils/          # Reserved for future reusable utilities
-│  ├─ locales/        # Reserved for future i18n modules
+│  ├─ locales/        # Canonical typed ZH-Hant / EN / JA copy
 │  ├─ types/          # Reserved for future shared application types
 │  ├─ pages/          # Existing page modules
 │  ├─ theme/          # Existing theme implementation
 │  ├─ styles/         # Canonical v2 CSS foundation
-│  ├─ content.ts      # Current typed localized content
 │  └─ dom.ts          # Current DOM helpers
 ├─ en/index.html
 ├─ ja/index.html
@@ -151,18 +150,41 @@ v2/
 └─ README.md
 ```
 
-The latest main already includes a v2 shell, styles and localized content. The
-foundation follow-up preserves those implementations and reserves the missing
-module boundaries with documentation only. It does not migrate content or DOM
-helpers, add service clients, or rebuild pages. V1 remains the active production
-site while v2 development continues; its root HTML/CSS/JavaScript and release
-flow remain independent of these TypeScript commands.
+V1 remains the active production site while v2 development continues; its root
+HTML/CSS/JavaScript and release flow remain independent of these TypeScript
+commands. Home and page reconstruction remain deferred to a later PR.
 
 `src/main.ts` composes DOM components from `components/navbar.ts`,
 `components/footer.ts`, and `pages/home.ts`. Shared localized copy lives in
-`content.ts`; markup uses native elements and `textContent`. There is no router,
+`locales/`; markup uses native elements and `textContent`. There is no router,
 framework or API request. A root-owned theme controller is passed to the navbar;
 theme preference, solar calculation and presentation have separate modules.
+
+### Locale architecture
+
+`src/locales/` is the canonical owner of runtime translated UI strings:
+
+- `types.ts` defines `supportedLocales`, the derived `Locale` identity, and the
+  shared `LocaleContent` schema.
+- `zh-Hant.ts`, `en.ts`, and `ja.ts` each own one complete language, including
+  navigation, language self-names, theme and accessibility labels, and provisional
+  Home copy. Each module uses `satisfies LocaleContent`; missing or incompatible
+  fields fail `check:v2:types`.
+- `index.ts` exposes the typed registry, `resolveLocale(pathname)`,
+  `getContent(locale)`, and `localeHref(locale, hash)`.
+
+The bootstrap selects by pathname: `/` → `zh-Hant`, `/en/` → `en`, and
+`/ja/` → `ja`. The same entries accept `index.html` and slashless locale paths.
+Unknown paths select the complete ZH-Hant default; they do not
+register new page routes. Invalid internal identities passed to `getContent`
+or `localeHref` throw explicitly instead of returning partial content.
+Language links retain the current fragment, including `#works` and `#about`.
+There is no router, runtime translation lookup, or translation dependency.
+
+Future v2 page copy belongs in these locale modules, extending the shared schema;
+components and pages consume it rather than maintaining independent translations.
+The static HTML entries still own document metadata and the no-JavaScript fallback.
+`content.ts` has been removed because it has no remaining responsibility.
 
 ### CSS design system
 
@@ -221,7 +243,7 @@ at narrow widths or enlarged text. The actions area can later accommodate search
 without adding a search control or reserving a visible empty slot now.
 
 The navbar language switcher uses native `details`/`summary` and localized links
-from `content.ts`. It preserves the current Home fragment across the three locale
+from `locales/`. It preserves the current Home fragment across the three locale
 entries, including `#works` and `#about`; v2 has no separate localized subpages yet.
 The same control remains in the wrapping mobile navbar (there is no drawer).
 Escape restores trigger focus; outside clicks and focus leaving the disclosure
@@ -272,7 +294,7 @@ the menu's checkmark and `menuitemradio` `aria-checked` describe the configured
 preference. The menu follows the language control in desktop/mobile Tab order.
 Enter/Space opens or selects; arrows, Home and End move among options; Escape
 restores trigger focus. Tab, outside click and focus leaving close the menu.
-ZH/EN/JA labels live in `content.ts`; no permanent Theme text label is displayed.
+ZH/EN/JA labels live in `locales/`; no permanent Theme text label is displayed.
 All pages share Light/Dark semantic tokens and matching `color-scheme` in
 `styles/tokens.css`, including visible focus colors tested on both surfaces.
 Dark uses a black page background and neutral near-black surfaces; Auto resolving

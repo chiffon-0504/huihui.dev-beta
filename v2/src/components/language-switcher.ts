@@ -1,15 +1,16 @@
-import { content, localeHref, localeLinks, locales, type Locale } from "../content";
+import { getContent, localeHref, supportedLocales, type Locale } from "../locales";
 import { element, link } from "../dom";
 import { createIcon } from "./icons";
 
 export function createLanguageSwitcher(locale: Locale): HTMLDetailsElement {
+  const copy = getContent(locale);
   const dropdown = element("details", "language-switcher");
-  const trigger = element("summary", "language-trigger navbar-control", localeLinks[locale].shortLabel);
-  trigger.setAttribute("aria-label", `${content[locale].languages}: ${localeLinks[locale].shortLabel}`);
+  const trigger = element("summary", "language-trigger navbar-control", copy.language.shortLabel);
+  trigger.setAttribute("aria-label", `${copy.languages}: ${copy.language.shortLabel}`);
   const options = element("ul", "language-options");
-  const links = locales.map((language) => {
+  const links = supportedLocales.map((language) => {
     const item = element("li", "");
-    const option = link(localeLinks[language].label, localeHref(language, window.location.hash), "language-option");
+    const option = link(getContent(language).language.label, localeHref(language, window.location.hash), "language-option");
     option.lang = language;
     option.hreflang = language;
     if (language === locale) option.setAttribute("aria-current", "page");
@@ -45,7 +46,7 @@ export function createLanguageSwitcher(locale: Locale): HTMLDetailsElement {
     if (event.target instanceof Node && !dropdown.contains(event.target)) dropdown.open = false;
   });
   const updateTargets = () => {
-    for (const [index, language] of locales.entries()) {
+    for (const [index, language] of supportedLocales.entries()) {
       links[index]!.href = localeHref(language, window.location.hash);
     }
   };

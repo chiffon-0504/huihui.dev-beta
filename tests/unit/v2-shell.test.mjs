@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, test } from "vitest";
-import { content, localeHref, localeLinks, locales, resolveLocale } from "../../v2/src/content.ts";
+import { getContent, localeHref, locales as content, supportedLocales, resolveLocale } from "../../v2/src/locales/index.ts";
 
 describe("v2 localized shell", () => {
   test.each([
@@ -12,11 +12,19 @@ describe("v2 localized shell", () => {
     expect(content[locale].aboutLabel).toBe(aboutLabel);
   });
 
-  for (const locale of locales) {
+  test("the canonical registry contains exactly the three supported locales", () => {
+    expect(supportedLocales).toEqual(["zh-Hant", "en", "ja"]);
+    expect(Object.keys(content)).toEqual(supportedLocales);
+  });
+
+  for (const locale of supportedLocales) {
     test(`${locale} has a matching entry and complete shared content`, async () => {
-      expect(resolveLocale(locale)).toBe(locale);
-      for (const value of Object.values(content[locale])) expect(value.trim()).not.toBe("");
-      const route = localeLinks[locale].href;
+      const { language, ...copy } = getContent(locale);
+      for (const value of [...Object.values(copy), ...Object.values(language)]) expect(value.trim()).not.toBe("");
+      const route = localeHref(locale);
+      expect(resolveLocale(route)).toBe(locale);
+      expect(resolveLocale(`${route}index.html`)).toBe(locale);
+      if (route !== "/") expect(resolveLocale(route.slice(0, -1))).toBe(locale);
       const html = await readFile(new URL(`../../v2${route}index.html`, import.meta.url), "utf8");
       expect(html).toContain(`<html lang="${locale}">`);
       expect(html).toContain('src="/src/main.ts"');
@@ -26,8 +34,16 @@ describe("v2 localized shell", () => {
     });
   }
 
-  test("unknown languages fall back to the default locale", () => {
-    expect(resolveLocale("fr")).toBe("zh-Hant");
+  test("unknown paths select a complete default locale without adding routes", () => {
+    for (const path of ["/fr/", "/english/", "/ja/works/"]) {
+      expect(resolveLocale(path)).toBe("zh-Hant");
+      expect(getContent(resolveLocale(path))).toBe(content["zh-Hant"]);
+    }
+  });
+
+  test.each(["fr", "", "constructor", "__proto__", undefined, null])("invalid internal locale %s fails explicitly", (locale) => {
+    expect(() => getContent(locale)).toThrow(/Unsupported v2 locale/);
+    expect(() => localeHref(locale, "#works")).toThrow(/Unsupported v2 locale/);
   });
 
   test.each([
@@ -43,8 +59,9 @@ describe("v2 localized shell", () => {
     ["en", "/en/", "English", "English"],
     ["ja", "/ja/", "日本語", "日本語"],
   ])("%s language links preserve localized Home sections", (locale, route, trigger, label) => {
-    expect(localeLinks[locale].shortLabel).toBe(trigger);
-    expect(localeLinks[locale].label).toBe(label);
+    expect(getContent(locale).language.shortLabel).toBe(trigger);
+    expect(getContent(locale).language.label).toBe(label);
+    expect(resolveLocale(route)).toBe(locale);
     expect(localeHref(locale)).toBe(route);
     for (const hash of ["#works", "#about"]) expect(localeHref(locale, hash)).toBe(`${route}${hash}`);
   });
