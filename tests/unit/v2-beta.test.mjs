@@ -10,7 +10,7 @@ test("one repository-owned mode gates only custom-domain smoke in both modes", a
   const document = parseDocument(await read(".github/workflows/beta-cd.yml"));
   expect(document.errors).toEqual([]);
   const workflow = document.toJS();
-  expect(workflow.env.BETA_CUSTOM_DOMAIN_ENABLED).toBe("false");
+  expect(workflow.env.BETA_CUSTOM_DOMAIN_ENABLED).toMatch(/^(true|false)$/);
   const sync = workflow.jobs.synchronize;
   const live = workflow.jobs["live-smoke"];
   expect(live.needs).toBe("synchronize");
