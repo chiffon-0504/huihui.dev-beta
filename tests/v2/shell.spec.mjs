@@ -2,9 +2,9 @@ import { expect, test } from "@playwright/test";
 import { applyPagesCsp } from "../support/csp-enforcement.mjs";
 
 const locales = [
-  { route: "/", lang: "zh-Hant", skip: "跳至主要內容", navigation: "主要導覽", worksLabel: "作品", aboutLabel: "關於" },
-  { route: "/en/", lang: "en", skip: "Skip to main content", navigation: "Main navigation", worksLabel: "Works", aboutLabel: "About" },
-  { route: "/ja/", lang: "ja", skip: "メインコンテンツへ移動", navigation: "メインナビゲーション", worksLabel: "制作実績", aboutLabel: "プロフィール" },
+  { route: "/", lang: "zh-Hant", skip: "跳至主要內容", navigation: "主要導覽", worksLabel: "作品", aboutLabel: "關於", worksHeading: "精選作品", focusLabel: "從設計到開發" },
+  { route: "/en/", lang: "en", skip: "Skip to main content", navigation: "Main navigation", worksLabel: "Works", aboutLabel: "About", worksHeading: "Selected work", focusLabel: "From design to development" },
+  { route: "/ja/", lang: "ja", skip: "メインコンテンツへ移動", navigation: "メインナビゲーション", worksLabel: "制作実績", aboutLabel: "プロフィール", worksHeading: "ピックアップした作品", focusLabel: "デザインから開発まで" },
 ];
 
 for (const locale of locales) {
@@ -13,7 +13,7 @@ for (const locale of locales) {
     const nav = page.getByRole("navigation", { name: locale.navigation });
     for (const [id, label] of [["works", locale.worksLabel], ["about", locale.aboutLabel]]) {
       await expect(nav.getByRole("link", { name: label, exact: true })).toHaveAttribute("href", `#${id}`);
-      await expect(page.locator(`#${id}`).getByRole("heading", { level: 2, name: label, exact: true })).toBeVisible();
+      await expect(page.locator(`#${id}`).getByRole("heading", { level: 2, name: id === "works" ? locale.worksHeading : locale.focusLabel, exact: true })).toBeVisible();
     }
     if (locale.lang !== "en") {
       await expect(nav.getByRole("link", { name: /^(Works|About)$/ })).toHaveCount(0);

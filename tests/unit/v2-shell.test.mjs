@@ -19,9 +19,16 @@ describe("v2 localized shell", () => {
 
   for (const locale of supportedLocales) {
     test(`${locale} has a matching entry and complete shared content`, async () => {
-      const { language, ...copy } = getContent(locale);
+      const { language, focus, principles, skills, interests, ...copy } = getContent(locale);
       expect(Object.keys(getContent(locale)).sort()).toEqual(Object.keys(content.en).sort());
       for (const value of [...Object.values(copy), ...Object.values(language)]) expect(value.trim()).not.toBe("");
+      for (const topics of [focus, principles, skills, interests]) {
+        expect(topics).toHaveLength(3);
+        for (const topic of topics) {
+          expect(topic.title.trim()).not.toBe("");
+          expect(topic.description.trim()).not.toBe("");
+        }
+      }
       const route = localeHref(locale);
       expect(resolveLocale(route)).toBe(locale);
       expect(resolveLocale(`${route}index.html`)).toBe(locale);

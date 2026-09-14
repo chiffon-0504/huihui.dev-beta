@@ -1,32 +1,20 @@
+.home {
+  font-size: var(--text-large);
+}
+
 .hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
-  align-items: center;
-  gap: var(--space-12);
   padding-block: var(--section-space);
 }
 
-.eyebrow,
-.project-category {
-  color: var(--color-accent);
-  font-size: var(--text-small);
-  font-weight: var(--font-weight-medium);
-  letter-spacing: var(--tracking-label);
-}
-
-.eyebrow {
-  margin-bottom: var(--space-6);
-}
-
 .hero-title {
-  max-width: 17ch;
+  max-width: 24ch;
+  word-break: keep-all;
 }
 
 .hero-introduction {
   max-width: var(--content-width-prose);
-  margin-top: var(--space-6);
+  margin-top: var(--space-8);
   color: var(--color-muted);
-  font-size: var(--text-large);
 }
 
 .hero-actions {
@@ -61,56 +49,7 @@
 }
 
 .home-link-context {
-  font-size: var(--text-small);
   font-weight: var(--font-weight-normal);
-}
-
-/* A quiet, non-interactive composition using the shared surface vocabulary. */
-.hero-visual {
-  display: grid;
-  align-items: center;
-  aspect-ratio: 1;
-  padding: var(--space-8);
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: var(--color-surface);
-}
-
-.hero-sketch {
-  padding: var(--space-6);
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-small);
-  background: var(--color-background);
-}
-
-.sketch-heading {
-  width: 50%;
-  height: var(--space-3);
-  background: var(--color-accent);
-}
-
-.sketch-line {
-  width: 75%;
-  height: var(--border-width);
-  margin-block: var(--space-4) var(--space-8);
-  background: var(--color-muted);
-}
-
-.sketch-tiles {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
-}
-
-.sketch-tile {
-  aspect-ratio: 1;
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-small);
-  background: var(--color-surface);
-}
-
-.sketch-tile:last-child {
-  border-color: var(--color-accent);
 }
 
 .home-section {
@@ -119,32 +58,14 @@
   scroll-margin-block: var(--space-8);
 }
 
-.home-about {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-  gap: var(--space-8);
-}
-
-.about-copy {
-  max-width: var(--content-width-prose);
-}
-
-.about-lead {
-  max-width: 30ch;
-  font-size: var(--text-heading);
-  font-weight: var(--font-weight-medium);
+.section-title {
   line-height: var(--line-height-heading);
-  text-wrap: balance;
 }
 
 .section-description {
   max-width: var(--content-width-prose);
   margin-top: var(--space-4);
   color: var(--color-muted);
-}
-
-.about-copy > .home-text-link {
-  margin-top: var(--space-6);
 }
 
 .section-heading {
@@ -162,22 +83,21 @@
 .home-projects {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-6);
-  margin-top: var(--space-8);
+  gap: var(--space-12);
+  margin-top: var(--space-12);
 }
 
+/* Project summaries share a baseline, without decorative cards or fake previews. */
 .home-project {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  padding: var(--space-8);
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: var(--color-surface);
+  padding-top: var(--space-6);
+  border-top: var(--border-width) solid var(--color-accent);
 }
 
 .project-title {
-  margin-top: var(--space-6);
+  font-size: var(--text-heading);
 }
 
 .home-project > .section-description {
@@ -185,29 +105,46 @@
   margin-bottom: var(--space-6);
 }
 
+.home-focus {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-8);
+  margin-block: var(--space-8);
+}
+
+.home-topic h3 {
+  line-height: var(--line-height-control);
+}
+
+.home-principles {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--space-12);
+}
+
+.principles-introduction {
+  font-size: var(--text-heading);
+  line-height: var(--line-height);
+}
+
+.home-topic-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-8);
+  margin-top: var(--space-8);
+}
+
+.home-practice {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--space-16);
+}
+
 @media (max-width: 40rem) {
-  .hero,
-  .home-about,
-  .home-projects {
+  .home-projects,
+  .home-focus,
+  .home-principles,
+  .home-practice {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .hero-visual {
-    aspect-ratio: 2;
-    padding: var(--space-6);
-  }
-
-  .hero-sketch {
-    width: 100%;
-    padding: var(--space-3);
-    margin-inline: auto;
-  }
-
-  .sketch-tile {
-    aspect-ratio: 2;
-  }
-
-  .home-project {
-    padding: var(--space-6);
   }
 }
