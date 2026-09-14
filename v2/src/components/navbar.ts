@@ -14,11 +14,11 @@ export function createNavbar(locale: Locale, theme: ThemeController): HTMLElemen
   const primary = element("ul", "navbar-primary");
   for (const id of ["works", "about"] as const) {
     const item = element("li", "");
-    item.append(link(copy[`${id}Label`], `#${id}`, "nav-link"));
+    item.append(link(copy[`${id}Label`], `#${id}`, "nav-link button button--quiet"));
     primary.append(item);
   }
   const actions = element("div", "navbar-actions");
-  const github = link("GitHub", "https://github.com/chiffon-0504", "nav-link navbar-control");
+  const github = link("GitHub", "https://github.com/chiffon-0504", "nav-link navbar-control button button--quiet");
   github.prepend(createIcon("github"));
   actions.append(
     github,

@@ -35,7 +35,7 @@ export function createHome(locale: Locale): HTMLElement {
   // Until their v2 milestones land, full pages live on the current site.
   const currentPage = (path: string) => `https://huihui.dev${localeHref(locale)}${path}/`;
   const currentLink = (label: string, path: string) => {
-    const anchor = link(label, currentPage(path), "home-text-link");
+    const anchor = link(label, currentPage(path), "button");
     anchor.append(element("span", "home-link-context", ` (${copy.currentSite})`));
     return anchor;
   };
@@ -47,8 +47,8 @@ export function createHome(locale: Locale): HTMLElement {
   title.id = "home-title";
   const actions = element("div", "hero-actions");
   actions.append(
-    link(copy.heroWorksCta, "#works", "home-primary-link"),
-    link(copy.heroAboutCta, "#about", "home-text-link"),
+    link(copy.heroWorksCta, "#works", "button button--primary"),
+    link(copy.heroAboutCta, "#about", "button"),
   );
   introduction.append(
     title,
@@ -79,7 +79,7 @@ export function createHome(locale: Locale): HTMLElement {
   website.append(
     element("h3", "project-title", copy.websiteTitle),
     element("p", "section-description", copy.websiteDescription),
-    link(copy.websiteCta, "https://github.com/chiffon-0504/huihui.dev-beta", "home-text-link"),
+    link(copy.websiteCta, "https://github.com/chiffon-0504/huihui.dev-beta", "button"),
   );
   const tool = element("article", "home-project");
   tool.append(

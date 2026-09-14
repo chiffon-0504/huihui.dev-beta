@@ -6,7 +6,7 @@ import { createIcon } from "./icons";
 export function createThemeSwitcher(locale: Locale, theme: ThemeController): HTMLDivElement {
   const copy = getContent(locale);
   const dropdown = element("div", "theme-switcher");
-  const trigger = element("button", "theme-trigger navbar-control");
+  const trigger = element("button", "theme-trigger navbar-control button button--quiet");
   trigger.type = "button";
   trigger.setAttribute("aria-haspopup", "menu");
   trigger.setAttribute("aria-expanded", "false");
@@ -22,7 +22,7 @@ export function createThemeSwitcher(locale: Locale, theme: ThemeController): HTM
   const options = modes.map((mode) => {
     const item = element("li", "");
     item.setAttribute("role", "none");
-    const option = element("button", "theme-option", labels[mode]);
+    const option = element("button", "theme-option button button--quiet", labels[mode]);
     option.type = "button";
     option.tabIndex = -1;
     option.setAttribute("role", "menuitemradio");

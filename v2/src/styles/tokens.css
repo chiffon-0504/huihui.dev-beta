@@ -28,6 +28,7 @@
   --border-width: 1px;
   --radius-small: 0.25rem;
   --radius-medium: 0.5rem;
+  --radius-pill: 9999px;
   --content-width: 70rem;
   --content-width-narrow: 54rem;
   --content-width-prose: 44rem;
@@ -58,6 +59,7 @@
   --color-muted: #5b625d;
   --color-border: #d9ddd8;
   --color-accent: #294e3b;
+  --color-button: #006fde;
   --color-focus: #1264a3;
   --shadow-popover: 0 0.25rem 1rem rgb(32 37 34 / 10%);
 }
@@ -70,6 +72,7 @@
   --color-muted: #b8b8b8;
   --color-border: #404040;
   --color-accent: #8fd3ff;
+  --color-button: var(--color-accent);
   --color-focus: #85c8ff;
   --shadow-popover: 0 0.25rem 1rem rgb(0 0 0 / 40%);
 }
