@@ -13,9 +13,23 @@ export interface LocaleContent {
   readonly eyebrow: string;
   readonly title: string;
   readonly introduction: string;
-  readonly upcoming: string;
+  readonly heroWorksCta: string;
+  readonly heroAboutCta: string;
   readonly worksLabel: string;
   readonly aboutLabel: string;
   readonly works: string;
   readonly about: string;
+  readonly aboutLead: string;
+  readonly aboutInterests: string;
+  readonly aboutCta: string;
+  readonly worksCta: string;
+  readonly currentSite: string;
+  readonly websiteCategory: string;
+  readonly websiteTitle: string;
+  readonly websiteDescription: string;
+  readonly websiteCta: string;
+  readonly toolCategory: string;
+  readonly toolTitle: string;
+  readonly toolDescription: string;
+  readonly toolCta: string;
 }
