@@ -633,7 +633,7 @@ describe("Playwright cross-browser validation contract", () => {
     expect(liveSmoke["timeout-minutes"]).toBe(35);
     expect(liveSmoke.environment).toEqual({
       name: "beta",
-      url: "https://beta.huihui.dev",
+      url: "https://huihuidev-beta.pages.dev",
     });
     expect(runCommands(liveSmoke)).toEqual([
       "npm ci",

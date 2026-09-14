@@ -58,9 +58,24 @@ The Dashboard build settings must be updated by an authorized account operator;
 repository changes alone do not switch the hosted build from the root v1 site.
 
 [Beta CD](../.github/workflows/beta-cd.yml) retains the existing exact commit,
-canonical Pages deployment, active domain and required beta Worker gates. It
-builds the expected v2 assets and runs two Chromium security contracts, then
-rechecks the active Pages identity:
+canonical Pages deployment and required beta Worker gates. Its version-controlled
+workflow environment sets `BETA_CUSTOM_DOMAIN_ENABLED: 'false'` while
+`beta.huihui.dev` is intentionally detached during V2 reconstruction. Only the
+custom-domain API lookup and custom-domain smoke are skipped; native Pages
+exact-SHA synchronization, quiescence, live smoke, Worker state/API smoke and
+post-smoke identity verification remain required. The active preview endpoint
+is `https://huihuidev-beta.pages.dev`; smoke uses the API-verified immutable URL
+for the exact workflow SHA rather than the mutable alias.
+
+Set that single value to `'true'` to require the active custom domain and its
+smoke again. Missing domains (including HTTP 404), inactive domains and API errors
+then fail as before. Missing or invalid mode values also fail; a domain 404 never
+selects disabled mode. No repository setting or Cloudflare mutation is involved.
+Acceptance of a mode change is the first `main` push using the new workflow;
+rerunning an older workflow run does not validate the change.
+
+Beta CD builds the expected v2 assets, runs the applicable Chromium security
+contracts, then rechecks the active Pages identity:
 
 - **Native Pages strict contract:** the quiescence gate supplies the immutable
   URL of the successful canonical deployment for the exact workflow SHA. The

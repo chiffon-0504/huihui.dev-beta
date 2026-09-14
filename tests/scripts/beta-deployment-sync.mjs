@@ -31,6 +31,12 @@ function requiredEnvironment(name) {
   return value;
 }
 
+export function parseCustomDomainEnabled(value) {
+  if (value === "true") return true;
+  if (value === "false") return false;
+  throw new Error("BETA_CUSTOM_DOMAIN_ENABLED must be explicitly set to 'true' or 'false'.");
+}
+
 export function resolveRequiredWorkerSha(targetSha, runGit = execFileSync) {
   const output = runGit(
     "git",
@@ -309,9 +315,11 @@ export function inspectPagesProductionQuiescence(deployments, targetSha) {
   };
 }
 
-export function inspectActivePagesIdentity(project, domain, targetSha) {
+export function inspectActivePagesIdentity(project, domain, targetSha, customDomainEnabled = true) {
   const deploymentState = inspectCanonicalPagesDeployment(project, targetSha);
-  const domainDiagnostic = assertActivePagesDomain(domain);
+  const domainDiagnostic = customDomainEnabled === false
+    ? `${PAGES_CUSTOM_DOMAIN} intentionally disabled; custom-domain lookup skipped`
+    : assertActivePagesDomain(domain);
 
   return {
     complete: deploymentState.complete,
@@ -324,8 +332,9 @@ export function inspectQuiescentPagesState(
   domain,
   deployments,
   targetSha,
+  customDomainEnabled = true,
 ) {
-  const identityState = inspectActivePagesIdentity(project, domain, targetSha);
+  const identityState = inspectActivePagesIdentity(project, domain, targetSha, customDomainEnabled);
   const quiescenceState = inspectPagesProductionQuiescence(
     deployments,
     targetSha,
@@ -372,29 +381,35 @@ export async function getProductionPagesDeployments(
   return deployments;
 }
 
-async function getActivePagesState(accountId, apiToken, targetSha) {
+export async function getActivePagesState(accountId, apiToken, targetSha, {
+  customDomainEnabled = parseCustomDomainEnabled(process.env.BETA_CUSTOM_DOMAIN_ENABLED),
+  fetchImpl = fetch,
+} = {}) {
   const projectPath = `/pages/projects/${encodeURIComponent(PAGES_PROJECT_NAME)}`;
   const domainPath = `${projectPath}/domains/${encodeURIComponent(PAGES_CUSTOM_DOMAIN)}`;
-  const cloudflareOptions = { accountId, apiToken };
+  const cloudflareOptions = { accountId, apiToken, fetchImpl };
   const [project, domain] = await Promise.all([
     cloudflareApiResult(projectPath, cloudflareOptions),
-    cloudflareApiResult(domainPath, cloudflareOptions),
+    customDomainEnabled === false ? undefined : cloudflareApiResult(domainPath, cloudflareOptions),
   ]);
 
-  return inspectActivePagesIdentity(project, domain, targetSha);
+  return inspectActivePagesIdentity(project, domain, targetSha, customDomainEnabled);
 }
 
-async function getQuiescentPagesState(accountId, apiToken, targetSha) {
+export async function getQuiescentPagesState(accountId, apiToken, targetSha, {
+  customDomainEnabled = parseCustomDomainEnabled(process.env.BETA_CUSTOM_DOMAIN_ENABLED),
+  fetchImpl = fetch,
+} = {}) {
   const projectPath = `/pages/projects/${encodeURIComponent(PAGES_PROJECT_NAME)}`;
   const domainPath = `${projectPath}/domains/${encodeURIComponent(PAGES_CUSTOM_DOMAIN)}`;
-  const cloudflareOptions = { accountId, apiToken };
+  const cloudflareOptions = { accountId, apiToken, fetchImpl };
   const [project, domain, deployments] = await Promise.all([
     cloudflareApiResult(projectPath, cloudflareOptions),
-    cloudflareApiResult(domainPath, cloudflareOptions),
-    getProductionPagesDeployments(accountId, apiToken),
+    customDomainEnabled === false ? undefined : cloudflareApiResult(domainPath, cloudflareOptions),
+    getProductionPagesDeployments(accountId, apiToken, fetchImpl),
   ]);
 
-  const state = inspectQuiescentPagesState(project, domain, deployments, targetSha);
+  const state = inspectQuiescentPagesState(project, domain, deployments, targetSha, customDomainEnabled);
   return { ...state, ...(state.complete ? { pagesUrl: canonicalPagesUrl(project, targetSha) } : {}) };
 }
 

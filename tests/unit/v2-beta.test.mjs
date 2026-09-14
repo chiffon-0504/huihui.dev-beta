@@ -2,8 +2,47 @@ import { readFile } from "node:fs/promises";
 import { expect, test, vi } from "vitest";
 import { parseDocument } from "yaml";
 import { betaSmokeTarget, cloudflareJsdBootstrap, inspectDocument, jsdConsoleText, validateBrowserEvidence, responseMetadata, securityHeaders, validateResponse, validateSecurityHeaders } from "../support/v2-beta-contract.mjs";
+import { parseCustomDomainEnabled } from "../scripts/beta-deployment-sync.mjs";
 
 const read = (path) => readFile(new URL(`../../${path}`, import.meta.url), "utf8");
+
+test("one repository-owned mode gates only custom-domain smoke in both modes", async () => {
+  const document = parseDocument(await read(".github/workflows/beta-cd.yml"));
+  expect(document.errors).toEqual([]);
+  const workflow = document.toJS();
+  expect(workflow.env.BETA_CUSTOM_DOMAIN_ENABLED).toMatch(/^(true|false)$/);
+  const sync = workflow.jobs.synchronize;
+  const live = workflow.jobs["live-smoke"];
+  expect(live.needs).toBe("synchronize");
+  const native = live.steps.find((step) => step.env?.V2_BETA_CONTRACT === "pages");
+  const custom = live.steps.find((step) => step.env?.V2_BETA_CONTRACT === "custom");
+  expect(custom.if).toBe("env.BETA_CUSTOM_DOMAIN_ENABLED == 'true'");
+  expect(native.if).toBeUndefined();
+  expect(native.env.V2_BETA_PAGES_URL).toBe("${{ steps.pages.outputs.pages_url }}");
+  expect(live.steps.find((step) => step.id === "pages").env.TARGET_SHA).toBe("${{ github.sha }}");
+
+  // The exact Actions predicate above and the script parser share the same strings.
+  for (const value of ["false", "true"]) {
+    expect(parseCustomDomainEnabled(value)).toBe(value === "true");
+  }
+  for (const job of [sync, live]) {
+    expect(job["continue-on-error"]).toBeUndefined();
+    expect(job.env?.BETA_CUSTOM_DOMAIN_ENABLED).toBeUndefined();
+    for (const step of job.steps) {
+      expect(step.env?.BETA_CUSTOM_DOMAIN_ENABLED).toBeUndefined();
+      expect(step["continue-on-error"]).toBeUndefined();
+      if (step.run) {
+        expect(step.run).not.toMatch(/continue-on-error|\|\|\s*(?:true|exit\s+0)/);
+        if (step !== custom) expect(step.if).toBeUndefined();
+      }
+    }
+  }
+  const syncWait = sync.steps.find((step) => step.run?.endsWith("beta-deployment-sync.mjs wait"));
+  expect(syncWait.env.TARGET_SHA).toBe("${{ github.sha }}");
+  expect(syncWait.env.REQUIRED_WORKER_SHA).toBe("${{ steps.worker.outputs.required_sha }}");
+  expect(live.steps.some((step) => step.run === "node tests/scripts/beta-http-smoke.mjs")).toBe(true);
+  expect(live.steps.at(-2).run).toBe("node tests/scripts/beta-deployment-sync.mjs verify-pages-active");
+});
 
 test("existing Beta CD selects v2 without adding a Pages upload path", async () => {
   const source = await read(".github/workflows/beta-cd.yml");
