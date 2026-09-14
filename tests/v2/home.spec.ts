@@ -18,18 +18,32 @@ for (const locale of supportedLocales) {
     test(`${locale} Home hierarchy, links and themes at ${width}px`, async ({ page }, testInfo) => {
       await page.setViewportSize({ width, height: 900 });
       const errors: string[] = [];
+      const externalRequests: string[] = [];
       page.on("pageerror", (error) => errors.push(error.message));
       page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+      page.on("requestfailed", (request) => errors.push(`${request.url()}: ${request.failure()?.errorText}`));
+      page.on("response", (response) => { if (response.status() >= 400) errors.push(`${response.status()} ${response.url()}`); });
+      page.on("request", (request) => {
+        if (new URL(request.url()).origin !== new URL(testInfo.project.use.baseURL!).origin) externalRequests.push(request.url());
+      });
       await page.goto(localeHref(locale));
       await expect(page.locator("main h1")).toHaveCount(1);
-      await expect(page.locator("main h2")).toHaveText([copy.aboutLabel, copy.worksLabel]);
-      await expect(page.locator("main h3")).toHaveText([copy.websiteTitle, copy.toolTitle]);
+      await expect(page.locator("main h2")).toHaveText([
+        copy.worksHeading, copy.focusLabel, copy.principlesLabel, copy.skillsLabel, copy.interestsLabel,
+      ]);
+      await expect(page.locator("main h3")).toHaveText([
+        copy.websiteTitle, copy.toolTitle,
+        ...[...copy.focus, ...copy.principles, ...copy.skills, ...copy.interests].map((topic) => topic.title),
+      ]);
       await expect(page.locator("main h4, main h5, main h6")).toHaveCount(0);
       await expect(page.getByRole("region", { name: copy.title, exact: true })).toBeVisible();
-      await expect(page.getByRole("region", { name: copy.aboutLabel, exact: true })).toBeVisible();
-      await expect(page.getByRole("region", { name: copy.worksLabel, exact: true })).toBeVisible();
-      await expect(page.locator(".hero-visual")).toHaveAttribute("aria-hidden", "true");
-      await expect(page.locator(".hero-visual a, .hero-visual button, .hero-visual [tabindex]")).toHaveCount(0);
+      for (const name of [copy.worksHeading, copy.focusLabel, copy.principlesLabel, copy.skillsLabel, copy.interestsLabel]) {
+        await expect(page.getByRole("region", { name, exact: true })).toBeVisible();
+      }
+      await expect(page.locator(".eyebrow, .project-category, .hero-visual")).toHaveCount(0);
+      expect(await page.locator("main h1, main h2, main h3, main p, main a, main span").evaluateAll((nodes) =>
+        nodes.every((node) => parseFloat(getComputedStyle(node).fontSize) >= 16 &&
+          getComputedStyle(node).textTransform !== "uppercase"))).toBe(true);
       const destination = `https://huihui.dev${localeHref(locale)}`;
       await expect(page.locator("#about a")).toHaveAttribute("href", `${destination}about/`);
       await expect(page.locator("#works .section-heading a")).toHaveAttribute("href", `${destination}works/`);
@@ -65,6 +79,7 @@ for (const locale of supportedLocales) {
         }
       }
       expect(errors).toEqual([]);
+      expect(externalRequests).toEqual([]);
     });
   }
 

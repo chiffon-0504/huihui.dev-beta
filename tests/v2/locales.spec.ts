@@ -9,15 +9,17 @@ for (const locale of supportedLocales) {
     const copy = getContent(locale);
     await page.goto(localeHref(locale));
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(copy.title);
-    await expect(page.locator(".eyebrow")).toHaveText(copy.eyebrow);
     await expect(page.locator(".hero-introduction")).toHaveText(copy.introduction);
     await expect(page.locator(".hero-actions a")).toHaveText([copy.heroWorksCta, copy.heroAboutCta]);
     await expect(page.locator(".works-introduction .section-description")).toHaveText(copy.works);
-    await expect(page.locator(".about-lead")).toHaveText(copy.aboutLead);
-    await expect(page.locator("#about .section-description")).toHaveText([copy.about, copy.aboutInterests]);
+    for (const [id, topics] of [["about", copy.focus], ["principles", copy.principles], ["skills", copy.skills], ["interests", copy.interests]] as const) {
+      await expect(page.locator(`#${id} .home-topic h3`)).toHaveText(topics.map((topic) => topic.title));
+      await expect(page.locator(`#${id} .home-topic p`)).toHaveText(topics.map((topic) => topic.description));
+    }
+    await expect(page.locator(".principles-introduction")).toHaveText(copy.principlesIntroduction);
+    await expect(page.locator("#interests > .section-description")).toHaveText(copy.interestsIntroduction);
     await expect(page.locator("#about a")).toHaveText(`${copy.aboutCta} (${copy.currentSite})`);
     await expect(page.locator("#works .section-heading a")).toHaveText(`${copy.worksCta} (${copy.currentSite})`);
-    await expect(page.locator(".project-category")).toHaveText([copy.websiteCategory, copy.toolCategory]);
     await expect(page.locator(".project-title")).toHaveText([copy.websiteTitle, copy.toolTitle]);
     await expect(page.locator(".home-project .section-description")).toHaveText([copy.websiteDescription, copy.toolDescription]);
     await expect(page.locator(".home-project a")).toHaveText([copy.websiteCta, `${copy.toolCta} (${copy.currentSite})`]);

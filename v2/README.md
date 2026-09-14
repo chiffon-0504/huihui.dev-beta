@@ -219,7 +219,7 @@ or glass blur. Add tokens for shared needs, not individual page adjustments.
 
 The single breakpoint is `40rem`: tokens reduce gutters from 1.5rem to 1rem
 and section spacing from 6rem to 4rem; the existing navbar wraps and Home
-sections and project cards stack. Use that literal in media queries because
+columns stack. Use that literal in media queries because
 custom properties cannot supply query conditions. Font sizes use rem; the display heading mixes
 rem and viewport sizing within rem bounds so enlarged text can grow. Do not
 lock root text sizing or hide horizontal overflow to mask reflow defects.
@@ -332,13 +332,18 @@ are complete. Independent About, Works, Posts, and Contact pages are not rebuilt
 
 `pages/home.ts` renders one shared composition for all three locales:
 
-1. **Hero:** site and personal identity, positioning, and primary Works / secondary
-   About fragment links. An abstract interface sketch is decorative and hidden
-   from assistive technology; it has no controls, remote assets, or motion.
-2. **About preview:** a short introduction, engineering interests and life beyond
-   code, with a link to the full profile.
-3. **Works preview:** two selected projects, huihui.dev and Tier Maker, with
-   visible descriptions and direct source/tool links. There is no gallery system.
+1. **Hero:** Web Design, Website Development and UI / UX positioning, with
+   performance, security and privacy as the central promise. Primary Works and
+   secondary About fragment links remain native anchors.
+2. **Selected work:** huihui.dev and Tier Maker, with readable summaries and
+   direct source/tool links. Projects use open columns instead of boxed cards.
+3. **Focus:** Web Design, Website Development and UI / UX, at the existing
+   `#about` destination, with a link to the full profile.
+4. **Engineering principles:** concrete performance, security and privacy
+   decisions behind the site.
+5. **Practice and interests:** AI-assisted development, Cloudflare and GitHub /
+   CI/CD skills alongside a separately headed section for ongoing Apple, OpenAI
+   and Web/AI interests that can inform future Posts. These are not new routes.
 
 The full-profile, more-work and tool links temporarily use matching-language
 pages on `https://huihui.dev`, explicitly labeled as the current site. These are
@@ -347,14 +352,18 @@ Works milestones can replace their destinations without changing these previews.
 The navbar continues to target the existing Home fragments.
 
 All Home text belongs to `locales/` and the shared `LocaleContent` schema. The
-content is adapted from the existing profile and project descriptions; no v1
+content describes the current Web/UI direction and existing projects; no v1
 markup, styles, scripts or runtime data are imported. Home-specific composition
-uses existing typography, spacing, surface, color, radius and control tokens.
-The sole 40rem breakpoint stacks the Hero, About columns and project cards.
+uses existing typography, spacing, color, radius and control tokens. It removes
+the decorative eyebrow, project category micro-labels and abstract Hero sketch.
+Normal Home content uses the existing 1.125rem token, including current-site
+link context. Hierarchy comes from headings, spacing and restrained rules.
+The sole 40rem breakpoint stacks the work, focus, principles and practice columns.
 
-Home uses one h1, two section h2s, and project h3s. Fragment destinations accept
+Home uses one h1, five section h2s, and project/topic h3s. Fragment destinations accept
 keyboard focus, CTA text wraps, and links keep the shared visible focus style.
 `tests/v2/home.spec.ts` covers three locales, desktop/mobile, both themes,
-keyboard anchors, current-site destinations, and 320px with 200% text and reduced
-motion. The locale browser contract covers all Home copy; existing shell,
+keyboard anchors, current-site destinations, readable typography, no external
+resource requests, and 320px with 200% text and reduced motion. The locale browser
+contract covers all Home copy; existing shell,
 language and theme suites retain their integration coverage.
