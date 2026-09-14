@@ -10,6 +10,10 @@ permissions:
   checks: read
   actions: read
 
+env:
+  # Temporarily detached during V2 reconstruction. Restore both custom-domain gates with 'true'.
+  BETA_CUSTOM_DOMAIN_ENABLED: 'false'
+
 concurrency:
   group: beta-cd
   cancel-in-progress: true
@@ -55,7 +59,7 @@ jobs:
     timeout-minutes: 35
     environment:
       name: beta
-      url: https://beta.huihui.dev
+      url: https://huihuidev-beta.pages.dev
 
     steps:
       - name: Checkout repository
@@ -94,6 +98,7 @@ jobs:
         run: npx playwright test --config=playwright.v2-beta.config.mjs --project=chromium --workers=1 --retries=0
 
       - name: Run custom beta domain application and edge smoke
+        if: env.BETA_CUSTOM_DOMAIN_ENABLED == 'true'
         env:
           V2_BETA_CONTRACT: custom
         run: npx playwright test --config=playwright.v2-beta.config.mjs --project=chromium --workers=1 --retries=0

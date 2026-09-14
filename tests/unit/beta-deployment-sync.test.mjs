@@ -7,12 +7,15 @@ import {
   canonicalPagesUrl,
   cloudflareApiResult,
   completedFailure,
+  getActivePagesState,
   getProductionPagesDeployments,
+  getQuiescentPagesState,
   inspectActivePagesIdentity,
   inspectCanonicalPagesDeployment,
   inspectPagesProductionQuiescence,
   inspectQuiescentPagesState,
   pollExactDeployment,
+  parseCustomDomainEnabled,
   resolveRequiredWorkerSha,
   selectNewestCoveringWorkerRun,
 } from "../scripts/beta-deployment-sync.mjs";
@@ -37,6 +40,7 @@ test("immutable Pages URL comes only from the exact successful canonical deploym
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllEnvs();
 });
 
 const ancestry = new Map([
@@ -109,6 +113,130 @@ const activePagesDomain = {
   name: PAGES_CUSTOM_DOMAIN,
   status: "active",
 };
+
+function pagesApiFixture({
+  project = {
+    ...pagesProject(),
+    canonical_deployment: {
+      ...pagesProject().canonical_deployment,
+      id: "12345678-1234-1234-1234-123456789abc",
+      url: "https://12345678.huihuidev-beta.pages.dev",
+    },
+  },
+  domain = activePagesDomain,
+  domainStatus = 200,
+  projectStatus = 200,
+  deployments = [pagesDeployment()],
+  deploymentsStatus = 200,
+} = {}) {
+  return vi.fn(async (url) => {
+    const path = new URL(url).pathname;
+    let result;
+    let status;
+    if (path.endsWith(`/domains/${PAGES_CUSTOM_DOMAIN}`)) {
+      result = domain;
+      status = domainStatus;
+    } else if (path.endsWith("/deployments")) {
+      result = deployments;
+      status = deploymentsStatus;
+    } else if (path.endsWith(`/pages/projects/${PAGES_PROJECT_NAME}`)) {
+      result = project;
+      status = projectStatus;
+    } else throw new Error(`Unexpected API request: ${url}`);
+    return new Response(JSON.stringify(status === 200
+      ? { success: true, result }
+      : { success: false, errors: [{ message: "API fixture failure" }] }), { status });
+  });
+}
+
+describe("explicit custom beta domain mode", () => {
+  test("parses only explicit boolean strings", () => {
+    expect(parseCustomDomainEnabled("false")).toBe(false);
+    expect(parseCustomDomainEnabled("true")).toBe(true);
+    for (const value of [undefined, null, "", "False", "0", "1", " true ", false, true]) {
+      expect(() => parseCustomDomainEnabled(value)).toThrow("BETA_CUSTOM_DOMAIN_ENABLED");
+    }
+  });
+
+  for (const getState of [getActivePagesState, getQuiescentPagesState]) {
+    describe(getState.name, () => {
+      test("disabled mode accepts a missing domain without ever looking it up", async () => {
+        vi.stubEnv("BETA_CUSTOM_DOMAIN_ENABLED", "false");
+        const fetchImpl = pagesApiFixture({ domainStatus: 404 });
+        const state = await getState("account", "token", A, { fetchImpl });
+        expect(state.complete).toBe(true);
+        expect(state.diagnostic).toContain("intentionally disabled; custom-domain lookup skipped");
+        expect(fetchImpl.mock.calls.some(([url]) => url.includes("/domains/"))).toBe(false);
+        expect(fetchImpl.mock.calls.some(([url]) => url.endsWith(`/projects/${PAGES_PROJECT_NAME}`))).toBe(true);
+        if (getState === getQuiescentPagesState) {
+          expect(state.pagesUrl).toBe("https://12345678.huihuidev-beta.pages.dev");
+          expect(fetchImpl.mock.calls.some(([url]) => url.includes("/deployments?env=production"))).toBe(true);
+        }
+      });
+
+      test("enabled mode requires a successful active domain lookup", async () => {
+        vi.stubEnv("BETA_CUSTOM_DOMAIN_ENABLED", "true");
+        const fetchImpl = pagesApiFixture();
+        const state = await getState("account", "token", A, { fetchImpl });
+        expect(state.complete).toBe(true);
+        expect(state.diagnostic).toContain(`${PAGES_CUSTOM_DOMAIN} is active`);
+        expect(fetchImpl.mock.calls.filter(([url]) => url.endsWith(`/domains/${PAGES_CUSTOM_DOMAIN}`))).toHaveLength(1);
+      });
+
+      test("enabled mode still fails on a domain 404 or missing/inactive domain data", async () => {
+        for (const fixture of [
+          { domainStatus: 404 },
+          { domain: null },
+          { domain: { ...activePagesDomain, status: "pending" } },
+        ]) {
+          await expect(getState("account", "token", A, {
+            customDomainEnabled: true,
+            fetchImpl: pagesApiFixture(fixture),
+          })).rejects.toThrow(/HTTP 404|did not contain a domain|expected active/);
+        }
+      });
+
+      test("missing mode fails before issuing API requests", async () => {
+        vi.stubEnv("BETA_CUSTOM_DOMAIN_ENABLED", undefined);
+        const fetchImpl = pagesApiFixture();
+        await expect(getState("account", "token", A, { fetchImpl })).rejects.toThrow("BETA_CUSTOM_DOMAIN_ENABLED");
+        expect(fetchImpl).not.toHaveBeenCalled();
+      });
+
+      for (const customDomainEnabled of [false, true]) {
+        test(`mode=${customDomainEnabled} still rejects a wrong SHA and failed Pages deployment`, async () => {
+          const options = { customDomainEnabled, fetchImpl: pagesApiFixture({ project: pagesProject({ sha: B }) }) };
+          const state = await getState("account", "token", A, options);
+          expect(state.complete).toBe(false);
+          expect(state.pagesUrl).toBeUndefined();
+          options.fetchImpl = pagesApiFixture({ project: pagesProject({ stageStatus: "failure" }) });
+          await expect(getState("account", "token", A, options)).rejects.toThrow("failure");
+        });
+
+        test.each([404, 500])(`mode=${customDomainEnabled} fails on a Pages project API %i`, async (projectStatus) => {
+          await expect(getState("account", "token", A, {
+            customDomainEnabled, fetchImpl: pagesApiFixture({ projectStatus }),
+          })).rejects.toThrow(`HTTP ${projectStatus}`);
+        });
+      }
+    });
+  }
+
+  test.each([false, true])("mode=%s keeps quiescence, deployment-list API and immutable URL checks mandatory", async (customDomainEnabled) => {
+    const state = await getQuiescentPagesState("account", "token", A, {
+      customDomainEnabled,
+      fetchImpl: pagesApiFixture({ deployments: [pagesDeployment({ sha: B, stageStatus: "active" })] }),
+    });
+    expect(state.complete).toBe(false);
+    expect(state.pagesUrl).toBeUndefined();
+    await expect(getQuiescentPagesState("account", "token", A, {
+      customDomainEnabled, fetchImpl: pagesApiFixture({ deploymentsStatus: 404 }),
+    })).rejects.toThrow("HTTP 404");
+    await expect(getQuiescentPagesState("account", "token", A, {
+      customDomainEnabled, fetchImpl: pagesApiFixture({ project: pagesProject() }),
+    })).rejects.toThrow("immutable deployment URL");
+  });
+});
 
 describe("beta Worker deployment synchronization", () => {
   test("resolves the latest Worker-affecting commit in target ancestry", () => {
