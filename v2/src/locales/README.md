@@ -1,5 +1,8 @@
 # Locales
 
-Reserved for future v2 i18n modules. The existing typed locale content and locale
-resolution remain in `../content.ts`, which is the current source of truth.
-Do not duplicate that dataset here or import the v1 locale scripts.
+Canonical v2 UI copy lives in `zh-Hant.ts`, `en.ts`, and `ja.ts`, checked against
+the single `LocaleContent` schema in `types.ts`. `index.ts` exposes locale
+selection, complete content, and fragment-preserving links.
+
+See the [v2 locale architecture](../../README.md#locale-architecture) for ownership
+and route rules. Do not duplicate these strings in components or import v1 locales.

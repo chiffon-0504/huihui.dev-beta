@@ -1,10 +1,10 @@
-import { content, type Locale } from "../content";
+import { getContent, type Locale } from "../locales";
 import { element } from "../dom";
 import type { ThemeController, ThemePreference, ThemeState } from "../theme/controller";
 import { createIcon } from "./icons";
 
 export function createThemeSwitcher(locale: Locale, theme: ThemeController): HTMLDivElement {
-  const copy = content[locale];
+  const copy = getContent(locale);
   const dropdown = element("div", "theme-switcher");
   const trigger = element("button", "theme-trigger navbar-control");
   trigger.type = "button";

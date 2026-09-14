@@ -1,4 +1,4 @@
-import { content, localeLinks, type Locale } from "../content";
+import { getContent, localeHref, type Locale } from "../locales";
 import { element, link } from "../dom";
 import type { ThemeController } from "../theme/controller";
 import { createLanguageSwitcher } from "./language-switcher";
@@ -6,14 +6,15 @@ import { createThemeSwitcher } from "./theme-switcher";
 import { createIcon } from "./icons";
 
 export function createNavbar(locale: Locale, theme: ThemeController): HTMLElement {
+  const copy = getContent(locale);
   const header = element("header", "site-header");
   const nav = element("nav", "navbar container");
-  nav.setAttribute("aria-label", content[locale].navigation);
-  const brand = link("huihui.dev", localeLinks[locale].href, "brand");
+  nav.setAttribute("aria-label", copy.navigation);
+  const brand = link("huihui.dev", localeHref(locale), "brand");
   const primary = element("ul", "navbar-primary");
   for (const id of ["works", "about"] as const) {
     const item = element("li", "");
-    item.append(link(content[locale][`${id}Label`], `#${id}`, "nav-link"));
+    item.append(link(copy[`${id}Label`], `#${id}`, "nav-link"));
     primary.append(item);
   }
   const actions = element("div", "navbar-actions");

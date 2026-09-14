@@ -1,8 +1,8 @@
-import { content, type Locale } from "../content";
+import { getContent, type Locale } from "../locales";
 import { element } from "../dom";
 
 export function createHome(locale: Locale): HTMLElement {
-  const copy = content[locale];
+  const copy = getContent(locale);
   const main = element("main", "container home");
   main.id = "main-content";
   main.tabIndex = -1;

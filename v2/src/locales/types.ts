@@ -1,0 +1,21 @@
+export const supportedLocales = ["zh-Hant", "en", "ja"] as const;
+export type Locale = (typeof supportedLocales)[number];
+
+export interface LocaleContent {
+  readonly language: { readonly label: string; readonly shortLabel: string };
+  readonly skip: string;
+  readonly navigation: string;
+  readonly languages: string;
+  readonly theme: string;
+  readonly themeAuto: string;
+  readonly themeLight: string;
+  readonly themeDark: string;
+  readonly eyebrow: string;
+  readonly title: string;
+  readonly introduction: string;
+  readonly upcoming: string;
+  readonly worksLabel: string;
+  readonly aboutLabel: string;
+  readonly works: string;
+  readonly about: string;
+}
