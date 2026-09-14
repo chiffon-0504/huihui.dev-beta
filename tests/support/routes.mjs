@@ -71,7 +71,6 @@ export const primaryRoutes = Object.entries(localeMetadata).flatMap(
 );
 
 export const standaloneDocuments = [
-  { url: "/114514/", file: "114514/index.html", lang: "zh-Hant" },
   { url: null, file: "404.html", lang: "zh-Hant" },
 ];
 

@@ -302,14 +302,6 @@ test("localized Works project cards preserve locale with keyboard navigation", a
   }
 });
 
-test("the standalone 114514 route loads", async ({ page }) => {
-  const response = await page.goto("/114514/");
-
-  expect(response?.status()).toBe(200);
-  await expect(page.locator(".error-card h1")).toHaveText("114514");
-  await expect(page.locator(".skip-link, #main-content")).toHaveCount(0);
-});
-
 test("missing routes return the standalone 404 page", async ({ page }) => {
   const response = await page.goto("/definitely-missing-route/");
 

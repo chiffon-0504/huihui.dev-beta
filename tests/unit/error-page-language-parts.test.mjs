@@ -16,17 +16,6 @@ const pages = [
     bodyText:
       "404 這個頁面不存在。 This page does not exist. このページは存在しません。 回首頁 / Home / ホーム",
   },
-  {
-    file: "114514/index.html",
-    heading: "114514",
-    paragraphs: [
-      { lang: null, text: "這個頁面太過惡臭了。" },
-      { lang: "en", text: "This page is far too foul." },
-      { lang: "ja", text: "このページはあまりにも臭すぎます。" },
-    ],
-    bodyText:
-      "114514 這個頁面太過惡臭了。 This page is far too foul. このページはあまりにも臭すぎます。 回首頁 / Home / ホーム",
-  },
 ];
 
 const normalizeText = (value) => value.replace(/\s+/g, " ").trim();

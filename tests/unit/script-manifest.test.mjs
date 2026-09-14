@@ -230,9 +230,8 @@ describe("route-specific JavaScript manifests", () => {
     }
   });
 
-  test("standalone 404 and legacy routes stay script-free", async () => {
+  test("the standalone 404 page stays script-free", async () => {
     expect(await getScripts("404.html", "/404.html")).toEqual([]);
-    expect(await getScripts("114514/index.html", "/114514/")).toEqual([]);
   });
 
   test("preserves only runtime-required dependency ordering", async () => {
