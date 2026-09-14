@@ -20,6 +20,7 @@ describe("v2 localized shell", () => {
   for (const locale of supportedLocales) {
     test(`${locale} has a matching entry and complete shared content`, async () => {
       const { language, ...copy } = getContent(locale);
+      expect(Object.keys(getContent(locale)).sort()).toEqual(Object.keys(content.en).sort());
       for (const value of [...Object.values(copy), ...Object.values(language)]) expect(value.trim()).not.toBe("");
       const route = localeHref(locale);
       expect(resolveLocale(route)).toBe(locale);

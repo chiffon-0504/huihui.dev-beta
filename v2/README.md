@@ -152,7 +152,8 @@ v2/
 
 V1 remains the active production site while v2 development continues; its root
 HTML/CSS/JavaScript and release flow remain independent of these TypeScript
-commands. Home and page reconstruction remain deferred to a later PR.
+commands. Home is the first completed v2 page; independent About, Works, Posts
+and Contact pages remain deferred.
 
 `src/main.ts` composes DOM components from `components/navbar.ts`,
 `components/footer.ts`, and `pages/home.ts`. Shared localized copy lives in
@@ -167,7 +168,7 @@ theme preference, solar calculation and presentation have separate modules.
 - `types.ts` defines `supportedLocales`, the derived `Locale` identity, and the
   shared `LocaleContent` schema.
 - `zh-Hant.ts`, `en.ts`, and `ja.ts` each own one complete language, including
-  navigation, language self-names, theme and accessibility labels, and provisional
+  navigation, language self-names, theme and accessibility labels, and completed
   Home copy. Each module uses `satisfies LocaleContent`; missing or incompatible
   fields fail `check:v2:types`.
 - `index.ts` exposes the typed registry, `resolveLocale(pathname)`,
@@ -204,7 +205,7 @@ styles/
 │  ├─ navbar.css       # Existing navigation and native theme/language controls
 │  └─ footer.css       # Existing footer
 └─ pages/
-   └─ home.css         # Provisional Home composition only
+   └─ home.css         # Completed Home composition only
 ```
 
 Only `tokens.css` owns global design values: semantic colors, opaque surface
@@ -218,8 +219,8 @@ or glass blur. Add tokens for shared needs, not individual page adjustments.
 
 The single breakpoint is `40rem`: tokens reduce gutters from 1.5rem to 1rem
 and section spacing from 6rem to 4rem; the existing navbar wraps and Home
-placeholders stack. Use that literal in media queries because custom properties
-cannot supply query conditions. Font sizes use rem; the display heading mixes
+sections and project cards stack. Use that literal in media queries because
+custom properties cannot supply query conditions. Font sizes use rem; the display heading mixes
 rem and viewport sizing within rem bounds so enlarged text can grow. Do not
 lock root text sizing or hide horizontal overflow to mask reflow defects.
 
@@ -235,9 +236,9 @@ Add reusable component styles under `components/` only with a real consumer.
 Future page composition belongs in `pages/`, after the shared layers; generic
 typography and layout must not acquire page selectors. Keep utilities small.
 V1 CSS is reference material only: do not incrementally copy legacy blocks into
-this system. This foundation does not reconstruct any individual page.
+this system. Home consumes this foundation without changing the shared layers.
 
-The primary links point to the Home `#works` and `#about` placeholders until
+The primary links point to the Home `#works` and `#about` previews until
 those pages are implemented. All navigation remains visible on mobile and wraps
 at narrow widths or enlarged text. The actions area can later accommodate search
 without adding a search control or reserving a visible empty slot now.
@@ -320,6 +321,40 @@ works in Firefox, which does not support render-blocking module attributes.
 The root controller initializes before app DOM creation and takes over live
 updates. With JavaScript disabled the existing light `noscript` fallback remains.
 
-The footer contains copyright. Home copy and both content
-sections are provisional. No v1 regression assertion is replaced: v2 has its own
-Playwright configuration and PR validation job.
+The footer contains copyright. Home is the first completed v2 page. No v1
+regression assertion is replaced: v2 has its own Playwright configuration and PR
+validation job.
+
+## Home milestone
+
+TypeScript, the design system, application shell, locale architecture, and Home
+are complete. Independent About, Works, Posts, and Contact pages are not rebuilt.
+
+`pages/home.ts` renders one shared composition for all three locales:
+
+1. **Hero:** site and personal identity, positioning, and primary Works / secondary
+   About fragment links. An abstract interface sketch is decorative and hidden
+   from assistive technology; it has no controls, remote assets, or motion.
+2. **About preview:** a short introduction, engineering interests and life beyond
+   code, with a link to the full profile.
+3. **Works preview:** two selected projects, huihui.dev and Tier Maker, with
+   visible descriptions and direct source/tool links. There is no gallery system.
+
+The full-profile, more-work and tool links temporarily use matching-language
+pages on `https://huihui.dev`, explicitly labeled as the current site. These are
+ordinary same-tab links, not embedded v1 pages or new v2 routes. Future About and
+Works milestones can replace their destinations without changing these previews.
+The navbar continues to target the existing Home fragments.
+
+All Home text belongs to `locales/` and the shared `LocaleContent` schema. The
+content is adapted from the existing profile and project descriptions; no v1
+markup, styles, scripts or runtime data are imported. Home-specific composition
+uses existing typography, spacing, surface, color, radius and control tokens.
+The sole 40rem breakpoint stacks the Hero, About columns and project cards.
+
+Home uses one h1, two section h2s, and project h3s. Fragment destinations accept
+keyboard focus, CTA text wraps, and links keep the shared visible focus style.
+`tests/v2/home.spec.ts` covers three locales, desktop/mobile, both themes,
+keyboard anchors, current-site destinations, and 320px with 200% text and reduced
+motion. The locale browser contract covers all Home copy; existing shell,
+language and theme suites retain their integration coverage.
