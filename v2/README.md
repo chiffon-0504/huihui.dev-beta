@@ -217,6 +217,7 @@ styles/
 ├─ layout.css          # Full-height shell and responsive container
 ├─ utilities.css       # Keyboard skip link only
 ├─ components/
+│  ├─ button.css       # Shared pill buttons, CTA anchors and control variants
 │  ├─ navbar.css       # Existing navigation and native theme/language controls
 │  └─ footer.css       # Existing footer
 └─ pages/
@@ -227,10 +228,29 @@ Only `tokens.css` owns global design values: semantic colors, opaque surface
 treatment, popover shadows, spacing, radii, font families/sizes/weights/leading,
 content widths, control/icon sizes, stacking, focus and motion. The existing
 `--color-background`, `--color-surface`, `--color-text`, `--color-muted`,
-`--color-border`, `--color-accent` and `--color-focus` names remain canonical;
-do not add a second palette or aliases for the same roles. Light/Dark values
-and native `color-scheme` remain paired. Surfaces deliberately use no gradient
-or glass blur. Add tokens for shared needs, not individual page adjustments.
+`--color-border`, `--color-accent`, `--color-button` and `--color-focus` names
+remain canonical; do not add a second palette or aliases for the same roles.
+Light/Dark values and native `color-scheme` remain paired. Surfaces deliberately
+use no gradient or glass blur. Add tokens for shared needs, not individual page
+adjustments.
+
+`components/button.css` loads before navbar and footer styles. Its `.button`
+class provides the shared outlined CTA treatment, with `.button--primary` for
+filled CTAs and `.button--quiet` for navigation and disclosure/menu controls.
+All variants use `--radius-pill` (`9999px`) for their shape and local focus radius,
+plus shared spacing and `--control-size` tokens rather than fixed heights that
+prevent text wrapping. Navigation CTAs remain native anchors with their hrefs;
+theme buttons and language disclosures retain native `button` and `summary`
+semantics. Home's former underline CTAs consume this layer instead of page-owned
+button styles, consistently across ZH/EN/JA.
+
+Outlined and primary buttons use `--color-button` for their outline/text or fill,
+with `--color-background` as primary text. Hover and `:focus-visible` feedback is
+shared; native disabled buttons reduce opacity and use a not-allowed cursor.
+The navbar overrides quiet controls to use color-only hover/focus feedback,
+without an inset frame or background. Its brand link also uses the button color
+on hover/focus without an underline. Keyboard `:focus-visible` outlines remain
+visible, and the button layer introduces no transitions or animations.
 
 The single breakpoint is `40rem`: tokens reduce gutters from 1.5rem to 1rem
 and section spacing from 6rem to 4rem; the existing navbar wraps and Home
@@ -239,10 +259,10 @@ custom properties cannot supply query conditions. Font sizes use rem; the displa
 rem and viewport sizing within rem bounds so enlarged text can grow. Do not
 lock root text sizing or hide horizontal overflow to mask reflow defects.
 
-Native controls keep their appearance unless the existing navigation component
-provides its own treatment. List-marker removal is scoped to navigation, leaving
-future content lists intact. Keyboard focus uses shared color/width/offset/radius
-tokens; the skip link sits above dropdowns. The shell has no transitions,
+Native controls keep their appearance unless the shared button or navigation
+styles provide their own treatment. List-marker removal is scoped to navigation,
+leaving future content lists intact. Keyboard focus uses shared color, width,
+offset and radius tokens; the skip link sits above dropdowns. The shell has no transitions,
 animations or smooth scrolling. Future optional motion must consume the duration
 tokens (zero under `prefers-reduced-motion: reduce`); nonessential keyframes and
 smooth scrolling also need an explicit reduced-motion alternative.
@@ -251,7 +271,8 @@ Add reusable component styles under `components/` only with a real consumer.
 Future page composition belongs in `pages/`, after the shared layers; generic
 typography and layout must not acquire page selectors. Keep utilities small.
 V1 CSS is reference material only: do not incrementally copy legacy blocks into
-this system. Home consumes this foundation without changing the shared layers.
+this system. Home-specific composition stays in `pages/home.css` and consumes
+the shared layers.
 
 The primary links point to the Home `#works` and `#about` previews until
 those pages are implemented. All navigation remains visible on mobile and wraps
@@ -314,7 +335,11 @@ ZH/EN/JA labels live in `locales/`; no permanent Theme text label is displayed.
 All pages share Light/Dark semantic tokens and matching `color-scheme` in
 `styles/tokens.css`, including visible focus colors tested on both surfaces.
 Dark uses a black page background and neutral near-black surfaces; Auto resolving
-to Dark uses the same tokens. Light's color palette is unchanged.
+to Dark uses the same tokens. Light's `--color-button` is blue `#006FDE`, separate
+from the existing green `--color-accent` used by other accents. Dark's button
+token references `--color-accent`, preserving its light blue `#8FD3FF`. Auto
+uses the same button palette as its effective Light or Dark result; OS color
+scheme does not select a separate button palette.
 
 Navbar action links, language summaries and theme buttons share the
 `navbar-control` height, typography, padding and flex alignment. The language
