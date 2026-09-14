@@ -27,6 +27,17 @@
   padding-block: var(--space-2);
 }
 
+.brand:hover,
+.brand:focus-visible {
+  color: var(--color-button);
+  text-decoration: none;
+}
+
+.navbar .button--quiet:is(:hover, :focus-visible) {
+  background: transparent;
+  box-shadow: none;
+}
+
 .navbar-primary,
 .navbar-actions {
   display: flex;
