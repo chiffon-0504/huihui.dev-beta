@@ -145,9 +145,6 @@ describe("canonical and hreflang static contracts", () => {
       [...expectedPrimaryRouteUrls].sort(),
     );
     expect(primaryRoutes.map((route) => route.file)).not.toContain("404.html");
-    expect(primaryRoutes.map((route) => route.file)).not.toContain(
-      "114514/index.html",
-    );
     expect(primaryRoutes.some((route) => route.url.includes("/posts/"))).toBe(
       false,
     );
@@ -155,7 +152,6 @@ describe("canonical and hreflang static contracts", () => {
       primaryRoutes.some((route) => redirectSources.includes(route.url)),
     ).toBe(false);
     expect(standaloneDocuments.map((document) => document.file)).toEqual([
-      "114514/index.html",
       "404.html",
     ]);
   });
