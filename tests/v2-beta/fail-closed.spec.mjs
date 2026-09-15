@@ -3,9 +3,24 @@ import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { guardBrowser, navigate } from "./browser.mjs";
 import { cloudflareJsdBootstrap, securityHeaders } from "../support/v2-beta-contract.mjs";
+import { readdir } from "node:fs/promises";
 
 const origin = "http://v2-beta-fixture.test";
 const headers = securityHeaders(await readFile(new URL("../../v2/public/_headers", import.meta.url), "utf8"));
+
+test("strict build verification rejects changed WebP bytes", async ({ page, baseURL }) => {
+  const files = await readdir(new URL("../../v2/dist/assets/", import.meta.url));
+  const name = files.find((file) => file.endsWith(".webp"));
+  expect(name).toBeDefined();
+  await page.route(`**/assets/${name}`, async (route) => {
+    const body = await readFile(new URL(`../../v2/dist/assets/${name}`, import.meta.url));
+    await route.fulfill({ contentType: "image/webp", body: Buffer.concat([body, Buffer.from("changed")]) });
+  });
+  const checkErrors = await guardBrowser(page, baseURL, { verifyBuild: true });
+  await navigate(page, `${baseURL}/works/`, headers);
+  await expect(page.locator("main.works")).toBeVisible();
+  await expect(checkErrors()).rejects.toThrow("Served asset bytes differ from repository build");
+});
 
 // Cases below run in real Chromium with isolated, intercepted responses.
 for (const scenario of ["challenge", "403", "missing-csp", "network"]) {
@@ -56,8 +71,8 @@ for (const scenario of ["known-jsd", "pages-jsd", "wrong-host", "changed-jsd", "
         unknownDispatched = true;
         return route.fulfill({ contentType: "text/javascript", body: "/* unexpected */" });
       }
-      if (!/^\/assets\/[\w.-]+\.(js|css|svg)$/.test(path)) return route.abort();
-      const contentType = path.endsWith(".js") ? "text/javascript" : path.endsWith(".css") ? "text/css" : "image/svg+xml";
+      if (!/^\/assets\/[\w.-]+\.(js|css|svg|webp)$/.test(path)) return route.abort();
+      const contentType = path.endsWith(".js") ? "text/javascript" : path.endsWith(".css") ? "text/css" : path.endsWith(".webp") ? "image/webp" : "image/svg+xml";
       let body = await readFile(new URL(`../../v2/dist${path}`, import.meta.url));
       if (scenario === "asset-bytes" && path.endsWith(".js")) body = Buffer.concat([body, Buffer.from("\n/* altered served bytes */")]);
       await route.fulfill({ contentType, body });

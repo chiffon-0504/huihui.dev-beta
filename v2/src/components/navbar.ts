@@ -14,9 +14,9 @@ export function createNavbar(locale: Locale, theme: ThemeController, page: Page)
   const primary = element("ul", "navbar-primary");
   for (const id of ["works", "about"] as const) {
     const item = element("li", "");
-    const href = id === "about" ? localeHref(locale, "", "about") : page === "home" ? "#works" : localeHref(locale, "#works");
+    const href = localeHref(locale, "", id);
     const anchor = link(copy[`${id}Label`], href, "nav-link button button--quiet");
-    if (id === "about" && page === "about") anchor.setAttribute("aria-current", "page");
+    if (id === page) anchor.setAttribute("aria-current", "page");
     item.append(anchor);
     primary.append(item);
   }

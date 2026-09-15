@@ -36,7 +36,7 @@ function browserEvidenceMetadata({ contract, url, documents, violations, console
       const parsed = new URL(value);
       const known = parsed.origin === BETA_ORIGIN || /^https:\/\/[0-9a-f]{8}\.huihuidev-beta\.pages\.dev$/.test(parsed.origin) || parsed.origin === "http://127.0.0.1:4176";
       if (!known) return "[redacted URL]";
-      return parsed.origin + (["/", "/en/", "/ja/"].includes(parsed.pathname) || /^\/assets\/[\w.-]+\.(js|css|svg)$/.test(parsed.pathname) ? parsed.pathname : "/[redacted path]");
+      return parsed.origin + (["/", "/en/", "/ja/"].includes(parsed.pathname) || /^\/assets\/[\w.-]+\.(js|css|svg|webp)$/.test(parsed.pathname) ? parsed.pathname : "/[redacted path]");
     } catch { return "[redacted URL]"; }
   };
   const number = (value) => Number.isSafeInteger(value) ? value : null;
@@ -91,7 +91,7 @@ export function validateBrowserEvidence({ contract, url, documents, violations, 
     if (!condition) assert.fail(`${message}: ${browserEvidenceMetadata({ contract, url, documents, violations, consoles, responsePolicies })}`);
   };
   const betaNavigation = (value) => ["/", "/en/", "/ja/"].some((path) => value === BETA_ORIGIN + path);
-  const assets = new Set(assetUrls.filter((value) => typeof value === "string" && /^https:\/\/beta\.huihui\.dev\/assets\/[\w.-]+\.(js|css|svg)$/.test(value)));
+  const assets = new Set(assetUrls.filter((value) => typeof value === "string" && /^https:\/\/beta\.huihui\.dev\/assets\/[\w.-]+\.(js|css|svg|webp)$/.test(value)));
   for (const response of responsePolicies.filter((item) => item.reportOnlyPolicy !== undefined)) {
     check(contract === "custom" && betaNavigation(response.url), "Report-Only edge exception is beta custom-domain only");
     check(isCloudflareMonitoringPolicy(response.reportOnlyPolicy) && Boolean(response.enforcingPolicy) && response.enforcingPolicy !== response.reportOnlyPolicy, "Unexpected delivered Report-Only policy");

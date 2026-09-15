@@ -19,11 +19,11 @@ describe("v2 localized shell", () => {
 
   for (const locale of supportedLocales) {
     test(`${locale} has a matching entry and complete shared content`, async () => {
-      const { language, focus, principles, skills, interests, aboutPage, contact, ...copy } = getContent(locale);
+      const { language, focus, principles, skills, interests, aboutPage, worksPage, contact, ...copy } = getContent(locale);
       expect(Object.keys(getContent(locale)).sort()).toEqual(Object.keys(content.en).sort());
       for (const value of [...Object.values(copy), ...Object.values(language)]) expect(value.trim()).not.toBe("");
       const strings = (value) => typeof value === "string" ? [value] : Object.values(value).flatMap(strings);
-      for (const value of strings({ aboutPage, contact })) expect(value.trim()).not.toBe("");
+      for (const value of strings({ aboutPage, worksPage, contact })) expect(value.trim()).not.toBe("");
       for (const topics of [focus, principles, skills, interests]) {
         expect(topics).toHaveLength(3);
         for (const topic of topics) {
@@ -45,7 +45,7 @@ describe("v2 localized shell", () => {
   }
 
   test("unknown paths select a complete default locale without adding routes", () => {
-    for (const path of ["/fr/", "/english/", "/ja/works/"]) {
+    for (const path of ["/fr/", "/english/", "/ja/posts/"]) {
       expect(resolveLocale(path)).toBe("zh-Hant");
       expect(getContent(resolveLocale(path))).toBe(content["zh-Hant"]);
     }

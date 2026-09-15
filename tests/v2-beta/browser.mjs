@@ -3,7 +3,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { inspectDocument, validateBrowserEvidence, validateResponse, validateSecurityHeaders } from "../support/v2-beta-contract.mjs";
 
-const applicationRoutes = ["/", "/en/", "/ja/", "/about/", "/en/about/", "/ja/about/"];
+const applicationRoutes = ["/", "/en/", "/ja/", "/about/", "/en/about/", "/ja/about/", "/works/", "/en/works/", "/ja/works/"];
 
 export async function checkNavigation(response, expectedUrl, expectedHeaders) {
   assert(response, "Browser/custom-domain navigation: missing response");
@@ -63,7 +63,7 @@ export async function guardBrowser(page, baseURL, { contract = "pages", verifyBu
         documents.push(inspectDocument({ html, builtHtml, url: url.href, contract, policy: delivered["content-security-policy"] }));
         responsePolicies.push({ url: url.href, enforcingPolicy: delivered["content-security-policy"], reportOnlyPolicy: delivered["content-security-policy-report-only"] });
       } else {
-        assert(/^\/assets\/[\w.-]+\.(js|css|svg)$/.test(url.pathname) && !url.search, "Unexpected resource outside repository build");
+        assert(/^\/assets\/[\w.-]+\.(js|css|svg|webp)$/.test(url.pathname) && !url.search, "Unexpected resource outside repository build");
       }
     })().catch((error) => errors.push(error.code === "ENOENT" ? "Resource absent from repository build" : error.message)));
   });

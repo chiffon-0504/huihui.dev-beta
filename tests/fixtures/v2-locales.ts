@@ -35,3 +35,8 @@ void interestsTitle;
 export const incompleteAbout: LocaleContent = { ...en, aboutPage: missingAboutHeading };
 // @ts-expect-error Shared footer contact labels must be translated.
 export const incompleteContact: LocaleContent = { ...ja, contact: { email: "contact@huihui.dev" } };
+
+const { alt, ...missingWorkAlt } = en.worksPage.website;
+void alt;
+// @ts-expect-error Every locale must provide meaningful image text.
+export const incompleteWorks: LocaleContent = { ...en, worksPage: { ...en.worksPage, website: missingWorkAlt } };

@@ -1,6 +1,28 @@
 import type { LocaleContent } from "./types";
 
 export default {
+  worksPage: {
+    title: "Works",
+    description: "Selected web development, browser tools, and photography by huihui.",
+    noScript: "This website needs JavaScript. You can also explore my projects on GitHub.",
+    introduction: "Websites, tools, and travel photography: a selection of my work in design, development, and observation.",
+    website: {
+      title: "huihui.dev",
+      description: "An evolving personal website with three languages, responsive interfaces, and light and dark themes. My Mount Fuji photograph serves as its cover.",
+      alt: "Snow-covered Mount Fuji under a blue sky, the photographic cover used on huihui.dev.",
+      linkLabel: "View the website source",
+    },
+    tool: {
+      title: "Tier Maker",
+      description: "Upload images, arrange your tiers, and export a PNG. A small browser tool for organizing and sharing your favorites.",
+      linkLabel: "Open Tier Maker (current site)",
+    },
+    photography: {
+      title: "Yokohama at night",
+      description: "Travel photography exploring light and city silhouettes. The waterfront lights and reflections in Yokohama capture one of those moments.",
+      alt: "Yokohama harbor at night, with illuminated towers and a red Ferris wheel reflected in the water.",
+    },
+  },
   contact: { label: "Contact", email: "contact@huihui.dev" },
   aboutPage: {
     title: "About me",

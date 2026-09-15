@@ -12,7 +12,7 @@ for (const locale of locales) {
     await page.goto(locale.route);
     const nav = page.getByRole("navigation", { name: locale.navigation });
     for (const [id, label] of [["works", locale.worksLabel], ["about", locale.aboutLabel]]) {
-      await expect(nav.getByRole("link", { name: label, exact: true })).toHaveAttribute("href", id === "about" ? `${locale.route}about/` : "#works");
+      await expect(nav.getByRole("link", { name: label, exact: true })).toHaveAttribute("href", `${locale.route}${id}/`);
       await expect(page.locator(`#${id}`).getByRole("heading", { level: 2, name: id === "works" ? locale.worksHeading : locale.focusLabel, exact: true })).toBeVisible();
     }
     if (locale.lang !== "en") {
@@ -39,7 +39,7 @@ for (const locale of locales) {
       const nav = page.getByRole("navigation", { name: locale.navigation });
       await expect(nav.getByRole("link")).toHaveCount(4);
       await expect(nav.getByRole("link", { name: "huihui.dev", exact: true })).toHaveAttribute("href", locale.route);
-      await expect(nav.getByRole("link", { name: locale.worksLabel, exact: true })).toHaveAttribute("href", "#works");
+      await expect(nav.getByRole("link", { name: locale.worksLabel, exact: true })).toHaveAttribute("href", `${locale.route}works/`);
       await expect(nav.getByRole("link", { name: locale.aboutLabel, exact: true })).toHaveAttribute("href", `${locale.route}about/`);
       await expect(nav.getByRole("link", { name: "GitHub", exact: true })).toHaveAttribute("href", "https://github.com/chiffon-0504");
       await expect(nav.locator('a[aria-current="page"]')).toHaveAttribute("hreflang", locale.lang);
@@ -72,7 +72,8 @@ for (const locale of locales) {
             await expect(page).toHaveURL(new RegExp(`${locale.route}about/$`));
             await expect(page.locator("main.about")).toBeVisible();
           } else {
-            await expect(page.locator(`#${sectionId}`)).toBeFocused();
+            await expect(page).toHaveURL(new RegExp(`${locale.route}works/$`));
+            await expect(page.locator("main.works")).toBeVisible();
           }
           // Reload instead of relying on engine-specific fragment tab order.
           await page.goto(locale.route);

@@ -17,7 +17,7 @@ const routes: Readonly<Record<Locale, string>> = {
   ja: "/ja/",
 };
 
-const pages: Readonly<Record<Page, string>> = { home: "", about: "about/" };
+const pages: Readonly<Record<Page, string>> = { home: "", about: "about/", works: "works/" };
 
 function matchesEntry(pathname: string, route: string): boolean {
   return pathname === route || pathname === `${route}index.html` || pathname === route.slice(0, -1);
@@ -30,7 +30,8 @@ export function resolveLocale(pathname: string): Locale {
 }
 
 export function resolvePage(pathname: string): Page {
-  return supportedLocales.some((locale) => matchesEntry(pathname, localeHref(locale, "", "about"))) ? "about" : "home";
+  return (Object.keys(pages) as Page[]).find((page) => supportedLocales.some((locale) =>
+    matchesEntry(pathname, localeHref(locale, "", page)))) ?? "home";
 }
 
 export function getContent(locale: Locale): LocaleContent {

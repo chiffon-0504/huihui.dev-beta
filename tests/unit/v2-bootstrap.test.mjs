@@ -26,7 +26,7 @@ beforeAll(async () => {
 }, 30_000);
 
 describe("v2 initial theme build contract", () => {
-  test.each(["index.html", "en/index.html", "ja/index.html", "about/index.html", "en/about/index.html", "ja/about/index.html"])("%s blocks parsing with an external classic bootstrap before styles and app", (entry) => {
+  test.each(["index.html", "en/index.html", "ja/index.html", "about/index.html", "en/about/index.html", "ja/about/index.html", "works/index.html", "en/works/index.html", "ja/works/index.html"])("%s blocks parsing with an external classic bootstrap before styles and app", (entry) => {
     const html = String(output.find((asset) => asset.fileName === entry)?.source);
     const tag = `<script src="/${bootstrap.fileName}"></script>`;
     expect(html).toContain(tag);
@@ -43,13 +43,13 @@ describe("v2 initial theme build contract", () => {
     }
   });
 
-  test("emits exactly Home and About in three locales with translated static metadata", () => {
+  test("emits exactly Home, About and Works in three locales with translated static metadata", () => {
     expect(output.filter((entry) => entry.fileName.endsWith(".html")).map((entry) => entry.fileName).sort())
-      .toEqual(["about/index.html", "en/about/index.html", "en/index.html", "index.html", "ja/about/index.html", "ja/index.html"]);
-    for (const locale of supportedLocales) {
-      const route = localeHref(locale, "", "about");
+      .toEqual(["about/index.html", "en/about/index.html", "en/index.html", "en/works/index.html", "index.html", "ja/about/index.html", "ja/index.html", "ja/works/index.html", "works/index.html"]);
+    for (const [locale, page] of supportedLocales.flatMap((locale) => ["about", "works"].map((page) => [locale, page]))) {
+      const route = localeHref(locale, "", page);
       const html = String(output.find((entry) => entry.fileName === `${route.slice(1)}index.html`)?.source);
-      const copy = getContent(locale).aboutPage;
+      const copy = getContent(locale)[`${page}Page`];
       expect(html).toContain(`<html lang="${locale}">`);
       expect(html).toContain(`<title>${copy.title} | huihui.dev</title>`);
       expect(html).toContain(copy.noScript);

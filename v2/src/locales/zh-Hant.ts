@@ -1,6 +1,28 @@
 import type { LocaleContent } from "./types";
 
 export default {
+  worksPage: {
+    title: "作品",
+    description: "huihui 的網站開發、瀏覽器工具與精選攝影作品。",
+    noScript: "此網站需要 JavaScript。你也可以在 GitHub 查看我的專案。",
+    introduction: "從網站與工具到旅行攝影，記錄我在設計、開發與觀察中的實作。",
+    website: {
+      title: "huihui.dev",
+      description: "持續演進的個人網站，以三種語言、響應式介面與明暗主題，實踐網站設計與開發。封面使用我的富士山攝影作品。",
+      alt: "藍天下覆雪的富士山，huihui.dev 使用的攝影封面。",
+      linkLabel: "查看網站原始碼",
+    },
+    tool: {
+      title: "Tier Maker",
+      description: "上傳圖片、排列喜好分級，再匯出 PNG。讓整理與分享都能在瀏覽器中完成的小工具。",
+      linkLabel: "開啟 Tier Maker（現行網站）",
+    },
+    photography: {
+      title: "橫濱夜景",
+      description: "以攝影記錄旅途中的光線與城市輪廓。橫濱港邊的燈光與倒影，是其中一個片刻。",
+      alt: "夜晚的橫濱港，亮起的高樓與紅色摩天輪映在水面上。",
+    },
+  },
   contact: { label: "聯絡", email: "contact@huihui.dev" },
   aboutPage: {
     title: "關於我",

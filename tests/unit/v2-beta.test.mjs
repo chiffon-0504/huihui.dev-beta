@@ -140,6 +140,17 @@ test.each([0, 1, 7, 13])("classifies %i attributed monitoring events separately 
   expect(validateBrowserEvidence(monitoringEvidence(count))).toBe(1);
 });
 
+test("WebP digest reads are attributed only to known build assets, never script execution", () => {
+  const data = monitoringEvidence();
+  const image = "https://beta.huihui.dev/assets/fuji-480-fixture.webp";
+  data.violations[1].blockedURI = image;
+  expect(() => validateBrowserEvidence(data)).toThrow(/outside repository build/);
+  data.assetUrls.push(image);
+  expect(validateBrowserEvidence(data)).toBe(1);
+  data.violations[1].effectiveDirective = data.violations[1].violatedDirective = "script-src-elem";
+  expect(() => validateBrowserEvidence(data)).toThrow(/outside repository build/);
+});
+
 for (const contract of ["custom", "pages"]) {
   test.each([
     ["absent", undefined],

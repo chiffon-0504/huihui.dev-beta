@@ -13,7 +13,7 @@ test.each([
   expect(resolvePage(localeHref(locale))).toBe("home");
 });
 
-test.each(["/en/aboutness/", "/ja/about/extra/", "/en/contact/", "/ja/works/", "/fr/about/"])(
+test.each(["/en/aboutness/", "/ja/about/extra/", "/en/contact/", "/ja/posts/", "/fr/about/"])(
   "unimplemented path %s does not select an About entry", (path) => {
     expect(resolvePage(path)).toBe("home");
     expect(resolveLocale(path)).toBe("zh-Hant");
