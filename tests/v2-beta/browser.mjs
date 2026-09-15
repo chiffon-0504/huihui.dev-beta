@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import { createHash } from "node:crypto";
-import { inspectDocument, validateBrowserEvidence, validateResponse, validateSecurityHeaders } from "../support/v2-beta-contract.mjs";
+import { failedRequestMetadata, inspectDocument, isResponsiveImageCancellation, validateBrowserEvidence, validateResponse, validateSecurityHeaders } from "../support/v2-beta-contract.mjs";
 
 const applicationRoutes = ["/", "/en/", "/ja/", "/about/", "/en/about/", "/ja/about/", "/works/", "/en/works/", "/ja/works/"];
 
@@ -28,6 +28,11 @@ export async function guardBrowser(page, baseURL, { contract = "pages", verifyBu
   const documents = [];
   const responsePolicies = [];
   const pending = [];
+  const failedRequests = [];
+  const requestDocuments = new WeakMap();
+  let documentId = 0;
+  page.on("framenavigated", (frame) => { if (frame === page.mainFrame()) documentId++; });
+  page.on("request", (request) => requestDocuments.set(request, documentId));
   const builtAssets = verifyBuild ? new Set((await readdir(new URL("../../v2/dist/assets/", import.meta.url))).map((name) => `/assets/${name}`)) : null;
   const assetHashes = new Map(verifyBuild ? await Promise.all([...builtAssets].map(async (path) => [path, createHash("sha256").update(await readFile(new URL(`../../v2/dist${path}`, import.meta.url))).digest("hex")])) : []);
   await page.exposeBinding("recordBetaCspViolation", (source, event) => {
@@ -41,7 +46,12 @@ export async function guardBrowser(page, baseURL, { contract = "pages", verifyBu
   });
   page.on("pageerror", () => errors.push("Browser/custom-domain script error"));
   page.on("console", (message) => { if (message.type() === "error") consoles.push({ text: message.text(), location: message.location() }); });
-  page.on("requestfailed", () => errors.push("Browser/custom-domain request failed"));
+  page.on("requestfailed", (request) => {
+    const message = `Browser/custom-domain request failed: ${JSON.stringify(failedRequestMetadata(request, baseURL, builtAssets))}`;
+    failedRequests.push({ request, message, documentId: requestDocuments.get(request), classified: false });
+    // Retain evidence even when navigation or build fetching fails first.
+    console.log(message);
+  });
   page.on("response", (response) => {
     const headers = response.headers();
     if (response.status() !== 200 || headers["cf-mitigated"]) {
@@ -98,7 +108,31 @@ export async function guardBrowser(page, baseURL, { contract = "pages", verifyBu
     // from enforcing evidence, not resolved by additional synchronization.
     await page.evaluate(() => undefined);
     await Promise.all(pending);
-    assert(errors.length === 0, errors.join("\n"));
+    const unclassified = failedRequests.filter((failure) => !failure.classified);
+    if (unclassified.length && verifyBuild && page.context().browser()?.browserType().name() === "chromium") {
+      const images = await page.locator("main img").evaluateAll(async (nodes) => Promise.all(nodes.map(async (node) => {
+        let decoded = false;
+        // A candidate selected after the document's load event can still be
+        // downloading. Await its native decode once; do not poll or retry it.
+        if (node.currentSrc) {
+          try { await node.decode(); decoded = true; } catch { /* Failed decoding cannot establish a replacement. */ }
+        }
+        return { srcset: node.srcset, currentSrc: node.currentSrc, complete: node.complete, naturalWidth: node.naturalWidth, decoded };
+      })));
+      for (const failure of unclassified) {
+        const request = failure.request;
+        let mainFrame = false;
+        try { mainFrame = request.frame() === page.mainFrame(); } catch { /* Requests without a frame remain failures. */ }
+        failure.classified = isResponsiveImageCancellation({
+          url: request.url(), errorText: request.failure()?.errorText, resourceType: request.resourceType(),
+          method: request.method(), mainFrame, sameDocument: failure.documentId === documentId,
+          navigation: request.isNavigationRequest(), redirected: Boolean(request.redirectedFrom() || request.redirectedTo()),
+        }, { baseURL, builtAssets, images });
+        if (failure.classified) console.log(`Classified responsive-image candidate cancellation after build-digest and decoded replacement verification: ${JSON.stringify(failedRequestMetadata(request, baseURL, builtAssets))}`);
+      }
+    }
+    const failures = [...errors, ...failedRequests.filter((failure) => !failure.classified).map((failure) => failure.message)];
+    assert(failures.length === 0, failures.join("\n"));
     const classified = validateBrowserEvidence({ contract, url: page.url(), documents, violations, consoles, responsePolicies, assetUrls: [...(builtAssets || [])].map((path) => new URL(path, baseURL).href) });
     if (classified) console.log(`Classified ${classified} pinned Cloudflare JSD bootstrap block(s); application CSP remains enforcing.`);
     const reports = violations.filter((event) => event.disposition === "report").length;

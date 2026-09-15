@@ -1,10 +1,62 @@
 import { readFile } from "node:fs/promises";
 import { expect, test, vi } from "vitest";
 import { parseDocument } from "yaml";
-import { betaSmokeTarget, cloudflareJsdBootstrap, inspectDocument, jsdConsoleText, validateBrowserEvidence, responseMetadata, securityHeaders, validateResponse, validateSecurityHeaders } from "../support/v2-beta-contract.mjs";
+import { betaSmokeTarget, cloudflareJsdBootstrap, failedRequestMetadata, inspectDocument, isResponsiveImageCancellation, jsdConsoleText, validateBrowserEvidence, responseMetadata, securityHeaders, validateResponse, validateSecurityHeaders } from "../support/v2-beta-contract.mjs";
 import { parseCustomDomainEnabled } from "../scripts/beta-deployment-sync.mjs";
 
 const read = (path) => readFile(new URL(`../../${path}`, import.meta.url), "utf8");
+
+test("failed request diagnostics retain Chromium evidence without leaking URL secrets", () => {
+  const origin = "https://1234abcd.huihuidev-beta.pages.dev";
+  const path = "/assets/fuji-800-fixture.webp";
+  const builtAssets = new Set([path]);
+  const request = (url, errorText = "net::ERR_ABORTED", resourceType = "image") => ({
+    url: () => url, resourceType: () => resourceType, failure: () => errorText == null ? null : ({ errorText }),
+  });
+  expect(failedRequestMetadata(request(`${origin}${path}`), origin, builtAssets)).toEqual({
+    url: `${origin}${path}`, sameOrigin: true, hasQuery: false, resourceType: "image",
+    errorText: "net::ERR_ABORTED", expectedBuildAsset: true,
+  });
+  const withSecrets = failedRequestMetadata(request(`https://user:password@1234abcd.huihuidev-beta.pages.dev${path}?token=secret#private`), origin, builtAssets);
+  expect(withSecrets.url).toBe(`${origin}${path}`);
+  expect(withSecrets.hasQuery).toBe(true);
+  expect(JSON.stringify(withSecrets)).not.toMatch(/user|password|token|secret|private/);
+  expect(failedRequestMetadata(request(`${origin}/assets/missing.webp`, "net::ERR_FAILED"), origin, builtAssets))
+    .toMatchObject({ expectedBuildAsset: false, errorText: "net::ERR_FAILED" });
+  expect(failedRequestMetadata(request(`https://external.test/${path}?secret`), origin, builtAssets))
+    .toMatchObject({ sameOrigin: false, url: "[redacted external URL]" });
+  expect(failedRequestMetadata(request(`${origin}/cdn-cgi/challenge-platform/secret`, "private diagnostic"), origin, builtAssets))
+    .toMatchObject({ url: `${origin}/[redacted path]`, errorText: "[redacted error text]", expectedBuildAsset: false });
+  expect(failedRequestMetadata(request(`${origin}/works/`, null, "document"), origin, null))
+    .toMatchObject({ url: `${origin}/works/`, resourceType: "document", errorText: null, expectedBuildAsset: null });
+});
+
+test("only an aborted built WebP image with a decoded responsive replacement can be classified", () => {
+  const baseURL = "https://1234abcd.huihuidev-beta.pages.dev";
+  const small = "/assets/fuji-480-fixture.webp";
+  const large = "/assets/fuji-800-fixture.webp";
+  const failure = { url: baseURL + small, errorText: "net::ERR_ABORTED", resourceType: "image", method: "GET", mainFrame: true, sameDocument: true, navigation: false, redirected: false };
+  const image = { srcset: `${small} 480w, ${large} 800w`, currentSrc: baseURL + large, complete: true, naturalWidth: 536, decoded: true };
+  const context = { baseURL, builtAssets: new Set([small, large, "/assets/main.js", "/assets/icons.svg"]), images: [image] };
+  expect(isResponsiveImageCancellation(failure, context)).toBe(true);
+  for (const change of [
+    { errorText: "net::ERR_FAILED" }, { errorText: "net::ERR_CONNECTION_RESET" }, { errorText: null },
+    { resourceType: "fetch" }, { resourceType: "script" }, { method: "POST" },
+    { mainFrame: false }, { sameDocument: false }, { navigation: true }, { redirected: true },
+    { url: baseURL + "/assets/missing.webp" }, { url: baseURL + "/assets/main.js" },
+    { url: baseURL + "/assets/icons.svg" }, { url: baseURL + "/cdn-cgi/challenge-platform/image.webp" },
+    { url: "https://external.test" + small }, { url: failure.url + "?secret" }, { url: failure.url + "#fragment" },
+    { url: failure.url.replace("https://", "https://user:secret@") },
+  ]) expect(isResponsiveImageCancellation({ ...failure, ...change }, context), JSON.stringify(change)).toBe(false);
+  for (const change of [
+    { currentSrc: failure.url }, { complete: false }, { decoded: false }, { naturalWidth: 0 },
+    { currentSrc: baseURL + "/assets/missing.webp" }, { currentSrc: "https://external.test" + large },
+    { srcset: "" }, { srcset: `${large} 800w` }, { srcset: `${small} 1x, ${large} 2x` },
+    { srcset: `${small} 480w, /assets/missing.webp 800w` },
+  ]) expect(isResponsiveImageCancellation(failure, { ...context, images: [{ ...image, ...change }] }), JSON.stringify(change)).toBe(false);
+  expect(isResponsiveImageCancellation(failure, { ...context, builtAssets: null })).toBe(false);
+  expect(isResponsiveImageCancellation(failure, { ...context, images: [] })).toBe(false);
+});
 
 test("one repository-owned mode gates only custom-domain smoke in both modes", async () => {
   const document = parseDocument(await read(".github/workflows/beta-cd.yml"));
