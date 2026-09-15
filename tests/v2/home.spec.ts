@@ -45,7 +45,7 @@ for (const locale of supportedLocales) {
         nodes.every((node) => parseFloat(getComputedStyle(node).fontSize) >= 16 &&
           getComputedStyle(node).textTransform !== "uppercase"))).toBe(true);
       const destination = `https://huihui.dev${localeHref(locale)}`;
-      await expect(page.locator("#about a")).toHaveAttribute("href", `${destination}about/`);
+      await expect(page.locator("#about a")).toHaveAttribute("href", localeHref(locale, "", "about"));
       await expect(page.locator("#works .section-heading a")).toHaveAttribute("href", `${destination}works/`);
       await expect(page.locator(".home-project a").first()).toHaveAttribute("href", "https://github.com/chiffon-0504/huihui.dev-beta");
       await expect(page.locator(".home-project a").last()).toHaveAttribute("href", `${destination}tools/tier-maker/`);

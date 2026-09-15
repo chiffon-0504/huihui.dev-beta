@@ -12,7 +12,7 @@ Use Node.js 24 and install dependencies from the repository root with `npm ci`.
 - `npm run dev:v2` starts the v2 development server.
 - `npm run check:v2:types` checks the strict TypeScript application;
   `npm run check:ts` remains a compatibility alias.
-- `npm run build:v2` typechecks and builds the three HTML entries into `v2/dist/`.
+- `npm run build:v2` typechecks and builds the six HTML entries into `v2/dist/`.
 - `npm run preview:v2` serves that build locally.
 - `npm run test:e2e:v2` builds and tests Chromium, Firefox, and WebKit.
 - `npx vitest run tests/unit/v2-` runs the focused v2 unit contracts, including
@@ -29,7 +29,8 @@ instead of passing through a CommonJS `require`. Pure solar and timezone tests
 remain in the focused Vitest suite. The theme browser spec uses the production calculator
 only to exercise real sunrise/sunset transitions.
 
-The v2 server serves `/`, `/en/`, and `/ja/`. The generated `v2/dist/` is a
+The v2 server serves Home at `/`, `/en/`, and `/ja/`, and About at `/about/`,
+`/en/about/`, and `/ja/about/`. The generated `v2/dist/` is a
 standalone site root; opening the source HTML directly or using the v1 static
 server does not compile TypeScript. Vite copies `public/_headers` into the build.
 This self-only CSP, noindex policy and revalidation headers apply to v2 beta.
@@ -51,8 +52,8 @@ Use the existing Cloudflare Pages Git integration:
 | Custom domain | `beta.huihui.dev` |
 | Pages domain | `huihuidev-beta.pages.dev` |
 
-Cloudflare installs the repository dependencies and builds the three routes
-`/`, `/en/`, and `/ja/`. Git integration is the only Pages publication path;
+Cloudflare installs the repository dependencies and builds the six Home/About
+routes above. Git integration is the only Pages publication path;
 there is no separate Direct Upload project or manual GitHub Pages deploy job.
 The Dashboard build settings must be updated by an authorized account operator;
 repository changes alone do not switch the hosted build from the root v1 site.
@@ -86,7 +87,7 @@ contracts, then rechecks the active Pages identity:
   verifies delivered security headers, and rejects every CSP violation and
   console error. Enforce, Report-Only and no-CSP isolated probes run here.
 - **Custom-domain contract:** `https://beta.huihui.dev` runs the same three-locale
-  desktop/mobile, theme, language, build-byte and security-header checks. The
+  Home/About desktop/mobile, theme, language, build-byte and security-header checks. The
   only platform exception is the Cloudflare Free-plan JSD bootstrap observed on
   2026-09-13. Its entire executable text is pinned, including the iframe bootstrap
   and `/cdn-cgi/challenge-platform/scripts/jsd/main.js`; only a hexadecimal Ray ID
@@ -141,7 +142,7 @@ scope even before they have imports or exports. Shared state should be owned by
 modules or passed explicitly, rather than attached to browser globals.
 TypeScript checks without emitting files. The existing Vite configuration at
 `../vite.v2.config.mjs` handles browser bundles, CSS/SVG imports, the classic theme
-bootstrap and the three HTML entries. No additional compiler, bundler or
+bootstrap and the six HTML entries. No additional compiler, bundler or
 framework dependency is needed.
 
 ```text
@@ -158,8 +159,11 @@ v2/
 │  ├─ styles/         # Canonical v2 CSS foundation
 │  └─ dom.ts          # Current DOM helpers
 ├─ en/index.html
+├─ en/about/index.html
 ├─ ja/index.html
+├─ ja/about/index.html
 ├─ index.html
+├─ about/index.html
 ├─ public/
 ├─ tsconfig.json
 └─ README.md
@@ -167,11 +171,12 @@ v2/
 
 V1 remains the active production site while v2 development continues; its root
 HTML/CSS/JavaScript and release flow remain independent of these TypeScript
-commands. Home is the first completed v2 page; independent About, Works, Posts
-and Contact pages remain deferred.
+commands. The page roadmap is **Home / About / Works / Posts**. Home and About
+are complete; Works and Posts remain deferred. Contact belongs exclusively to
+the shared footer, with no standalone Contact route, module or stylesheet.
 
 `src/main.ts` composes DOM components from `components/navbar.ts`,
-`components/footer.ts`, and `pages/home.ts`. Shared localized copy lives in
+`components/footer.ts`, and either `pages/home.ts` or `pages/about.ts`. Shared localized copy lives in
 `locales/`; markup uses native elements and `textContent`. There is no router,
 framework or API request. A root-owned theme controller is passed to the navbar;
 theme preference, solar calculation and presentation have separate modules.
@@ -184,22 +189,25 @@ theme preference, solar calculation and presentation have separate modules.
   shared `LocaleContent` schema.
 - `zh-Hant.ts`, `en.ts`, and `ja.ts` each own one complete language, including
   navigation, language self-names, theme and accessibility labels, and completed
-  Home copy. Each module uses `satisfies LocaleContent`; missing or incompatible
+  Home/About copy and footer contact text. Each module uses `satisfies LocaleContent`; missing or incompatible
   fields fail `check:v2:types`.
 - `index.ts` exposes the typed registry, `resolveLocale(pathname)`,
-  `getContent(locale)`, and `localeHref(locale, hash)`.
+  `resolvePage(pathname)`, `getContent(locale)`, and `localeHref(locale, hash, page)`.
 
-The bootstrap selects by pathname: `/` → `zh-Hant`, `/en/` → `en`, and
-`/ja/` → `ja`. The same entries accept `index.html` and slashless locale paths.
+The bootstrap selects known Home and About entries by pathname: the root paths
+use `zh-Hant`, `/en/` paths use `en`, and `/ja/` paths use `ja`.
+These entries also accept `index.html` and slashless paths.
 Unknown paths select the complete ZH-Hant default; they do not
 register new page routes. Invalid internal identities passed to `getContent`
 or `localeHref` throw explicitly instead of returning partial content.
-Language links retain the current fragment, including `#works` and `#about`.
+Language links retain the current page and fragment, including Home's `#works`
+and `#about` and About's `#interests`.
 There is no router, runtime translation lookup, or translation dependency.
 
 Future v2 page copy belongs in these locale modules, extending the shared schema;
 components and pages consume it rather than maintaining independent translations.
-The static HTML entries still own document metadata and the no-JavaScript fallback.
+Home's static HTML entries own their document metadata and no-JavaScript fallback;
+About's HTML templates take those strings from the typed locales at build time.
 `content.ts` has been removed because it has no remaining responsibility.
 
 ### CSS design system
@@ -221,7 +229,8 @@ styles/
 │  ├─ navbar.css       # Existing navigation and native theme/language controls
 │  └─ footer.css       # Existing footer
 └─ pages/
-   └─ home.css         # Completed Home composition only
+   ├─ home.css         # Home composition
+   └─ about.css        # About composition
 ```
 
 Only `tokens.css` owns global design values: semantic colors, opaque surface
@@ -274,14 +283,15 @@ V1 CSS is reference material only: do not incrementally copy legacy blocks into
 this system. Home-specific composition stays in `pages/home.css` and consumes
 the shared layers.
 
-The primary links point to the Home `#works` and `#about` previews until
-those pages are implemented. All navigation remains visible on mobile and wraps
+The primary About link points to the localized About page. Works points to the
+localized Home `#works` preview, including when navigating from About.
+All navigation remains visible on mobile and wraps
 at narrow widths or enlarged text. The actions area can later accommodate search
 without adding a search control or reserving a visible empty slot now.
 
 The navbar language switcher uses native `details`/`summary` and localized links
-from `locales/`. It preserves the current Home fragment across the three locale
-entries, including `#works` and `#about`; v2 has no separate localized subpages yet.
+from `locales/`. It preserves the current page and fragment across the three
+locale entries: Home sections stay on Home, and About sections stay on About.
 The same control remains in the wrapping mobile navbar (there is no drawer).
 Escape restores trigger focus; outside clicks and focus leaving the disclosure
 close it. Tab follows native document order. The disclosure and links work if
@@ -361,14 +371,16 @@ works in Firefox, which does not support render-blocking module attributes.
 The root controller initializes before app DOM creation and takes over live
 updates. With JavaScript disabled the existing light `noscript` fallback remains.
 
-The footer contains copyright. Home is the first completed v2 page. No v1
+The footer contains copyright and the localized contact label with the existing
+public `contact@huihui.dev` mail link. It is shared by Home and About. No v1
 regression assertion is replaced: v2 has its own Playwright configuration and PR
 validation job.
 
 ## Home milestone
 
 TypeScript, the design system, application shell, locale architecture, and Home
-are complete. Independent About, Works, Posts, and Contact pages are not rebuilt.
+are complete, followed by the About milestone below. Works and Posts remain
+deferred; Contact is footer-only.
 
 `pages/home.ts` renders one shared composition for all three locales:
 
@@ -385,11 +397,10 @@ are complete. Independent About, Works, Posts, and Contact pages are not rebuilt
    CI/CD skills alongside a separately headed section for ongoing Apple, OpenAI
    and Web/AI interests that can inform future Posts. These are not new routes.
 
-The full-profile, more-work and tool links temporarily use matching-language
-pages on `https://huihui.dev`, explicitly labeled as the current site. These are
-ordinary same-tab links, not embedded v1 pages or new v2 routes. Future About and
-Works milestones can replace their destinations without changing these previews.
-The navbar continues to target the existing Home fragments.
+The full-profile link now opens the matching-language V2 About page. More-work
+and tool links still use matching-language pages on `https://huihui.dev`,
+explicitly labeled as the current site. These are ordinary same-tab links, not
+embedded v1 pages. Home's Hero keeps its useful Works and Focus fragment links.
 
 All Home text belongs to `locales/` and the shared `LocaleContent` schema. The
 content describes the current Web/UI direction and existing projects; no v1
@@ -407,3 +418,35 @@ keyboard anchors, current-site destinations, readable typography, no external
 resource requests, and 320px with 200% text and reduced motion. The locale browser
 contract covers all Home copy; existing shell,
 language and theme suites retain their integration coverage.
+
+## About milestone
+
+`pages/about.ts` presents the profile in four open sections: background, web
+development practice, hobbies, and music/art preferences. V1's profile data and
+About page are content references only. Electronic Engineering, photography,
+maimai DX, Arcaea, visual novels and creative interests remain; the simulated
+editor, code reveal, media gallery, Steam API and score widgets are not migrated.
+
+The three About HTML entries use the existing MPA build and common `main.ts`
+bootstrap. `locales/index.ts` resolves only known HTML entries, with typed `Page`
+identities and `localeHref(locale, hash, page)` for native document links. It does
+not intercept navigation or implement a client router. A future standalone page
+can add its real HTML entries, typed identity, content and page module to the
+same shell without introducing placeholder Works, Posts or Contact routes.
+
+`LocaleContent.aboutPage` requires all About strings. The small `aboutHtml` Vite
+transform fills escaped title, description and `noscript` placeholders from
+those same typed locale modules during development and build. HTML owns the
+document structure and language attribute; components use `textContent`.
+`pages/about.css` uses the existing semantic tokens, shared typography and pill
+CTA, and stacks its heading/content columns at the existing 40rem breakpoint.
+
+Focused unit contracts verify entry resolution, missing-translation type errors,
+six emitted HTML files and external-only theme bootstrap. About browser coverage
+checks all copy, page-preserving language links, Home round trips, shared footer
+and theme controls, native keyboard navigation, resource failures, and 320px /
+200% text reflow. Existing Home and shared shell suites retain their coverage.
+The existing global `_headers`, noindex policy and Beta CD architecture apply
+unchanged to the new entries. The strict browser smoke adds exactly the three
+built About routes to its allowed documents and applies the same build-byte,
+security-header and language checks; local tests do not prove a live deployment.

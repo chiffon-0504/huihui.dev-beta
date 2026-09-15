@@ -1,0 +1,56 @@
+.about {
+  font-size: var(--text-large);
+}
+
+.about-intro {
+  padding-block: var(--section-space);
+}
+
+.about-lead {
+  max-width: var(--content-width-prose);
+  margin-top: var(--space-8);
+  font-size: var(--text-heading);
+}
+
+.about-section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--space-12);
+  padding-block: var(--section-space);
+  border-top: var(--border-width) solid var(--color-border);
+  scroll-margin-block: var(--space-8);
+}
+
+.about-story,
+.about-topics {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-8);
+  margin: 0;
+}
+
+.about-story p,
+.about-topic dd {
+  max-width: var(--content-width-prose);
+  color: var(--color-muted);
+}
+
+.about-topic dt {
+  font-weight: var(--font-weight-medium);
+  font-size: var(--text-subheading);
+}
+
+.about-topic dd {
+  margin: var(--space-2) 0 0;
+}
+
+.about-practice > a {
+  margin-top: var(--space-8);
+}
+
+@media (max-width: 40rem) {
+  .about-section {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-8);
+  }
+}

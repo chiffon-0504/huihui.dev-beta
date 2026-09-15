@@ -1,6 +1,37 @@
 import type { LocaleContent } from "./types";
 
 export default {
+  contact: { label: "お問い合わせ", email: "contact@huihui.dev" },
+  aboutPage: {
+    title: "私について",
+    description: "huihui のプロフィール。電子工学、Web デザインと開発、写真、ゲーム、音楽について。",
+    noScript: "このサイトには JavaScript が必要です。GitHub でもプロジェクトをご覧いただけます。",
+    introduction: "huihui です。電子工学を専攻し、Web サイト制作、写真、音楽ゲーム、ビジュアルノベルが好きです。",
+    backgroundTitle: "電子工学から Web へ",
+    background: [
+      "専攻は電子工学で、Web インターフェースや組み込みシステムに関心があります。huihui.dev は、制作したものと自分の好きなことをまとめる個人の開発スペースです。",
+      "現在は Web Design、Website Development、UI / UX を主な軸に、見た目、読みやすさ、実装を一緒に考えています。このサイトも、学びや試みとともに少しずつ育てています。",
+    ],
+    practiceTitle: "Web サイトの作り方",
+    practice: [
+      { title: "Web 標準を土台に", description: "HTML、CSS、JavaScript を使い、さまざまな端末やキーボード操作にも配慮した、わかりやすく使いやすい画面を作ります。" },
+      { title: "変更を確認できる形に", description: "Git と GitHub を使い、Issues、Branches、Pull Requests、GitHub Actions で要件整理、変更のレビュー、テストを進めます。" },
+      { title: "作りながら確かめる", description: "AI を活用した開発と Cloudflare のデプロイ・API ツールを取り入れ、出力や使い心地は自分でも確認します。" },
+    ],
+    interestsTitle: "コードを離れて楽しむこと",
+    interests: [
+      { title: "写真", description: "趣味のひとつは写真です。撮影した作品もこの個人サイトにまとめています。" },
+      { title: "音楽ゲーム", description: "maimai でらっくすや Arcaea が好きです。音楽とリズム、繰り返し練習する過程を楽しんでいます。" },
+      { title: "ビジュアルノベル", description: "好きな作品のひとつは Summer Pockets REFLECTION BLUE。ほかにもビジュアルノベルを集めています。" },
+    ],
+    musicTitle: "好きな音楽とイラスト",
+    music: [
+      { title: "作曲家", description: "Laur、USAO、Sakuzyo、ak+q。" },
+      { title: "バンドと楽曲", description: "Morfonica や Ave Mujica が好きで、「One step at a time」や「顏」を聴いています。TOGENASHI TOGEARI の「雑踏、僕らの街」もお気に入りです。" },
+      { title: "イラストレーター", description: "@momoco_haru、@horuhara、@kurumi_lm の作品を追いかけています。" },
+    ],
+    worksCta: "ピックアップした作品を見る",
+  },
   language: { label: "日本語", shortLabel: "日本語" },
   skip: "メインコンテンツへ移動",
   navigation: "メインナビゲーション",

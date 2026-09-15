@@ -1,6 +1,37 @@
 import type { LocaleContent } from "./types";
 
 export default {
+  contact: { label: "聯絡", email: "contact@huihui.dev" },
+  aboutPage: {
+    title: "關於我",
+    description: "認識 huihui：電子工程背景、網站設計與開發，以及攝影、遊戲和音樂。",
+    noScript: "此網站需要 JavaScript。你也可以在 GitHub 瀏覽我的專案。",
+    introduction: "我是 huihui，電子工程背景，喜歡做網站，也喜歡攝影、音樂遊戲與 Galgame。",
+    backgroundTitle: "從電子工程到網站",
+    background: [
+      "我的主修是電子工程，關注 Web 介面與嵌入式系統。huihui.dev 是我的個人開發空間，用來整理作品，也記錄自己的興趣。",
+      "現在，我以 Web Design、Website Development 與 UI / UX 為主要方向，把視覺設計、閱讀體驗與實作放在一起思考。這個網站也隨著學習與嘗試持續演進。",
+    ],
+    practiceTitle: "我如何做網站",
+    practice: [
+      { title: "從原生技術開始", description: "以 HTML、CSS 與 JavaScript 為基礎，製作清楚、易用的介面，兼顧不同裝置與鍵盤操作。" },
+      { title: "讓修改可以被檢查", description: "使用 Git 與 GitHub，透過 Issues、Branches、Pull Requests 和 GitHub Actions 整理需求、檢查修改與執行測試。" },
+      { title: "持續實作與驗證", description: "將 AI 輔助開發融入工作流程，搭配 Cloudflare 的部署與 API 工具，並親自確認產出與使用體驗。" },
+    ],
+    interestsTitle: "螢幕之外與遊戲之中",
+    interests: [
+      { title: "攝影", description: "攝影是我的興趣之一，作品也收錄在個人網站裡。" },
+      { title: "音樂遊戲", description: "喜歡 maimai DX 與 Arcaea。音樂、節奏與一次次練習，是我享受遊戲的方式。" },
+      { title: "Galgame", description: "喜歡的作品包括 Summer Pockets REFLECTION BLUE，也收藏其他視覺小說遊戲。" },
+    ],
+    musicTitle: "喜歡的聲音與創作",
+    music: [
+      { title: "作曲家", description: "Laur、USAO、Sakuzyo、ak+q。" },
+      { title: "樂團與歌曲", description: "喜歡 Morfonica 與 Ave Mujica，包括〈One step at a time〉與〈顏〉；也喜歡 TOGENASHI TOGEARI 的〈雑踏、僕らの街〉。" },
+      { title: "插畫創作者", description: "關注 @momoco_haru、@horuhara 與 @kurumi_lm 的作品。" },
+    ],
+    worksCta: "看看我的精選作品",
+  },
   language: { label: "繁體中文", shortLabel: "中文" },
   skip: "跳至主要內容",
   navigation: "主要導覽",
