@@ -26,8 +26,8 @@ permissions:
   contents: read
 
 jobs:
-  v2-shell:
-    name: TypeScript and v2 browsers
+  v2-unit:
+    name: v2 unit contracts
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -42,10 +42,56 @@ jobs:
         run: npm ci
       - name: Run v2 unit contracts
         run: npx vitest run tests/unit/v2-
-      - name: Install browsers
-        run: npx playwright install --with-deps chromium firefox webkit
+
+  v2-browsers:
+    name: v2 E2E (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install browser
+        run: npx playwright install --with-deps ${{ matrix.browser }}
       - name: Build and test v2 shell
-        run: npm run test:e2e:v2
+        run: npm run test:e2e:v2 -- --project=${{ matrix.browser }}
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-v2-${{ matrix.browser }}
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  v2-beta:
+    name: v2 built-beta and CSP
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install browser
+        run: npx playwright install --with-deps chromium
+      - name: Build v2
+        run: npm run build:v2
       - name: Verify built beta with delivered CSP
         env:
           V2_BETA_LOCAL: "1"
@@ -54,7 +100,24 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: playwright-v2-shell
+          name: playwright-v2-beta
           path: test-results/
           if-no-files-found: ignore
           retention-days: 7
+
+  v2-shell:
+    name: TypeScript and v2 browsers
+    needs: [v2-unit, v2-browsers, v2-beta]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every v2 component to succeed
+        env:
+          UNIT_RESULT: ${{ needs.v2-unit.result }}
+          BROWSERS_RESULT: ${{ needs.v2-browsers.result }}
+          BETA_RESULT: ${{ needs.v2-beta.result }}
+        run: |
+          test "$UNIT_RESULT" = success
+          test "$BROWSERS_RESULT" = success
+          test "$BETA_RESULT" = success
