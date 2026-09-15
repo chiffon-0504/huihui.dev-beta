@@ -3,6 +3,51 @@ import { createHash } from "node:crypto";
 
 export const BETA_ORIGIN = "https://beta.huihui.dev";
 
+// Diagnostic metadata only: query strings, credentials and unknown paths must
+// never enter logs. This does not classify or exempt any failed request.
+export function failedRequestMetadata(request, baseURL, builtAssets) {
+  const url = new URL(request.url());
+  const sameOrigin = url.origin === new URL(baseURL).origin;
+  const knownPath = /^\/(?:en\/|ja\/)?(?:about\/|works\/)?$/.test(url.pathname)
+    || (/^\/assets\/[\w.-]+\.(js|css|svg|webp)$/.test(url.pathname) && builtAssets?.has(url.pathname) === true);
+  const errorText = request.failure()?.errorText;
+  return {
+    url: sameOrigin ? url.origin + (knownPath ? url.pathname : "/[redacted path]") : "[redacted external URL]",
+    sameOrigin,
+    hasQuery: Boolean(url.search),
+    resourceType: request.resourceType(),
+    errorText: typeof errorText === "string" && /^net::ERR_[A-Z0-9_]+$/.test(errorText) ? errorText : errorText == null ? null : "[redacted error text]",
+    expectedBuildAsset: builtAssets ? builtAssets.has(url.pathname) : null,
+  };
+}
+
+// The caller must first verify every build asset's HTTP response and digest.
+// ERR_ABORTED alone is insufficient: require a decoded replacement from the
+// same responsive image in the same document, with both URLs in the build.
+export function isResponsiveImageCancellation(failure, { baseURL, builtAssets, images }) {
+  const expectedWebp = (value) => {
+    try {
+      const url = new URL(value);
+      return url.origin === new URL(baseURL).origin && !url.username && !url.password
+        && !url.search && !url.hash && /^\/assets\/[\w.-]+\.webp$/.test(url.pathname)
+        && builtAssets?.has(url.pathname) === true;
+    } catch { return false; }
+  };
+  if (failure.errorText !== "net::ERR_ABORTED" || failure.resourceType !== "image"
+    || failure.method !== "GET" || failure.mainFrame !== true || failure.sameDocument !== true
+    || failure.navigation !== false || failure.redirected !== false || !expectedWebp(failure.url)) return false;
+  return images.some((image) => {
+    if (!image.complete || !image.decoded || !(image.naturalWidth > 0)
+      || image.currentSrc === failure.url || !expectedWebp(image.currentSrc)) return false;
+    const candidates = image.srcset.split(",").map((candidate) => {
+      const match = candidate.trim().match(/^(\/assets\/[\w.-]+\.webp) [1-9]\d*w$/);
+      return match ? new URL(match[1], baseURL).href : null;
+    });
+    return candidates.length > 1 && candidates.every(expectedWebp)
+      && candidates.includes(failure.url) && candidates.includes(image.currentSrc);
+  });
+}
+
 // Observed on beta.huihui.dev on 2026-09-13. Pin every executable byte;
 // only the Ray ID and base64-encoded decimal timestamp are variable.
 export function cloudflareJsdBootstrap(ray, timestamp) {

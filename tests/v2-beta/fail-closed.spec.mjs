@@ -8,6 +8,57 @@ import { readdir } from "node:fs/promises";
 const origin = "http://v2-beta-fixture.test";
 const headers = securityHeaders(await readFile(new URL("../../v2/public/_headers", import.meta.url), "utf8"));
 
+test("browser-initiated responsive candidate cancellation requires a decoded build replacement", async ({ page, baseURL }) => {
+  const files = await readdir(new URL("../../v2/dist/assets/", import.meta.url));
+  const small = `/assets/${files.find((file) => /^fuji-480-.*\.webp$/.test(file))}`;
+  const large = `/assets/${files.find((file) => /^fuji-800-.*\.webp$/.test(file))}`;
+  let release;
+  const held = new Promise((resolve) => { release = resolve; });
+  let started;
+  const requested = new Promise((resolve) => { started = resolve; });
+  await page.route(`**${small}`, async (route) => {
+    if (route.request().resourceType() === "image") { started(); await held; }
+    await route.fallback();
+  });
+  const checkErrors = await guardBrowser(page, baseURL, { verifyBuild: true });
+  await page.setViewportSize({ width: 390, height: 900 });
+  try {
+    await navigate(page, `${baseURL}/works/`, headers);
+    await requested;
+    const canceled = page.waitForEvent("requestfailed", (request) => request.url() === baseURL + small);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    expect((await canceled).failure()?.errorText).toBe("net::ERR_ABORTED");
+    release();
+    const image = page.locator("main img").first();
+    await expect.poll(() => image.evaluate((node) => node.complete && node.currentSrc)).toBe(baseURL + large);
+    await checkErrors();
+    // Classification remains valid across the contract's repeated checks.
+    await checkErrors();
+  } finally { release(); }
+});
+
+for (const scenario of ["fetch-aborted", "image-aborted", "image-reset", "404", "challenge"]) {
+  test(`build request failures remain fatal: ${scenario}`, async ({ page, baseURL }) => {
+    const files = await readdir(new URL("../../v2/dist/assets/", import.meta.url));
+    const path = `/assets/${files.find((file) => /^fuji-800-.*\.webp$/.test(file))}`;
+    await page.setViewportSize({ width: 1440, height: 900 });
+    let injected = false;
+    await page.route(`**${path}`, async (route) => {
+      const type = scenario === "fetch-aborted" ? "fetch" : "image";
+      if (injected || route.request().resourceType() !== type) return route.fallback();
+      injected = true;
+      if (scenario === "404") return route.fulfill({ status: 404, body: "missing" });
+      if (scenario === "challenge") return route.fulfill({ status: 200, headers: { "cf-mitigated": "challenge" }, body: "blocked" });
+      return route.abort(scenario === "image-reset" ? "connectionreset" : "aborted");
+    });
+    const checkErrors = await guardBrowser(page, baseURL, { verifyBuild: true });
+    await navigate(page, `${baseURL}/works/`, headers);
+    if (scenario === "fetch-aborted") await page.evaluate((path) => fetch(path).catch(() => {}), path);
+    await expect(checkErrors()).rejects.toThrow(scenario === "404" ? /HTTP failure/ : scenario === "challenge" ? /challenge\/security/ : /request failed/);
+    expect(injected).toBe(true);
+  });
+}
+
 test("strict build verification rejects changed WebP bytes", async ({ page, baseURL }) => {
   const files = await readdir(new URL("../../v2/dist/assets/", import.meta.url));
   const name = files.find((file) => file.endsWith(".webp"));
