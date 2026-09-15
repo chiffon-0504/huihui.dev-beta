@@ -7,20 +7,22 @@ import ja from "./v2/src/locales/ja.ts";
 
 const fromRoot = (relativePath) => fileURLToPath(new URL(relativePath, import.meta.url));
 
-// About metadata and the no-JavaScript fallback share the typed runtime copy.
-function aboutHtml() {
-  const entries = { "/about/index.html": zhHant, "/en/about/index.html": en, "/ja/about/index.html": ja };
+// Page metadata and the no-JavaScript fallback share the typed runtime copy.
+function pageHtml() {
+  const entries = Object.fromEntries(Object.entries({ "": zhHant, "/en": en, "/ja": ja }).flatMap(([prefix, locale]) =>
+    ["about", "works"].map((page) => [`${prefix}/${page}/index.html`, { page, copy: locale[`${page}Page`] }])));
   const escape = (text) => text.replace(/[&<>"']/g, (character) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   })[character]);
   return {
-    name: "v2-about-html",
+    name: "v2-page-html",
     transformIndexHtml: {
       order: "pre",
       handler(html, context) {
-        const copy = entries[context.path]?.aboutPage;
-        if (!copy) return html;
-        return html.replace(/\{\{about\.(title|description|noScript)\}\}/g, (_, key) => escape(copy[key]));
+        const entry = entries[context.path];
+        if (!entry) return html;
+        return html.replace(/\{\{(about|works)\.(title|description|noScript)\}\}/g,
+          (placeholder, page, key) => page === entry.page ? escape(entry.copy[key]) : placeholder);
       },
     },
   };
@@ -88,7 +90,7 @@ export default defineConfig({
   root: fromRoot("./v2/"),
   publicDir: "public",
   appType: "mpa",
-  plugins: [aboutHtml(), themeBootstrap()],
+  plugins: [pageHtml(), themeBootstrap()],
   build: {
     outDir: "dist",
     rolldownOptions: {
@@ -96,6 +98,9 @@ export default defineConfig({
         home: fromRoot("./v2/index.html"),
         en: fromRoot("./v2/en/index.html"),
         ja: fromRoot("./v2/ja/index.html"),
+        works: fromRoot("./v2/works/index.html"),
+        enWorks: fromRoot("./v2/en/works/index.html"),
+        jaWorks: fromRoot("./v2/ja/works/index.html"),
         about: fromRoot("./v2/about/index.html"),
         enAbout: fromRoot("./v2/en/about/index.html"),
         jaAbout: fromRoot("./v2/ja/about/index.html"),

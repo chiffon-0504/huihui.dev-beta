@@ -1,0 +1,18 @@
+.work-card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.work-card h2 {
+  font-size: var(--text-heading);
+}
+
+.work-description {
+  color: var(--color-muted);
+  max-width: var(--content-width-prose);
+}

@@ -41,7 +41,7 @@ for (const locale of supportedLocales) {
       const nav = page.getByRole("navigation", { name: copy.navigation });
       await expect(nav.getByRole("link", { name: copy.aboutLabel, exact: true })).toHaveAttribute("href", route);
       await expect(nav.getByRole("link", { name: copy.aboutLabel, exact: true })).toHaveAttribute("aria-current", "page");
-      await expect(nav.getByRole("link", { name: copy.worksLabel, exact: true })).toHaveAttribute("href", localeHref(locale, "#works"));
+      await expect(nav.getByRole("link", { name: copy.worksLabel, exact: true })).toHaveAttribute("href", localeHref(locale, "", "works"));
       await expect(nav.getByRole("link", { name: "huihui.dev", exact: true })).toHaveAttribute("href", localeHref(locale));
       await expect(page.locator(".footer-contact span")).toHaveText(copy.contact.label);
       await expect(page.getByRole("contentinfo").getByRole("link")).toHaveText(copy.contact.email);

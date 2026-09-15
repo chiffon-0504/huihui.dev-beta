@@ -1,6 +1,28 @@
 import type { LocaleContent } from "./types";
 
 export default {
+  worksPage: {
+    title: "制作実績",
+    description: "huihui の Web 開発、ブラウザツール、写真作品を紹介します。",
+    noScript: "このサイトには JavaScript が必要です。GitHub でもプロジェクトをご覧いただけます。",
+    introduction: "Web サイトやツールから旅先の写真まで。デザイン、開発、観察を通じて形にしたものを紹介します。",
+    website: {
+      title: "huihui.dev",
+      description: "3 言語、レスポンシブな画面、ライト・ダークテーマを備えた、進化を続ける個人サイト。カバーには自分で撮影した富士山の写真を使用しています。",
+      alt: "青空の下に雪をいただく富士山。huihui.dev のカバーに使用している写真。",
+      linkLabel: "サイトのソースを見る",
+    },
+    tool: {
+      title: "Tier Maker",
+      description: "画像をアップロードし、ランクを並べて PNG に書き出す。お気に入りをブラウザで整理して共有できる小さなツールです。",
+      linkLabel: "Tier Maker を開く（現行サイト）",
+    },
+    photography: {
+      title: "横浜の夜景",
+      description: "旅先の光や街の輪郭を写真に残しています。横浜の水辺に輝く灯りと反射を捉えた一枚です。",
+      alt: "夜の横浜港。ライトアップされた高層ビルと赤い観覧車が水面に映っている。",
+    },
+  },
   contact: { label: "お問い合わせ", email: "contact@huihui.dev" },
   aboutPage: {
     title: "私について",

@@ -8,5 +8,8 @@
 @import "./components/button.css";
 @import "./components/navbar.css";
 @import "./components/footer.css";
+@import "./components/media.css";
+@import "./components/work-card.css";
 @import "./pages/home.css";
 @import "./pages/about.css";
+@import "./pages/works.css";
