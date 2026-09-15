@@ -18,7 +18,7 @@ for (const locale of supportedLocales) {
     }
     await expect(page.locator(".principles-introduction")).toHaveText(copy.principlesIntroduction);
     await expect(page.locator("#interests > .section-description")).toHaveText(copy.interestsIntroduction);
-    await expect(page.locator("#about a")).toHaveText(`${copy.aboutCta} (${copy.currentSite})`);
+    await expect(page.locator("#about a")).toHaveText(copy.aboutCta);
     await expect(page.locator("#works .section-heading a")).toHaveText(`${copy.worksCta} (${copy.currentSite})`);
     await expect(page.locator(".project-title")).toHaveText([copy.websiteTitle, copy.toolTitle]);
     await expect(page.locator(".home-project .section-description")).toHaveText([copy.websiteDescription, copy.toolDescription]);

@@ -1,8 +1,8 @@
-import { getContent, localeHref, supportedLocales, type Locale } from "../locales";
+import { getContent, localeHref, supportedLocales, type Locale, type Page } from "../locales";
 import { element, link } from "../dom";
 import { createIcon } from "./icons";
 
-export function createLanguageSwitcher(locale: Locale): HTMLDetailsElement {
+export function createLanguageSwitcher(locale: Locale, page: Page): HTMLDetailsElement {
   const copy = getContent(locale);
   const dropdown = element("details", "language-switcher");
   const trigger = element("summary", "language-trigger navbar-control button button--quiet", copy.language.shortLabel);
@@ -10,7 +10,7 @@ export function createLanguageSwitcher(locale: Locale): HTMLDetailsElement {
   const options = element("ul", "language-options");
   const links = supportedLocales.map((language) => {
     const item = element("li", "");
-    const option = link(getContent(language).language.label, localeHref(language, window.location.hash), "language-option button button--quiet");
+    const option = link(getContent(language).language.label, localeHref(language, window.location.hash, page), "language-option button button--quiet");
     option.lang = language;
     option.hreflang = language;
     if (language === locale) option.setAttribute("aria-current", "page");
@@ -47,7 +47,7 @@ export function createLanguageSwitcher(locale: Locale): HTMLDetailsElement {
   });
   const updateTargets = () => {
     for (const [index, language] of supportedLocales.entries()) {
-      links[index]!.href = localeHref(language, window.location.hash);
+      links[index]!.href = localeHref(language, window.location.hash, page);
     }
   };
   dropdown.addEventListener("toggle", updateTargets);

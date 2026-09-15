@@ -1,6 +1,37 @@
 import type { LocaleContent } from "./types";
 
 export default {
+  contact: { label: "Contact", email: "contact@huihui.dev" },
+  aboutPage: {
+    title: "About me",
+    description: "Meet huihui: an electronic engineering background, web design and development, photography, games, and music.",
+    noScript: "This website needs JavaScript. You can also explore my projects on GitHub.",
+    introduction: "I'm huihui. My background is in electronic engineering, and I enjoy building websites, photography, rhythm games, and visual novels.",
+    backgroundTitle: "From electronics to the web",
+    background: [
+      "My major is Electronic Engineering, with interests in web interfaces and embedded systems. huihui.dev is my personal development space, where I collect my work and share my interests.",
+      "Today, my main focus is Web Design, Website Development, and UI / UX. I think about visual design, the reading experience, and implementation together. This website keeps evolving as I learn and experiment.",
+    ],
+    practiceTitle: "How I build websites",
+    practice: [
+      { title: "Start with native web technologies", description: "I use HTML, CSS, and JavaScript to make clear, usable interfaces, considering different devices and keyboard interaction." },
+      { title: "Make changes reviewable", description: "I use Git and GitHub, with Issues, Branches, Pull Requests, and GitHub Actions to organize requirements, review changes, and run tests." },
+      { title: "Keep building and checking", description: "I bring AI-assisted development into my workflow alongside Cloudflare's deployment and API tools, and check the results and user experience myself." },
+    ],
+    interestsTitle: "Away from code, into play",
+    interests: [
+      { title: "Photography", description: "Photography is one of my hobbies. I also share my work on this personal website." },
+      { title: "Rhythm games", description: "I enjoy maimai DX and Arcaea: the music, the rhythm, and the practice that goes into each play." },
+      { title: "Visual novels", description: "Summer Pockets REFLECTION BLUE is among my favorites, alongside other visual novels in my collection." },
+    ],
+    musicTitle: "Music and art I enjoy",
+    music: [
+      { title: "Composers", description: "Laur, USAO, Sakuzyo, and ak+q." },
+      { title: "Bands and songs", description: "I enjoy Morfonica and Ave Mujica, including “One step at a time” and “顏”, as well as “雑踏、僕らの街” by TOGENASHI TOGEARI." },
+      { title: "Illustrators", description: "I follow the work of @momoco_haru, @horuhara, and @kurumi_lm." },
+    ],
+    worksCta: "Explore my selected work",
+  },
   language: { label: "English", shortLabel: "English" },
   skip: "Skip to main content",
   navigation: "Main navigation",

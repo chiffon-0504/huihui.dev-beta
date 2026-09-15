@@ -12,7 +12,7 @@ for (const locale of locales) {
     await page.goto(locale.route);
     const nav = page.getByRole("navigation", { name: locale.navigation });
     for (const [id, label] of [["works", locale.worksLabel], ["about", locale.aboutLabel]]) {
-      await expect(nav.getByRole("link", { name: label, exact: true })).toHaveAttribute("href", `#${id}`);
+      await expect(nav.getByRole("link", { name: label, exact: true })).toHaveAttribute("href", id === "about" ? `${locale.route}about/` : "#works");
       await expect(page.locator(`#${id}`).getByRole("heading", { level: 2, name: id === "works" ? locale.worksHeading : locale.focusLabel, exact: true })).toBeVisible();
     }
     if (locale.lang !== "en") {
@@ -40,10 +40,10 @@ for (const locale of locales) {
       await expect(nav.getByRole("link")).toHaveCount(4);
       await expect(nav.getByRole("link", { name: "huihui.dev", exact: true })).toHaveAttribute("href", locale.route);
       await expect(nav.getByRole("link", { name: locale.worksLabel, exact: true })).toHaveAttribute("href", "#works");
-      await expect(nav.getByRole("link", { name: locale.aboutLabel, exact: true })).toHaveAttribute("href", "#about");
+      await expect(nav.getByRole("link", { name: locale.aboutLabel, exact: true })).toHaveAttribute("href", `${locale.route}about/`);
       await expect(nav.getByRole("link", { name: "GitHub", exact: true })).toHaveAttribute("href", "https://github.com/chiffon-0504");
       await expect(nav.locator('a[aria-current="page"]')).toHaveAttribute("hreflang", locale.lang);
-      await expect(page.getByRole("contentinfo").getByRole("link")).toHaveCount(0);
+      await expect(page.getByRole("contentinfo").getByRole("link")).toHaveAttribute("href", "mailto:contact@huihui.dev");
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
       if (testInfo.project.name === "chromium") {
         await page.screenshot({ path: testInfo.outputPath(`${locale.lang}-${viewport.width}.png`), fullPage: true });
@@ -68,7 +68,12 @@ for (const locale of locales) {
         const sectionId = navIndex === 1 ? "works" : navIndex === 2 ? "about" : null;
         if (sectionId) {
           await page.keyboard.press("Enter");
-          await expect(page.locator(`#${sectionId}`)).toBeFocused();
+          if (sectionId === "about") {
+            await expect(page).toHaveURL(new RegExp(`${locale.route}about/$`));
+            await expect(page.locator("main.about")).toBeVisible();
+          } else {
+            await expect(page.locator(`#${sectionId}`)).toBeFocused();
+          }
           // Reload instead of relying on engine-specific fragment tab order.
           await page.goto(locale.route);
           for (let index = 0; index < navIndex + 2; index++) {

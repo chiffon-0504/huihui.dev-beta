@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, test, vi } from "vitest";
 import { build } from "vite";
 import config from "../../vite.v2.config.mjs";
 import { THEME_STORAGE_KEY } from "../../v2/src/theme/preference.ts";
+import { getContent, localeHref, supportedLocales } from "../../v2/src/locales/index.ts";
 
 let output;
 let bootstrap;
@@ -25,7 +26,7 @@ beforeAll(async () => {
 }, 30_000);
 
 describe("v2 initial theme build contract", () => {
-  test.each(["index.html", "en/index.html", "ja/index.html"])("%s blocks parsing with an external classic bootstrap before styles and app", (entry) => {
+  test.each(["index.html", "en/index.html", "ja/index.html", "about/index.html", "en/about/index.html", "ja/about/index.html"])("%s blocks parsing with an external classic bootstrap before styles and app", (entry) => {
     const html = String(output.find((asset) => asset.fileName === entry)?.source);
     const tag = `<script src="/${bootstrap.fileName}"></script>`;
     expect(html).toContain(tag);
@@ -39,6 +40,21 @@ describe("v2 initial theme build contract", () => {
     for (const script of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
       expect(script[1]).toMatch(/\bsrc="\/[^"\s]+"/);
       expect(script[2].trim()).toBe("");
+    }
+  });
+
+  test("emits exactly Home and About in three locales with translated static metadata", () => {
+    expect(output.filter((entry) => entry.fileName.endsWith(".html")).map((entry) => entry.fileName).sort())
+      .toEqual(["about/index.html", "en/about/index.html", "en/index.html", "index.html", "ja/about/index.html", "ja/index.html"]);
+    for (const locale of supportedLocales) {
+      const route = localeHref(locale, "", "about");
+      const html = String(output.find((entry) => entry.fileName === `${route.slice(1)}index.html`)?.source);
+      const copy = getContent(locale).aboutPage;
+      expect(html).toContain(`<html lang="${locale}">`);
+      expect(html).toContain(`<title>${copy.title} | huihui.dev</title>`);
+      expect(html).toContain(copy.noScript);
+      expect(html).toContain(`<meta name="description" content="${copy.description}">`);
+      expect(html).not.toMatch(/\{\{|(?:src|href)="(?:\/v2\/|\/vendor\/)|src="https?:\/\//g);
     }
   });
 

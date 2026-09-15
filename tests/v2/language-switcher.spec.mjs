@@ -109,9 +109,9 @@ for (const locale of locales) {
         await expect(page.locator(".language-switcher")).not.toHaveAttribute("open");
       }
     }
-    // A fragment changed by primary navigation must also update existing links.
+    // A fragment changed by the Home CTA must also update existing links.
     await page.goto(locale.route);
-    await page.locator('.navbar a[href="#about"]').click();
+    await page.locator('.hero-actions a[href="#about"]').click();
     await page.locator("summary").click();
     for (const target of locales) {
       await expect(page.locator(".language-switcher").getByRole("link", { name: target.label, exact: true }))

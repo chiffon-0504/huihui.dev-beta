@@ -61,7 +61,7 @@ export function createHome(locale: Locale): HTMLElement {
   const about = section("about", copy.focusLabel, "home-about");
   about.append(
     topicList(copy.focus, "home-focus"),
-    currentLink(copy.aboutCta, "about"),
+    link(copy.aboutCta, localeHref(locale, "", "about"), "button"),
   );
 
   const works = element("section", "home-section home-works");

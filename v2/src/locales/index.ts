@@ -1,9 +1,9 @@
 import zhHant from "./zh-Hant";
 import en from "./en";
 import ja from "./ja";
-import { supportedLocales, type Locale, type LocaleContent } from "./types";
+import { supportedLocales, type Locale, type LocaleContent, type Page } from "./types";
 
-export { supportedLocales, type Locale, type LocaleContent } from "./types";
+export { supportedLocales, type Locale, type LocaleContent, type Page } from "./types";
 
 export const locales: Readonly<Record<Locale, LocaleContent>> = {
   "zh-Hant": zhHant,
@@ -17,12 +17,20 @@ const routes: Readonly<Record<Locale, string>> = {
   ja: "/ja/",
 };
 
-// Only the existing Home entries select a language; this is not a page router.
+const pages: Readonly<Record<Page, string>> = { home: "", about: "about/" };
+
+function matchesEntry(pathname: string, route: string): boolean {
+  return pathname === route || pathname === `${route}index.html` || pathname === route.slice(0, -1);
+}
+
+// Resolve only emitted MPA entries; navigation still loads native HTML documents.
 export function resolveLocale(pathname: string): Locale {
-  return supportedLocales.find((locale) => {
-    const route = routes[locale];
-    return pathname === route || pathname === `${route}index.html` || pathname === route.slice(0, -1);
-  }) ?? "zh-Hant";
+  return supportedLocales.find((locale) => Object.values(pages).some((path) =>
+    matchesEntry(pathname, `${routes[locale]}${path}`))) ?? "zh-Hant";
+}
+
+export function resolvePage(pathname: string): Page {
+  return supportedLocales.some((locale) => matchesEntry(pathname, localeHref(locale, "", "about"))) ? "about" : "home";
 }
 
 export function getContent(locale: Locale): LocaleContent {
@@ -31,7 +39,7 @@ export function getContent(locale: Locale): LocaleContent {
   return locales[locale];
 }
 
-export function localeHref(locale: Locale, hash = ""): string {
+export function localeHref(locale: Locale, hash = "", page: Page = "home"): string {
   getContent(locale);
-  return `${routes[locale]}${hash}`;
+  return `${routes[locale]}${pages[page]}${hash}`;
 }

@@ -28,3 +28,10 @@ getContent("fr");
 localeHref("fr");
 // @ts-expect-error Consumers cannot edit canonical copy through the registry.
 locales.en.title = "Changed";
+
+const { interestsTitle, ...missingAboutHeading } = en.aboutPage;
+void interestsTitle;
+// @ts-expect-error Every language must include all About copy.
+export const incompleteAbout: LocaleContent = { ...en, aboutPage: missingAboutHeading };
+// @ts-expect-error Shared footer contact labels must be translated.
+export const incompleteContact: LocaleContent = { ...ja, contact: { email: "contact@huihui.dev" } };

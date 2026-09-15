@@ -3,6 +3,8 @@ import { readFile, readdir } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { inspectDocument, validateBrowserEvidence, validateResponse, validateSecurityHeaders } from "../support/v2-beta-contract.mjs";
 
+const applicationRoutes = ["/", "/en/", "/ja/", "/about/", "/en/about/", "/ja/about/"];
+
 export async function checkNavigation(response, expectedUrl, expectedHeaders) {
   assert(response, "Browser/custom-domain navigation: missing response");
   const headers = await response.allHeaders();
@@ -52,7 +54,7 @@ export async function guardBrowser(page, baseURL, { contract = "pages", verifyBu
       const request = response.request();
       if (request.isNavigationRequest()) {
         assert(request.frame() === page.mainFrame(), "Unexpected frame navigation");
-        assert(["/", "/en/", "/ja/"].includes(url.pathname), "Unexpected application route");
+        assert(applicationRoutes.includes(url.pathname), "Unexpected application route");
         const [html, builtHtml, delivered] = await Promise.all([
           response.text(),
           readFile(new URL(`../../v2/dist${url.pathname}index.html`, import.meta.url), "utf8"),
@@ -69,7 +71,7 @@ export async function guardBrowser(page, baseURL, { contract = "pages", verifyBu
     const request = route.request();
     const url = new URL(request.url());
     const unexpectedBuildRequest = verifyBuild && (url.search || (request.isNavigationRequest()
-      ? request.frame() !== page.mainFrame() || !["/", "/en/", "/ja/"].includes(url.pathname)
+      ? request.frame() !== page.mainFrame() || !applicationRoutes.includes(url.pathname)
       : !builtAssets.has(url.pathname)));
     if (unexpectedBuildRequest || url.origin !== new URL(baseURL).origin || request.method() !== "GET" || url.pathname.startsWith("/api/") || url.pathname.startsWith("/cdn-cgi/challenge-platform/")) {
       errors.push("Browser/custom-domain forbidden request or challenge resource; no challenge solving allowed");
