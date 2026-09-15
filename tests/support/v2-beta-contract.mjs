@@ -9,7 +9,7 @@ export function failedRequestMetadata(request, baseURL, builtAssets) {
   const url = new URL(request.url());
   const sameOrigin = url.origin === new URL(baseURL).origin;
   const knownPath = /^\/(?:en\/|ja\/)?(?:about\/|works\/)?$/.test(url.pathname)
-    || /^\/assets\/[\w.-]+\.(js|css|svg|webp)$/.test(url.pathname);
+    || (/^\/assets\/[\w.-]+\.(js|css|svg|webp)$/.test(url.pathname) && builtAssets?.has(url.pathname) === true);
   const errorText = request.failure()?.errorText;
   return {
     url: sameOrigin ? url.origin + (knownPath ? url.pathname : "/[redacted path]") : "[redacted external URL]",

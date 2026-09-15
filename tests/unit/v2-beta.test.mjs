@@ -31,6 +31,31 @@ test("failed request diagnostics retain Chromium evidence without leaking URL se
     .toMatchObject({ url: `${origin}/works/`, resourceType: "document", errorText: null, expectedBuildAsset: null });
 });
 
+test("failed request diagnostics redact asset-shaped paths without confirmed build membership", () => {
+  const origin = "https://1234abcd.huihuidev-beta.pages.dev";
+  const asset = "/assets/fuji-800-fixture.webp";
+  const builtAssets = new Set([asset]);
+  const request = (path) => ({ url: () => origin + path, resourceType: () => "image", failure: () => ({ errorText: "net::ERR_FAILED" }) });
+  for (const assets of [builtAssets, undefined, null]) {
+    const metadata = failedRequestMetadata(request("/assets/session-secret.webp"), origin, assets);
+    expect(metadata.url).toBe(`${origin}/[redacted path]`);
+    expect(metadata.expectedBuildAsset).toBe(assets ? false : null);
+    expect(JSON.stringify(metadata)).not.toContain("session-secret");
+  }
+  expect(failedRequestMetadata(request(asset), origin, undefined).url).toBe(`${origin}/[redacted path]`);
+  // Build membership alone cannot make an arbitrary pathname safe either.
+  const unknown = "/private/session-secret";
+  const metadata = failedRequestMetadata(request(unknown), origin, new Set([unknown]));
+  expect(metadata.url).toBe(`${origin}/[redacted path]`);
+  expect(JSON.stringify(metadata)).not.toContain("session-secret");
+  for (const prefix of ["/", "/en/", "/ja/"]) {
+    for (const page of ["", "about/", "works/"]) {
+      const path = prefix + page;
+      expect(failedRequestMetadata(request(path), origin, undefined).url).toBe(origin + path);
+    }
+  }
+});
+
 test("only an aborted built WebP image with a decoded responsive replacement can be classified", () => {
   const baseURL = "https://1234abcd.huihuidev-beta.pages.dev";
   const small = "/assets/fuji-480-fixture.webp";
