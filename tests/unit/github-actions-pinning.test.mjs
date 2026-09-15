@@ -240,6 +240,79 @@ jobs:
 });
 
 describe("Playwright cross-browser validation contract", () => {
+  test("runs every v2 browser independently and preserves the fail-closed aggregate gate", async () => {
+    const { source, workflow } = await readWorkflow("validate-v2.yml");
+    const { default: config } = await import("../../playwright.v2.config.mjs");
+    const unit = workflow.jobs["v2-unit"];
+    const browsers = workflow.jobs["v2-browsers"];
+    const beta = workflow.jobs["v2-beta"];
+    const gate = workflow.jobs["v2-shell"];
+
+    expect(Object.keys(workflow.jobs).sort()).toEqual([
+      "v2-beta", "v2-browsers", "v2-shell", "v2-unit",
+    ]);
+    expect(workflow.permissions).toEqual({ contents: "read" });
+    for (const job of [unit, browsers, beta]) {
+      expect(job["runs-on"]).toBe("ubuntu-latest");
+      expect(job).not.toHaveProperty("needs");
+      expect(job).not.toHaveProperty("if");
+      expect(job).not.toHaveProperty("concurrency");
+    }
+    expect(source).not.toContain("continue-on-error");
+    expect(browsers.strategy).toEqual({
+      "fail-fast": false,
+      matrix: { browser: ["chromium", "firefox", "webkit"] },
+    });
+    expect(config.projects.map(({ name }) => name)).toEqual(
+      browsers.strategy.matrix.browser,
+    );
+    expect(config.workers).toBe(1);
+    expect(config.retries).toBe(0);
+    expect(config.fullyParallel).toBe(false);
+    expect(runCommands(unit)).toEqual([
+      "npm ci",
+      "npx vitest run tests/unit/v2-",
+    ]);
+    expect(runCommands(browsers)).toEqual([
+      "npm ci",
+      "npx playwright install --with-deps ${{ matrix.browser }}",
+      "npm run test:e2e:v2 -- --project=${{ matrix.browser }}",
+    ]);
+    expect(runCommands(beta)).toEqual([
+      "npm ci",
+      "npx playwright install --with-deps chromium",
+      "npm run build:v2",
+      "npx playwright test --config=playwright.v2-beta.config.mjs",
+    ]);
+    expect(beta.steps.find(({ run }) => run?.includes("--config="))?.env)
+      .toEqual({ V2_BETA_LOCAL: "1" });
+    for (const [job, name] of [
+      [browsers, "playwright-v2-${{ matrix.browser }}"],
+      [beta, "playwright-v2-beta"],
+    ]) {
+      const artifacts = actionSteps(job, "actions/upload-artifact");
+      expect(artifacts).toHaveLength(1);
+      expect(artifacts[0]).toMatchObject({
+        if: "failure()",
+        with: { name, path: "test-results/", "if-no-files-found": "ignore", "retention-days": 7 },
+      });
+    }
+    expect(gate.name).toBe("TypeScript and v2 browsers");
+    expect(gate.needs).toEqual(["v2-unit", "v2-browsers", "v2-beta"]);
+    expect(gate.if).toBe("always()");
+    expect(gate.steps).toHaveLength(1);
+    expect(gate.steps[0].env).toEqual({
+      UNIT_RESULT: "${{ needs.v2-unit.result }}",
+      BROWSERS_RESULT: "${{ needs.v2-browsers.result }}",
+      BETA_RESULT: "${{ needs.v2-beta.result }}",
+    });
+    expect(runCommands(gate)[0].trim().split("\n")).toEqual([
+      'test "$UNIT_RESULT" = success',
+      'test "$BROWSERS_RESULT" = success',
+      'test "$BETA_RESULT" = success',
+    ]);
+  });
+
   test("keeps complete Chromium and full-compatible cross-browser suites distinct", async () => {
     const baseConfig = (
       await import(
