@@ -10,7 +10,7 @@ const fromRoot = (relativePath) => fileURLToPath(new URL(relativePath, import.me
 // Page metadata and the no-JavaScript fallback share the typed runtime copy.
 function pageHtml() {
   const entries = Object.fromEntries(Object.entries({ "": zhHant, "/en": en, "/ja": ja }).flatMap(([prefix, locale]) =>
-    ["about", "works"].map((page) => [`${prefix}/${page}/index.html`, { page, copy: locale[`${page}Page`] }])));
+    ["about", "works", "posts"].map((page) => [`${prefix}/${page}/index.html`, { page, copy: locale[`${page}Page`] }])));
   const escape = (text) => text.replace(/[&<>"']/g, (character) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   })[character]);
@@ -21,7 +21,7 @@ function pageHtml() {
       handler(html, context) {
         const entry = entries[context.path];
         if (!entry) return html;
-        return html.replace(/\{\{(about|works)\.(title|description|noScript)\}\}/g,
+        return html.replace(/\{\{(about|works|posts)\.(title|description|noScript)\}\}/g,
           (placeholder, page, key) => page === entry.page ? escape(entry.copy[key]) : placeholder);
       },
     },
@@ -98,6 +98,9 @@ export default defineConfig({
         home: fromRoot("./v2/index.html"),
         en: fromRoot("./v2/en/index.html"),
         ja: fromRoot("./v2/ja/index.html"),
+        posts: fromRoot("./v2/posts/index.html"),
+        enPosts: fromRoot("./v2/en/posts/index.html"),
+        jaPosts: fromRoot("./v2/ja/posts/index.html"),
         works: fromRoot("./v2/works/index.html"),
         enWorks: fromRoot("./v2/en/works/index.html"),
         jaWorks: fromRoot("./v2/ja/works/index.html"),

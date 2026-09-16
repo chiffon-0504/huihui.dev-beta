@@ -1,0 +1,21 @@
+.post-category {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+  gap: var(--space-8);
+  scroll-margin-block: var(--space-8);
+}
+
+.post-category > h2 {
+  padding-top: var(--space-8);
+}
+
+.post-list {
+  min-width: 0;
+}
+
+@media (max-width: 40rem) {
+  .post-category {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+}

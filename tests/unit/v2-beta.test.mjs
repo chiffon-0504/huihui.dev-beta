@@ -49,7 +49,7 @@ test("failed request diagnostics redact asset-shaped paths without confirmed bui
   expect(metadata.url).toBe(`${origin}/[redacted path]`);
   expect(JSON.stringify(metadata)).not.toContain("session-secret");
   for (const prefix of ["/", "/en/", "/ja/"]) {
-    for (const page of ["", "about/", "works/"]) {
+    for (const page of ["", "about/", "works/", "posts/"]) {
       const path = prefix + page;
       expect(failedRequestMetadata(request(path), origin, undefined).url).toBe(origin + path);
     }

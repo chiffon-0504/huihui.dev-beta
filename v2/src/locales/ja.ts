@@ -1,6 +1,48 @@
 import type { LocaleContent } from "./types";
 
 export default {
+  postsLabel: "記事",
+  postsPage: {
+    title: "記事",
+    description: "huihui の音楽、リズムゲーム、日々の記録。",
+    noScript: "このサイトには JavaScript が必要です。GitHub でもプロジェクトをご覧いただけます。",
+    introduction: "好きな音楽、ゲームでの小さな達成、日々のひとこま。テーマごとにまとめて、少しずつ書き留めています。",
+    categories: {
+      music: "音楽",
+      "rhythm-games": "リズムゲーム",
+      journal: "日々の記録"
+    },
+    articles: {
+      "ave-mujica-exitus-taipei-day2-2026-08-09": {
+        title: "Ave Mujica「Exitus」台北 DAY2",
+        excerpt: "ありがとう！最高のライブでした！"
+      },
+      "arcaea-course-mode-phase-10-clear-2026-07-31": {
+        title: "Arcaea Course Mode：Phase 10 完走",
+        excerpt: "Course Mode Phase 10 完走！！"
+      },
+      "arcaea-boss-song-ex-scores-2026-06-28": {
+        title: "Arcaea：3曲の EX 記録",
+        excerpt: "初代ボス曲 Grievous Lady（FUTURE 11）、3.0 のボス曲 Tempestissimo（FUTURE 10+）、6.0 の Lament Rain（FUTURE 10）で EX を達成。"
+      },
+      "arcaea-potential-12-2026-06-27": {
+        title: "Arcaea：Potential 12.00 到達",
+        excerpt: "2021年に Arcaea を始めた頃は本当に難しく、慣れるまで大変でした。ずっと目標だった Potential 12.00 に、ついに到達しました。\nFracture Ray（FUTURE 11）で EX を達成。これからも Arcaea を続けていきます。"
+      },
+      "arcaea-potential-11-90-2026-05-03": {
+        title: "Arcaea：Potential 11.90",
+        excerpt: "Potential 11.90 に到達！Aether Crest: Astral（FUTURE 10）で EX を達成。"
+      },
+      "arcaea-cyaegha-ex-plus-2026-04-19": {
+        title: "Arcaea：Cyaegha EX+",
+        excerpt: "Cyaegha（FUTURE 10+）で EX+ を達成！"
+      },
+      "hello-world-2026-04-14": {
+        title: "Hello, World!",
+        excerpt: "Hello, World!"
+      }
+    }
+  },
   worksPage: {
     title: "制作実績",
     description: "huihui の Web 開発、ブラウザツール、写真作品を紹介します。",

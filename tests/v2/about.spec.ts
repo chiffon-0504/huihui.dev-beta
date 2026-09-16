@@ -97,7 +97,7 @@ for (const locale of supportedLocales) {
     await page.keyboard.press("Enter");
     await expect(page.getByRole("main")).toBeFocused();
     await page.goto(route);
-    for (const selector of [".skip-link", ".brand", ".navbar-primary li:first-child a", ".navbar-primary li:last-child a", ".navbar-actions > a", ".language-trigger"]) {
+    for (const selector of [".skip-link", ".brand", ".navbar-primary li:nth-child(1) a", ".navbar-primary li:nth-child(2) a", ".navbar-primary li:nth-child(3) a", ".navbar-actions > a", ".language-trigger"]) {
       await page.keyboard.press("Tab");
       const control = page.locator(selector);
       await expect(control).toBeFocused();

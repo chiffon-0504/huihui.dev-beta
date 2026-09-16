@@ -1,0 +1,14 @@
+.posts {
+  padding-block: var(--section-space);
+  font-size: var(--text-large);
+}
+
+.posts-lead {
+  margin-top: var(--space-8);
+  max-width: var(--content-width-prose);
+  color: var(--color-muted);
+}
+
+.posts > .post-category {
+  margin-top: var(--space-12);
+}

@@ -126,7 +126,7 @@ for (const width of [1440, 390]) {
     await page.goto("/en/");
     const { root, trigger } = control(page);
     // Reach the new control through document Tab order, after the language summary.
-    for (let index = 0; index < 6; index++) await page.keyboard.press("Tab");
+    for (let index = 0; index < 7; index++) await page.keyboard.press("Tab");
     await expect(page.locator(".language-switcher summary")).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(trigger).toBeFocused();

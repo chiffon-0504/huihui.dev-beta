@@ -12,7 +12,7 @@ Use Node.js 24 and install dependencies from the repository root with `npm ci`.
 - `npm run dev:v2` starts the v2 development server.
 - `npm run check:v2:types` checks the strict TypeScript application;
   `npm run check:ts` remains a compatibility alias.
-- `npm run build:v2` typechecks and builds the nine HTML entries into `v2/dist/`.
+- `npm run build:v2` typechecks and builds the twelve HTML entries into `v2/dist/`.
 - `npm run preview:v2` serves that build locally.
 - `npm run test:e2e:v2` builds and tests Chromium, Firefox, and WebKit.
 - `npx vitest run tests/unit/v2-` runs the focused v2 unit contracts, including
@@ -31,7 +31,7 @@ only to exercise real sunrise/sunset transitions.
 
 The v2 server serves Home at `/`, `/en/`, and `/ja/`, and About at `/about/`,
 `/en/about/`, and `/ja/about/`. Works uses `/works/`, `/en/works/`, and
-`/ja/works/`. The generated `v2/dist/` is a
+`/ja/works/`. Posts uses `/posts/`, `/en/posts/`, and `/ja/posts/`. The generated `v2/dist/` is a
 standalone site root; opening the source HTML directly or using the v1 static
 server does not compile TypeScript. Vite copies `public/_headers` into the build.
 This beta CSP, noindex policy and revalidation headers apply to v2 beta.
@@ -53,7 +53,7 @@ Use the existing Cloudflare Pages Git integration:
 | Custom domain | `beta.huihui.dev` |
 | Pages domain | `huihuidev-beta.pages.dev` |
 
-Cloudflare installs the repository dependencies and builds the nine Home/About/Works
+Cloudflare installs the repository dependencies and builds the twelve Home/About/Works/Posts
 routes above. Git integration is the only Pages publication path;
 there is no separate Direct Upload project or manual GitHub Pages deploy job.
 The Dashboard build settings must be updated by an authorized account operator;
@@ -88,7 +88,7 @@ contracts, then rechecks the active Pages identity:
   verifies delivered security headers, and rejects every CSP violation and
   console error. Enforce, Report-Only and no-CSP isolated probes run here.
 - **Custom-domain contract:** `https://beta.huihui.dev` runs the same three-locale
-  Home/About/Works desktop/mobile, theme, language, build-byte and security-header checks. The
+  Home/About/Works/Posts desktop/mobile, theme, language, build-byte and security-header checks. The
   only platform exception is the Cloudflare Free-plan JSD bootstrap observed on
   2026-09-13. Its entire executable text is pinned, including the iframe bootstrap
   and `/cdn-cgi/challenge-platform/scripts/jsd/main.js`; only a hexadecimal Ray ID
@@ -143,7 +143,7 @@ scope even before they have imports or exports. Shared state should be owned by
 modules or passed explicitly, rather than attached to browser globals.
 TypeScript checks without emitting files. The existing Vite configuration at
 `../vite.v2.config.mjs` handles browser bundles, CSS/SVG/WebP imports, the classic theme
-bootstrap and the nine HTML entries. No additional compiler, bundler or
+bootstrap and the twelve HTML entries. No additional compiler, bundler or
 framework dependency is needed.
 
 ```text
@@ -156,6 +156,7 @@ v2/
 │  ├─ locales/        # Canonical typed ZH-Hant / EN / JA copy
 │  ├─ types/          # Reserved for future shared application types
 │  ├─ media/          # Image definitions and bounded local variants
+│  ├─ posts/          # Canonical post and category identities, dates and destinations
 │  ├─ pages/          # Existing page modules
 │  ├─ theme/          # Existing theme implementation
 │  ├─ styles/         # Canonical v2 CSS foundation
@@ -168,6 +169,9 @@ v2/
 ├─ works/index.html
 ├─ en/works/index.html
 ├─ ja/works/index.html
+├─ posts/index.html
+├─ en/posts/index.html
+├─ ja/posts/index.html
 ├─ about/index.html
 ├─ public/
 ├─ tsconfig.json
@@ -176,12 +180,11 @@ v2/
 
 V1 remains the active production site while v2 development continues; its root
 HTML/CSS/JavaScript and release flow remain independent of these TypeScript
-commands. The page roadmap is **Home / About / Works / Posts**. Home, About and Works
-are complete; Posts remains deferred. Contact belongs exclusively to
+commands. The page roadmap is **Home ✅ / About ✅ / Works ✅ / Posts ✅**. Contact belongs exclusively to
 the shared footer, with no standalone Contact route, module or stylesheet.
 
 `src/main.ts` composes DOM components from `components/navbar.ts`,
-`components/footer.ts`, and `pages/home.ts`, `pages/about.ts`, or `pages/works.ts`. Shared localized copy lives in
+`components/footer.ts`, and `pages/home.ts`, `pages/about.ts`, `pages/works.ts`, or `pages/posts.ts`. Shared localized copy lives in
 `locales/`; markup uses native elements and `textContent`. There is no router,
 framework or API request. A root-owned theme controller is passed to the navbar;
 theme preference, solar calculation and presentation have separate modules.
@@ -194,25 +197,25 @@ theme preference, solar calculation and presentation have separate modules.
   shared `LocaleContent` schema.
 - `zh-Hant.ts`, `en.ts`, and `ja.ts` each own one complete language, including
   navigation, language self-names, theme and accessibility labels, and completed
-  Home/About/Works copy and footer contact text. Each module uses `satisfies LocaleContent`; missing or incompatible
+  Home/About/Works/Posts copy and footer contact text. Each module uses `satisfies LocaleContent`; missing or incompatible
   fields fail `check:v2:types`.
 - `index.ts` exposes the typed registry, `resolveLocale(pathname)`,
   `resolvePage(pathname)`, `getContent(locale)`, and `localeHref(locale, hash, page)`.
 
-The bootstrap selects known Home, About and Works entries by pathname: the root paths
+The bootstrap selects known Home, About, Works and Posts entries by pathname: the root paths
 use `zh-Hant`, `/en/` paths use `en`, and `/ja/` paths use `ja`.
 These entries also accept `index.html` and slashless paths.
 Unknown paths select the complete ZH-Hant default; they do not
 register new page routes. Invalid internal identities passed to `getContent`
 or `localeHref` throw explicitly instead of returning partial content.
 Language links retain the current page and fragment, including Home's `#works`
-and `#about` and About's `#interests`.
+and `#about`, About's `#interests`, and Posts category/article IDs.
 There is no router, runtime translation lookup, or translation dependency.
 
 Future v2 page copy belongs in these locale modules, extending the shared schema;
 components and pages consume it rather than maintaining independent translations.
 Home's static HTML entries own their document metadata and no-JavaScript fallback;
-About and Works HTML templates take those strings from the typed locales at build time.
+About, Works and Posts HTML templates take those strings from the typed locales at build time.
 `content.ts` has been removed because it has no remaining responsibility.
 
 ### CSS design system
@@ -234,11 +237,14 @@ styles/
 │  ├─ navbar.css       # Existing navigation and native theme/language controls
 │  ├─ footer.css       # Existing footer
 │  ├─ media.css        # Native responsive image presentation
-│  └─ work-card.css    # Reusable open project cards
+│  ├─ work-card.css    # Reusable open project cards
+│  ├─ post-card.css    # Reusable article links, dates and excerpts
+│  └─ post-category.css # Semantic category groups
 └─ pages/
    ├─ home.css         # Home composition
    ├─ about.css        # About composition
-   └─ works.css        # Works grid composition
+   ├─ works.css        # Works grid composition
+   └─ posts.css        # Posts introduction and group spacing
 ```
 
 Only `tokens.css` owns global design values: semantic colors, opaque surface
@@ -387,7 +393,7 @@ validation job.
 ## Home milestone
 
 TypeScript, the design system, application shell, locale architecture, and Home
-are complete, followed by the About milestone below. Works is complete in the milestone below; Posts remains deferred and Contact is footer-only.
+are complete, followed by the About milestone below. Works and Posts are complete in their milestones below; Contact is footer-only.
 
 `pages/home.ts` renders one shared composition for all three locales:
 
@@ -439,7 +445,7 @@ bootstrap. `locales/index.ts` resolves only known HTML entries, with typed `Page
 identities and `localeHref(locale, hash, page)` for native document links. It does
 not intercept navigation or implement a client router. A future standalone page
 can add its real HTML entries, typed identity, content and page module to the
-same shell without introducing placeholder Posts or Contact routes.
+same shell without introducing placeholder routes. Contact remains footer-only.
 
 `LocaleContent.aboutPage` requires all About strings. The small `pageHtml` Vite
 transform fills escaped title, description and `noscript` placeholders from
@@ -449,7 +455,7 @@ document structure and language attribute; components use `textContent`.
 CTA, and stacks its heading/content columns at the existing 40rem breakpoint.
 
 Focused unit contracts verify entry resolution, missing-translation type errors,
-nine emitted HTML files and external-only theme bootstrap. About browser coverage
+twelve emitted HTML files and external-only theme bootstrap. About browser coverage
 checks all copy, page-preserving language links, Home round trips, shared footer
 and theme controls, native keyboard navigation, resource failures, and 320px /
 200% text reflow. Existing Home and shared shell suites retain their coverage.
@@ -523,5 +529,61 @@ for source preservation, controlled upload, activation and verified beta infrast
 Works tests cover route/copy parity, native links and focus, image dimensions,
 asset decoding, actual selected sources at desktop/mobile and 2x density, missing
 images, both themes and 320px/200% reflow. Strict local beta smoke includes all
-nine documents and verifies every emitted WebP against its built SHA-256;
+twelve documents and verifies every emitted WebP against its built SHA-256;
 unknown requests and changed image bytes remain rejected.
+
+## Posts milestone
+
+Posts is a native MPA at `/posts/`, `/en/posts/`, and `/ja/posts/`.
+Navbar links use the active language and mark Posts as the current page.
+Language switching retains Posts and its category or article fragment. Only
+known entries (including slashless and `index.html` forms) resolve as Posts;
+unknown paths do not register a new page. Contact stays in the shared footer.
+
+### Content inventory and ownership
+
+V1's `js/posts-data.js` was inspected as content only. It contains seven dated
+short updates with no title field or individual article routes. They appear at
+`/posts/`, `/en/posts/`, and `/ja/posts/`; the V1 renderer exposes data IDs,
+not article fragment targets. V2 retains those stable IDs and source dates,
+provides editorial titles and plain-text excerpts based on all seven updates,
+and gives each readable entry a native permalink on the localized Posts page.
+There are no invented detail pages or external requests when reading Posts.
+V1 photos, hashtags, markup, scripts and widgets are not imported.
+
+| Date | Source update / V2 title topic | Category |
+| --- | --- | --- |
+| 2026-08-09 | Ave Mujica “Exitus” Taipei DAY2; thanks for the concert | Music |
+| 2026-07-31 | Arcaea Course Mode Phase 10 clear | Rhythm games |
+| 2026-06-28 | Arcaea: Grievous Lady, Tempestissimo and Lament Rain EX scores | Rhythm games |
+| 2026-06-27 | Arcaea Potential 12.00, playing since 2021 and Fracture Ray EX | Rhythm games |
+| 2026-05-03 | Arcaea Potential 11.90 and Aether Crest: Astral EX | Rhythm games |
+| 2026-04-19 | Arcaea Cyaegha EX+ | Rhythm games |
+| 2026-04-14 | Hello, World! | Journal |
+
+- `src/posts/registry.ts` owns the canonical post IDs, optional publication
+  dates, typed category identities/order, and `postHref(locale, id)`.
+  Entries stay newest first within each category. No date is inferred when absent.
+- `LocaleContent.postsPage` owns metadata, introduction, category labels and
+  every article title/excerpt. Its Records are keyed by `PostCategory` and the
+  registry-derived `PostId`; all three locale modules must supply every entry.
+  Adding a post or category therefore requires matching translated copy.
+- `components/post-card.ts` renders an article with a linked h3, a localized
+  UTC calendar date in `time[datetime]`, and its text. Its title link is a
+  permalink to the visible short entry, not a claim of a longer article.
+- `components/post-category.ts` renders an explicitly named section with an
+  h2 and the category's articles. Three groups are enough for this inventory;
+  all articles remain visible, without filter state or animation.
+- `pages/posts.ts` composes one h1 and these shared components. Component CSS
+  owns article/group presentation; `pages/posts.css` owns page spacing.
+  Existing tokens, focus styles and theme controls apply. The shared navbar
+  allows its three primary links to wrap at enlarged text sizes.
+
+The focused `tests/unit/v2-posts.test.mjs` verifies unique IDs and valid dates,
+category membership, complete localized fields, destinations and unknown paths.
+The existing negative TypeScript fixture rejects incomplete copy and invalid
+category/post identities. `tests/v2/posts.spec.ts` covers every locale in all
+three browsers, native article links, language fragments, Navbar round trips,
+keyboard focus, Light/Dark/Auto, desktop/mobile, 320px/200% reflow, reduced motion,
+and resource errors. Build inventories and strict built-beta smoke include all
+12 documents; exact HTML/asset bytes and CSP negative controls remain required.

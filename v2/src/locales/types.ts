@@ -1,6 +1,22 @@
+import type { PostCategory, PostId } from "../posts/registry";
+
 export const supportedLocales = ["zh-Hant", "en", "ja"] as const;
 export type Locale = (typeof supportedLocales)[number];
-export type Page = "home" | "about" | "works";
+export type Page = "home" | "about" | "works" | "posts";
+
+export interface PostContent {
+  readonly title: string;
+  readonly excerpt: string;
+}
+
+export interface PostsContent {
+  readonly title: string;
+  readonly description: string;
+  readonly noScript: string;
+  readonly introduction: string;
+  readonly categories: Readonly<Record<PostCategory, string>>;
+  readonly articles: Readonly<Record<PostId, PostContent>>;
+}
 
 export interface ViewerContent {
   readonly title: string;
@@ -47,6 +63,8 @@ export interface HomeTopic {
 }
 
 export interface LocaleContent {
+  readonly postsLabel: string;
+  readonly postsPage: PostsContent;
   readonly worksPage: WorksContent;
   readonly aboutPage: AboutContent;
   readonly contact: { readonly label: string; readonly email: string };
