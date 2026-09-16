@@ -1,4 +1,5 @@
 import { Script, createContext } from "node:vm";
+import { readFile, readdir } from "node:fs/promises";
 import { beforeAll, describe, expect, test, vi } from "vitest";
 import { build } from "vite";
 import config from "../../vite.v2.config.mjs";
@@ -60,6 +61,17 @@ describe("v2 initial theme build contract", () => {
       expect(html).toContain(`<meta name="description" content="${copy.description}">`);
       expect(html).not.toMatch(/\{\{|(?:src|href)="(?:\/v2\/|\/vendor\/)|src="https?:\/\//g);
     }
+  });
+
+  test("reserved error URLs rewrite only to an absent static target", async () => {
+    const rules = await readFile(new URL("../../v2/public/_redirects", import.meta.url), "utf8");
+    expect(rules.trim().split(/\r?\n/)).toEqual([
+      "/404.html /__v2-not-found__/ 200",
+      "/404 /__v2-not-found__/ 200",
+    ]);
+    const publicFiles = await readdir(new URL("../../v2/public/", import.meta.url), { recursive: true });
+    const files = [...output.map((entry) => entry.fileName), ...publicFiles];
+    expect(files.some((file) => file.replaceAll("\\", "/").startsWith("__v2-not-found__"))).toBe(false);
   });
 
   test("the single shared error document is script-free with three native escape links", () => {

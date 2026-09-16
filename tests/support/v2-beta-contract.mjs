@@ -3,10 +3,11 @@ import { createHash } from "node:crypto";
 
 export const BETA_ORIGIN = "https://beta.huihui.dev";
 
-// Deliberately invalid navigation probes, never part of the content registry.
+// Unknown paths and reserved error-document URLs, never content entries.
 export const notFoundPaths = [
   "/does-not-exist/", "/fr/", "/fr/posts/", "/en/posts/extra/",
   "/posts/not-a-real-post/", "/en/does-not-exist/", "/ja/posts/extra/",
+  "/404.html", "/404",
 ];
 
 // Diagnostic metadata only: query strings, credentials and unknown paths must

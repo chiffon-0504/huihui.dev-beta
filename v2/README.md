@@ -55,7 +55,8 @@ application resolver; it remains usable without JavaScript.
 
 Vite stays in MPA mode. Its preview plugin normalizes only aliases of known
 content entries (`/en/posts` and `/en/posts/index.html` to `/en/posts/`, preserving
-queries), then lets real files and content resolve before the 404 fallback.
+queries). It reserves `/404.html` and `/404` before static middleware, then lets
+real files and content resolve before the 404 fallback.
 `/en/posts/extra/` can never normalize to Posts. The fallback serves the built
 error bytes with status 404, including HEAD semantics and configured preview
 security headers. Error responses require `Cache-Control: no-store`, matching
@@ -67,7 +68,12 @@ HTTP parity checks run against `npm run build:v2` and `npm run preview:v2`.
 [Cloudflare Pages](https://developers.cloudflare.com/pages/configuration/serving-pages/)
 uses the top-level static `404.html` to disable its default SPA fallback.
 Local preview and Pages are expected to match status, error content and original
-URL. No Worker, Function, `_redirects` rule or Dashboard change is needed.
+URL. Two exact rules in `public/_redirects` internally rewrite `/404.html` and
+`/404` to the deliberately absent `/__v2-not-found__/` target. Pages then serves
+the shared error document with HTTP 404 instead of normalizing the error file
+into a successful content URL. The rewrite's `200` is Pages' proxy syntax, not
+the final missing-asset response status. No Worker, Function or Dashboard change
+is needed; build contracts keep the rewrite target absent.
 
 `tests/v2/not-found.spec.mjs` covers unknown paths with/without JavaScript,
 keyboard escape links, all twelve HTTP 200 entries, canonical aliases, real and

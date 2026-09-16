@@ -103,9 +103,21 @@ function strictNotFound() {
         const route = entry.slice(0, -"index.html".length);
         return [[entry, route], ...(route === "/" ? [] : [[route.slice(0, -1), route]])];
       }));
+      const serveNotFound = (request, response) => {
+        for (const [name, value] of Object.entries(preview.headers ?? {})) response.setHeader(name, value);
+        response.statusCode = 404;
+        // Pages error responses override the content cache policy with no-store.
+        response.setHeader("Cache-Control", "no-store");
+        response.setHeader("Content-Type", "text/html; charset=utf-8");
+        response.setHeader("Content-Length", html.byteLength);
+        response.end(request.method === "HEAD" ? undefined : html);
+      };
       server.middlewares.use((request, response, next) => {
         if (!["GET", "HEAD"].includes(request.method)) return next();
         const [pathname, ...query] = request.url.split("?");
+        // Reserve the error document before Vite's static middleware can
+        // expose it as a successful file or extensionless HTML alias.
+        if (pathname === "/404.html" || pathname === "/404") return serveNotFound(request, response);
         const canonical = aliases.get(pathname);
         if (!canonical) return next();
         response.writeHead(308, { Location: canonical + (query.length ? `?${query.join("?")}` : "") });
@@ -116,13 +128,7 @@ function strictNotFound() {
       return () => server.middlewares.use((request, response, next) => {
         if (!["GET", "HEAD"].includes(request.method)
           || entries.includes(request.url.split("?")[0])) return next();
-        for (const [name, value] of Object.entries(preview.headers ?? {})) response.setHeader(name, value);
-        response.statusCode = 404;
-        // Pages error responses override the content cache policy with no-store.
-        response.setHeader("Cache-Control", "no-store");
-        response.setHeader("Content-Type", "text/html; charset=utf-8");
-        response.setHeader("Content-Length", html.byteLength);
-        response.end(request.method === "HEAD" ? undefined : html);
+        serveNotFound(request, response);
       });
     },
   };

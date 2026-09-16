@@ -67,6 +67,16 @@ test("query, fragment, extension and missing-asset paths cannot fall back to Hom
   expect(head.status()).toBe(404);
   expect(head.headers()["cache-control"]).toBe("no-store");
   expect(await head.body()).toHaveLength(0);
+  for (const path of ["/404.html", "/404"]) {
+    for (const method of ["get", "head"]) {
+      const reserved = await request[method](`${path}?keep=1`, { maxRedirects: 0 });
+      expect(reserved.status(), `${method} ${path}`).toBe(404);
+      expect(reserved.headers().location).toBeUndefined();
+      expect(reserved.headers()["cache-control"]).toBe("no-store");
+      if (method === "get") expect(await reserved.text()).toBe(builtHtml);
+      else expect(await reserved.body()).toHaveLength(0);
+    }
+  }
   // Static files must win before the error fallback, even with HTML Accept.
   const style = builtHtml.match(/href="(\/assets\/[^"\s]+\.css)"/)[1];
   const css = await request.get(style, { headers: { Accept: "text/html" } });
