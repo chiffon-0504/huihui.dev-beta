@@ -22,11 +22,15 @@ proxied DNS record. The public r2.dev endpoint remains disabled. No CORS policy,
 object expiration, Worker proxy, zone cache/header override or production change
 was introduced. Cloudflare's default incomplete-multipart abort rule is unchanged.
 
-The viewer still opens with Pages WebP only. An explicit action disclosing the
-file size loads the selected JPG. Windows Firefox's same-URL retry after a 404
-or corrupt image remains a known compatibility blocker: Ubuntu CI passes those
-strict tests, but that does not resolve the observed Windows failures. Keep this
-pilot Draft; no query busting, URL changes, reload workaround or weaker assertion.
+The active R2 pilot contains three immutable high-resolution JPG assets. Cards
+and viewer previews use local Pages WebP only; an explicit viewer action
+disclosing the file size loads the selected JPG. The merged no-retry contract
+retains the decoded preview on failure or timeout, announces the localized error,
+and keeps the load action disabled but focusable. Selecting or opening an image
+starts its normal preview state and requires a new explicit high-resolution
+action. Close, Escape, focus return and image switching remain available.
+See the [failure contract and historical retry investigation](../../tests/support/v2-image-retry.md);
+there is no query busting, URL mutation, reload workaround or automatic retry.
 
 ## Required external configuration (separate authorization)
 

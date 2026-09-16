@@ -81,7 +81,10 @@ Pull requests should:
 
 ## Multilingual changes
 
-The site supports ZH / EN / JA through path-based routing. Shared layout behavior is injected from `js/layout.js`, while localized content is organized in `js/locales/zh.js`, `js/locales/en.js`, and `js/locales/ja.js`. Localized pages use the root-language routes alongside corresponding `en/` and `ja/` paths.
+Both V1 and V2 support ZH-Hant / EN / JA through path-based routing, with root-language routes alongside corresponding `en/` and `ja/` paths. Their locale ownership is separate:
+
+- **V1:** shared layout behavior is injected from `js/layout.js`; localized content is organized in `js/locales/zh.js`, `js/locales/en.js`, and `js/locales/ja.js`, alongside the localized HTML pages.
+- **V2:** `v2/src/locales/zh-Hant.ts`, `en.ts`, and `ja.ts` own runtime UI copy under the shared `LocaleContent` schema in `v2/src/locales/types.ts`. Home/About/Works/Posts use twelve MPA entries; Contact remains in the shared footer. About, Works and Posts HTML metadata and no-JavaScript fallback text also consume these typed locales through Vite. See the [V2 locale architecture](v2/README.md#locale-architecture) for route and ownership details.
 
 When changing user-facing localized content, check the corresponding locale keys or pages in all three languages. Do not leave languages inconsistently updated unless the pull request explicitly explains why a translation is intentionally deferred.
 

@@ -14,7 +14,9 @@ high-resolution action. Successful loads still swap only after decode. R2 URL
 identity, immutable cache headers, no-referrer, CSP and CORS are unchanged.
 
 The investigation below is historical evidence for this contract change, not an
-ongoing search for workarounds. PR #234 remains Draft for CI and Codex Review.
+ongoing search for workarounds. [PR #234](https://github.com/chiffon-0504/huihui.dev-beta/pull/234)
+merged on 2026-09-16 at `70fe0a5862c6d6bf1846f4b5b824cd0aff184813`,
+establishing the current no-retry failure contract.
 
 ## Baseline and environment
 
