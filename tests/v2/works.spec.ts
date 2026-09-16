@@ -28,14 +28,14 @@ for (const locale of supportedLocales) {
       await expect(page.locator("main a a, main a button, main button a, main h3, main h4")).toHaveCount(0);
       expect(await page.locator("[id]").evaluateAll((nodes) => nodes.map((node) => node.id).filter((id, i, all) => all.indexOf(id) !== i))).toEqual([]);
       const images = page.locator("main img");
-      await expect(images).toHaveCount(2);
-      for (const [index, alt] of [copy.website.alt, copy.photography.alt].entries()) {
+      await expect(images).toHaveCount(3);
+      for (const [index, alt] of [copy.website.alt, copy.photography.alt, copy.photography.shibaAlt].entries()) {
         const image = images.nth(index);
         await expect(image).toHaveAttribute("alt", alt);
         await expect(image).toHaveAttribute("loading", index === 0 ? "eager" : "lazy");
         await expect(image).toHaveAttribute("decoding", "async");
         await expect(image).toHaveAttribute("width", "800");
-        await expect(image).toHaveAttribute("height", index === 0 ? "492" : "461");
+        await expect(image).toHaveAttribute("height", "1067");
         await expect(image).toHaveAttribute("srcset", /480w, .*800w, .*1200w$/);
         await image.scrollIntoViewIfNeeded();
         await expect.poll(() => image.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth > 0)).toBe(true);
@@ -45,7 +45,7 @@ for (const locale of supportedLocales) {
         }));
         expect(selection.sizes).toContain("(max-width: 40rem)");
         expect(selection.rendered).toBe(width === 1440 ? 536 : 358);
-        expect(selection.height / selection.rendered).toBeCloseTo(index === 0 ? 492 / 800 : 461 / 800, 2);
+        expect(selection.height / selection.rendered).toBeCloseTo(1067 / 800, 2);
         expect(selection.current).toMatch(width === 1440 ? /-(800|1200)-[\w-]+\.webp$/ : /-(480|800)-[\w-]+\.webp$/);
         await testInfo.attach(`image-selection-${index}`, { body: JSON.stringify(selection), contentType: "application/json" });
       }
@@ -88,7 +88,7 @@ for (const locale of supportedLocales) {
     await expect(page.locator(".skip-link")).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(page.locator("main")).toBeFocused();
-    for (const anchor of await page.locator(".work-card a").all()) {
+    for (const anchor of await page.locator(".work-card a, .image-preview").all()) {
       await page.keyboard.press("Tab");
       await expect(anchor).toBeFocused();
       await expect(anchor).toHaveCSS("outline-style", "solid");

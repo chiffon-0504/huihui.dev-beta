@@ -9,6 +9,7 @@ on:
       - "tests/v2-beta/**"
       - "tests/scripts/v2-beta-server.mjs"
       - "tests/support/v2-beta-contract.mjs"
+      - "tests/support/v2-viewer-fixture.mjs"
       - "playwright.v2-beta.config.mjs"
       - ".github/workflows/beta-cd.yml"
       - "tests/unit/v2-*.test.mjs"

@@ -348,7 +348,7 @@ test.each([
 test("v2 beta security headers remain enforcing and self-only", async () => {
   const source = await read("v2/public/_headers");
   const headers = securityHeaders(source);
-  expect(headers["content-security-policy"]).toBe("default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'none';");
+  expect(headers["content-security-policy"]).toBe("default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://assets-beta.huihui.dev; connect-src 'self'; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'none';");
   expect(headers["x-robots-tag"]).toBe("noindex, nofollow");
   expect(source).not.toMatch(/unsafe-inline|unsafe-eval|api\.huihui\.dev|Report-Only/);
   expect(() => validateSecurityHeaders({}, headers, "beta")).toThrow("delivery mismatch");

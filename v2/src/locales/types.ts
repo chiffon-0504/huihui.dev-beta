@@ -2,6 +2,19 @@ export const supportedLocales = ["zh-Hant", "en", "ja"] as const;
 export type Locale = (typeof supportedLocales)[number];
 export type Page = "home" | "about" | "works";
 
+export interface ViewerContent {
+  readonly title: string;
+  readonly open: string;
+  readonly close: string;
+  readonly previous: string;
+  readonly next: string;
+  readonly load: string;
+  readonly loading: string;
+  readonly loaded: string;
+  readonly error: string;
+  readonly retry: string;
+}
+
 export interface WorksContent {
   readonly title: string;
   readonly description: string;
@@ -9,7 +22,8 @@ export interface WorksContent {
   readonly introduction: string;
   readonly website: HomeTopic & { readonly alt: string; readonly linkLabel: string };
   readonly tool: HomeTopic & { readonly linkLabel: string };
-  readonly photography: HomeTopic & { readonly alt: string };
+  readonly photography: HomeTopic & { readonly alt: string; readonly shibaAlt: string };
+  readonly viewer: ViewerContent;
 }
 
 export interface AboutContent {

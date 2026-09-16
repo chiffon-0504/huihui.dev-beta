@@ -4,3 +4,30 @@
   height: auto;
   background: var(--color-surface);
 }
+
+.image-preview {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.image-viewer {
+  margin: auto;
+  width: min(52rem, calc(100% - 2rem));
+  max-height: calc(100dvh - 2rem);
+  padding: var(--space-6);
+  overflow: auto;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+}
+
+.image-viewer::backdrop { background: rgb(0 0 0 / 70%); }
+.viewer-controls { display: flex; flex-wrap: wrap; gap: var(--space-4); }
+.viewer-stage { margin-block: var(--space-6); }
+.viewer-stage img { max-height: 65dvh; object-fit: contain; }
+.viewer-status { color: var(--color-muted); }
+.viewer-load[aria-disabled="true"] { opacity: .7; cursor: default; }

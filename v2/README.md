@@ -34,7 +34,7 @@ The v2 server serves Home at `/`, `/en/`, and `/ja/`, and About at `/about/`,
 `/ja/works/`. The generated `v2/dist/` is a
 standalone site root; opening the source HTML directly or using the v1 static
 server does not compile TypeScript. Vite copies `public/_headers` into the build.
-This self-only CSP, noindex policy and revalidation headers apply to v2 beta.
+This beta CSP, noindex policy and revalidation headers apply to v2 beta.
 Existing shell tests also retain coverage under the root v1 `_headers` policy.
 
 ## Beta deployment
@@ -462,7 +462,7 @@ security-header and language checks; local tests do not prove a live deployment.
 
 `pages/works.ts` composes three representative items from `LocaleContent.worksPage`: the
 website with its Mount Fuji photographic cover, the existing Tier Maker tool, and
-Yokohama photography. All three routes use the same native MPA shell and page
+Tsutenkaku and Shiba Inu photography. All three routes use the same native MPA shell and page
 module. Navbar Works links open the localized page and mark the current page;
 language switching retains Works and the fragment. Home and About content and
 CTAs are unchanged. Metadata and noscript text share the typed locales through
@@ -500,11 +500,22 @@ reuse existing tokens and button styles. Only `pages/works.css` owns the grid.
   `<picture>` only when actual alternate formats or crops justify it. The rules
   follow the [native image attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/img).
 
-Future CDN/R2 migration can replace URLs in the asset registry without rewriting
-card or image consumers. This is a source-model capability only: the current
-self-only CSP and strict build-resource verification do not permit an external
-CDN. Its reviewed origin, policy and verification changes belong to that later
-PR, together with any infrastructure. No R2 integration is present.
+The new V2 JPG pilot uses only three external source photographs: Fuji,
+Tsutenkaku and a Shiba Inu. It has no V1 source/path/identity mapping. The optional
+`ImageAsset.highResolution` descriptor is separate from its Pages WebP preview.
+Only `media/published.ts` enables public objects after byte/hash/decode validation;
+its empty initial state leaves the gallery fully functional with local previews.
+The beta CSP adds exactly `https://assets-beta.huihui.dev` to `img-src`; scripts,
+styles, connections and all other directives retain their existing restrictions.
+
+The native image dialog opens with WebP, discloses decimal MB before an explicit
+high-resolution action, and assigns a remote image URL only inside that action.
+It sets `referrerpolicy="no-referrer"`, adds no CORS attribute, and swaps the image
+only after successful decode. Errors/timeouts retain the preview with manual
+retry. Close, Escape, keyboard focus return and image switching remain available
+while loading; generation tokens reject stale completions. Normal browsing and
+preview opening never depend on R2. See the [pilot operations](tools/README.md)
+for source preservation, controlled upload, activation and pending infrastructure.
 
 Works tests cover route/copy parity, native links and focus, image dimensions,
 asset decoding, actual selected sources at desktop/mobile and 2x density, missing
