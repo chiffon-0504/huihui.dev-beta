@@ -12,7 +12,7 @@ export function createNavbar(locale: Locale, theme: ThemeController, page: Page)
   nav.setAttribute("aria-label", copy.navigation);
   const brand = link("huihui.dev", localeHref(locale), "brand");
   const primary = element("ul", "navbar-primary");
-  for (const id of ["works", "about"] as const) {
+  for (const id of ["works", "about", "posts"] as const) {
     const item = element("li", "");
     const href = localeHref(locale, "", id);
     const anchor = link(copy[`${id}Label`], href, "nav-link button button--quiet");

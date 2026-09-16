@@ -1,6 +1,48 @@
 import type { LocaleContent } from "./types";
 
 export default {
+  postsLabel: "文章",
+  postsPage: {
+    title: "文章",
+    description: "huihui 的音樂、節奏遊戲與日常紀錄。",
+    noScript: "這個網站需要 JavaScript。你也可以在 GitHub 查看我的專案。",
+    introduction: "記下喜歡的音樂、遊戲裡的小小突破，以及生活中的片刻。依主題整理，慢慢累積。",
+    categories: {
+      music: "音樂",
+      "rhythm-games": "節奏遊戲",
+      journal: "日常"
+    },
+    articles: {
+      "ave-mujica-exitus-taipei-day2-2026-08-09": {
+        title: "Ave Mujica「Exitus」台北 DAY2",
+        excerpt: "謝謝！這是最棒的演唱會！"
+      },
+      "arcaea-course-mode-phase-10-clear-2026-07-31": {
+        title: "Arcaea Course Mode：Phase 10 完成",
+        excerpt: "Course Mode Phase 10 完成！！"
+      },
+      "arcaea-boss-song-ex-scores-2026-06-28": {
+        title: "Arcaea：三首歌曲的 EX 紀錄",
+        excerpt: "初代魔王 Grievous Lady（FUTURE 11）、3.0 魔王 Tempestissimo（FUTURE 10+），以及 6.0 Lament Rain（FUTURE 10），都達成 EX。"
+      },
+      "arcaea-potential-12-2026-06-27": {
+        title: "Arcaea：Potential 12.00 摘星",
+        excerpt: "從 2021 年開始玩 Arcaea，當初真的覺得上手難度很高。以前一直把「摘星」當成一個夢想，現在終於到達 Potential 12.00 了。\nFracture Ray（FUTURE 11）達成 EX。未來也會繼續玩 Arcaea。"
+      },
+      "arcaea-potential-11-90-2026-05-03": {
+        title: "Arcaea：Potential 11.90",
+        excerpt: "到達 Potential 11.90！Aether Crest: Astral（FUTURE 10）達成 EX。"
+      },
+      "arcaea-cyaegha-ex-plus-2026-04-19": {
+        title: "Arcaea：Cyaegha EX+",
+        excerpt: "Cyaegha（FUTURE 10+）達成 EX+！"
+      },
+      "hello-world-2026-04-14": {
+        title: "Hello, World!",
+        excerpt: "Hello, World!"
+      }
+    }
+  },
   worksPage: {
     title: "作品",
     description: "huihui 的網站開發、瀏覽器工具與精選攝影作品。",

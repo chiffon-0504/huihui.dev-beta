@@ -10,7 +10,7 @@ const locales = [
   { route: "/", lang: "zh-Hant", light: "淺色", dark: "深色", auto: "自動" },
   { route: "/en/", lang: "en", light: "Light", dark: "Dark", auto: "Auto" },
   { route: "/ja/", lang: "ja", light: "ライト", dark: "ダーク", auto: "自動" },
-].flatMap((locale) => [locale, ...["about", "works"].map((page) => ({ ...locale, route: `${locale.route}${page}/` }))]);
+].flatMap((locale) => [locale, ...["about", "works", "posts"].map((page) => ({ ...locale, route: `${locale.route}${page}/` }))]);
 
 for (const locale of locales) {
   for (const width of [1440, 390]) {
@@ -58,7 +58,7 @@ for (const locale of locales) {
       await page.screenshot({ path: testInfo.outputPath(`${locale.lang}-${width}-auto-dark.png`), fullPage: true });
       await checkErrors();
       await page.locator(".language-switcher summary").click();
-      const destination = (locale.lang === "en" ? "/ja/" : "/en/") + (locale.route.endsWith("about/") ? "about/" : locale.route.endsWith("works/") ? "works/" : "");
+      const destination = (locale.lang === "en" ? "/ja/" : "/en/") + (locale.route.endsWith("about/") ? "about/" : locale.route.endsWith("works/") ? "works/" : locale.route.endsWith("posts/") ? "posts/" : "");
       const navigation = page.waitForResponse((response) => response.request().isNavigationRequest() && response.request().frame() === page.mainFrame());
       await page.locator(`.language-switcher a[href="${destination}"]`).click();
       await checkNavigation(await navigation, new URL(destination, baseURL).href, expectedHeaders);

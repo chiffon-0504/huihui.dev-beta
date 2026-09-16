@@ -45,6 +45,11 @@
   gap: var(--space-6);
 }
 
+.navbar-primary {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
 .navbar-actions {
   margin-inline-start: auto;
   flex-wrap: wrap;

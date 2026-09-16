@@ -40,3 +40,21 @@ const { alt, ...missingWorkAlt } = en.worksPage.website;
 void alt;
 // @ts-expect-error Every locale must provide meaningful image text.
 export const incompleteWorks: LocaleContent = { ...en, worksPage: { ...en.worksPage, website: missingWorkAlt } };
+
+import type { Post, PostCategory } from "../../v2/src/posts/registry";
+import { postHref } from "../../v2/src/posts/registry";
+import type { PostContent, PostsContent } from "../../v2/src/locales/types";
+
+export const undatedPost: Post = { id: "hello-world-2026-04-14", category: "journal" };
+// @ts-expect-error Arbitrary categories are not structural identities.
+export const invalidCategory: PostCategory = "technology";
+// @ts-expect-error Every category needs a translated label in each locale.
+export const missingCategory: PostsContent = { ...en.postsPage, categories: { music: "Music", journal: "Journal" } };
+// @ts-expect-error Every canonical post needs localized content.
+export const missingArticle: PostsContent = { ...ja.postsPage, articles: {} };
+// @ts-expect-error Excerpts are required even for short posts.
+export const missingExcerpt: PostContent = { title: "Hello" };
+// @ts-expect-error Article titles must be strings.
+export const invalidTitle: PostContent = { title: 1, excerpt: "Hello" };
+// @ts-expect-error Destinations must identify a canonical post.
+postHref("en", "missing-post");

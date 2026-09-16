@@ -1,6 +1,48 @@
 import type { LocaleContent } from "./types";
 
 export default {
+  postsLabel: "Posts",
+  postsPage: {
+    title: "Posts",
+    description: "Notes on music, rhythm games, and everyday moments by huihui.",
+    noScript: "This website needs JavaScript. You can also explore my projects on GitHub.",
+    introduction: "Music I love, small breakthroughs in games, and moments from everyday life. A growing collection of notes, organized by topic.",
+    categories: {
+      music: "Music",
+      "rhythm-games": "Rhythm games",
+      journal: "Journal"
+    },
+    articles: {
+      "ave-mujica-exitus-taipei-day2-2026-08-09": {
+        title: "Ave Mujica “Exitus” Taipei DAY2",
+        excerpt: "Thank you! This was the best concert ever!"
+      },
+      "arcaea-course-mode-phase-10-clear-2026-07-31": {
+        title: "Arcaea Course Mode: Phase 10 clear",
+        excerpt: "Course Mode Phase 10 cleared!"
+      },
+      "arcaea-boss-song-ex-scores-2026-06-28": {
+        title: "Arcaea: three EX scores",
+        excerpt: "EX on the original boss song Grievous Lady (FUTURE 11), the 3.0 boss song Tempestissimo (FUTURE 10+), and 6.0 Lament Rain (FUTURE 10)."
+      },
+      "arcaea-potential-12-2026-06-27": {
+        title: "Arcaea: reaching Potential 12.00",
+        excerpt: "I started playing Arcaea in 2021 and found it very difficult to get into. Reaching Potential 12.00 had always been a goal, and now I have finally achieved it.\nEX on Fracture Ray (FUTURE 11). I will keep playing Arcaea."
+      },
+      "arcaea-potential-11-90-2026-05-03": {
+        title: "Arcaea: Potential 11.90",
+        excerpt: "Reached Potential 11.90! EX on Aether Crest: Astral (FUTURE 10)."
+      },
+      "arcaea-cyaegha-ex-plus-2026-04-19": {
+        title: "Arcaea: Cyaegha EX+",
+        excerpt: "EX+ on Cyaegha (FUTURE 10+)!"
+      },
+      "hello-world-2026-04-14": {
+        title: "Hello, World!",
+        excerpt: "Hello, World!"
+      }
+    }
+  },
   worksPage: {
     title: "Works",
     description: "Selected web development, browser tools, and photography by huihui.",

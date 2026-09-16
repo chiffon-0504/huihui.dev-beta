@@ -2,9 +2,9 @@ import { expect, test } from "@playwright/test";
 import { applyPagesCsp } from "../support/csp-enforcement.mjs";
 
 const locales = [
-  { route: "/", lang: "zh-Hant", skip: "跳至主要內容", navigation: "主要導覽", worksLabel: "作品", aboutLabel: "關於", worksHeading: "精選作品", focusLabel: "從設計到開發" },
-  { route: "/en/", lang: "en", skip: "Skip to main content", navigation: "Main navigation", worksLabel: "Works", aboutLabel: "About", worksHeading: "Selected work", focusLabel: "From design to development" },
-  { route: "/ja/", lang: "ja", skip: "メインコンテンツへ移動", navigation: "メインナビゲーション", worksLabel: "制作実績", aboutLabel: "プロフィール", worksHeading: "ピックアップした作品", focusLabel: "デザインから開発まで" },
+  { route: "/", lang: "zh-Hant", skip: "跳至主要內容", navigation: "主要導覽", worksLabel: "作品", aboutLabel: "關於", postsLabel: "文章", worksHeading: "精選作品", focusLabel: "從設計到開發" },
+  { route: "/en/", lang: "en", skip: "Skip to main content", navigation: "Main navigation", worksLabel: "Works", aboutLabel: "About", postsLabel: "Posts", worksHeading: "Selected work", focusLabel: "From design to development" },
+  { route: "/ja/", lang: "ja", skip: "メインコンテンツへ移動", navigation: "メインナビゲーション", worksLabel: "制作実績", aboutLabel: "プロフィール", postsLabel: "記事", worksHeading: "ピックアップした作品", focusLabel: "デザインから開発まで" },
 ];
 
 for (const locale of locales) {
@@ -37,7 +37,7 @@ for (const locale of locales) {
       await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
       await expect(page.getByRole("contentinfo")).toBeVisible();
       const nav = page.getByRole("navigation", { name: locale.navigation });
-      await expect(nav.getByRole("link")).toHaveCount(4);
+      await expect(nav.getByRole("link")).toHaveCount(5);
       await expect(nav.getByRole("link", { name: "huihui.dev", exact: true })).toHaveAttribute("href", locale.route);
       await expect(nav.getByRole("link", { name: locale.worksLabel, exact: true })).toHaveAttribute("href", `${locale.route}works/`);
       await expect(nav.getByRole("link", { name: locale.aboutLabel, exact: true })).toHaveAttribute("href", `${locale.route}about/`);
@@ -59,16 +59,19 @@ for (const locale of locales) {
       // Restart without a fragment so tab order begins at the document start.
       await page.goto(locale.route);
       await page.keyboard.press("Tab");
-      for (const [navIndex, label] of ["huihui.dev", locale.worksLabel, locale.aboutLabel, "GitHub"].entries()) {
+      for (const [navIndex, label] of ["huihui.dev", locale.worksLabel, locale.aboutLabel, locale.postsLabel, "GitHub"].entries()) {
         await page.keyboard.press("Tab");
         const current = nav.getByRole("link", { name: label, exact: true });
         await expect(current).toBeFocused();
         await expect(current).toBeInViewport();
         expect(await current.evaluate((node) => getComputedStyle(node).outlineStyle)).toBe("solid");
-        const sectionId = navIndex === 1 ? "works" : navIndex === 2 ? "about" : null;
+        const sectionId = navIndex === 1 ? "works" : navIndex === 2 ? "about" : navIndex === 3 ? "posts" : null;
         if (sectionId) {
           await page.keyboard.press("Enter");
-          if (sectionId === "about") {
+          if (sectionId === "posts") {
+            await expect(page).toHaveURL(new RegExp(`${locale.route}posts/$`));
+            await expect(page.locator("main.posts")).toBeVisible();
+          } else if (sectionId === "about") {
             await expect(page).toHaveURL(new RegExp(`${locale.route}about/$`));
             await expect(page.locator("main.about")).toBeVisible();
           } else {

@@ -17,7 +17,7 @@ const routes: Readonly<Record<Locale, string>> = {
   ja: "/ja/",
 };
 
-const pages: Readonly<Record<Page, string>> = { home: "", about: "about/", works: "works/" };
+const pages: Readonly<Record<Page, string>> = { home: "", about: "about/", works: "works/", posts: "posts/" };
 
 function matchesEntry(pathname: string, route: string): boolean {
   return pathname === route || pathname === `${route}index.html` || pathname === route.slice(0, -1);

@@ -3,7 +3,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { failedRequestMetadata, inspectDocument, isResponsiveImageCancellation, validateBrowserEvidence, validateResponse, validateSecurityHeaders } from "../support/v2-beta-contract.mjs";
 
-const applicationRoutes = ["/", "/en/", "/ja/", "/about/", "/en/about/", "/ja/about/", "/works/", "/en/works/", "/ja/works/"];
+const applicationRoutes = ["/", "/en/", "/ja/", "/about/", "/en/about/", "/ja/about/", "/works/", "/en/works/", "/ja/works/", "/posts/", "/en/posts/", "/ja/posts/"];
 
 export async function checkNavigation(response, expectedUrl, expectedHeaders) {
   assert(response, "Browser/custom-domain navigation: missing response");

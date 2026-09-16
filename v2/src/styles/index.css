@@ -10,6 +10,9 @@
 @import "./components/footer.css";
 @import "./components/media.css";
 @import "./components/work-card.css";
+@import "./components/post-card.css";
+@import "./components/post-category.css";
+@import "./pages/posts.css";
 @import "./pages/home.css";
 @import "./pages/about.css";
 @import "./pages/works.css";

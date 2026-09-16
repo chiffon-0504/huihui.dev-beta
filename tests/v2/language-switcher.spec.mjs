@@ -68,7 +68,7 @@ for (const locale of locales) {
 
       // Reach the trigger through the actual document tab order, without focus().
       await page.goto(locale.route);
-      for (let index = 0; index < 6; index++) await page.keyboard.press("Tab");
+      for (let index = 0; index < 7; index++) await page.keyboard.press("Tab");
       await expect(trigger).toBeFocused();
       expect(await trigger.evaluate((node) => getComputedStyle(node).outlineStyle)).toBe("solid");
       for (const key of ["Enter", "Space"]) {
