@@ -1,5 +1,4 @@
 import { expect, test } from "@playwright/test";
-import { writeFile } from "node:fs/promises";
 import { jpeg, remoteUrl, openViewerFixture, readV2Headers } from "../support/v2-viewer-fixture.mjs";
 
 test("real Works: load, scroll, hover, focus and every preview request zero R2 JPGs", async ({ page, baseURL }) => {
@@ -82,12 +81,19 @@ test("explicit action loads only the selected JPEG; native dialog traps and rest
 const immutable = "public, max-age=31536000, immutable";
 for (const [failure, failureCache] of [
   ["404", "no-store"], ["network", "no-store"], ["decode", "no-store"],
-  ["404", immutable], ["decode", immutable],
+  ["404", immutable], ["decode", immutable], ["timeout", immutable],
 ]) {
   const suffix = failureCache === immutable ? " (immutable failure response)" : "";
-  test(`${failure} leaves preview usable and supports explicit retry${suffix}`, async ({ page, baseURL }, testInfo) => {
+  test(`${failure} keeps a usable preview and disables further high-resolution actions${suffix}`, async ({ page, baseURL }) => {
     let count = 0;
     const requests = [];
+    let release;
+    const blocked = new Promise((resolve) => { release = resolve; });
+    let completed;
+    const done = new Promise((resolve) => { completed = resolve; });
+    let entered;
+    const requested = new Promise((resolve) => { entered = resolve; });
+    await page.clock.install();
     await page.addInitScript(() => {
       window.highResolutionAssignments = [];
       const identities = new WeakMap();
@@ -102,10 +108,17 @@ for (const [failure, failureCache] of [
         src.set.call(this, value);
       } });
     });
-    await page.route("https://assets-beta.huihui.dev/**", (route) => {
+    await page.route("https://assets-beta.huihui.dev/**", async (route) => {
       count++;
       requests.push({ url: route.request().url(), referer: route.request().headers().referer ?? null });
+      entered();
       if (count > 1) return route.fulfill({ headers: { "cache-control": immutable }, contentType: "image/jpeg", body: jpeg });
+      if (failure === "timeout") {
+        await blocked;
+        await route.fulfill({ headers: { "cache-control": immutable }, contentType: "image/jpeg", body: jpeg });
+        completed();
+        return;
+      }
       if (failure === "network") return route.abort("failed");
       // Interception isolates image-result reuse; the native HTTP probe covers HTTP caching.
       return route.fulfill({ status: failure === "404" ? 404 : 200, headers: { "cache-control": failureCache }, contentType: "image/jpeg", body: "invalid" });
@@ -114,32 +127,65 @@ for (const [failure, failureCache] of [
     await page.getByRole("button", { name: "fuji", exact: true }).click();
     expect(count).toBe(0);
     expect(await page.evaluate(() => window.highResolutionAssignments)).toEqual([]);
-    await page.locator(".viewer-load").click();
-    await expect(page.getByRole("status")).toContainText("Could not load");
+    const preview = await page.locator("dialog img").elementHandle();
+    await preview.evaluate((image) => image.decode());
+    const close = page.getByRole("button", { name: "Close", exact: true });
+    const load = page.locator(".viewer-load");
+    await expect(close).toBeFocused();
+    await page.keyboard.press("Shift+Tab");
+    await expect(load).toBeFocused();
+    await page.keyboard.press("Enter");
+    await requested;
+    if (failure === "timeout") await page.clock.runFor(60_000);
+    const error = "Could not load high-resolution image. Preview remains available.";
+    await expect(page.getByRole("status")).toHaveText(error);
+    await expect(page.getByRole("status")).toHaveAttribute("aria-live", "polite");
     await expect(page.locator(".viewer-stage")).toHaveAttribute("data-mode", "preview");
-    await page.locator("dialog img").evaluate((image) => image.decode());
-    expect(count).toBe(1);
-    await page.getByRole("button", { name: /Retry high-resolution/ }).click();
     await expect(page.locator(".viewer-stage")).toHaveAttribute("aria-busy", "false");
-    const observations = await page.evaluate(() => ({
-      assignments: window.highResolutionAssignments,
-      mode: document.querySelector(".viewer-stage").dataset.mode,
-      status: document.querySelector(".viewer-status").textContent,
-      violations: window.violations,
-    }));
-    const evidencePath = testInfo.outputPath("same-url-retry.json");
-    await writeFile(evidencePath, JSON.stringify({ platform: process.platform, browser: testInfo.project.name,
-      failure, failureCache, requests, ...observations }, null, 2));
-    await testInfo.attach("same-url-retry.json", { contentType: "application/json", path: evidencePath });
-    expect(observations.assignments).toEqual([1, 2].map((image) => ({
-      url: remoteUrl("fuji"), image, referrerPolicy: "no-referrer", crossOrigin: null,
-    })));
-    expect(observations.violations).toEqual([]);
-    expect(requests).toEqual([1, 2].map(() => ({ url: remoteUrl("fuji"), referer: null })));
+    await expect(load).toBeFocused();
+    await expect(load).toBeDisabled();
+    await expect(load).toHaveAccessibleName("Load high-resolution · 0.0 MB");
+    await expect(page.getByRole("button", { name: /Retry/ })).toHaveCount(0);
+    expect(await preview.evaluate((image) => image.isConnected && image.currentSrc.endsWith("/preview.webp") && image.naturalWidth > 0)).toBe(true);
+    // Real keyboard activation and a synthetic click must both respect the disabled state.
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("Space");
+    await load.evaluate((button) => button.click());
+    if (failure === "timeout") { release(); await done; }
+    // Exercise the old timeout boundary without a wall-clock sleep or automatic retry.
+    await page.clock.runFor(60_001);
+    await expect(page.getByRole("status")).toHaveText(error);
+    await expect(page.locator(".viewer-stage")).toHaveAttribute("data-mode", "preview");
+    expect(await page.evaluate(() => window.highResolutionAssignments)).toEqual([{
+      url: remoteUrl("fuji"), image: 1, referrerPolicy: "no-referrer", crossOrigin: null,
+    }]);
+    expect(requests).toEqual([{ url: remoteUrl("fuji"), referer: null }]);
+    await page.keyboard.press("Tab");
+    await expect(close).toBeFocused();
+    await page.keyboard.press("Shift+Tab");
+    await expect(load).toBeFocused();
+    await page.getByRole("button", { name: "Next image" }).click();
+    await expect(page.locator("dialog img")).toHaveAttribute("alt", "tsutenkaku");
+    await page.locator("dialog img").evaluate((image) => image.decode());
+    await expect(load).toBeEnabled();
+    await expect(load).toHaveText("Load high-resolution · 0.0 MB");
+    expect(count).toBe(1);
+    await load.click();
     await expect(page.locator(".viewer-stage")).toHaveAttribute("data-mode", "high-resolution");
     expect(count).toBe(2);
+    expect(requests.at(-1)).toEqual({ url: remoteUrl("tsutenkaku"), referer: null });
     await page.keyboard.press("Escape");
     await expect(page.getByRole("button", { name: "fuji", exact: true })).toBeFocused();
+    const other = page.getByRole("button", { name: "shiba", exact: true });
+    await other.click();
+    await expect(page.locator(".viewer-stage")).toHaveAttribute("data-mode", "preview");
+    await expect(page.locator("dialog img")).toHaveAttribute("alt", "shiba");
+    await expect(load).toBeEnabled();
+    await expect(page.getByRole("status")).toHaveText("shiba");
+    expect(count).toBe(2);
+    await close.click();
+    await expect(other).toBeFocused();
+    expect(await page.evaluate(() => window.violations)).toEqual([]);
   });
 }
 

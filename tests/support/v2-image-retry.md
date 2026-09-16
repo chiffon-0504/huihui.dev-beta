@@ -1,8 +1,20 @@
-# Windows Firefox same-URL image retry investigation
+# High-resolution failure contract and Firefox retry investigation
 
-Status: unresolved; keep the follow-up PR Draft. No reliable same-page fix was
-demonstrated within the existing URL, cache, CSP and R2 constraints. There is no
-application change in this investigation.
+The product no longer promises in-page recovery after a failed high-resolution
+load. Across Chromium, Firefox and WebKit, failures and timeouts retain the
+decoded WebP preview, announce the existing localized error, and leave the load
+action `aria-disabled="true"`. The control remains focusable so the failure does
+not discard keyboard focus. The handler accepts only the preview state, so
+keyboard activation and synthetic clicks cannot start another load in the
+failed view. There is no Retry label, automatic retry or reload instruction.
+
+Close, Escape, focus return and image switching remain available. Selecting or
+opening an image starts its normal preview state and requires a new explicit
+high-resolution action. Successful loads still swap only after decode. R2 URL
+identity, immutable cache headers, no-referrer, CSP and CORS are unchanged.
+
+The investigation below is historical evidence for this contract change, not an
+ongoing search for workarounds. PR #234 remains Draft for CI and Codex Review.
 
 ## Baseline and environment
 
@@ -18,7 +30,7 @@ Observed on Windows, Node 24.15.0, Playwright 1.61.1, bundled Firefox 151.0
 The unmodified viewer tests failed the 404 and corrupt-JPEG retries; the network
 abort retry passed. Both failures retained a decoded WebP preview.
 
-## Evidence and attribution
+## Historical evidence and attribution
 
 The intercepted fixture uses this exact synthetic JPEG identity for both clicks:
 
@@ -46,9 +58,13 @@ ready to serve a valid 2x3 JPEG on request two. In failing cases:
 
 These observations rule out viewer state and Playwright route interception as
 necessary causes. They support failed-image reuse in this Firefox build, with
-timing-sensitive recovery. They do **not** identify an exact Gecko defect, prove
-Windows exclusivity, or establish behavior in an independently installed stock
-Firefox or another Firefox version. No stock Firefox was available locally.
+timing-sensitive recovery. Ubuntu Firefox also reproduced the same corrupt-JPEG
+failure in [the investigation CI run](https://github.com/chiffon-0504/huihui.dev-beta/actions/runs/35077997892/job/104734872613)
+at `51ca637c448166c02ef7d140ee12a264178af05a` (114 passed / 1 failed): two image
+assignments, one identical-URL request, a retained preview and no CSP violation.
+This is not a Windows-only compatibility issue. The evidence does not identify
+an exact Gecko defect or establish behavior in independently installed stock
+Firefox. No stock Firefox was available locally.
 
 HTTP caching is a separate constraint. The native HTTP probe also observes
 Chromium reuse of an immutable failed response. Routing disables HTTP caching
@@ -58,26 +74,42 @@ cache recovery. The probe intentionally uses a loopback URL and no application
 CSP to isolate image loading; the viewer regression retains the exact R2 URL
 and delivered application CSP. Neither probe accesses or modifies R2 objects.
 
-## Reproduction
+## Current regression checks
 
 Use the existing lockfile dependencies and installed Playwright browsers:
 
 ```powershell
 npm.cmd ci
 npm.cmd run build:v2
-npx.cmd playwright test --config=playwright.v2.config.mjs tests/v2/image-viewer.spec.mjs
-node tests/scripts/v2-image-retry-probe.mjs > test-results/native-retry.jsonl
-node tests/scripts/v2-image-retry-probe.mjs --uncontrolled > test-results/native-retry-uncontrolled.jsonl
+npx.cmd playwright test --config=playwright.v2.config.mjs tests/v2/image-viewer.spec.mjs tests/v2/works.spec.ts
+npx.cmd vitest run tests/unit/v2-high-resolution.test.mjs tests/unit/v2-locales-types.test.mjs tests/unit/v2-works.test.mjs
 ```
 
-The viewer tests require exactly two identical URL requests and a successfully
-decoded high-resolution image. They are not skipped, marked expected failures,
-or softened for Firefox. `same-url-retry.json` in each completed retry test's
-output records assignments, request URLs, referrers, UI state and CSP violations
-before asserting recovery; failure traces remain enabled. All success responses
-retain `Cache-Control: public, max-age=31536000, immutable`.
+The viewer tests now require exactly one assignment and request for the failed
+image, an unchanged decoded preview, localized error status, a disabled action,
+and no further attempt after Enter, Space, synthetic click or the timeout
+boundary. They cover 404, network abort, corrupt JPEG, immutable failure
+responses and timeout with late completion. They also require successful
+explicit loading of another image, normal preview on reopening, keyboard focus
+containment and return. Works tests cover the actual zh-Hant/en/ja error copy,
+Close and Escape immediately after failure. Normal success, zero requests
+before explicit action and CSP negative controls remain covered in every engine.
+No browser is skipped or marked as an expected failure.
 
-The standalone script reports observations rather than an acceptance result.
+Local contract validation on 2026-09-16 passed strict TypeScript/build and 41
+relevant unit tests. The viewer/Works run was 87 passed / 3 failed: Chromium and
+Firefox each passed 30/30; WebKit passed 27/30. All 39 viewer cases and all nine
+localized failure/close cases passed. The three failures were WebKit's existing
+Works skip-link Tab assertions, before opening the viewer. All three reproduced
+at the same assertion in an unmodified Git export of
+`51ca637c448166c02ef7d140ee12a264178af05a`; they were not changed or skipped.
+Ubuntu CI remains the independent browser validation gate.
+
+## Archived native probe
+
+`tests/scripts/v2-image-retry-probe.mjs` preserves the completed investigation.
+It is not run by application code or CI and is not required for the new failure
+contract. The standalone script reports observations rather than an acceptance result.
 Its exit success only means the diagnostic completed. It compares HTTP versus
 route interception, no-store versus immutable failure responses, both failures
 and four image lifecycles in Firefox and Chromium. Paths distinguish independent
@@ -87,7 +119,7 @@ under ignored `test-results/`, stops that process after reporting, and leaves
 the profile there for inspection. It has a 30-second diagnostic timeout, not a
 retry or product delay.
 
-## Local validation and remaining gate
+## Historical investigation validation
 
 - `npm.cmd ci`: lockfile installation succeeded, audit reported zero vulnerabilities.
 - `npm.cmd run build:v2`: strict TypeScript and build passed.
@@ -108,10 +140,9 @@ retry or product delay.
   `EncodingError` results in each of its four cases.
 - Diagnostic syntax and `git diff --check` passed.
 
-Keep the product, immutable URLs/cache policy, WebP fallback, accessibility,
-close/Escape/focus behavior, CSP and R2 architecture unchanged. No cache-busting,
-fetch/CORS expansion, proxy, reload workaround, automatic retry or browser skip
-is introduced. A future fix must pass the original recovery assertions on
-Windows Firefox and native HTTP verification under the stated constraints.
-Linux CI results alone cannot clear this Windows limitation. Live R2 acceptance
-and stock-Firefox comparison remain unperformed.
+The failed retry assertions above belong to the superseded product contract.
+Current acceptance is the safe fallback contract described at the top, on all
+three browsers. No cache-busting, URL mutation, browser sniffing, fetch/CORS
+expansion, proxy, reload workaround, automatic retry or infrastructure change
+is introduced. Live R2 acceptance and stock-Firefox comparison were not performed
+as part of the historical investigation.

@@ -95,6 +95,37 @@ for (const locale of supportedLocales) {
       await expect(anchor).toBeInViewport();
     }
   });
+
+  test(`${locale} high-resolution errors retain localized previews and accessible close controls`, async ({ page }) => {
+    let requests = 0;
+    await page.route("https://assets-beta.huihui.dev/**", (route) => {
+      requests++;
+      return route.fulfill({ status: 404, headers: { "cache-control": "public, max-age=31536000, immutable" },
+        contentType: "image/jpeg", body: "invalid" });
+    });
+    await page.goto(route);
+    const dialog = page.getByRole("dialog", { name: copy.viewer.title });
+    for (const [index, action] of ["close", "Escape"].entries()) {
+      const trigger = page.locator(".image-preview").nth(index);
+      await trigger.click();
+      const load = dialog.locator(".viewer-load");
+      await expect(load).toBeEnabled();
+      await expect(dialog.locator(".viewer-stage")).toHaveAttribute("data-mode", "preview");
+      expect(requests).toBe(index);
+      await load.click();
+      await expect(dialog.getByRole("status")).toHaveText(copy.viewer.error);
+      await expect(dialog.getByRole("status")).toHaveAttribute("aria-live", "polite");
+      await expect(load).toBeDisabled();
+      await expect(load).toHaveAccessibleName(new RegExp(`^${copy.viewer.load}`));
+      await dialog.locator("img").evaluate((image: HTMLImageElement) => image.decode());
+      await expect(dialog.locator("img")).toHaveAttribute("alt", index === 0 ? copy.website.alt : copy.photography.alt);
+      expect(requests).toBe(index + 1);
+      if (action === "close") await dialog.getByRole("button", { name: copy.viewer.close, exact: true }).click();
+      else await page.keyboard.press("Escape");
+      await expect(dialog).not.toBeVisible();
+      await expect(trigger).toBeFocused();
+    }
+  });
 }
 
 test("a missing image leaves alt text, reserved geometry and project links", async ({ page }) => {

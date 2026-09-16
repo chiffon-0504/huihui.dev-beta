@@ -33,7 +33,6 @@ export default {
       loading: "Loading high-resolution image. Preview remains available.",
       loaded: "High-resolution image loaded.",
       error: "Could not load high-resolution image. Preview remains available.",
-      retry: "Retry high-resolution",
     },
   },
   contact: { label: "Contact", email: "contact@huihui.dev" },

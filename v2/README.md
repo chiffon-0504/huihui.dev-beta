@@ -512,9 +512,11 @@ styles, connections and all other directives retain their existing restrictions.
 The native image dialog opens with WebP, discloses decimal MB before an explicit
 high-resolution action, and assigns a remote image URL only inside that action.
 It sets `referrerpolicy="no-referrer"`, adds no CORS attribute, and swaps the image
-only after successful decode. Errors/timeouts retain the preview with manual
-retry. Close, Escape, keyboard focus return and image switching remain available
-while loading; generation tokens reject stale completions. Normal browsing and
+only after successful decode. Errors/timeouts retain the WebP preview and show
+the localized error while keeping the high-resolution action disabled and
+focusable. There is no in-page retry; selecting or opening an image starts from
+its normal preview state. Close, Escape, keyboard focus return and image switching
+remain available while loading; generation tokens reject stale completions. Normal browsing and
 preview opening never depend on R2. See the [pilot operations](tools/README.md)
 for source preservation, controlled upload, activation and verified beta infrastructure.
 
