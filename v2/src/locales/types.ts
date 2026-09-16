@@ -12,7 +12,6 @@ export interface ViewerContent {
   readonly loading: string;
   readonly loaded: string;
   readonly error: string;
-  readonly retry: string;
 }
 
 export interface WorksContent {

@@ -33,7 +33,6 @@ export default {
       loading: "正在載入高解析圖片，仍可觀看預覽。",
       loaded: "高解析圖片已載入。",
       error: "無法載入高解析圖片，仍可觀看預覽。",
-      retry: "重試載入高解析圖片",
     },
   },
   contact: { label: "聯絡", email: "contact@huihui.dev" },

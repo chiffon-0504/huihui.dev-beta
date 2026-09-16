@@ -78,7 +78,7 @@ export function createImageViewer(images: readonly ImageOptions[], copy: ViewerC
   previous.addEventListener("click", () => show(index - 1));
   next.addEventListener("click", () => show(index + 1));
   load.addEventListener("click", () => {
-    if (state === "loading" || state === "loaded" || !dialog.open) return;
+    if (state !== "preview" || !dialog.open) return;
     const options = images[index]!;
     if (!options.asset.highResolution) return;
     const high = validateHighResolution(options.asset.highResolution, options.asset.id ?? "");
@@ -101,10 +101,10 @@ export function createImageViewer(images: readonly ImageOptions[], copy: ViewerC
       state = "error";
       stage.setAttribute("aria-busy", "false");
       status.textContent = copy.error;
-      load.removeAttribute("aria-disabled");
-      load.textContent = `${copy.retry} · ${fileSizeLabel(high.bytes)}`;
+      // Keep the action disabled and focusable: same-URL image failures may be cached.
+      // Selecting an image starts a new preview; this failed view offers no retry.
     };
-    // Bound a stalled download, with explicit retry only. Closing never waits on it.
+    // Bound a stalled download without retrying. Closing never waits on it.
     timeout = setTimeout(fail, 60_000);
     // This is the only assignment of an R2 URL, inside the explicit click handler.
     image.src = high.url;

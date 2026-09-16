@@ -33,7 +33,6 @@ export default {
       loading: "高解像度画像を読み込み中です。プレビューは引き続き表示されます。",
       loaded: "高解像度画像を読み込みました。",
       error: "高解像度画像を読み込めませんでした。プレビューは引き続き表示されます。",
-      retry: "高解像度画像を再読み込み",
     },
   },
   contact: { label: "お問い合わせ", email: "contact@huihui.dev" },
