@@ -31,3 +31,4 @@
 .viewer-stage img { max-height: 65dvh; object-fit: contain; }
 .viewer-status { color: var(--color-muted); }
 .viewer-load[aria-disabled="true"] { opacity: .7; cursor: default; }
+.viewer-load[hidden] { display: none; }

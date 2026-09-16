@@ -2,7 +2,7 @@ import { readFile, writeFile, realpath } from "node:fs/promises";
 import { createHash, createHmac } from "node:crypto";
 import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { isAbsolute, relative, resolve } from "node:path";
+import { isAbsolute, relative, resolve, sep } from "node:path";
 
 export const ids = ["fuji", "tsutenkaku", "shiba"];
 export const origin = "https://assets-beta.huihui.dev";
@@ -120,7 +120,7 @@ async function main() {
   for (const id of ids) {
     const path = await realpath(inputs.get(id));
     const fromRepo = relative(await realpath(root), path);
-    assert(isAbsolute(fromRepo) || fromRepo.startsWith(".."), "Source JPEG must remain outside the repository");
+    assert(isAbsolute(fromRepo) || fromRepo === ".." || fromRepo.startsWith(`..${sep}`), "Source JPEG must remain outside the repository");
     const bytes = await readFile(path);
     const info = await inspect(bytes, sharp);
     const candidate = descriptor(id, info);

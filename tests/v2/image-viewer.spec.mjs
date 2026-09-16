@@ -21,6 +21,8 @@ test("real Works: load, scroll, hover, focus and every preview request zero R2 J
       expect(remote).toEqual([]);
       await trigger.click();
       await expect(page.locator("dialog")).toBeVisible();
+      const loadControl = page.locator(".viewer-load");
+      if (await loadControl.evaluate((button) => button.hidden)) await expect(loadControl).not.toBeVisible();
       await page.locator("dialog img").evaluate((image) => image.decode());
       expect(remote).toEqual([]);
       await page.keyboard.press("Escape");
