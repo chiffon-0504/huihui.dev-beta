@@ -1,13 +1,13 @@
 # huihui.dev
 
 <p align="center">
-  <strong>Static-first personal website with Liquid Glass UI, multilingual layout components, and Cloudflare Workers APIs.</strong>
+  <strong>Static-first personal website: V1.6.4 production and a Vanilla TypeScript/Vite V2 beta.</strong>
 </p>
 
 <p align="center">
   <a href="https://huihui.dev">Stable Site</a>
   ·
-  <a href="https://beta.huihui.dev">Beta Site</a>
+  <a href="https://huihuidev-beta.pages.dev">V2 Beta Preview</a>
   ·
   <a href="https://github.com/chiffon-0504/huihui.dev-beta">Development Repository</a>
   ·
@@ -27,9 +27,9 @@
 
 ## Overview
 
-**huihui.dev** is a static-first personal website and lightweight web system built with HTML, CSS, and Vanilla JavaScript.
+**huihui.dev** is a static-first personal website and lightweight web system. V1.6.4 production uses HTML, CSS, and Vanilla JavaScript; the V2 beta is a separate Vanilla TypeScript/Vite application under `v2/`.
 
-The project keeps the frontend deployable as static files while using Cloudflare Workers for API normalization, external data access, caching, form validation, and protected server-side operations. The current direction remains:
+V1 keeps the frontend deployable as static files while using Cloudflare Workers for API normalization, external data access, caching, form validation, and protected server-side operations. Its architecture includes:
 
 - static-first frontend
 - Liquid Glass UI system
@@ -37,11 +37,15 @@ The project keeps the frontend deployable as static files while using Cloudflare
 - selected Cloudflare Workers API endpoints
 - Cloudflare Pages Git integration for static publishing and GitHub Actions for validation and Worker deployment
 
-This repository, `huihui.dev-beta`, is the **public primary development repository** for the project. Active development, pull requests, issues, CI, and beta validation happen here first and are deployed to `beta.huihui.dev`. Stable production is maintained separately in `huihui.dev-stable` and released to `huihui.dev` only after beta changes are verified.
+This repository, `huihui.dev-beta`, is the **public primary development repository** for the project. Active V2 development and validation happen here; the existing beta Pages project, `huihuidev-beta`, hosts the preview at `huihuidev-beta.pages.dev`. `beta.huihui.dev` is intentionally detached during reconstruction. The separate `huihui.dev-stable` repository and `huihui.dev` remain V1.6.4 production.
+
+V2 has twelve Home/About/Works/Posts × ZH-Hant/EN/JA HTML entries, typed locale ownership, and footer-only Contact. Its active R2 pilot contains three immutable high-resolution JPG assets; local WebP remains the normal card/preview source, and remote high-resolution media loads only through the explicit viewer action. See the [V2 documentation](v2/README.md) for the current implementation and beta deployment settings.
 
 ---
 
 ## Features
+
+The following inventory describes V1 production; V2's implemented pages and media are documented in [v2/README.md](v2/README.md).
 
 | Area | Description |
 |---|---|
@@ -59,6 +63,8 @@ This repository, `huihui.dev-beta`, is the **public primary development reposito
 ---
 
 ## Architecture
+
+V1 production architecture:
 
 ```text
 Browser
@@ -86,8 +92,8 @@ Browser
 
 | Repository | Role | Deployment Target |
 |---|---|---|
-| `huihui.dev-beta` | Public primary development repository | `beta.huihui.dev` |
-| `huihui.dev-stable` | Production repository | `huihui.dev` |
+| `huihui.dev-beta` | Public primary development repository; V2 beta | `huihuidev-beta.pages.dev` (Pages project `huihuidev-beta`) |
+| `huihui.dev-stable` | V1.6.4 production repository | `huihui.dev` |
 
 The public beta repository is the source of active development and validation. Stable production is released through the stable repository after beta changes are verified and ready for production.
 
@@ -110,7 +116,7 @@ Static-site and Worker deployments use separate paths.
 Static site:
 huihui.dev-beta/main
   -> Cloudflare Pages Git integration
-  -> beta.huihui.dev
+  -> huihuidev-beta.pages.dev (V2 beta; beta.huihui.dev intentionally detached)
 
 huihui.dev-stable/main
   -> Cloudflare Pages Git integration
@@ -146,7 +152,10 @@ The [Worker workflow](.github/workflows/deploy-huihui-api-worker.yml) enforces s
 GitHub remains the source of truth. Cloudflare Pages Git integration publishes static content. GitHub Actions validates the repository and deploys Workers. The beta Worker uses the named Wrangler `beta` environment, while the production Worker uses the default production Wrangler environment, keeping the deployment targets separate.
 
 Beta now targets v2 development through the existing `huihuidev-beta` Pages
-project at `beta.huihui.dev` and `huihuidev-beta.pages.dev`. Its Git integration
+project at the active preview surface `huihuidev-beta.pages.dev`.
+`beta.huihui.dev` is intentionally detached during reconstruction; Beta CD sets
+`BETA_CUSTOM_DOMAIN_ENABLED: 'false'` and skips only custom-domain lookup and
+smoke. Exact-SHA native Pages and beta Worker verification remain required. Its Git integration
 must build from the repository root with `npm run build:v2` on Node.js 24 and
 publish `v2/dist`; see the [v2 deployment settings](v2/README.md#beta-deployment).
 Beta CD verifies the v2 site and the existing beta Worker state. The stable
@@ -158,6 +167,8 @@ The production deployment job is assigned to the GitHub `production` Environment
 ---
 
 ## Recent Improvements
+
+The following records describe the V1.6.4 release and its environment model at that time. Current V2 beta hosting is described above.
 
 ### Stable Release
 
@@ -183,6 +194,8 @@ The production deployment job is assigned to the GitHub `production` Environment
 
 ## Tech Stack
 
+V1 production stack (V2 uses the separate [TypeScript/Vite foundation](v2/README.md#structure)):
+
 | Layer | Tools |
 |---|---|
 | Frontend | HTML5, CSS3, Vanilla JavaScript |
@@ -200,6 +213,8 @@ The production deployment job is assigned to the GitHub `production` Environment
 ---
 
 ## Project Structure
+
+V1 and shared repository paths are shown below. The separate `v2/` application has its own [structure and page inventory](v2/README.md#structure).
 
 ```text
 /
@@ -250,14 +265,14 @@ Key directories:
 | `workers/huihui-api/` | Cloudflare Worker serving the site's API routes (beta/production) |
 | `.github/workflows/` | GitHub Actions deployment workflows |
 
-Legacy redirects preserve backward compatibility from `/posts/`, `/en/posts/`, and `/ja/posts/` to `/milestones/`, `/en/milestones/`, and `/ja/milestones/`, respectively.
+V1 legacy redirects preserve backward compatibility from `/posts/`, `/en/posts/`, and `/ja/posts/` to `/milestones/`, `/en/milestones/`, and `/ja/milestones/`, respectively. V2 serves its own Posts entries at those Posts paths.
 
 ---
 
 ## Design Principles
 
 - Keep the site static-first unless dynamic behavior is required.
-- Use Liquid Glass as a readable interface system, not a decorative overlay.
+- In V1, use Liquid Glass as a readable interface system, not a decorative overlay; V2 follows its separate [CSS design system](v2/README.md#css-design-system).
 - Separate blur, tint, border, opacity, and shadow concerns in CSS.
 - Keep shared layout behavior centralized and consistent across languages.
 - Manage multilingual text through locale files rather than duplicated page logic.
@@ -275,11 +290,12 @@ Legacy redirects preserve backward compatibility from `/posts/`, `/en/posts/`, a
 | Repository visibility | Public |
 | Development repository | `chiffon-0504/huihui.dev-beta` |
 | Production repository | `chiffon-0504/huihui.dev-stable` |
-| Beta environment | <https://beta.huihui.dev> |
+| V2 beta preview | <https://huihuidev-beta.pages.dev> |
+| Beta custom domain | `beta.huihui.dev` intentionally detached during reconstruction |
 | Stable production | <https://huihui.dev> |
 | Current stable release | `v1.6.4` |
 | Deployment | Cloudflare Pages Git integration (static site) / GitHub Actions (Workers) |
-| Current direction | Static-first site with Liquid Glass UI, multilingual shared layout, and Workers-backed APIs |
+| Current direction | V2 Vanilla TypeScript/Vite development in beta; V1.6.4 remains production |
 
 ---
 

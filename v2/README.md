@@ -50,8 +50,8 @@ Use the existing Cloudflare Pages Git integration:
 | Build command | `npm run build:v2` |
 | Build output directory | `v2/dist` |
 | Node.js | `24` |
-| Custom domain | `beta.huihui.dev` |
-| Pages domain | `huihuidev-beta.pages.dev` |
+| Custom domain | `beta.huihui.dev` — intentionally detached during reconstruction |
+| Pages domain | `huihuidev-beta.pages.dev` — active preview surface |
 
 Cloudflare installs the repository dependencies and builds the twelve Home/About/Works/Posts
 routes above. Git integration is the only Pages publication path;
@@ -87,7 +87,7 @@ contracts, then rechecks the active Pages identity:
   dispatch,
   verifies delivered security headers, and rejects every CSP violation and
   console error. Enforce, Report-Only and no-CSP isolated probes run here.
-- **Custom-domain contract:** `https://beta.huihui.dev` runs the same three-locale
+- **Custom-domain contract (when enabled):** `https://beta.huihui.dev` runs the same three-locale
   Home/About/Works/Posts desktop/mobile, theme, language, build-byte and security-header checks. The
   only platform exception is the Cloudflare Free-plan JSD bootstrap observed on
   2026-09-13. Its entire executable text is pinned, including the iframe bootstrap
@@ -297,15 +297,15 @@ V1 CSS is reference material only: do not incrementally copy legacy blocks into
 this system. Home-specific composition stays in `pages/home.css` and consumes
 the shared layers.
 
-The primary About and Works links point to their matching-language V2 pages.
+The primary About, Works and Posts links point to their matching-language V2 pages.
 All navigation remains visible on mobile and wraps
 at narrow widths or enlarged text. The actions area can later accommodate search
 without adding a search control or reserving a visible empty slot now.
 
 The navbar language switcher uses native `details`/`summary` and localized links
 from `locales/`. It preserves the current page and fragment across the three
-locale entries: Home sections stay on Home, About sections stay on About, and
-Works links stay on Works.
+locale entries: Home sections stay on Home, About sections stay on About,
+Works links stay on Works, and Posts category/article fragments stay on Posts.
 The same control remains in the wrapping mobile navbar (there is no drawer).
 Escape restores trigger focus; outside clicks and focus leaving the disclosure
 close it. Tab follows native document order. The disclosure and links work if
@@ -386,7 +386,7 @@ The root controller initializes before app DOM creation and takes over live
 updates. With JavaScript disabled the existing light `noscript` fallback remains.
 
 The footer contains copyright and the localized contact label with the existing
-public `contact@huihui.dev` mail link. It is shared by Home, About and Works. No v1
+public `contact@huihui.dev` mail link. It is shared by Home, About, Works and Posts. No v1
 regression assertion is replaced: v2 has its own Playwright configuration and PR
 validation job.
 
