@@ -1,10 +1,28 @@
 import { readFile } from "node:fs/promises";
 import { expect, test, vi } from "vitest";
 import { parseDocument } from "yaml";
-import { betaSmokeTarget, cloudflareJsdBootstrap, failedRequestMetadata, inspectDocument, isResponsiveImageCancellation, jsdConsoleText, validateBrowserEvidence, responseMetadata, securityHeaders, validateResponse, validateSecurityHeaders } from "../support/v2-beta-contract.mjs";
+import { betaSmokeTarget, cloudflareJsdBootstrap, failedRequestMetadata, inspectDocument, isResponsiveImageCancellation, jsdConsoleText, validateBrowserEvidence, responseMetadata, securityHeaders, validateResponse, validateNotFoundResponse, validateSecurityHeaders } from "../support/v2-beta-contract.mjs";
 import { parseCustomDomainEnabled } from "../scripts/beta-deployment-sync.mjs";
 
 const read = (path) => readFile(new URL(`../../${path}`, import.meta.url), "utf8");
+
+test("expected 404 has a dedicated fail-closed contract; content still requires 200", async () => {
+  const url = "https://12345678.huihuidev-beta.pages.dev/fr/";
+  const expectedHeaders = securityHeaders(await read("v2/public/_headers"));
+  const html = await read("v2/404.html");
+  const response = { status: 404, url, redirected: false, headers: { ...expectedHeaders, "content-type": "text/html; charset=utf-8" }, html };
+  expect(() => validateNotFoundResponse(response, url, html, expectedHeaders)).not.toThrow();
+  expect(() => validateResponse(response, url, "content")).toThrow("HTTP failure");
+  for (const change of [
+    { status: 200 }, { status: 403 }, { status: 500 }, { redirected: true },
+    { url: "https://12345678.huihuidev-beta.pages.dev/" }, { html: "Home" },
+    { headers: { ...response.headers, "cf-mitigated": "challenge" } },
+    { headers: { ...response.headers, "content-type": "text/plain" } },
+    { headers: { ...response.headers, "content-security-policy-report-only": "" } },
+    ...Object.keys(expectedHeaders).map((key) => ({ headers: { ...response.headers, [key]: undefined } })),
+  ]) expect(() => validateNotFoundResponse({ ...response, ...change }, url, html, expectedHeaders)).toThrow();
+  expect(() => validateNotFoundResponse(response, "https://12345678.huihuidev-beta.pages.dev/en/", html, expectedHeaders)).toThrow("dedicated unknown-path probe");
+});
 
 test("failed request diagnostics retain Chromium evidence without leaking URL secrets", () => {
   const origin = "https://1234abcd.huihuidev-beta.pages.dev";

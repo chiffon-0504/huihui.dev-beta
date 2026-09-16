@@ -3,6 +3,12 @@ import { createHash } from "node:crypto";
 
 export const BETA_ORIGIN = "https://beta.huihui.dev";
 
+// Deliberately invalid navigation probes, never part of the content registry.
+export const notFoundPaths = [
+  "/does-not-exist/", "/fr/", "/fr/posts/", "/en/posts/extra/",
+  "/posts/not-a-real-post/", "/en/does-not-exist/", "/ja/posts/extra/",
+];
+
 // Diagnostic metadata only: query strings, credentials and unknown paths must
 // never enter logs. This does not classify or exempt any failed request.
 export function failedRequestMetadata(request, baseURL, builtAssets) {
@@ -194,6 +200,18 @@ export function validateResponse({ status, headers, url, redirected }, expectedU
   assert(!headers["cf-mitigated"], `${context}: challenge/security response ${metadata}`);
   assert(status === 200, `${context}: HTTP failure ${metadata}`);
   assert(!redirected && url === expectedUrl, `${context}: unexpected redirect or URL`);
+}
+
+// Separate expected-error contract: the generic verifier above still requires 200.
+export function validateNotFoundResponse({ status, headers, url, redirected, html }, expectedUrl, builtHtml, expectedHeaders) {
+  assert(notFoundPaths.includes(new URL(expectedUrl).pathname), "Not-found verification requires a dedicated unknown-path probe");
+  assert(!headers["cf-mitigated"], "Not-found: challenge/security response");
+  assert(status === 404, `Not-found: expected HTTP 404 ${responseMetadata(status, headers)}`);
+  assert(!redirected && url === expectedUrl, "Not-found: unexpected redirect or URL");
+  assert(headers["content-type"]?.includes("text/html"), "Not-found: expected HTML");
+  validateSecurityHeaders(headers, expectedHeaders, "Not-found");
+  assert(headers["content-security-policy-report-only"] === undefined, "Not-found: unexpected Report-Only policy");
+  assert(html === builtHtml, "Not-found: unexpected error document bytes");
 }
 
 export function securityHeaders(source) {

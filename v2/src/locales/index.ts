@@ -24,6 +24,8 @@ function matchesEntry(pathname: string, route: string): boolean {
 }
 
 // Resolve only emitted MPA entries; navigation still loads native HTML documents.
+// Unknown -> zh-Hant/Home is an internal defensive fallback only. The HTTP
+// serving layer returns the shared 404 document without loading this resolver.
 export function resolveLocale(pathname: string): Locale {
   return supportedLocales.find((locale) => Object.values(pages).some((path) =>
     matchesEntry(pathname, `${routes[locale]}${path}`))) ?? "zh-Hant";

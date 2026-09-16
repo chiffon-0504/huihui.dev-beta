@@ -1,0 +1,24 @@
+@import "./tokens.css";
+@import "./reset.css";
+@import "./base.css";
+@import "./typography.css";
+
+.not-found {
+  max-width: var(--content-width-prose);
+  margin-inline: auto;
+  padding: var(--section-space) var(--gutter);
+}
+
+.not-found section {
+  margin-top: var(--space-8);
+}
+
+.not-found p {
+  margin-block: var(--space-2) var(--space-3);
+  font-size: var(--text-large);
+}
+
+.not-found a {
+  display: inline-block;
+  padding-block: var(--space-2);
+}
