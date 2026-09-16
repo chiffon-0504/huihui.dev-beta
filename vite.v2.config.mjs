@@ -118,6 +118,8 @@ function strictNotFound() {
           || entries.includes(request.url.split("?")[0])) return next();
         for (const [name, value] of Object.entries(preview.headers ?? {})) response.setHeader(name, value);
         response.statusCode = 404;
+        // Pages error responses override the content cache policy with no-store.
+        response.setHeader("Cache-Control", "no-store");
         response.setHeader("Content-Type", "text/html; charset=utf-8");
         response.setHeader("Content-Length", html.byteLength);
         response.end(request.method === "HEAD" ? undefined : html);

@@ -13,6 +13,7 @@ for (const javaScriptEnabled of [true, false]) {
         const url = new URL(path, baseURL).href;
         const response = await page.goto(url);
         expect(response.status()).toBe(404);
+        expect(response.headers()["cache-control"]).toBe("no-store");
         expect(response.request().redirectedFrom()).toBeNull();
         expect(page.url()).toBe(url);
         expect(await response.text()).toBe(builtHtml);
@@ -64,6 +65,7 @@ test("query, fragment, extension and missing-asset paths cannot fall back to Hom
   }
   const head = await request.head("/does-not-exist/");
   expect(head.status()).toBe(404);
+  expect(head.headers()["cache-control"]).toBe("no-store");
   expect(await head.body()).toHaveLength(0);
   // Static files must win before the error fallback, even with HTML Accept.
   const style = builtHtml.match(/href="(\/assets\/[^"\s]+\.css)"/)[1];

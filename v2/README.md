@@ -58,7 +58,11 @@ content entries (`/en/posts` and `/en/posts/index.html` to `/en/posts/`, preserv
 queries), then lets real files and content resolve before the 404 fallback.
 `/en/posts/extra/` can never normalize to Posts. The fallback serves the built
 error bytes with status 404, including HEAD semantics and configured preview
-headers. The development server remains Vite's source-development server;
+security headers. Error responses require `Cache-Control: no-store`, matching
+the Pages override observed on the exact-SHA immutable PR deployment on
+2026-09-17. Content responses keep the existing `_headers` revalidation policy;
+the dedicated 404 verifier requires no-store rather than accepting arbitrary
+cache headers. The development server remains Vite's source-development server;
 HTTP parity checks run against `npm run build:v2` and `npm run preview:v2`.
 [Cloudflare Pages](https://developers.cloudflare.com/pages/configuration/serving-pages/)
 uses the top-level static `404.html` to disable its default SPA fallback.
