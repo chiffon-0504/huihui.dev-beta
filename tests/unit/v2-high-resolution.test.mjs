@@ -6,6 +6,14 @@ import { workImages } from "../../v2/src/media/works.ts";
 import { verifiedHighResolution } from "../../v2/src/media/published.ts";
 import { descriptor, hash, verifyResponse, verifyPublic, publish, s3Request, cacheControl } from "../../v2/tools/media.mjs";
 
+test("the verified pilot activates exactly the three approved photos", () => {
+  expect(Object.keys(verifiedHighResolution).sort()).toEqual(["fuji", "shiba", "tsutenkaku"]);
+  for (const [id, source] of Object.entries(pilotSources)) {
+    expect(verifiedHighResolution[id]).toEqual(descriptor(id, source));
+    expect(workImages[id].highResolution).toEqual(verifiedHighResolution[id]);
+  }
+});
+
 test.each(Object.entries(pilotSources))("%s has an immutable beta descriptor and verified Pages previews", async (id, source) => {
   const candidate = descriptor(id, source);
   expect(validateHighResolution(candidate, id)).toEqual(candidate);

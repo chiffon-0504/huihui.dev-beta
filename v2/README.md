@@ -503,8 +503,9 @@ reuse existing tokens and button styles. Only `pages/works.css` owns the grid.
 The new V2 JPG pilot uses only three external source photographs: Fuji,
 Tsutenkaku and a Shiba Inu. It has no V1 source/path/identity mapping. The optional
 `ImageAsset.highResolution` descriptor is separate from its Pages WebP preview.
-Only `media/published.ts` enables public objects after byte/hash/decode validation;
-its empty initial state leaves the gallery fully functional with local previews.
+Only `media/published.ts` enables public objects after byte/hash/decode validation.
+The three pilot descriptors were activated after public verification on 2026-09-16;
+the gallery and ordinary dialog previews still use only local WebP assets.
 The beta CSP adds exactly `https://assets-beta.huihui.dev` to `img-src`; scripts,
 styles, connections and all other directives retain their existing restrictions.
 
@@ -515,7 +516,7 @@ only after successful decode. Errors/timeouts retain the preview with manual
 retry. Close, Escape, keyboard focus return and image switching remain available
 while loading; generation tokens reject stale completions. Normal browsing and
 preview opening never depend on R2. See the [pilot operations](tools/README.md)
-for source preservation, controlled upload, activation and pending infrastructure.
+for source preservation, controlled upload, activation and verified beta infrastructure.
 
 Works tests cover route/copy parity, native links and focus, image dimensions,
 asset decoding, actual selected sources at desktop/mobile and 2x density, missing

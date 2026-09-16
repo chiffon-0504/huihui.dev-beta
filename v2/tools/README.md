@@ -8,16 +8,25 @@ No alternate master, sanitized layer or compressed JPG is created.
 
 ## Current activation state
 
-Repository support and Pages previews are available. `media/published.ts` is
-empty: the website has no active high-resolution descriptors or remote JPG URLs.
-The viewer works with Pages previews; its high-resolution control is hidden
-until an object passes explicit public verification and activation.
+The three pilot JPGs were uploaded and independently verified through
+`assets-beta.huihui.dev` on 2026-09-16 before activating `media/published.ts`.
+Each public response returned HTTP 200 without redirects, `image/jpeg`, the
+expected byte size, source SHA-256 and decoded dimensions, and
+`Cache-Control: public, max-age=31536000, immutable`. Publication reported cache
+MISS; the independent activation verification reported HIT for all three.
+`media/pilot-sources.ts` records the exact hashes, object keys and source sizes.
 
-Read-only Cloudflare checks on 2026-09-16 returned R2 API error `10042: Please
-enable R2 through the Cloudflare Dashboard`. Bucket inventory is unavailable;
-this is not proof of an empty bucket list. The `huihui.dev` zone is active, and
-the exact `assets-beta.huihui.dev` DNS query returned zero records. No Cloudflare
-configuration, object upload, production resource or API Worker was changed.
+The beta bucket `huihui-v2-media-beta` uses APAC / Standard storage. Its custom
+domain has active ownership and SSL, minimum TLS 1.2, and a Cloudflare-managed
+proxied DNS record. The public r2.dev endpoint remains disabled. No CORS policy,
+object expiration, Worker proxy, zone cache/header override or production change
+was introduced. Cloudflare's default incomplete-multipart abort rule is unchanged.
+
+The viewer still opens with Pages WebP only. An explicit action disclosing the
+file size loads the selected JPG. Windows Firefox's same-URL retry after a 404
+or corrupt image remains a known compatibility blocker: Ubuntu CI passes those
+strict tests, but that does not resolve the observed Windows failures. Keep this
+pilot Draft; no query busting, URL changes, reload workaround or weaker assertion.
 
 ## Required external configuration (separate authorization)
 
@@ -115,5 +124,6 @@ perform a separate explicit acceptance for all three viewer controls: disclosed
 MB, one intended JPG request after click, no referrer/CORS, successful decode,
 no console/security error, and close/focus behavior. Run `activate` verification
 again to compare public/source hashes and actual cache headers. Do not download
-the future library on unrelated PRs. Live acceptance is pending for this pilot;
-local interception does not prove DNS, TLS, R2 or deployed Pages behavior.
+the future library on unrelated PRs. Local interception does not prove DNS, TLS,
+R2 or deployed Pages behavior; record exact deployment identity and live
+acceptance separately for each head.
