@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { writeFile } from "node:fs/promises";
 import { jpeg, remoteUrl, openViewerFixture, readV2Headers } from "../support/v2-viewer-fixture.mjs";
 
 test("real Works: load, scroll, hover, focus and every preview request zero R2 JPGs", async ({ page, baseURL }) => {
@@ -78,24 +79,63 @@ test("explicit action loads only the selected JPEG; native dialog traps and rest
   expect(await page.evaluate(() => window.violations)).toEqual([]);
 });
 
-for (const failure of ["404", "network", "decode"]) {
-  test(`${failure} leaves preview usable and supports explicit retry`, async ({ page, baseURL }) => {
+const immutable = "public, max-age=31536000, immutable";
+for (const [failure, failureCache] of [
+  ["404", "no-store"], ["network", "no-store"], ["decode", "no-store"],
+  ["404", immutable], ["decode", immutable],
+]) {
+  const suffix = failureCache === immutable ? " (immutable failure response)" : "";
+  test(`${failure} leaves preview usable and supports explicit retry${suffix}`, async ({ page, baseURL }, testInfo) => {
     let count = 0;
+    const requests = [];
+    await page.addInitScript(() => {
+      window.highResolutionAssignments = [];
+      const identities = new WeakMap();
+      const src = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, "src");
+      // Observe the detached loader without changing its URL or decode promise.
+      Object.defineProperty(HTMLImageElement.prototype, "src", { ...src, set(value) {
+        if (String(value).startsWith("https://assets-beta.huihui.dev/")) {
+          if (!identities.has(this)) identities.set(this, window.highResolutionAssignments.length + 1);
+          window.highResolutionAssignments.push({ url: String(value), image: identities.get(this),
+            referrerPolicy: this.referrerPolicy, crossOrigin: this.crossOrigin });
+        }
+        src.set.call(this, value);
+      } });
+    });
     await page.route("https://assets-beta.huihui.dev/**", (route) => {
       count++;
-      if (count > 1) return route.fulfill({ contentType: "image/jpeg", body: jpeg });
+      requests.push({ url: route.request().url(), referer: route.request().headers().referer ?? null });
+      if (count > 1) return route.fulfill({ headers: { "cache-control": immutable }, contentType: "image/jpeg", body: jpeg });
       if (failure === "network") return route.abort("failed");
-      // A transient failure must not masquerade as a cacheable immutable object.
-      return route.fulfill({ status: failure === "404" ? 404 : 200, headers: { "cache-control": "no-store" }, contentType: "image/jpeg", body: "invalid" });
+      // Interception isolates image-result reuse; the native HTTP probe covers HTTP caching.
+      return route.fulfill({ status: failure === "404" ? 404 : 200, headers: { "cache-control": failureCache }, contentType: "image/jpeg", body: "invalid" });
     });
     await openViewerFixture(page, baseURL);
     await page.getByRole("button", { name: "fuji", exact: true }).click();
+    expect(count).toBe(0);
+    expect(await page.evaluate(() => window.highResolutionAssignments)).toEqual([]);
     await page.locator(".viewer-load").click();
     await expect(page.getByRole("status")).toContainText("Could not load");
     await expect(page.locator(".viewer-stage")).toHaveAttribute("data-mode", "preview");
     await page.locator("dialog img").evaluate((image) => image.decode());
     expect(count).toBe(1);
     await page.getByRole("button", { name: /Retry high-resolution/ }).click();
+    await expect(page.locator(".viewer-stage")).toHaveAttribute("aria-busy", "false");
+    const observations = await page.evaluate(() => ({
+      assignments: window.highResolutionAssignments,
+      mode: document.querySelector(".viewer-stage").dataset.mode,
+      status: document.querySelector(".viewer-status").textContent,
+      violations: window.violations,
+    }));
+    const evidencePath = testInfo.outputPath("same-url-retry.json");
+    await writeFile(evidencePath, JSON.stringify({ platform: process.platform, browser: testInfo.project.name,
+      failure, failureCache, requests, ...observations }, null, 2));
+    await testInfo.attach("same-url-retry.json", { contentType: "application/json", path: evidencePath });
+    expect(observations.assignments).toEqual([1, 2].map((image) => ({
+      url: remoteUrl("fuji"), image, referrerPolicy: "no-referrer", crossOrigin: null,
+    })));
+    expect(observations.violations).toEqual([]);
+    expect(requests).toEqual([1, 2].map(() => ({ url: remoteUrl("fuji"), referer: null })));
     await expect(page.locator(".viewer-stage")).toHaveAttribute("data-mode", "high-resolution");
     expect(count).toBe(2);
     await page.keyboard.press("Escape");
