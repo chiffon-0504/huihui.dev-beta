@@ -3,6 +3,13 @@ import { createHash } from "node:crypto";
 
 export const BETA_ORIGIN = "https://beta.huihui.dev";
 
+// Unknown paths and reserved error-document URLs, never content entries.
+export const notFoundPaths = [
+  "/does-not-exist/", "/fr/", "/fr/posts/", "/en/posts/extra/",
+  "/posts/not-a-real-post/", "/en/does-not-exist/", "/ja/posts/extra/",
+  "/404.html", "/404",
+];
+
 // Diagnostic metadata only: query strings, credentials and unknown paths must
 // never enter logs. This does not classify or exempt any failed request.
 export function failedRequestMetadata(request, baseURL, builtAssets) {
@@ -194,6 +201,28 @@ export function validateResponse({ status, headers, url, redirected }, expectedU
   assert(!headers["cf-mitigated"], `${context}: challenge/security response ${metadata}`);
   assert(status === 200, `${context}: HTTP failure ${metadata}`);
   assert(!redirected && url === expectedUrl, `${context}: unexpected redirect or URL`);
+}
+
+// Separate expected-error contract: the generic verifier above still requires 200.
+export function validateNotFoundResponse({ status, headers, url, redirected, html }, expectedUrl, builtHtml, expectedHeaders) {
+  assert(notFoundPaths.includes(new URL(expectedUrl).pathname), "Not-found verification requires a dedicated unknown-path probe");
+  assert(!headers["cf-mitigated"], "Not-found: challenge/security response");
+  assert(status === 404, `Not-found: expected HTTP 404 ${responseMetadata(status, headers)}`);
+  assert(!redirected && url === expectedUrl, "Not-found: unexpected redirect or URL");
+  assert(headers["content-type"]?.includes("text/html"), "Not-found: expected HTML");
+  // Observed on the exact-SHA immutable PR deployment on 2026-09-17:
+  // Pages overrides the global content cache policy for its 404 response.
+  validateSecurityHeaders(headers, { ...expectedHeaders, "cache-control": "no-store" }, "Not-found");
+  assert(headers["content-security-policy-report-only"] === undefined, "Not-found: unexpected Report-Only policy");
+  assert(html === builtHtml, "Not-found: unexpected error document bytes");
+}
+
+// Only after dedicated response validation: Chromium omits the reason phrase
+// for the observed Pages response, while local HTTP includes "Not Found".
+export function isNotFoundConsole({ text, location }, expectedUrl) {
+  return notFoundPaths.includes(new URL(expectedUrl).pathname)
+    && /^Failed to load resource: the server responded with a status of 404 \((?:Not Found)?\)$/.test(text)
+    && location?.url === expectedUrl && location.lineNumber === 0 && location.columnNumber === 0;
 }
 
 export function securityHeaders(source) {

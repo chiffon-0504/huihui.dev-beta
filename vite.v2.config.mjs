@@ -1,5 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import { relative, resolve } from "node:path";
 import { build, defineConfig, normalizePath } from "vite";
 import zhHant from "./v2/src/locales/zh-Hant.ts";
 import en from "./v2/src/locales/en.ts";
@@ -77,7 +79,8 @@ function themeBootstrap() {
     },
     transformIndexHtml: {
       order: "post",
-      async handler() {
+      async handler(_html, context) {
+        if (context.path === "/404.html") return;
         const { fileName } = await compile();
         // A classic head script also blocks in browsers without blocking=render.
         return [{ tag: "script", attrs: { src: command === "serve" ? "/theme-bootstrap.js" : `/${fileName}` }, injectTo: "head-prepend" }];
@@ -86,15 +89,61 @@ function themeBootstrap() {
   };
 }
 
+// Preview mirrors Pages' static error document, independently of the app resolver.
+function strictNotFound() {
+  return {
+    name: "v2-strict-not-found",
+    async configurePreviewServer(server) {
+      const { root, build, preview } = server.config;
+      const html = await readFile(resolve(root, build.outDir, "404.html"));
+      const entries = Object.values(build.rolldownOptions.input)
+        .map((entry) => `/${normalizePath(relative(root, entry))}`)
+        .filter((entry) => entry.endsWith("/index.html"));
+      const aliases = new Map(entries.flatMap((entry) => {
+        const route = entry.slice(0, -"index.html".length);
+        return [[entry, route], ...(route === "/" ? [] : [[route.slice(0, -1), route]])];
+      }));
+      const serveNotFound = (request, response) => {
+        for (const [name, value] of Object.entries(preview.headers ?? {})) response.setHeader(name, value);
+        response.statusCode = 404;
+        // Pages error responses override the content cache policy with no-store.
+        response.setHeader("Cache-Control", "no-store");
+        response.setHeader("Content-Type", "text/html; charset=utf-8");
+        response.setHeader("Content-Length", html.byteLength);
+        response.end(request.method === "HEAD" ? undefined : html);
+      };
+      server.middlewares.use((request, response, next) => {
+        if (!["GET", "HEAD"].includes(request.method)) return next();
+        const [pathname, ...query] = request.url.split("?");
+        // Reserve the error document before Vite's static middleware can
+        // expose it as a successful file or extensionless HTML alias.
+        if (pathname === "/404.html" || pathname === "/404") return serveNotFound(request, response);
+        const canonical = aliases.get(pathname);
+        if (!canonical) return next();
+        response.writeHead(308, { Location: canonical + (query.length ? `?${query.join("?")}` : "") });
+        response.end();
+      });
+      // Run after Vite's real static files and MPA lookup. Known HTML rewrites
+      // still proceed to Vite's index middleware; missing resources stay 404.
+      return () => server.middlewares.use((request, response, next) => {
+        if (!["GET", "HEAD"].includes(request.method)
+          || entries.includes(request.url.split("?")[0])) return next();
+        serveNotFound(request, response);
+      });
+    },
+  };
+}
+
 export default defineConfig({
   root: fromRoot("./v2/"),
   publicDir: "public",
   appType: "mpa",
-  plugins: [pageHtml(), themeBootstrap()],
+  plugins: [pageHtml(), themeBootstrap(), strictNotFound()],
   build: {
     outDir: "dist",
     rolldownOptions: {
       input: {
+        notFound: fromRoot("./v2/404.html"),
         home: fromRoot("./v2/index.html"),
         en: fromRoot("./v2/en/index.html"),
         ja: fromRoot("./v2/ja/index.html"),

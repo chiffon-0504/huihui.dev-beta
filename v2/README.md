@@ -12,7 +12,8 @@ Use Node.js 24 and install dependencies from the repository root with `npm ci`.
 - `npm run dev:v2` starts the v2 development server.
 - `npm run check:v2:types` checks the strict TypeScript application;
   `npm run check:ts` remains a compatibility alias.
-- `npm run build:v2` typechecks and builds the twelve HTML entries into `v2/dist/`.
+- `npm run build:v2` typechecks and builds twelve content entries plus one shared
+  `404.html` error document into `v2/dist/` (thirteen HTML files total).
 - `npm run preview:v2` serves that build locally.
 - `npm run test:e2e:v2` builds and tests Chromium, Firefox, and WebKit.
 - `npx vitest run tests/unit/v2-` runs the focused v2 unit contracts, including
@@ -37,6 +38,53 @@ server does not compile TypeScript. Vite copies `public/_headers` into the build
 This beta CSP, noindex policy and revalidation headers apply to v2 beta.
 Existing shell tests also retain coverage under the root v1 `_headers` policy.
 
+### Strict unknown-path HTTP contract
+
+The navigable content inventory remains exactly twelve Home/About/Works/Posts
+entries. `404.html` is one shared error document, not a content page, `Page`
+identity, navbar entry, language-switch destination or sitemap route.
+The emitted HTML inventory is exactly those twelve entries plus `404.html`: 13.
+
+Unknown URLs, including unknown languages and extra path segments, return HTTP
+404 with the intentional error document and preserve the requested URL. They
+never serve or redirect to Home, infer a locale, or echo the path/query. The
+static document owns all three explanations and native escape links to `/`,
+`/en/`, and `/ja/`, with language attributes, headings and visible focus. It
+imports shared CSS tokens/defaults but loads no script, theme bootstrap or
+application resolver; it remains usable without JavaScript.
+
+Vite stays in MPA mode. Its preview plugin normalizes only aliases of known
+content entries (`/en/posts` and `/en/posts/index.html` to `/en/posts/`, preserving
+queries). It reserves `/404.html` and `/404` before static middleware, then lets
+real files and content resolve before the 404 fallback.
+`/en/posts/extra/` can never normalize to Posts. The fallback serves the built
+error bytes with status 404, including HEAD semantics and configured preview
+security headers. Error responses require `Cache-Control: no-store`, matching
+the Pages override observed on the exact-SHA immutable PR deployment on
+2026-09-17. Content responses keep the existing `_headers` revalidation policy;
+the dedicated 404 verifier requires no-store rather than accepting arbitrary
+cache headers. The development server remains Vite's source-development server;
+HTTP parity checks run against `npm run build:v2` and `npm run preview:v2`.
+[Cloudflare Pages](https://developers.cloudflare.com/pages/configuration/serving-pages/)
+uses the top-level static `404.html` to disable its default SPA fallback.
+Local preview and Pages are expected to match status, error content and original
+URL. Two exact rules in `public/_redirects` internally rewrite `/404.html` and
+`/404` to the deliberately absent `/__v2-not-found__/` target. Pages then serves
+the shared error document with HTTP 404 instead of normalizing the error file
+into a successful content URL. The rewrite's `200` is Pages' proxy syntax, not
+the final missing-asset response status. No Worker, Function or Dashboard change
+is needed; build contracts keep the rewrite target absent.
+
+`tests/v2/not-found.spec.mjs` covers unknown paths with/without JavaScript,
+keyboard escape links, all twelve HTTP 200 entries, canonical aliases, real and
+missing assets, and narrow-screen reflow in Chromium, Firefox and WebKit.
+`tests/v2-beta/not-found.spec.mjs` uses a dedicated expected-404 verifier; the
+generic success verifier still requires HTTP 200. It checks exact built error
+HTML/CSS, no Home shell, original URL, delivered CSP/noindex/security headers and
+unexpected resources. The existing Beta CD exact-SHA immutable Pages gates run
+this contract after future deployment; local fixture results do not prove edge
+delivery. CSP enforcing, Report-Only and no-CSP controls remain in the Beta suite.
+
 ## Beta deployment
 
 Use the existing Cloudflare Pages Git integration:
@@ -54,7 +102,7 @@ Use the existing Cloudflare Pages Git integration:
 | Pages domain | `huihuidev-beta.pages.dev` — active preview surface |
 
 Cloudflare installs the repository dependencies and builds the twelve Home/About/Works/Posts
-routes above. Git integration is the only Pages publication path;
+routes above plus the shared error document. Git integration is the only Pages publication path;
 there is no separate Direct Upload project or manual GitHub Pages deploy job.
 The Dashboard build settings must be updated by an authorized account operator;
 repository changes alone do not switch the hosted build from the root v1 site.
@@ -205,8 +253,9 @@ theme preference, solar calculation and presentation have separate modules.
 The bootstrap selects known Home, About, Works and Posts entries by pathname: the root paths
 use `zh-Hant`, `/en/` paths use `en`, and `/ja/` paths use `ja`.
 These entries also accept `index.html` and slashless paths.
-Unknown paths select the complete ZH-Hant default; they do not
-register new page routes. Invalid internal identities passed to `getContent`
+The resolver's unknown-path ZH-Hant/Home fallback is internal defensive behavior
+only; it does not register routes or define HTTP behavior. The HTTP serving layer
+returns the shared 404 document without loading the resolver. Invalid internal identities passed to `getContent`
 or `localeHref` throw explicitly instead of returning partial content.
 Language links retain the current page and fragment, including Home's `#works`
 and `#about`, About's `#interests`, and Posts category/article IDs.
@@ -455,7 +504,8 @@ document structure and language attribute; components use `textContent`.
 CTA, and stacks its heading/content columns at the existing 40rem breakpoint.
 
 Focused unit contracts verify entry resolution, missing-translation type errors,
-twelve emitted HTML files and external-only theme bootstrap. About browser coverage
+twelve content entries plus one shared error document (thirteen emitted HTML
+files) and the content entries' external-only theme bootstrap. About browser coverage
 checks all copy, page-preserving language links, Home round trips, shared footer
 and theme controls, native keyboard navigation, resource failures, and 320px /
 200% text reflow. Existing Home and shared shell suites retain their coverage.
@@ -529,7 +579,7 @@ for source preservation, controlled upload, activation and verified beta infrast
 Works tests cover route/copy parity, native links and focus, image dimensions,
 asset decoding, actual selected sources at desktop/mobile and 2x density, missing
 images, both themes and 320px/200% reflow. Strict local beta smoke includes all
-twelve documents and verifies every emitted WebP against its built SHA-256;
+twelve content documents and a separate expected-404 contract, and verifies every emitted WebP against its built SHA-256;
 unknown requests and changed image bytes remain rejected.
 
 ## Posts milestone
@@ -586,4 +636,5 @@ category/post identities. `tests/v2/posts.spec.ts` covers every locale in all
 three browsers, native article links, language fragments, Navbar round trips,
 keyboard focus, Light/Dark/Auto, desktop/mobile, 320px/200% reflow, reduced motion,
 and resource errors. Build inventories and strict built-beta smoke include all
-12 documents; exact HTML/asset bytes and CSP negative controls remain required.
+12 content documents plus the shared 404 error document; exact HTML/asset bytes
+and CSP negative controls remain required.

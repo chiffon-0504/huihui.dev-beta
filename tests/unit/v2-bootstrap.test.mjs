@@ -1,4 +1,5 @@
 import { Script, createContext } from "node:vm";
+import { readFile, readdir } from "node:fs/promises";
 import { beforeAll, describe, expect, test, vi } from "vitest";
 import { build } from "vite";
 import config from "../../vite.v2.config.mjs";
@@ -44,7 +45,11 @@ describe("v2 initial theme build contract", () => {
   });
 
   test("emits exactly Home, About, Works and Posts in three locales with translated static metadata", () => {
-    expect(output.filter((entry) => entry.fileName.endsWith(".html")).map((entry) => entry.fileName).sort())
+    const documents = output.filter((entry) => entry.fileName.endsWith(".html"));
+    expect(documents).toHaveLength(13);
+    const content = documents.filter((entry) => entry.fileName !== "404.html");
+    expect(content).toHaveLength(12);
+    expect(content.map((entry) => entry.fileName).sort())
       .toEqual(["about/index.html", "en/about/index.html", "en/index.html", "en/posts/index.html", "en/works/index.html", "index.html", "ja/about/index.html", "ja/index.html", "ja/posts/index.html", "ja/works/index.html", "posts/index.html", "works/index.html"]);
     for (const [locale, page] of supportedLocales.flatMap((locale) => ["about", "works", "posts"].map((page) => [locale, page]))) {
       const route = localeHref(locale, "", page);
@@ -56,6 +61,39 @@ describe("v2 initial theme build contract", () => {
       expect(html).toContain(`<meta name="description" content="${copy.description}">`);
       expect(html).not.toMatch(/\{\{|(?:src|href)="(?:\/v2\/|\/vendor\/)|src="https?:\/\//g);
     }
+  });
+
+  test("reserved error URLs rewrite only to an absent static target", async () => {
+    const rules = await readFile(new URL("../../v2/public/_redirects", import.meta.url), "utf8");
+    expect(rules.trim().split(/\r?\n/)).toEqual([
+      "/404.html /__v2-not-found__/ 200",
+      "/404 /__v2-not-found__/ 200",
+    ]);
+    const publicFiles = await readdir(new URL("../../v2/public/", import.meta.url), { recursive: true });
+    const files = [...output.map((entry) => entry.fileName), ...publicFiles];
+    expect(files.some((file) => file.replaceAll("\\", "/").startsWith("__v2-not-found__"))).toBe(false);
+  });
+
+  test("the single shared error document is script-free with three native escape links", () => {
+    const errors = output.filter((entry) => entry.fileName === "404.html");
+    expect(errors).toHaveLength(1);
+    const html = String(errors[0].source);
+    expect(html).toContain('<main class="not-found">');
+    expect(html.match(/<h1\b/g)).toHaveLength(1);
+    expect(html).toContain("<h1>404</h1>");
+    expect(html.match(/<h2\b/g)).toHaveLength(3);
+    expect([...html.matchAll(/<a href="([^"]+)" hreflang="([^"]+)"/g)].map((match) => match.slice(1)))
+      .toEqual([["/", "zh-Hant"], ["/en/", "en"], ["/ja/", "ja"]]);
+    expect(html).not.toMatch(/<script\b|<style\b|\bstyle=|\bon\w+=|main\.ts|modulepreload|id="app"|<nav\b|<footer\b|https?:\/\//i);
+    const styles = [...html.matchAll(/<link rel="stylesheet"[^>]*href="([^"]+)"/g)];
+    expect(styles.length).toBeGreaterThan(0);
+    for (const [, path] of styles) {
+      expect(path).toMatch(/^\/assets\/[\w.-]+\.css$/);
+      expect(output.some((entry) => `/${entry.fileName}` === path)).toBe(true);
+    }
+    const routes = supportedLocales.flatMap((locale) => ["home", "about", "works", "posts"].map((page) => localeHref(locale, "", page)));
+    expect(new Set(routes).size).toBe(12);
+    expect(routes).not.toContain("/404.html");
   });
 
   test("the generated bootstrap parses as a classic script without module or dynamic-code execution", () => {

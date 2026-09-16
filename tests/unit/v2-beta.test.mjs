@@ -1,10 +1,45 @@
 import { readFile } from "node:fs/promises";
 import { expect, test, vi } from "vitest";
 import { parseDocument } from "yaml";
-import { betaSmokeTarget, cloudflareJsdBootstrap, failedRequestMetadata, inspectDocument, isResponsiveImageCancellation, jsdConsoleText, validateBrowserEvidence, responseMetadata, securityHeaders, validateResponse, validateSecurityHeaders } from "../support/v2-beta-contract.mjs";
+import { betaSmokeTarget, cloudflareJsdBootstrap, failedRequestMetadata, inspectDocument, isNotFoundConsole, isResponsiveImageCancellation, jsdConsoleText, validateBrowserEvidence, responseMetadata, securityHeaders, validateResponse, validateNotFoundResponse, validateSecurityHeaders } from "../support/v2-beta-contract.mjs";
 import { parseCustomDomainEnabled } from "../scripts/beta-deployment-sync.mjs";
 
 const read = (path) => readFile(new URL(`../../${path}`, import.meta.url), "utf8");
+
+test.each(["Not Found", ""])("404 console attribution pins the URL, location and reason phrase: %s", (reason) => {
+  const url = "https://12345678.huihuidev-beta.pages.dev/fr/";
+  const message = { text: `Failed to load resource: the server responded with a status of 404 (${reason})`, location: { url, lineNumber: 0, columnNumber: 0 } };
+  expect(isNotFoundConsole(message, url)).toBe(true);
+  for (const change of [
+    { text: message.text.replace("404", "403") }, { text: `${message.text} extra` },
+    { text: "Unrelated error" }, { location: undefined },
+    { location: { ...message.location, url: `${url}?private=value` } },
+    { location: { ...message.location, url: "https://other.test/fr/" } },
+    { location: { ...message.location, lineNumber: 1 } },
+    { location: { ...message.location, columnNumber: 1 } },
+  ]) expect(isNotFoundConsole({ ...message, ...change }, url)).toBe(false);
+  expect(isNotFoundConsole(message, "https://12345678.huihuidev-beta.pages.dev/")).toBe(false);
+});
+
+test("expected 404 has a dedicated fail-closed contract; content still requires 200", async () => {
+  const url = "https://12345678.huihuidev-beta.pages.dev/fr/";
+  const expectedHeaders = securityHeaders(await read("v2/public/_headers"));
+  const html = await read("v2/404.html");
+  const response = { status: 404, url, redirected: false, headers: { ...expectedHeaders, "cache-control": "no-store", "content-type": "text/html; charset=utf-8" }, html };
+  expect(() => validateNotFoundResponse(response, url, html, expectedHeaders)).not.toThrow();
+  expect(() => validateResponse(response, url, "content")).toThrow("HTTP failure");
+  for (const change of [
+    { status: 200 }, { status: 403 }, { status: 500 }, { redirected: true },
+    { url: "https://12345678.huihuidev-beta.pages.dev/" }, { html: "Home" },
+    { headers: { ...response.headers, "cf-mitigated": "challenge" } },
+    { headers: { ...response.headers, "content-type": "text/plain" } },
+    { headers: { ...response.headers, "content-security-policy-report-only": "" } },
+    ...["", "no-cache", expectedHeaders["cache-control"], "public, max-age=86400"]
+      .map((value) => ({ headers: { ...response.headers, "cache-control": value } })),
+    ...Object.keys(expectedHeaders).map((key) => ({ headers: { ...response.headers, [key]: undefined } })),
+  ]) expect(() => validateNotFoundResponse({ ...response, ...change }, url, html, expectedHeaders)).toThrow();
+  expect(() => validateNotFoundResponse(response, "https://12345678.huihuidev-beta.pages.dev/en/", html, expectedHeaders)).toThrow("dedicated unknown-path probe");
+});
 
 test("failed request diagnostics retain Chromium evidence without leaking URL secrets", () => {
   const origin = "https://1234abcd.huihuidev-beta.pages.dev";
