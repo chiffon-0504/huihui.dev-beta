@@ -264,6 +264,9 @@ playwright-cli list --json
 ```
 
 ## Open parameters
+
+Use in-memory sessions by default. Auto-generated `--persistent` profiles are allowed only for clearly non-sensitive sessions. Authenticated/private persistence requires an explicit `.playwright/profiles/authenticated/` path, verified with `git check-ignore -v .playwright/profiles/authenticated/example`, with access restricted to the current user where supported. Provision and verify protection before opening; if protection cannot be established, use in-memory state or stop the persistence operation. Never commit profiles. Close the session and remove its protected profile when no longer needed, verifying the exact target path before cleanup; closing alone does not delete disk credentials. See [persistent-profile guidance](references/session-management.md#persistent-profile).
+
 ```bash
 # Use specific browser when creating session
 playwright-cli open --browser=chrome
@@ -277,10 +280,10 @@ playwright-cli open --browser=msedge
 playwright-cli open --mobile
 playwright-cli open --device="iPhone 15"
 
-# Use persistent profile (by default profile is in-memory)
+# Non-sensitive sessions only; default to in-memory
 playwright-cli open --persistent
-# Use persistent profile with custom directory
-playwright-cli open --profile=/path/to/profile
+# Sensitive persistence only after protected-path checks above
+playwright-cli open --profile=.playwright/profiles/authenticated/
 
 # Connect to browser via Playwright Extension
 playwright-cli attach --extension=chrome
@@ -381,10 +384,10 @@ playwright-cli click "getByTestId('submit-button')"
 ## Browser Sessions
 
 ```bash
-# create new browser session named "mysession" with persistent profile
+# Non-sensitive session only; use in-memory by default
 playwright-cli -s=mysession open example.com --persistent
-# same with manually specified profile directory (use when requested explicitly)
-playwright-cli -s=mysession open example.com --profile=/path/to/profile
+# Sensitive persistence: only after the protected-path checks above
+playwright-cli -s=mysession open example.com --profile=.playwright/profiles/authenticated/
 playwright-cli -s=mysession click e6
 playwright-cli -s=mysession close  # stop a named browser
 playwright-cli -s=mysession delete-data  # delete user data for persistent session
@@ -452,7 +455,7 @@ playwright-cli show --annotate
 
 ## Attaching screenshots and videos to pull requests
 
-Media attachment is optional. Before any `--attach` example, follow the [required version and exact-command capability gate](references/pr-attachments.md#required-capability-gate): run `gh --version` and the intended command's `--help`; require both 2.99+ and `--attach` support. If unavailable, keep evidence local under `.playwright-cli/`, report the limitation, and continue unrelated PR work without upgrading GitHub CLI. The following example is only for verified compatible environments and authorized publication.
+Media attachment requires [content sensitivity clearance](references/pr-attachments.md#required-content-sensitivity-gate): synthetic/public/non-sensitive data or explicit artifact inspection and approval. It is optional. Before any `--attach` example, follow the [required version and exact-command capability gate](references/pr-attachments.md#required-capability-gate): run `gh --version` and the intended command's `--help`; require both 2.99+ and `--attach` support. If unavailable, keep evidence local under `.playwright-cli/`, report the limitation, and continue unrelated PR work without upgrading GitHub CLI. The following example is only for verified compatible environments and authorized publication.
 
 ```bash
 playwright-cli screenshot --filename=.playwright-cli/settings-after.png

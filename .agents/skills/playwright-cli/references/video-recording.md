@@ -132,7 +132,7 @@ Embrace creativity, overlays are powerful.
 
 ### 3. Attach the recording to the pull request
 
-Publishing a recording is optional. First follow the [required capability gate](pr-attachments.md#required-capability-gate): verify `gh --version` is 2.99+ and the exact operation's `--help` contains `--attach`. Only then use the examples below for authorized publication. Otherwise keep the recording local under `.playwright-cli/`, report the missing attachment capability, and continue unrelated PR work; do not upgrade GitHub CLI automatically. If visual evidence cannot be omitted, report the blocker rather than inventing an upload mechanism.
+Publishing requires [content sensitivity clearance](pr-attachments.md#required-content-sensitivity-gate): synthetic/public/non-sensitive data or explicit artifact inspection and approval. Publishing a recording is optional. Also follow the [required capability gate](pr-attachments.md#required-capability-gate): verify `gh --version` is 2.99+ and the exact operation's `--help` contains `--attach`. Only then use the examples below for authorized publication. Otherwise keep the recording local under `.playwright-cli/`, report the missing attachment capability, and continue unrelated PR work; do not upgrade GitHub CLI automatically. If visual evidence cannot be omitted, report the blocker rather than inventing an upload mechanism.
 
 ```bash
 gh pr create --title "feat(todo): add items inline" --body-file body.md --attach .playwright-cli/demo.webm

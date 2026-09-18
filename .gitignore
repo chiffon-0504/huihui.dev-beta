@@ -16,3 +16,6 @@ v2/dist/
 
 # Ephemeral Playwright CLI browser investigation artifacts
 /.playwright-cli/
+
+# Sensitive local persistent browser profiles
+/.playwright/profiles/

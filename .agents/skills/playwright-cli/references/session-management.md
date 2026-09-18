@@ -97,14 +97,14 @@ playwright-cli -s=variant-b screenshot
 
 ### Persistent Profile
 
-By default, browser profile is kept in memory only. Use `--persistent` flag on `open` to persist the browser profile to disk:
+Use in-memory sessions by default. Auto-generated `--persistent` profiles are allowed only for clearly non-sensitive sessions. Authenticated/private persistence requires an explicit `.playwright/profiles/authenticated/` path, verified with `git check-ignore -v .playwright/profiles/authenticated/example`, with access restricted to the current user where supported. Provision and verify protection before opening; if protection cannot be established, use in-memory state or stop the persistence operation. Never commit profiles. Close the session and remove its protected profile when no longer needed, verifying the exact target path before cleanup; closing alone does not delete disk credentials.
 
 ```bash
-# Use persistent profile (auto-generated location)
+# Non-sensitive sessions only; otherwise use the protected explicit path below
 playwright-cli open https://example.com --persistent
 
-# Use persistent profile with custom directory
-playwright-cli open https://example.com --profile=/path/to/profile
+# After provisioning and verifying the protected directory
+playwright-cli open https://example.com --profile=.playwright/profiles/authenticated/
 ```
 
 ## Attaching to a Running Browser
@@ -188,7 +188,7 @@ playwright-cli open https://example.com --browser=firefox
 # Open in headed mode
 playwright-cli open https://example.com --headed
 
-# Open with persistent profile
+# Non-sensitive sessions only; sensitive persistence must follow Persistent Profile above
 playwright-cli open https://example.com --persistent
 ```
 

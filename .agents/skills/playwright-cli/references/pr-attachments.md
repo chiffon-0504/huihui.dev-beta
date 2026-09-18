@@ -2,6 +2,10 @@
 
 `gh` 2.99+ uploads local images and videos with the repeatable `--attach` flag on `gh pr create`, `gh pr comment`, `gh pr edit`, `gh issue create`, `gh issue comment` and `gh issue edit`. PNG, JPEG, GIF, WebP, SVG, MP4, MOV and WebM are accepted, so `playwright-cli screenshot` and `video-start` output can be attached as is.
 
+## Required content sensitivity gate
+
+Before any PR/Issue media publication, either establish that the test uses only synthetic, public, non-sensitive data, or have a human/authorized agent explicitly inspect and approve each artifact for publication. Failure media can expose user/account data, session identifiers, credentials, private DOM state, and confidential console/network-visible content. No automatic redaction is provided. Publication requires this content gate, the capability gate below, and explicit publication authorization.
+
 ## Required capability gate
 
 Media attachment is optional. Before using any `--attach` example in this Skill, run `gh --version` and inspect help for the exact operation you intend to use:
@@ -54,42 +58,16 @@ Reference the file in the body as `![alt](.playwright-cli/settings-after.png)` t
 
 ## From CI
 
-The optional attachment step checks the runner capability before publishing artifacts from `test-results`. An unsupported runner skips only this step; the preceding test step retains its original failure status (no `continue-on-error` or test-status override). No CLI installation or upgrade is performed.
+Do not automatically discover and publish arbitrary failure media from `test-results` into a PR. The default flow is: collect output, retain it through the repository's existing approved CI-artifact handling, and perform no automatic PR media upload. CI artifacts are not automatically safe either: respect existing access and retention controls; if storage is not approved for the content, report the limitation instead of adding an upload destination.
 
 ```yaml
-permissions:
-  pull-requests: write
 steps:
   - run: npx playwright test
-  - name: Attach failure screenshots and videos to the PR
-    if: failure() && github.event_name == 'pull_request'
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    run: |
-      gh_version=$(gh --version) || {
-        echo "Media attachment skipped: GitHub CLI version unavailable."
-        exit 0
-      }
-      printf '%s\n' "$gh_version"
-      gh_number=$(printf '%s\n' "$gh_version" | head -1 | awk '{print $3}')
-      if ! printf '%s\n' "$gh_number" | awk -F. 'NF == 3 && $1 ~ /^[0-9]+$/ && $2 ~ /^[0-9]+$/ && $3 ~ /^[0-9]+$/ && ($1 > 2 || ($1 == 2 && $2 >= 99)) { ok=1 } END { exit !ok }'; then
-        echo "Media attachment skipped: GitHub CLI 2.99+ is required."
-        exit 0
-      fi
-      attach_help=$(gh pr comment --help) || {
-        echo "Media attachment skipped: command help unavailable."
-        exit 0
-      }
-      if ! printf '%s\n' "$attach_help" | grep -q -- '--attach'; then
-        echo "Media attachment skipped: gh pr comment lacks --attach."
-        exit 0
-      fi
-      files=$(find test-results -name '*.png' -o -name '*.webm' | head -20)
-      if [ -n "$files" ]; then
-        gh pr comment ${{ github.event.pull_request.number }} \
-          --body "Failure screenshots and videos from run ${{ github.run_id }}." \
-          $(printf -- '--attach %s ' $files)
-      fi
+  - name: Report local failure evidence
+    if: failure()
+    run: echo "Failure media remains in test-results for approved CI-artifact handling; no automatic PR upload."
 ```
 
-For a polished walkthrough of a new feature, record a hero script as described in [video-recording.md](video-recording.md) and attach the resulting WebM the same way.
+Use the existing workflow's approved artifact collection rather than adding one from this example. The original test step keeps its failure status; do not use `continue-on-error` or override its result. No GitHub CLI installation or upgrade is performed.
+
+A separately authorized publication step may select specific artifacts only after an explicit synthetic/public/non-sensitive guarantee or per-artifact inspection and approval, then repeat `gh --version` and the exact command's `--help` capability checks. Never treat a successful capability check as permission to publish sensitive content. For a walkthrough, [video-recording.md](video-recording.md) follows the same two gates.
