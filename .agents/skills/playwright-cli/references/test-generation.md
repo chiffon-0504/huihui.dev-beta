@@ -17,24 +17,24 @@ Every action you perform with `playwright-cli` generates corresponding Playwrigh
 
 ```bash
 # Start a session
-playwright-cli open https://example.com/login
+playwright-cli open https://example.com/contact
 
 # Take a snapshot to see elements
 playwright-cli snapshot
-# Output shows: e1 [textbox "Email"], e2 [textbox "Password"], e3 [button "Sign In"]
+# Output shows: e1 [textbox "Email"], e2 [textbox "Message"], e3 [button "Send"]
 
 # Fill form fields - generates code automatically
 playwright-cli fill e1 "user@example.com"
 # Ran Playwright code:
 # await page.getByRole('textbox', { name: 'Email' }).fill('user@example.com');
 
-playwright-cli fill e2 "password123"
+playwright-cli fill e2 "Please send product information"
 # Ran Playwright code:
-# await page.getByRole('textbox', { name: 'Password' }).fill('password123');
+# await page.getByRole('textbox', { name: 'Message' }).fill('Please send product information');
 
 playwright-cli click e3
 # Ran Playwright code:
-# await page.getByRole('button', { name: 'Sign In' }).click();
+# await page.getByRole('button', { name: 'Send' }).click();
 ```
 
 ### Building a test file
@@ -44,15 +44,15 @@ Collect the generated code into a Playwright test:
 ```typescript
 import { test, expect } from '@playwright/test';
 
-test('login flow', async ({ page }) => {
+test('contact form', async ({ page }) => {
   // Generated code from playwright-cli session:
-  await page.goto('https://example.com/login');
+  await page.goto('https://example.com/contact');
   await page.getByRole('textbox', { name: 'Email' }).fill('user@example.com');
-  await page.getByRole('textbox', { name: 'Password' }).fill('password123');
-  await page.getByRole('button', { name: 'Sign In' }).click();
+  await page.getByRole('textbox', { name: 'Message' }).fill('Please send product information');
+  await page.getByRole('button', { name: 'Send' }).click();
 
   // Add assertions
-  await expect(page).toHaveURL(/.*dashboard/);
+  await expect(page).toHaveURL(/.*thank-you/);
 });
 ```
 
@@ -320,21 +320,21 @@ Collect the generated code and write the test file at the path given in the spec
 // seed: tests/seed.spec.ts
 import { test, expect } from './fixtures';   // or '@playwright/test' if no fixtures file
 
-test.describe('Signing in and out', () => {
-  test('should sign in', async ({ page }) => {
+test.describe('Contact form', () => {
+  test('should send a message', async ({ page }) => {
     // 1. Navigate to the application
     // (handled by the seed fixture)
 
-    // 2. Type 'John Doe' into the username field
-    await page.getByRole('textbox', { name: 'username' }).fill('John Doe');
+    // 2. Type 'John Doe' into the name field
+    await page.getByRole('textbox', { name: 'Name' }).fill('John Doe');
 
-    // 3. Type password
-    await page.getByRole('textbox', { name: 'password' }).fill('TestPassword');
+    // 3. Type a non-sensitive message
+    await page.getByRole('textbox', { name: 'Message' }).fill('Please send product information');
 
     // 4. Press Enter to submit
-    await page.getByRole('textbox', { name: 'password' }).press('Enter');
+    await page.getByRole('textbox', { name: 'Message' }).press('Enter');
 
-    await expect(page.getByRole('heading')).toContainText('Welcome, John Doe!');
+    await expect(page.getByRole('heading')).toContainText('Thank you, John Doe!');
   });
 });
 ```

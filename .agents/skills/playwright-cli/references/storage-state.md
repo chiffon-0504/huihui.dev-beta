@@ -4,23 +4,24 @@ Manage cookies, localStorage, sessionStorage, and browser storage state.
 
 ## Storage State
 
-Save and restore complete browser state including cookies and storage.
+Save and restore complete browser state including cookies and storage. Authentication state can contain credentials and session tokens and must never be committed.
+
+Use only `.playwright/auth/auth-state.json`, covered by the repository rule `/.playwright/auth/`. Before saving, provision the directory with access restricted to the current user through a repository-approved mechanism and run `git check-ignore -v .playwright/auth/auth-state.json`. If protected storage is unavailable, stop the save operation. Git ignore rules prevent accidental staging but do not restrict filesystem access.
+
+Never pass passwords, tokens, API keys, or other secrets in CLI arguments, embedded code, or expanded environment variables. Use an already-authenticated session or repository-approved protected authentication mechanism. Do not print credential-bearing cookies or storage to tool output or logs; the inspection examples below are for non-sensitive state only.
 
 ### Save Storage State
 
 ```bash
-# Save to auto-generated filename (storage-state-{timestamp}.json)
-playwright-cli state-save
-
-# Save to specific filename
-playwright-cli state-save my-auth-state.json
+# Save only to the protected, Git-ignored path
+playwright-cli state-save .playwright/auth/auth-state.json
 ```
 
 ### Restore Storage State
 
 ```bash
 # Load storage state from file
-playwright-cli state-load my-auth-state.json
+playwright-cli state-load .playwright/auth/auth-state.json
 
 # Reload page to apply cookies
 playwright-cli open https://example.com
@@ -34,8 +35,8 @@ The saved file contains:
 {
   "cookies": [
     {
-      "name": "session_id",
-      "value": "abc123",
+      "name": "theme",
+      "value": "dark",
       "domain": "example.com",
       "path": "/",
       "expires": 1893456000,
@@ -79,20 +80,20 @@ playwright-cli cookie-list --path=/api
 ### Get Specific Cookie
 
 ```bash
-playwright-cli cookie-get session_id
+playwright-cli cookie-get theme
 ```
 
 ### Set a Cookie
 
 ```bash
 # Basic cookie
-playwright-cli cookie-set session abc123
+playwright-cli cookie-set theme dark
 
 # Cookie with options
-playwright-cli cookie-set session abc123 --domain=example.com --path=/ --httpOnly --secure --sameSite=Lax
+playwright-cli cookie-set theme dark --domain=example.com --path=/ --httpOnly --secure --sameSite=Lax
 
 # Cookie with expiration (Unix timestamp)
-playwright-cli cookie-set remember_me token123 --expires=1893456000
+playwright-cli cookie-set theme dark --expires=1893456000
 ```
 
 ### Delete a Cookie
@@ -114,7 +115,7 @@ For complex scenarios like adding multiple cookies at once, use `run-code`:
 ```bash
 playwright-cli run-code "async page => {
   await page.context().addCookies([
-    { name: 'session_id', value: 'sess_abc123', domain: 'example.com', path: '/', httpOnly: true },
+    { name: 'language', value: 'en', domain: 'example.com', path: '/' },
     { name: 'preferences', value: JSON.stringify({ theme: 'dark' }), domain: 'example.com', path: '/' }
   ]);
 }"
@@ -131,7 +132,7 @@ playwright-cli localstorage-list
 ### Get Single Value
 
 ```bash
-playwright-cli localstorage-get token
+playwright-cli localstorage-get theme
 ```
 
 ### Set Value
@@ -149,7 +150,7 @@ playwright-cli localstorage-set user_settings '{"theme":"dark","language":"en"}'
 ### Delete Single Item
 
 ```bash
-playwright-cli localstorage-delete token
+playwright-cli localstorage-delete theme
 ```
 
 ### Clear All localStorage
@@ -165,7 +166,7 @@ For complex scenarios like setting multiple values at once, use `run-code`:
 ```bash
 playwright-cli run-code "async page => {
   await page.evaluate(() => {
-    localStorage.setItem('token', 'jwt_abc123');
+    localStorage.setItem('theme', 'dark');
     localStorage.setItem('user_id', '12345');
     localStorage.setItem('expires_at', Date.now() + 3600000);
   });
@@ -232,18 +233,14 @@ playwright-cli run-code "async page => {
 ### Authentication State Reuse
 
 ```bash
-# Step 1: Login and save state
-playwright-cli open https://app.example.com/login
-playwright-cli snapshot
-playwright-cli fill e1 "user@example.com"
-playwright-cli fill e2 "password123"
-playwright-cli click e3
+# Step 1: Use an already-authenticated session established through a
+# repository-approved protected mechanism; do not enter credentials via CLI.
 
 # Save the authenticated state
-playwright-cli state-save auth.json
+playwright-cli state-save .playwright/auth/auth-state.json
 
 # Step 2: Later, restore state and skip login
-playwright-cli state-load auth.json
+playwright-cli state-load .playwright/auth/auth-state.json
 playwright-cli open https://app.example.com/dashboard
 # Already logged in!
 ```
@@ -251,17 +248,17 @@ playwright-cli open https://app.example.com/dashboard
 ### Save and Restore Roundtrip
 
 ```bash
-# Set up authentication state
+# Set up non-sensitive demonstration state
 playwright-cli open https://example.com
-playwright-cli eval "() => { document.cookie = 'session=abc123'; localStorage.setItem('user', 'john'); }"
+playwright-cli eval "() => { document.cookie = 'theme=dark'; localStorage.setItem('user', 'john'); }"
 
 # Save state to file
-playwright-cli state-save my-session.json
+playwright-cli state-save .playwright/auth/auth-state.json
 
 # ... later, in a new session ...
 
 # Restore state
-playwright-cli state-load my-session.json
+playwright-cli state-load .playwright/auth/auth-state.json
 playwright-cli open https://example.com
 # Cookies and localStorage are restored!
 ```
@@ -269,7 +266,7 @@ playwright-cli open https://example.com
 ## Security Notes
 
 - Never commit storage state files containing auth tokens
-- Add `*.auth-state.json` to `.gitignore`
+- Save only to the protected `.playwright/auth/auth-state.json` path; verify it is Git-ignored before each save
 - Delete state files after automation completes
-- Use environment variables for sensitive data
+- Never expand secrets from environment variables into commands or print them to logs
 - By default, sessions run in-memory mode which is safer for sensitive operations

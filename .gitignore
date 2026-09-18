@@ -10,3 +10,6 @@ v2/dist/
 .env.*
 .dev.vars
 .dev.vars.*
+
+# Sensitive local Playwright authentication state
+/.playwright/auth/

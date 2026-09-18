@@ -6,6 +6,10 @@ allowed-tools: Bash(playwright-cli:*) Bash(npx:*) Bash(npm:*)
 
 # Browser Automation with playwright-cli
 
+Never pass passwords, tokens, API keys, or other secrets as command-line arguments, including embedded code or expanded environment variables. Use an already-authenticated session or another repository-approved protected authentication mechanism. Do not print credentials to tool output or logs.
+
+Authentication state may contain credentials and session tokens. Before saving, provision `.playwright/auth/` with access restricted to the current user through a repository-approved mechanism and verify `git check-ignore -v .playwright/auth/auth-state.json`. Never commit authentication state; Git ignore rules alone do not protect filesystem access.
+
 ## Quick start
 
 ```bash
@@ -116,16 +120,15 @@ playwright-cli tab-select 0
 ### Storage
 
 ```bash
-playwright-cli state-save
-playwright-cli state-save auth.json
-playwright-cli state-load auth.json
+playwright-cli state-save .playwright/auth/auth-state.json
+playwright-cli state-load .playwright/auth/auth-state.json
 
 # Cookies
 playwright-cli cookie-list
 playwright-cli cookie-list --domain=example.com
-playwright-cli cookie-get session_id
-playwright-cli cookie-set session_id abc123
-playwright-cli cookie-set session_id abc123 --domain=example.com --httpOnly --secure
+playwright-cli cookie-get theme
+playwright-cli cookie-set theme dark
+playwright-cli cookie-set theme dark --domain=example.com --httpOnly --secure
 playwright-cli cookie-delete session_id
 playwright-cli cookie-clear
 
@@ -255,7 +258,7 @@ playwright-cli --raw snapshot > before.yml
 playwright-cli click e5
 playwright-cli --raw snapshot > after.yml
 diff before.yml after.yml
-TOKEN=$(playwright-cli --raw cookie-get session_id)
+playwright-cli --raw cookie-get theme
 playwright-cli --raw localstorage-get theme
 ```
 
@@ -418,7 +421,7 @@ playwright-cli open https://example.com/form
 playwright-cli snapshot
 
 playwright-cli fill e1 "user@example.com"
-playwright-cli fill e2 "password123"
+playwright-cli fill e2 "Please send product information"
 playwright-cli click e3
 playwright-cli snapshot
 playwright-cli close

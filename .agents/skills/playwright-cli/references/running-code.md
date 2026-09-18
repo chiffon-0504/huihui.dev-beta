@@ -217,16 +217,16 @@ playwright-cli run-code "async page => {
 ## Complex Workflows
 
 ```bash
-# Login and save state
+# Use an already-authenticated session established through a repository-approved
+# protected mechanism. Never pass credentials in CLI arguments or embedded code.
+# Before saving, provision .playwright/auth/ with current-user-only access and
+# verify its repository ignore rule; stop if protected storage is unavailable.
+git check-ignore -v .playwright/auth/auth-state.json
 playwright-cli run-code "async page => {
-  await page.goto('https://example.com/login');
-  await page.getByRole('textbox', { name: 'Email' }).fill('user@example.com');
-  await page.getByRole('textbox', { name: 'Password' }).fill('secret');
-  await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.waitForURL('**/dashboard');
-  await page.context().storageState({ path: 'auth.json' });
-  return 'Login successful';
+  await page.context().storageState({ path: '.playwright/auth/auth-state.json' });
+  return 'State saved';
 }"
+# Authentication state contains credentials/session tokens: never commit it.
 
 # Scrape data from multiple pages
 playwright-cli run-code "async page => {
