@@ -13,3 +13,6 @@ v2/dist/
 
 # Sensitive local Playwright authentication state
 /.playwright/auth/
+
+# Ephemeral Playwright CLI browser investigation artifacts
+/.playwright-cli/

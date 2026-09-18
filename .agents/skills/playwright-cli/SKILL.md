@@ -10,6 +10,16 @@ Never pass passwords, tokens, API keys, or other secrets as command-line argumen
 
 Authentication state may contain credentials and session tokens. Before saving, provision `.playwright/auth/` with access restricted to the current user through a repository-approved mechanism and verify `git check-ignore -v .playwright/auth/auth-state.json`. Never commit authentication state; Git ignore rules alone do not protect filesystem access.
 
+## Repository invocation and artifact policy
+
+Canonical command documentation: [microsoft/playwright-cli](https://github.com/microsoft/playwright-cli/tree/12228454ed024c9ac89abd59df3b706ed9135fd9/skills/playwright-cli), commit `12228454ed024c9ac89abd59df3b706ed9135fd9`, with repository-specific security adaptations. Reinstalling upstream can overwrite these adaptations; review and preserve them on updates.
+
+Every `playwright-cli ...` example in this Skill and its references means `npx --yes @playwright/cli@0.1.20 ...` (`npx.cmd` in Windows PowerShell). No global installation is required or permitted by this Skill. Do not select `npx playwright cli` based on the presence of local Playwright. The repository's automated `@playwright/test` runner is separate: do not install, upgrade, or change its dependencies or configuration for this Skill. Test-debugging examples depend on runner capabilities; if unavailable, report the limitation without upgrading the test stack.
+
+Keep generated snapshots, screenshots, videos, downloads, and logs under the Git-ignored `.playwright-cli/` workspace. Create required output directories before saving. Never capture or print credentials/private data in screenshots, recordings, snapshots, network output, or logs. Inspect artifacts for sensitive content before any separately authorized sharing; Git ignore is not access control or redaction.
+
+Tracing is limited to public unauthenticated pages, local fixtures, or synthetic data without reusable credentials. Do not start tracing on authenticated, credential-bearing, private, or sensitive sessions. Any future authenticated-trace exception requires separate explicit authorization and an approved protected-storage/redaction procedure; none is provided here. See [tracing restrictions](references/tracing.md).
+
 ## Quick start
 
 ```bash
@@ -101,9 +111,9 @@ playwright-cli mousewheel 0 100
 ```bash
 playwright-cli screenshot
 playwright-cli screenshot e5
-playwright-cli screenshot --filename=page.png
+playwright-cli screenshot --filename=.playwright-cli/page.png
 playwright-cli screenshot --hires
-playwright-cli pdf --filename=page.pdf
+playwright-cli pdf --filename=.playwright-cli/page.pdf
 ```
 
 ### Tabs
@@ -147,21 +157,6 @@ playwright-cli sessionstorage-delete step
 playwright-cli sessionstorage-clear
 ```
 
-### Emulation
-
-```bash
-playwright-cli set-color-scheme dark
-playwright-cli clear-color-scheme
-playwright-cli set-reduced-motion reduce
-playwright-cli clear-reduced-motion
-playwright-cli set-forced-colors active
-playwright-cli clear-forced-colors
-playwright-cli set-contrast more
-playwright-cli clear-contrast
-playwright-cli set-media print
-playwright-cli clear-media
-```
-
 ### Network
 
 ```bash
@@ -181,6 +176,7 @@ playwright-cli requests
 playwright-cli request 5
 playwright-cli run-code "async page => await page.context().grantPermissions(['geolocation'])"
 playwright-cli run-code --filename=script.js
+# Non-sensitive, unauthenticated session only; see tracing restrictions.
 playwright-cli tracing-start
 playwright-cli tracing-stop
 
@@ -188,12 +184,12 @@ playwright-cli tracing-stop
 playwright-cli recording-start
 playwright-cli recording-stop
 
-playwright-cli video-start video.webm
+playwright-cli video-start .playwright-cli/video.webm
 playwright-cli video-chapter "Chapter Title" --description="Details" --duration=2000
 playwright-cli video-stop
 
-# annotate each subsequent action (click, type, ...) with a callout naming the action, optionally styling the action point and target highlight
-playwright-cli video-show-actions --duration=600 --position=top-right --highlight-style="outline: 2px solid #333"
+# annotate each subsequent action (click, type, ...) with a callout naming the action and highlighting the target
+playwright-cli video-show-actions --duration=600 --position=top-right
 playwright-cli video-hide-actions
 
 # launch the dashboard for UI review / design feedback — user annotates the page, you receive the annotated screenshot, snapshot, and notes
@@ -253,11 +249,11 @@ The global `--raw` option strips page status, generated code, and snapshot secti
 
 ```bash
 playwright-cli --raw eval "JSON.stringify(performance.timing)" | jq '.loadEventEnd - .navigationStart'
-playwright-cli --raw eval "JSON.stringify([...document.querySelectorAll('a')].map(a => a.href))" > links.json
-playwright-cli --raw snapshot > before.yml
+playwright-cli --raw eval "JSON.stringify([...document.querySelectorAll('a')].map(a => a.href))" > .playwright-cli/links.json
+playwright-cli --raw snapshot > .playwright-cli/before.yml
 playwright-cli click e5
-playwright-cli --raw snapshot > after.yml
-diff before.yml after.yml
+playwright-cli --raw snapshot > .playwright-cli/after.yml
+diff .playwright-cli/before.yml .playwright-cli/after.yml
 playwright-cli --raw cookie-get theme
 playwright-cli --raw localstorage-get theme
 ```
@@ -339,7 +335,7 @@ You can also take a snapshot on demand using `playwright-cli snapshot` command. 
 playwright-cli snapshot
 
 # save to file, use when snapshot is a part of the workflow result
-playwright-cli snapshot --filename=after-click.yaml
+playwright-cli snapshot --filename=.playwright-cli/after-click.yaml
 
 # snapshot an element instead of the whole page
 playwright-cli snapshot "#main"
@@ -400,20 +396,6 @@ playwright-cli close-all
 playwright-cli kill-all
 ```
 
-## Installation
-
-If global `playwright-cli` command is not available, try a local version via `npx playwright cli`:
-
-```bash
-npx --no-install playwright --version
-```
-
-When local version is available, use `npx playwright cli` in all commands. Otherwise, install `playwright-cli` as a global command:
-
-```bash
-npm install -g @playwright/cli@latest
-```
-
 ## Example: Form submission
 
 ```bash
@@ -451,6 +433,7 @@ playwright-cli close
 
 ```bash
 playwright-cli open https://example.com
+# Non-sensitive, unauthenticated session only; see tracing restrictions.
 playwright-cli tracing-start
 playwright-cli click e4
 playwright-cli fill e7 "test"
@@ -472,8 +455,8 @@ playwright-cli show --annotate
 `gh` 2.99+ uploads local images and videos with the repeatable `--attach` flag on `gh pr create`, `gh pr comment` and `gh issue comment`. Attach a screenshot or a short video when it saves the reviewer a checkout: a UI fix, a before/after pair, a new user-facing flow, or the failure state in a bug report.
 
 ```bash
-playwright-cli screenshot --filename=settings-after.png
-gh pr comment 123 --body "Settings page after the fix." --attach ./settings-after.png
+playwright-cli screenshot --filename=.playwright-cli/settings-after.png
+gh pr comment 123 --body "Settings page after the fix." --attach .playwright-cli/settings-after.png
 ```
 
 See [references/pr-attachments.md](references/pr-attachments.md) for alt text, inline references, size limits and attaching test artifacts from CI.

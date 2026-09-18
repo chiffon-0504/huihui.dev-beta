@@ -153,11 +153,7 @@ test -f playwright.config.ts || test -f playwright.config.js
 npx --no-install playwright --version
 ```
 
-If there is no Playwright install, bootstrap one and let the user pick the defaults:
-
-```bash
-npm init playwright@latest
-```
+The repository test runner is separate from the pinned standalone CLI. If it or a required test-debugging capability is unavailable, report that limitation; do not bootstrap or upgrade the automated test stack for this Skill.
 
 ### 1.2 Prerequisite: seed test
 

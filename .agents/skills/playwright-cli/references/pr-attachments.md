@@ -11,22 +11,22 @@ Attach visual evidence when it saves the reviewer a checkout: a screenshot of a 
 ```bash
 # capture the evidence
 playwright-cli open http://localhost:3000/settings
-playwright-cli screenshot --filename=settings-after.png
-playwright-cli video-start settings-flow.webm
+playwright-cli screenshot --filename=.playwright-cli/settings-after.png
+playwright-cli video-start .playwright-cli/settings-flow.webm
 playwright-cli click e5
 playwright-cli fill e7 "New name" --submit
 playwright-cli video-stop
 
 # attach when creating the PR; alt text goes after "#" (images only)
 gh pr create --title "fix(settings): keep name after save" --body-file body.md \
-  --attach './settings-after.png#Settings page after saving' --attach ./settings-flow.webm
+  --attach '.playwright-cli/settings-after.png#Settings page after saving' --attach .playwright-cli/settings-flow.webm
 
 # or comment on an existing PR / issue
-gh pr comment 123 --body "Recorded the new flow end to end." --attach ./settings-flow.webm
-gh issue comment 456 --body "Failure state after submitting the form." --attach ./failure.png
+gh pr comment 123 --body "Recorded the new flow end to end." --attach .playwright-cli/settings-flow.webm
+gh issue comment 456 --body "Failure state after submitting the form." --attach .playwright-cli/failure.png
 ```
 
-Reference the file in the body as `![alt](./settings-after.png)` to place it inline and `gh` rewrites the path to the uploaded URL. Unreferenced attachments are appended at the end in flag order.
+Reference the file in the body as `![alt](.playwright-cli/settings-after.png)` to place it inline and `gh` rewrites the path to the uploaded URL. Unreferenced attachments are appended at the end in flag order.
 
 ## Limits
 

@@ -135,7 +135,7 @@ playwright-cli run-code "async page => {
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('link', { name: 'Download' }).click();
   const download = await downloadPromise;
-  await download.saveAs('./downloaded-file.pdf');
+  await download.saveAs('.playwright-cli/downloaded-file.pdf');
   return download.suggestedFilename();
 }"
 ```

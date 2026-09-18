@@ -9,11 +9,11 @@
       "computedHash": "106acf230014cbb43ca34e6410371321b56ca742f9ee0442e8ec05bf02eb0384"
     },
     "playwright-cli": {
-      "source": "microsoft/playwright",
-      "ref": "main",
+      "source": "microsoft/playwright-cli",
+      "ref": "12228454ed024c9ac89abd59df3b706ed9135fd9",
       "sourceType": "github",
-      "skillPath": "packages/playwright-core/src/tools/skills/playwright-cli/SKILL.md",
-      "computedHash": "ebaff3f4f2436f181e14588d9a1ca582b2b7733a4ff1d077c31024ab48afa5cf"
+      "skillPath": "skills/playwright-cli/SKILL.md",
+      "computedHash": "08b71f8cb7c27fbc3b590517889ce2a706dc08e85d8bd5daa2d4e1251b94f0a4"
     },
     "security-best-practices": {
       "source": "openai/skills",
