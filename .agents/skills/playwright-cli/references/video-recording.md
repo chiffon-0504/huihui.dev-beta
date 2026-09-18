@@ -132,7 +132,7 @@ Embrace creativity, overlays are powerful.
 
 ### 3. Attach the recording to the pull request
 
-A hero script recording is the best proof of work for a user-facing change. GitHub accepts WebM as is, so once the recording looks right, attach it with `gh` 2.99+ instead of describing the flow in words:
+Publishing a recording is optional. First follow the [required capability gate](pr-attachments.md#required-capability-gate): verify `gh --version` is 2.99+ and the exact operation's `--help` contains `--attach`. Only then use the examples below for authorized publication. Otherwise keep the recording local under `.playwright-cli/`, report the missing attachment capability, and continue unrelated PR work; do not upgrade GitHub CLI automatically. If visual evidence cannot be omitted, report the blocker rather than inventing an upload mechanism.
 
 ```bash
 gh pr create --title "feat(todo): add items inline" --body-file body.md --attach .playwright-cli/demo.webm

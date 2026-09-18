@@ -452,7 +452,7 @@ playwright-cli show --annotate
 
 ## Attaching screenshots and videos to pull requests
 
-`gh` 2.99+ uploads local images and videos with the repeatable `--attach` flag on `gh pr create`, `gh pr comment` and `gh issue comment`. Attach a screenshot or a short video when it saves the reviewer a checkout: a UI fix, a before/after pair, a new user-facing flow, or the failure state in a bug report.
+Media attachment is optional. Before any `--attach` example, follow the [required version and exact-command capability gate](references/pr-attachments.md#required-capability-gate): run `gh --version` and the intended command's `--help`; require both 2.99+ and `--attach` support. If unavailable, keep evidence local under `.playwright-cli/`, report the limitation, and continue unrelated PR work without upgrading GitHub CLI. The following example is only for verified compatible environments and authorized publication.
 
 ```bash
 playwright-cli screenshot --filename=.playwright-cli/settings-after.png

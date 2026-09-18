@@ -2,6 +2,23 @@
 
 `gh` 2.99+ uploads local images and videos with the repeatable `--attach` flag on `gh pr create`, `gh pr comment`, `gh pr edit`, `gh issue create`, `gh issue comment` and `gh issue edit`. PNG, JPEG, GIF, WebP, SVG, MP4, MOV and WebM are accepted, so `playwright-cli screenshot` and `video-start` output can be attached as is.
 
+## Required capability gate
+
+Media attachment is optional. Before using any `--attach` example in this Skill, run `gh --version` and inspect help for the exact operation you intend to use:
+
+```bash
+gh --version
+gh pr create --help
+gh pr comment --help
+gh issue comment --help
+```
+
+Proceed only with GitHub CLI 2.99+ **and** `--attach` present in that exact command's help (also check the matching help for edit or issue-create operations). Version parsing alone is not sufficient.
+
+The review reported 2.96.0; the latest check in this repository environment on 2026-09-18 detected 2.97.0. Neither provides `--attach`; all three command help checks above lacked the flag. In this environment, do not execute attachment commands. Keep screenshots/videos local under ignored `.playwright-cli/`, report that media publication was skipped because the installed GitHub CLI lacks the capability, and continue unrelated PR work. If visual evidence is mandatory and cannot be omitted, report the missing capability instead of inventing another upload mechanism. Do not install or upgrade GitHub CLI automatically.
+
+All attachment examples below are conditional on this gate and separately authorized publication.
+
 ## When to attach
 
 Attach visual evidence when it saves the reviewer a checkout: a screenshot of a UI fix, a before/after pair, a short video of a new user-facing flow, or the failure state when filing a bug. Skip it for refactors, backend-only changes and anything the diff already shows.
@@ -37,7 +54,7 @@ Reference the file in the body as `![alt](.playwright-cli/settings-after.png)` t
 
 ## From CI
 
-Attach the screenshots and videos Playwright Test already saves under `test-results` (`screenshot: 'only-on-failure'`, `video: 'retain-on-failure'`) with the same command:
+The optional attachment step checks the runner capability before publishing artifacts from `test-results`. An unsupported runner skips only this step; the preceding test step retains its original failure status (no `continue-on-error` or test-status override). No CLI installation or upgrade is performed.
 
 ```yaml
 permissions:
@@ -49,6 +66,24 @@ steps:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     run: |
+      gh_version=$(gh --version) || {
+        echo "Media attachment skipped: GitHub CLI version unavailable."
+        exit 0
+      }
+      printf '%s\n' "$gh_version"
+      gh_number=$(printf '%s\n' "$gh_version" | head -1 | awk '{print $3}')
+      if ! printf '%s\n' "$gh_number" | awk -F. 'NF == 3 && $1 ~ /^[0-9]+$/ && $2 ~ /^[0-9]+$/ && $3 ~ /^[0-9]+$/ && ($1 > 2 || ($1 == 2 && $2 >= 99)) { ok=1 } END { exit !ok }'; then
+        echo "Media attachment skipped: GitHub CLI 2.99+ is required."
+        exit 0
+      fi
+      attach_help=$(gh pr comment --help) || {
+        echo "Media attachment skipped: command help unavailable."
+        exit 0
+      }
+      if ! printf '%s\n' "$attach_help" | grep -q -- '--attach'; then
+        echo "Media attachment skipped: gh pr comment lacks --attach."
+        exit 0
+      fi
       files=$(find test-results -name '*.png' -o -name '*.webm' | head -20)
       if [ -n "$files" ]; then
         gh pr comment ${{ github.event.pull_request.number }} \
