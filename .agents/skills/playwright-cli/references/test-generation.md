@@ -4,8 +4,8 @@ End-to-end workflow for authoring and maintaining Playwright tests with `playwri
 
 - **How generation works** — the core mechanic everything else relies on: actions become TypeScript, plus how to add assertions.
 - **Plan** — explore the app, produce a spec file describing what to test.
-- **Generate** — turn a spec into Playwright test files. Update the spec if it's vague or stale.
-- **Heal** — diagnose failing tests, fix the code, reconcile the spec with reality.
+- **Generate** — turn a spec into Playwright test files. Resolve harmless technical ambiguity without changing intent; ask before changing expected behavior.
+- **Heal** — diagnose failing tests, fix the code while preserving approved intent; reconcile behavior changes only after user confirmation.
 
 Plan / generate / heal lean on the same mechanic: run `npx playwright test --debug=cli` in the background, then `playwright-cli attach tw-XXXX` to drive the paused page interactively. See [playwright-tests.md](playwright-tests.md) for the debug/attach mechanics.
 
@@ -276,7 +276,7 @@ Guidelines:
 
 ## 2. Generate
 
-Goal: take a spec file and produce Playwright test files. Optionally update the spec if it has drifted.
+Goal: take a spec file and produce Playwright test files. Preserve intended behavior; specification changes require the decision boundary below.
 
 ### 2.1 Inputs
 
@@ -296,7 +296,13 @@ playwright-cli attach tw-XXXX
 
 **Do not** just open the app url with playwright-cli, always go through the test to capture any custom setup done there.
 
-Walk the scenario's `Steps:` one by one with `playwright-cli`, treating the spec as the plan and the live app as the source of truth. If a step is vague ("click the button" — which button?), references an element that no longer exists, or contradicts the app's actual behaviour, use your judgement: update the spec to match what the app really does, then keep going. Editing the spec mid-generation is expected.
+Walk the scenario's `Steps:` one by one with `playwright-cli`. The specification / approved requirement defines intended behavior; the live application provides implementation evidence and is not automatically authoritative over the plan. Classify discrepancies rather than silently reconciling them.
+
+Resolve only harmless technical ambiguity autonomously: choosing the one obvious button implied by a step, stable semantic locators, wrapper/DOM structure, technical locator drift, or implementation details already implied by the specification. Document these without changing intended user-visible behavior.
+
+If the app contradicts an expected outcome, removes an expected feature/control, materially changes user-visible text or flow, changes intended operation order, or could represent either intentional change or regression, stop that scenario and ask the user. Provide the scenario id, relevant spec step/expectation, observed behavior, concrete evidence (snapshot text, URL, DOM state or outcome), and an evidence-qualified assessment of stale spec vs regression vs ambiguity. Do not rewrite the spec until the user decides. Continue independent scenarios where safe.
+
+A user-confirmed intentional change permits a spec update. A user-confirmed regression preserves the spec and treats the app behavior as a bug. Generate and Heal use this same boundary.
 
 Every action prints the equivalent Playwright TypeScript (see [How generation works](#0-how-generation-works)):
 
@@ -361,7 +367,7 @@ Any failure goes to Section 3.
 
 ## 3. Heal
 
-Goal: fix failing tests, and update the spec if the app's intended behaviour changed.
+Goal: fix failing tests while preserving intended behavior; update the spec only after the user confirms an intentional product change.
 
 ### 3.1 Find failing tests
 
@@ -396,7 +402,7 @@ Rehearse the corrected interaction with `playwright-cli` — the generated code 
 
 ### 3.3 Apply the fix
 
-Edit the test file: update the locator, assertion, step order, or inputs to match the corrected behaviour. Stop the background debug run. Rerun the single test to confirm green.
+Apply the Generate decision boundary before editing: technical locator or implementation changes may preserve the existing expectations autonomously; user-visible discrepancies require the user decision in Section 3.4 first. Do not change assertions, intended order, or inputs merely to match observed behavior. Stop the background debug run and rerun the single test after an authorized fix.
 
 Never skip hooks or add sleeps as a fix. Never use `networkidle`.
 
@@ -405,13 +411,14 @@ Never skip hooks or add sleeps as a fix. Never use `networkidle`.
 Open the spec referenced by the `// spec:` header in the test file and locate the scenario that matches the test.
 
 - **Fix was purely technical** (locator drift, better assertion shape) and the spec's user-level behaviour still matches the app → leave the spec alone.
-- **Fix changed user-visible steps, inputs, order, or expected outcomes** that the spec describes → update the spec to match reality. Keep the scenario id and file path stable; only the step / expect lines change.
+- **User confirmed an intentional change to user-visible steps, inputs, order, or expected outcomes** → update the spec to reflect that approved change. Keep the scenario id and file path stable; only the step / expect lines change.
 - **Unclear whether the app change is intentional** (spec is stale) **or a regression** (test was right, app is wrong) → **stop and ask the user**. Provide:
   - the scenario id (e.g. `2.3`),
   - the spec lines that no longer match,
-  - the observed app behaviour (quote a snapshot excerpt or a concrete outcome).
+  - the observed app behaviour and concrete evidence (snapshot text, URL, DOM state or outcome),
+  - an evidence-qualified assessment of stale spec, regression, or ambiguity.
 
-Only after the user answers, either update the spec (intentional change) or file/flag the test as covering a bug (regression).
+Do not rewrite the spec before the user decides. After confirmation, either update it for an intentional change or preserve it and treat the app behavior as a bug for a regression.
 
 ### 3.5 Iteration and giving up
 

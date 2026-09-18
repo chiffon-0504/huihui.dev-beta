@@ -34,6 +34,6 @@ The test is paused at the start, so you should step over or pause at a particula
 where the problem is most likely to be.
 
 Every action you perform with `playwright-cli` generates corresponding Playwright TypeScript code.
-This code appears in the output and can be copied directly into the test. Most of the time, a specific locator or an expectation should be updated, but it could also be a bug in the app. Use your judgement.
+This code appears in the output and can be copied directly into the test. Adapt technical locators without changing intended behavior. If observations disagree with user-visible expectations, stop that scenario and ask the user with the spec step, observed outcome and evidence; follow the [Generate/Heal authority boundary](test-generation.md#22-generate-one-scenario). Change expectations only for a user-confirmed intentional change; preserve them for a confirmed regression.
 
 After fixing the test, stop the background test run. Rerun to check that test passes.
