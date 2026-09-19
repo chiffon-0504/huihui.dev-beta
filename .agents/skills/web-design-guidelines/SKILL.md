@@ -22,7 +22,7 @@ Normal reviews require no network access to obtain review policy. This locally r
 
 ## Provenance and local adaptation
 
-The reference is based on `command.md` from `vercel-labs/web-interface-guidelines` at commit `e3d624baaf29dc1fc645aff3e38f03e564d2d6b1`, retrieved 2026-09-18, with repository-reviewed local corrections to preserve native keyboard semantics. [Immutable upstream source](https://github.com/vercel-labs/web-interface-guidelines/blob/e3d624baaf29dc1fc645aff3e38f03e564d2d6b1/command.md).
+The reference is based on `command.md` from `vercel-labs/web-interface-guidelines` at commit `e3d624baaf29dc1fc645aff3e38f03e564d2d6b1`, retrieved 2026-09-18, with repository-reviewed local corrections for native keyboard semantics, locale-aware casing, and appropriate autocomplete guidance. [Immutable upstream source](https://github.com/vercel-labs/web-interface-guidelines/blob/e3d624baaf29dc1fc645aff3e38f03e564d2d6b1/command.md).
 
 This is a repository-specific overlay on the installed `vercel-labs/agent-skills` package. `skills-lock.json` retains the installer's source/hash metadata; it is not a fabricated hash of local adaptations. Preserve this local policy and reference when updating the Skill.
 

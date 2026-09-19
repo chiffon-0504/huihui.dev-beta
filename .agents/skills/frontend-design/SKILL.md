@@ -68,4 +68,4 @@ Use active voice as default. A CTA says exactly what happens when it is used: "S
 
 Treat failure and emptiness as moments for direction, not mood. Explain what went wrong and how to fix it, in the interface's voice rather than a person's. Errors don't apologize, and they are never vague about what happened. An empty screen is an invitation to act.
 
-Keep the tone conversational: plain verbs, sentence case, no filler, with tone matched to the brand and the audience. Let each written element do exactly one job.
+Keep the tone conversational: plain verbs, no filler, with tone matched to the brand and the audience. Use English sentence case for headings, buttons, and other UI copy, preserving proper nouns, brands, acronyms, and identifiers. zh-Hant and Japanese copy follow their own language conventions; do not apply English casing rules to them. Let each written element do exactly one job.

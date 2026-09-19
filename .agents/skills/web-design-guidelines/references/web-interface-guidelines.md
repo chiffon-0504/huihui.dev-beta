@@ -36,7 +36,7 @@ Read files, check against rules below. Output concise but comprehensive—sacrif
 
 ### Forms
 
-- Inputs need `autocomplete` and meaningful `name`
+- Inputs need a meaningful `name` and, where applicable, `autocomplete` tokens appropriate to their purpose (e.g. `name`, `email`, `tel`, `street-address`); preserve useful autofill for ordinary name, email, address, and contact fields
 - Use correct `type` (`email`, `tel`, `url`, `number`) and `inputmode`
 - Never block paste (`onPaste` + `preventDefault`)
 - Labels clickable (`htmlFor` or wrapping control)
@@ -45,7 +45,7 @@ Read files, check against rules below. Output concise but comprehensive—sacrif
 - Submit button stays enabled until request starts; spinner during request
 - Errors inline next to fields; focus first error on submit
 - Placeholders end with `…` and show example pattern
-- `autocomplete="off"` on non-auth fields to avoid password manager triggers
+- Use `autocomplete="off"` only with a concrete reason the value should not be retained or autofilled; do not disable autofill merely because a field is non-authentication or to avoid password manager triggers
 - Warn before navigation with unsaved changes (`beforeunload` or router guard)
 
 ### Animation
@@ -141,9 +141,9 @@ Read files, check against rules below. Output concise but comprehensive—sacrif
 ### Content & Copy
 
 - Active voice: "Install the CLI" not "The CLI will be installed"
-- Title Case for headings/buttons (Chicago style)
+- Use English sentence case for headings, buttons, and other UI copy, preserving proper nouns, brands, acronyms, and identifiers. zh-Hant and Japanese copy follow their own language conventions; do not apply English casing rules to them.
 - Numerals for counts: "8 deployments" not "eight"
-- Specific button labels: "Save API Key" not "Continue"
+- Specific button labels: "Save API key" not "Continue"
 - Error messages include fix/next step, not just problem
 - Second person; avoid first person
 - `&` over "and" where space-constrained
