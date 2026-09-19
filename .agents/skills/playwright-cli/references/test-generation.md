@@ -320,7 +320,8 @@ Collect the generated code and write the test file at the path given in the spec
 ```ts
 // spec: specs/basic-operations.plan.md
 // seed: tests/seed.spec.ts
-import { test, expect } from './fixtures';   // or '@playwright/test' if no fixtures file
+// test: tests/contact/send-message.spec.ts
+import { test, expect } from '../fixtures';   // or '@playwright/test' if no fixtures file
 
 test.describe('Contact form', () => {
   test('should send a message', async ({ page }) => {
@@ -346,7 +347,7 @@ Rules:
 - **One test per file.** File path, describe name, and test name come verbatim from the spec (minus the ordinal).
 - Prefix each numbered step with a `// N. <step text>` comment before its actions.
 - Use the describe group name verbatim from the spec (no `1.` ordinal).
-- Import from `./fixtures` if the project has one; otherwise `@playwright/test`.
+- Locate the selected fixture module and calculate its import relative to each generated test file's directory; do not invent or relocate fixtures. Use `/` separators in module specifiers, including on Windows. With `tests/fixtures.ts`, `tests/foo.spec.ts` imports `./fixtures`, `tests/group/foo.spec.ts` imports `../fixtures`, and `tests/a/b/foo.spec.ts` imports `../../fixtures`. If no fixture module exists, import from `@playwright/test`.
 - **Important**: close the CLI session and stop the background test before moving to the next scenario.
 
 ### 2.3 Generate multiple scenarios

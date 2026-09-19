@@ -12,10 +12,10 @@ v2/dist/
 .dev.vars.*
 
 # Sensitive local Playwright authentication state
-/.playwright/auth/
+**/.playwright/auth/
 
 # Ephemeral Playwright CLI browser investigation artifacts
-/.playwright-cli/
+.playwright-cli/
 
 # Sensitive local persistent browser profiles
-/.playwright/profiles/
+**/.playwright/profiles/

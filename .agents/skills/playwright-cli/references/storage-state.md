@@ -6,7 +6,7 @@ Manage cookies, localStorage, sessionStorage, and browser storage state.
 
 Save and restore complete browser state including cookies and storage. Authentication state can contain credentials and session tokens and must never be committed.
 
-Use only `.playwright/auth/auth-state.json`, covered by the repository rule `/.playwright/auth/`. Before saving, provision the directory with access restricted to the current user through a repository-approved mechanism and run `git check-ignore -v .playwright/auth/auth-state.json`. If protected storage is unavailable, stop the save operation. Git ignore rules prevent accidental staging but do not restrict filesystem access.
+Use only `.playwright/auth/auth-state.json`, covered by the repository rule `**/.playwright/auth/`. Before saving, provision the directory with access restricted to the current user through a repository-approved mechanism and run `git check-ignore -v .playwright/auth/auth-state.json`. If protected storage is unavailable, stop the save operation. Git ignore rules prevent accidental staging but do not restrict filesystem access.
 
 Never pass passwords, tokens, API keys, or other secrets in CLI arguments, embedded code, or expanded environment variables. Use an already-authenticated session or repository-approved protected authentication mechanism. Do not print credential-bearing cookies or storage to tool output or logs; the inspection examples below are for non-sensitive state only.
 
