@@ -6,7 +6,7 @@ allowed-tools: Bash(playwright-cli:*) Bash(npx:*) Bash(npm:*)
 
 # Browser Automation with playwright-cli
 
-Never pass passwords, tokens, API keys, or other secrets as command-line arguments, including embedded code or expanded environment variables. Use an already-authenticated session or another repository-approved protected authentication mechanism. Do not print credentials to tool output or logs.
+Never pass passwords, tokens, API keys, or other secrets as command-line arguments, including embedded code or expanded environment variables. Use a repository-approved protected authentication mechanism; an already-authenticated session is eligible for CLI use only under the non-sensitive-session policy below. Do not print credentials to tool output or logs.
 
 Authentication state may contain credentials and session tokens. Before saving, provision `.playwright/auth/` with access restricted to the current user through a repository-approved mechanism and verify `git check-ignore -v .playwright/auth/auth-state.json`. Never commit authentication state; Git ignore rules alone do not protect filesystem access.
 
@@ -16,9 +16,38 @@ Canonical command documentation: [microsoft/playwright-cli](https://github.com/m
 
 Every `playwright-cli ...` example in this Skill and its references means `npx --yes @playwright/cli@0.1.20 ...` (`npx.cmd` in Windows PowerShell). No global installation is required or permitted by this Skill. Do not select `npx playwright cli` based on the presence of local Playwright. The repository's automated `@playwright/test` runner is separate: do not install, upgrade, or change its dependencies or configuration for this Skill. Test-debugging examples depend on runner capabilities; if unavailable, report the limitation without upgrading the test stack.
 
-Keep generated snapshots, screenshots, videos, downloads, and logs under the Git-ignored `.playwright-cli/` workspace. Create required output directories before saving. Never capture or print credentials/private data in screenshots, recordings, snapshots, network output, or logs. Inspect artifacts for sensitive content before any separately authorized sharing; Git ignore is not access control or redaction.
+Ordinary non-sensitive unauthenticated investigation uses the Git-ignored `.playwright-cli/` workspace. Authenticated reuse is limited to explicitly verified non-sensitive pages and requires the protected output configuration below as an additional safeguard. Create required output directories before saving. Never expose credentials/private data in command output, agent responses, PR comments, screenshots, recordings, snapshots, or logs. Inspect only already-cleared non-sensitive artifacts before any separately authorized sharing; Git ignore is not access control or redaction.
 
 Tracing is limited to public unauthenticated pages, local fixtures, or synthetic data without reusable credentials. Do not start tracing on authenticated, credential-bearing, private, or sensitive sessions. Any future authenticated-trace exception requires separate explicit authorization and an approved protected-storage/redaction procedure; none is provided here. See [tracing restrictions](references/tracing.md).
+
+## Non-sensitive sessions and protected output
+
+The pinned `@playwright/cli@0.1.20` must not be used on sensitive authenticated/private pages. This applies to every command and reference, including `open`, `attach`, test-debug sessions, navigation, snapshots, and storage inspection. Before connecting or navigating, establish that all tabs, rendered data, URLs/titles, console/network output, downloads and command results are explicitly known safe. Do not discover whether a page is sensitive by capturing it first. If safety is uncertain, stop CLI use and use another repository-approved testing mechanism.
+
+The upstream README lists `outputMode: "file"`, but it does not enforce file-only output in this pinned version: a dummy-content smoke showed that `snapshot` prints DOM and `console` prints messages to stdout even with that setting. Commands also return page URLs/titles and generated code. Do not rely on `outputMode`, `--raw`, or a protected directory to suppress/redact sensitive output; no snapshot-suppression flag is supplied here. Protected auth state does not protect subsequent page artifacts automatically.
+
+For otherwise non-sensitive authenticated reuse, prepare `.playwright/private/cli.config.json` and `.playwright/private/artifacts/` with access restricted to the current user through a repository-approved mechanism (owner-only permissions or Windows ACLs, where supported). Verify permissions before opening the session, and verify `git check-ignore -v` for both paths. The depth-independent ignore rule is `**/.playwright/private/`. Stop authenticated CLI reuse if protection cannot be established.
+
+Use this supported output configuration; `outputDir` is resolved against the CLI process working directory, not the config file directory. Keep that working directory fixed throughout the session (or use a verified absolute path to the same protected artifacts directory):
+
+```json
+{
+  "outputDir": ".playwright/private/artifacts"
+}
+```
+
+```bash
+# After verifying non-sensitive output, access restrictions, and Git-ignore coverage:
+playwright-cli open --config=.playwright/private/cli.config.json
+# Only then load approved protected state; navigate only to a known-safe page.
+playwright-cli state-load .playwright/auth/auth-state.json
+playwright-cli goto https://example.com
+playwright-cli close
+```
+
+Use a fresh CLI session with that config before loading state; do not attach to an authenticated browser unless equivalent output configuration and non-sensitive output are verified beforehand. `outputDir` redirects automatically named artifacts, but explicit `--filename`/save paths can bypass it: direct those artifacts into `.playwright/private/artifacts/` too, never the ordinary workspace. Do not inspect credential-bearing cookies/storage or request details through stdout-returning commands. Existing protected auth state remains in `.playwright/auth/auth-state.json`, and any approved persistent profile remains in `.playwright/profiles/authenticated/`; each needs its own verified access restriction and ignore coverage. Profiles with private tabs or output are ineligible for this CLI even if their files are protected.
+
+Close the session when done. Delete its protected runtime artifacts/config, saved state, and profile when no longer required, verifying the exact target paths before cleanup. Never commit or share these files. Protected output is an additional safeguard for approved non-sensitive use, not permission to investigate sensitive pages; tracing restrictions above remain unchanged.
 
 ## Quick start
 
@@ -265,7 +294,7 @@ playwright-cli list --json
 
 ## Open parameters
 
-Use in-memory sessions by default. Auto-generated `--persistent` profiles are allowed only for clearly non-sensitive sessions. Authenticated/private persistence requires an explicit `.playwright/profiles/authenticated/` path, verified with `git check-ignore -v .playwright/profiles/authenticated/example`, with access restricted to the current user where supported. Provision and verify protection before opening; if protection cannot be established, use in-memory state or stop the persistence operation. Never commit profiles. Close the session and remove its protected profile when no longer needed, verifying the exact target path before cleanup; closing alone does not delete disk credentials. See [persistent-profile guidance](references/session-management.md#persistent-profile).
+Use in-memory sessions by default. Auto-generated `--persistent` profiles are allowed only for clearly non-sensitive sessions. For authenticated reuse that satisfies the non-sensitive-session policy above, persistence requires an explicit `.playwright/profiles/authenticated/` path, verified with `git check-ignore -v .playwright/profiles/authenticated/example`, with access restricted to the current user where supported. Provision and verify protection before opening; if protection cannot be established, stop authenticated CLI reuse. In-memory state does not prevent disk artifacts or stdout output. Never commit profiles. Close the session and remove its protected profile when no longer needed, verifying the exact target path before cleanup; closing alone does not delete disk credentials. See [persistent-profile guidance](references/session-management.md#persistent-profile).
 
 ```bash
 # Use specific browser when creating session
@@ -282,8 +311,8 @@ playwright-cli open --device="iPhone 15"
 
 # Non-sensitive sessions only; default to in-memory
 playwright-cli open --persistent
-# Sensitive persistence only after protected-path checks above
-playwright-cli open --profile=.playwright/profiles/authenticated/
+# Known-safe authenticated output only, after protected-path checks above
+playwright-cli open --config=.playwright/private/cli.config.json --profile=.playwright/profiles/authenticated/
 
 # Connect to browser via Playwright Extension
 playwright-cli attach --extension=chrome
@@ -320,7 +349,7 @@ playwright-cli --% goto "https://example.com/?a=1&b=2"
 
 ## Snapshots
 
-After each command, playwright-cli provides a snapshot of the current browser state.
+After each command, playwright-cli provides a snapshot of the current browser state. These examples are for non-sensitive pages only; automatic artifacts and stdout must follow the [session/output policy](#non-sensitive-sessions-and-protected-output).
 
 ```bash
 > playwright-cli goto https://example.com
@@ -386,8 +415,8 @@ playwright-cli click "getByTestId('submit-button')"
 ```bash
 # Non-sensitive session only; use in-memory by default
 playwright-cli -s=mysession open example.com --persistent
-# Sensitive persistence: only after the protected-path checks above
-playwright-cli -s=mysession open example.com --profile=.playwright/profiles/authenticated/
+# Known-safe authenticated output only, after the protected-path checks above
+playwright-cli -s=mysession open https://example.com --config=.playwright/private/cli.config.json --profile=.playwright/profiles/authenticated/
 playwright-cli -s=mysession click e6
 playwright-cli -s=mysession close  # stop a named browser
 playwright-cli -s=mysession delete-data  # delete user data for persistent session

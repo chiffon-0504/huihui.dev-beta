@@ -7,6 +7,8 @@ End-to-end workflow for authoring and maintaining Playwright tests with `playwri
 - **Generate** — turn a spec into Playwright test files. Resolve harmless technical ambiguity without changing intent; ask before changing expected behavior.
 - **Heal** — diagnose failing tests, fix the code while preserving approved intent; reconcile behavior changes only after user confirmation.
 
+All exploration and debug/attach commands must follow the [non-sensitive-session policy](../SKILL.md#non-sensitive-sessions-and-protected-output). Do not attach to seeds or tests that expose sensitive/private data; an approved fixture for independent test execution does not authorize sensitive CLI investigation. If the seed cannot be safely explored with this CLI, stop that scenario and use another repository-approved mechanism.
+
 Plan / generate / heal lean on the same mechanic: run `npx playwright test --debug=cli` in the background, then `playwright-cli attach tw-XXXX` to drive the paused page interactively. See [playwright-tests.md](playwright-tests.md) for the debug/attach mechanics.
 
 ---
@@ -286,7 +288,7 @@ Goal: take a spec file and produce Playwright test files. Preserve intended beha
 
 ### 2.2 Generate one scenario
 
-For each target scenario, in sequence (never in parallel — scenarios share the seed session):
+For each target scenario, in sequence (never in parallel — interaction commands share the default CLI session):
 
 ```bash
 PLAYWRIGHT_HTML_OPEN=never npx playwright test <seed-file> --debug=cli   # background
@@ -315,18 +317,24 @@ playwright-cli click e7
 
 For each `- expect:` bullet, add an explicit assertion. See [How generation works](#0-how-generation-works) for details.
 
-Collect the generated code and write the test file at the path given in the spec:
+Before writing each test, identify the seed file, the setup it performs, which setup a reusable fixture/helper supplies, which safe standalone setup must be reproduced directly, and anything that cannot safely be copied. Every generated test must independently reproduce the intended post-seed starting state; running the seed during generation does not initialize a later independent test process.
+
+Prefer the existing reusable fixture/helper and use it in the generated test runtime. If setup exists only in the standalone seed body, copy equivalent safe deterministic setup (such as public navigation or non-sensitive feature initialization) before scenario-specific steps; do not copy the seed's `test(...)` wrapper. For complex setup shared by multiple scenarios, prefer an appropriate reusable fixture/helper within the authorized scope rather than duplicating large blocks; do not refactor unrelated tests.
+
+Never copy passwords, tokens, credential entry, secrets, or unsafe CLI login procedures from a seed. If sensitive authentication setup has no approved reusable fixture/state mechanism, stop that scenario and report that it cannot safely become independently executable until such a mechanism is available. Do not generate a test that silently omits required setup.
+
+Collect the generated code and write the test file at the path given in the spec. In this fixture-based example, `tests/fixtures.ts` supplies navigation when the generated test itself runs:
 
 ```ts
 // spec: specs/basic-operations.plan.md
 // seed: tests/seed.spec.ts
 // test: tests/contact/send-message.spec.ts
-import { test, expect } from '../fixtures';   // or '@playwright/test' if no fixtures file
+import { test, expect } from '../fixtures';
 
 test.describe('Contact form', () => {
   test('should send a message', async ({ page }) => {
     // 1. Navigate to the application
-    // (handled by the seed fixture)
+    // (handled by the imported shared fixture at test runtime)
 
     // 2. Type 'John Doe' into the name field
     await page.getByRole('textbox', { name: 'Name' }).fill('John Doe');
@@ -342,17 +350,31 @@ test.describe('Contact form', () => {
 });
 ```
 
+If the seed instead contains only the minimum standalone `page.goto('https://example.com/')` setup above, use plain `@playwright/test` and reproduce that setup explicitly before the scenario actions:
+
+```ts
+import { test, expect } from '@playwright/test';
+
+test('should open the public home page', async ({ page }) => {
+  // Required setup equivalent to the standalone seed body.
+  await page.goto('https://example.com/');
+
+  // Scenario-specific assertion follows setup.
+  await expect(page.getByRole('heading', { name: 'Example Domain' })).toBeVisible();
+});
+```
+
 Rules:
 
 - **One test per file.** File path, describe name, and test name come verbatim from the spec (minus the ordinal).
 - Prefix each numbered step with a `// N. <step text>` comment before its actions.
 - Use the describe group name verbatim from the spec (no `1.` ordinal).
-- Locate the selected fixture module and calculate its import relative to each generated test file's directory; do not invent or relocate fixtures. Use `/` separators in module specifiers, including on Windows. With `tests/fixtures.ts`, `tests/foo.spec.ts` imports `./fixtures`, `tests/group/foo.spec.ts` imports `../fixtures`, and `tests/a/b/foo.spec.ts` imports `../../fixtures`. If no fixture module exists, import from `@playwright/test`.
+- Locate the selected fixture module and calculate its import relative to each generated test file's directory; do not invent or relocate fixtures. Use `/` separators in module specifiers, including on Windows. With `tests/fixtures.ts`, `tests/foo.spec.ts` imports `./fixtures`, `tests/group/foo.spec.ts` imports `../fixtures`, and `tests/a/b/foo.spec.ts` imports `../../fixtures`. If no fixture module exists, import from `@playwright/test` and explicitly invoke the selected reusable helper or reproduce equivalent safe standalone seed setup as described above; the import alone supplies no seed setup.
 - **Important**: close the CLI session and stop the background test before moving to the next scenario.
 
 ### 2.3 Generate multiple scenarios
 
-Loop 2.2 over the targeted scenarios one at a time, restarting the seed between each so every test starts from a clean page. This is safe to parallelise due to unique generated session names - just make sure each test run is stopped.
+Loop 2.2 over the targeted scenarios strictly one at a time: start a fresh seed/debug runner, attach, resume the seed, interact, write the independently executable test, close the CLI session, and stop the runner before starting the next scenario. Unique `tw-XXXX` runner names do not isolate commands sent through the default CLI session. Do not parallelize multi-scenario generation.
 
 ### 2.4 Run generated tests
 

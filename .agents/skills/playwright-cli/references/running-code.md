@@ -217,8 +217,10 @@ playwright-cli run-code "async page => {
 ## Complex Workflows
 
 ```bash
-# Use an already-authenticated session established through a repository-approved
-# protected mechanism. Never pass credentials in CLI arguments or embedded code.
+# Only use an eligible non-sensitive authenticated session with protected output
+# already configured; follow SKILL.md "Non-sensitive sessions and protected output".
+# Sensitive/private pages are prohibited even with protected state or outputDir.
+# Never pass credentials in CLI arguments or embedded code.
 # Before saving, provision .playwright/auth/ with current-user-only access and
 # verify its repository ignore rule; stop if protected storage is unavailable.
 git check-ignore -v .playwright/auth/auth-state.json

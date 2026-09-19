@@ -8,23 +8,27 @@ Save and restore complete browser state including cookies and storage. Authentic
 
 Use only `.playwright/auth/auth-state.json`, covered by the repository rule `**/.playwright/auth/`. Before saving, provision the directory with access restricted to the current user through a repository-approved mechanism and run `git check-ignore -v .playwright/auth/auth-state.json`. If protected storage is unavailable, stop the save operation. Git ignore rules prevent accidental staging but do not restrict filesystem access.
 
-Never pass passwords, tokens, API keys, or other secrets in CLI arguments, embedded code, or expanded environment variables. Use an already-authenticated session or repository-approved protected authentication mechanism. Do not print credential-bearing cookies or storage to tool output or logs; the inspection examples below are for non-sensitive state only.
+Protected storage state does not automatically protect page snapshots/logs. Before any authenticated reuse, follow the [non-sensitive-session and protected-output policy](../SKILL.md#non-sensitive-sessions-and-protected-output): this pinned CLI is prohibited on sensitive/private pages, even with protected files. All potential page and command output must be explicitly known safe; otherwise stop and use another repository-approved mechanism. Open a fresh session with the protected config before loading state.
+
+Never pass passwords, tokens, API keys, or other secrets in CLI arguments, embedded code, or expanded environment variables. Use only an eligible non-sensitive authenticated session established through a repository-approved protected mechanism. Do not print credential-bearing cookies or storage to tool output or logs; the inspection examples below are for non-sensitive state only.
 
 ### Save Storage State
 
 ```bash
-# Save only to the protected, Git-ignored path
+# Eligible non-sensitive session with protected output config already active;
+# save only to the protected, Git-ignored path
 playwright-cli state-save .playwright/auth/auth-state.json
 ```
 
 ### Restore Storage State
 
 ```bash
-# Load storage state from file
+# First verify non-sensitive output and provision/verify protected paths.
+playwright-cli open --config=.playwright/private/cli.config.json
 playwright-cli state-load .playwright/auth/auth-state.json
 
-# Reload page to apply cookies
-playwright-cli open https://example.com
+# Navigate within that configured session to an explicitly known-safe page.
+playwright-cli goto https://example.com
 ```
 
 ### Storage State File Format
@@ -233,16 +237,23 @@ playwright-cli run-code "async page => {
 ### Authentication State Reuse
 
 ```bash
-# Step 1: Use an already-authenticated session established through a
-# repository-approved protected mechanism; do not enter credentials via CLI.
+# Step 1: Only an eligible, explicitly non-sensitive authenticated session
+# established through a repository-approved protected mechanism may be used.
+# Its protected output config must already be active; never enter credentials via CLI.
 
 # Save the authenticated state
 playwright-cli state-save .playwright/auth/auth-state.json
 
-# Step 2: Later, restore state and skip login
+# Close the first CLI session before starting another.
+playwright-cli close
+
+# Step 2: Re-verify the safe-page and protected-path requirements before reuse.
+playwright-cli open --config=.playwright/private/cli.config.json
 playwright-cli state-load .playwright/auth/auth-state.json
-playwright-cli open https://app.example.com/dashboard
-# Already logged in!
+# Substitute only a pre-approved non-sensitive destination, never a private dashboard.
+playwright-cli goto https://example.com
+playwright-cli close
+# Delete saved state and protected runtime artifacts when no longer required.
 ```
 
 ### Save and Restore Roundtrip
@@ -257,9 +268,10 @@ playwright-cli state-save .playwright/auth/auth-state.json
 
 # ... later, in a new session ...
 
-# Restore state
+# Restore non-sensitive demonstration state in a fresh session
+playwright-cli open
 playwright-cli state-load .playwright/auth/auth-state.json
-playwright-cli open https://example.com
+playwright-cli goto https://example.com
 # Cookies and localStorage are restored!
 ```
 
@@ -267,6 +279,6 @@ playwright-cli open https://example.com
 
 - Never commit storage state files containing auth tokens
 - Save only to the protected `.playwright/auth/auth-state.json` path; verify it is Git-ignored before each save
-- Delete state files after automation completes
+- Close the CLI session and delete state plus protected runtime artifacts/config and profiles when no longer required; verify exact cleanup paths
 - Never expand secrets from environment variables into commands or print them to logs
-- By default, sessions run in-memory mode which is safer for sensitive operations
+- In-memory browser state does not suppress disk snapshots or stdout. Sensitive/private pages are prohibited; `outputMode: "file"` does not provide the required confidentiality in this pinned CLI

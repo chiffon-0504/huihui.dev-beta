@@ -19,3 +19,6 @@ v2/dist/
 
 # Sensitive local persistent browser profiles
 **/.playwright/profiles/
+
+# Protected local Playwright CLI configuration and investigation artifacts
+**/.playwright/private/

@@ -1,14 +1,14 @@
 # Browser Session Management
 
-Run multiple isolated browser sessions concurrently with state persistence.
+Run multiple isolated browser sessions concurrently with state persistence. All examples require the [non-sensitive-session and protected-output policy](../SKILL.md#non-sensitive-sessions-and-protected-output); isolated cookies or protected profiles do not make sensitive page output safe. Test generation remains strictly sequential as specified in [test-generation.md](test-generation.md#23-generate-multiple-scenarios).
 
 ## Named Browser Sessions
 
 Use `-s` flag to isolate browser contexts:
 
 ```bash
-# Browser 1: Authentication flow
-playwright-cli -s=auth open https://app.example.com/login
+# Browser 1: Non-sensitive login-form demonstration; no credential entry
+playwright-cli -s=auth open https://example.com/login
 
 # Browser 2: Public browsing (separate cookies, storage)
 playwright-cli -s=public open https://example.com
@@ -97,19 +97,19 @@ playwright-cli -s=variant-b screenshot
 
 ### Persistent Profile
 
-Use in-memory sessions by default. Auto-generated `--persistent` profiles are allowed only for clearly non-sensitive sessions. Authenticated/private persistence requires an explicit `.playwright/profiles/authenticated/` path, verified with `git check-ignore -v .playwright/profiles/authenticated/example`, with access restricted to the current user where supported. Provision and verify protection before opening; if protection cannot be established, use in-memory state or stop the persistence operation. Never commit profiles. Close the session and remove its protected profile when no longer needed, verifying the exact target path before cleanup; closing alone does not delete disk credentials.
+Use in-memory sessions by default. Auto-generated `--persistent` profiles are allowed only for clearly non-sensitive sessions. For authenticated reuse that satisfies the non-sensitive-session policy, persistence requires an explicit `.playwright/profiles/authenticated/` path, verified with `git check-ignore -v .playwright/profiles/authenticated/example`, with access restricted to the current user where supported. Provision and verify protection before opening; if protection cannot be established, stop authenticated CLI reuse. In-memory state does not prevent disk artifacts or stdout output. Never commit profiles. Close the session and remove its protected profile when no longer needed, verifying the exact target path before cleanup; closing alone does not delete disk credentials.
 
 ```bash
 # Non-sensitive sessions only; otherwise use the protected explicit path below
 playwright-cli open https://example.com --persistent
 
-# After provisioning and verifying the protected directory
-playwright-cli open https://example.com --profile=.playwright/profiles/authenticated/
+# Known-safe authenticated output only, after verifying protected output/profile paths
+playwright-cli open https://example.com --config=.playwright/private/cli.config.json --profile=.playwright/profiles/authenticated/
 ```
 
 ## Attaching to a Running Browser
 
-Use `attach` to connect to a browser that is already running, instead of launching a new one.
+Use `attach` to connect to a browser that is already running, instead of launching a new one. Verify all tabs and potential output are non-sensitive before attaching; authenticated reuse also requires equivalent protected output configuration verified beforehand. Do not attach to sensitive/private browser sessions.
 
 ### Attach by channel name
 
@@ -188,7 +188,7 @@ playwright-cli open https://example.com --browser=firefox
 # Open in headed mode
 playwright-cli open https://example.com --headed
 
-# Non-sensitive sessions only; sensitive persistence must follow Persistent Profile above
+# Non-sensitive sessions only; authenticated reuse must follow Persistent Profile above
 playwright-cli open https://example.com --persistent
 ```
 
@@ -198,7 +198,7 @@ playwright-cli open https://example.com --persistent
 
 ```bash
 # GOOD: Clear purpose
-playwright-cli -s=github-auth open https://github.com
+playwright-cli -s=github-public open https://github.com
 playwright-cli -s=docs-scrape open https://docs.example.com
 
 # AVOID: Generic names
