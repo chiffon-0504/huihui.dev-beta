@@ -9,7 +9,7 @@ End-to-end workflow for authoring and maintaining Playwright tests with `playwri
 
 All exploration and debug/attach commands must follow the [non-sensitive-session policy](../SKILL.md#non-sensitive-sessions-and-protected-output). Do not attach to seeds or tests that expose sensitive/private data; an approved fixture for independent test execution does not authorize sensitive CLI investigation. If the seed cannot be safely explored with this CLI, stop that scenario and use another repository-approved mechanism.
 
-Plan / generate / heal lean on the same mechanic: run `npx playwright test --debug=cli` in the background, then `playwright-cli attach tw-XXXX` to drive the paused page interactively. See [playwright-tests.md](playwright-tests.md) for the debug/attach mechanics.
+Before planning, generating, healing, creating a seed, or launching a debug runner, resolve the applicable config and its effective test directory as described in [Section 1.1](#11-prerequisite-workspace-and-owning-config). Plan / generate / heal then use the same mechanic: run `npx playwright test --config=<selected-config> <seed-or-test-file> --debug=cli` in the background, then `playwright-cli attach tw-XXXX` to drive the paused page interactively. See [playwright-tests.md](playwright-tests.md) for the debug/attach mechanics.
 
 ---
 
@@ -145,26 +145,42 @@ await expect(page.getByRole('navigation')).toMatchAriaSnapshot(`
 
 Goal: produce a spec file (e.g. `specs/<feature>.plan.md`) that enumerates the scenarios to test. **Always** write the spec to a file.
 
-### 1.1 Prerequisite: workspace
+### 1.1 Prerequisite: workspace and owning config
 
-Check the workspace has Playwright installed before anything else:
+Resolve the test environment before choosing paths or running tests:
+
+1. Discover the relevant existing configs through repository scripts, nearby tests, subsystem documentation, and config imports. Include the repository's `.mjs` configs, not only `.ts`/`.js`; inspect other config extensions when present.
+2. Select the config that owns the target feature/test. A default config's existence is not evidence that it owns the target. If multiple configs plausibly apply and repository context does not resolve the choice, stop and ask the user.
+3. Read the effective `testDir` (including imported config and project overrides), discovery rules such as `testMatch`/`testIgnore`, and the applicable `webServer`, `baseURL`, `globalSetup`, projects, retries/workers, context defaults, and documented prerequisites. Keep config-owned infrastructure intact; do not start a replacement server or duplicate/bypass setup. For example, v2 preview requires the documented v2 build first; follow the existing task authorization for that prerequisite.
+4. Locate the seed and choose generated-file paths inside that config's discoverable test directory. Create a seed only if genuinely needed and authorized to create test files. Record the config and environment choice in the plan and retain it through Generate, validation, and Heal.
+
+Repository examples (not universal Playwright defaults):
+
+| Target | Config | Effective testDir | Config-owned environment |
+|---|---|---|---|
+| v1 / legacy E2E | `playwright.config.mjs` | `tests/e2e` via `playwright.base.config.mjs` | `http://127.0.0.1:4173`, static-server global setup, Chromium |
+| v2 | `playwright.v2.config.mjs` | `tests/v2` | `http://127.0.0.1:4175`, v2 preview webServer, Chromium/Firefox/WebKit |
+
+In the templates below, replace `<selected-config>`, `<testDir>`, and file placeholders with the resolved values before execution or writing actual plans. Examples use repository-root-relative paths; when invoked elsewhere, use resolved paths rather than relying on cwd or implicit config selection. If a particular project is selected, record it and preserve the same `--project` selection across phases.
+
+Confirm the repository runner is already available:
 
 ```bash
-# Either of these confirms a workspace:
-test -f playwright.config.ts || test -f playwright.config.js
 npx --no-install playwright --version
 ```
 
-The repository test runner is separate from the pinned standalone CLI. If it or a required test-debugging capability is unavailable, report that limitation; do not bootstrap or upgrade the automated test stack for this Skill.
+The repository test runner is separate from the pinned standalone CLI. If it or a required test-debugging capability is unavailable, report that limitation; do not bootstrap or upgrade the automated test stack for this Skill. `--config` here selects the test runner environment, not the standalone CLI's output configuration.
+
+A path outside the selected effective `testDir`, or excluded by its discovery rules, is a configuration/discovery mismatch. Resolve the config/path first; `No tests found` is not evidence that a test failed. Where the runner is available, `npx playwright test --config=<selected-config> <test-file> --list` can confirm discovery without launching browser tests.
 
 ### 1.2 Prerequisite: seed test
 
 A **seed test** is a minimal test that lands the page in the state every scenario starts from: navigation to the app, any required login, feature flags, etc. Scenarios assume a fresh start *after* the seed. `--debug=cli` pauses *inside* this test, so the seed is where every planning and generation session begins.
 
-Minimum viable seed:
+Minimum viable seed, located under the selected discoverable `<testDir>` (adapt navigation to the intended starting state):
 
 ```ts
-// tests/seed.spec.ts
+// <testDir>/seed.spec.ts
 import { test } from '@playwright/test';
 
 test('seed', async ({ page }) => {
@@ -175,7 +191,7 @@ test('seed', async ({ page }) => {
 Preferred — push navigation into a fixture so scenario tests reuse it:
 
 ```ts
-// tests/fixtures.ts
+// <testDir>/fixtures.ts
 import { test as baseTest } from '@playwright/test';
 export { expect } from '@playwright/test';
 
@@ -188,7 +204,7 @@ export const test = baseTest.extend({
 ```
 
 ```ts
-// tests/seed.spec.ts
+// <testDir>/seed.spec.ts
 import { test } from './fixtures';
 
 test('seed', async ({ page }) => {
@@ -196,17 +212,28 @@ test('seed', async ({ page }) => {
 });
 ```
 
-If no seed exists, create one that at least navigates to the app.
+Use an existing seed inside the selected config's discoverable test directory. Only create `<testDir>/seed.spec.ts` if needed and test-file creation is authorized; ensure its extension/name matches the config's discovery rules. Do not create or relocate tests outside discovery.
 
 ### 1.3 Explore the app
 
-Launch the app via the seed in the background and attach:
+Launch the app through the selected config and seed in the background, preserving its setup and environment, then attach:
 
 ```bash
-PLAYWRIGHT_HTML_OPEN=never npx playwright test tests/seed.spec.ts --debug=cli
+PLAYWRIGHT_HTML_OPEN=never npx playwright test --config=<selected-config> <seed-file> --debug=cli
 # wait for "Debugging Instructions" and the session name tw-XXXX
 playwright-cli attach tw-XXXX
 ```
+
+For an authorized seed that exists and matches discovery, repository examples are:
+
+```bash
+# v1 / legacy seed
+PLAYWRIGHT_HTML_OPEN=never npx playwright test --config=playwright.config.mjs tests/e2e/seed.spec.ts --debug=cli
+# v2 seed (a separate workflow; do not launch both concurrently)
+PLAYWRIGHT_HTML_OPEN=never npx playwright test --config=playwright.v2.config.mjs tests/v2/seed.spec.ts --debug=cli
+```
+
+These paths illustrate placement; they do not assert that seed files already exist.
 
 Resume so the seed runs, then probe the app:
 
@@ -231,7 +258,7 @@ Map out:
 
 ### 1.4 Write the spec file
 
-Save under `specs/<feature>.plan.md`. Use this structure:
+Save under `specs/<feature>.plan.md`. Record the actual selected config, effective test directory, seed, and any selected project/environment prerequisites per group; replace placeholders before saving. Use this structure:
 
 ```markdown
 # <Feature> Test Plan
@@ -244,11 +271,13 @@ Save under `specs/<feature>.plan.md`. Use this structure:
 
 ### 1. <Group Name>
 
-**Seed:** `tests/seed.spec.ts`
+**Config:** `<selected-config>`
+**Test directory:** `<testDir>`
+**Seed:** `<testDir>/seed.spec.ts`
 
 #### 1.1. <kebab-case-scenario-name>
 
-**File:** `tests/<group>/<kebab-case-scenario-name>.spec.ts`
+**File:** `<testDir>/<group>/<kebab-case-scenario-name>.spec.ts`
 
 **Steps:**
   1. <Concrete user step>
@@ -262,13 +291,16 @@ Save under `specs/<feature>.plan.md`. Use this structure:
 
 ### 2. <Next Group>
 
-**Seed:** `tests/seed.spec.ts`
+**Config:** `<selected-config>`
+**Test directory:** `<testDir>`
+**Seed:** `<testDir>/seed.spec.ts`
 ...
 ```
 
 Guidelines:
 
 - Each scenario is independent and starts from the seed's fresh state — never chain scenarios.
+- Seed and generated test paths must be discoverable by the recorded config. Prefer existing repository naming/location conventions within its effective test directory.
 - Scenario names are kebab-case and match the test file name (`should-add-single-todo` → `should-add-single-todo.spec.ts`).
 - Cover happy path, edge cases, validation, negative flows, persistence.
 - Write steps at the user level ("Type 'Buy milk' into the input"), not the API level ("call `fill`").
@@ -284,14 +316,15 @@ Goal: take a spec file and produce Playwright test files. Preserve intended beha
 
 - **Spec file**, e.g. `specs/basic-operations.plan.md`.
 - **Target**: either a single scenario (e.g. `1.2`), a whole group (`1`), or all.
-- **Seed file**, read from the `**Seed:**` line of the scenario's group.
+- **Config** and **test directory**, read from the scenario's group context; verify against the effective config and preserve any recorded project/environment selection.
+- **Seed file**, read from the `**Seed:**` line of the scenario's group and verified to be discoverable by that config.
 
 ### 2.2 Generate one scenario
 
 For each target scenario, in sequence (never in parallel — interaction commands share the default CLI session):
 
 ```bash
-PLAYWRIGHT_HTML_OPEN=never npx playwright test <seed-file> --debug=cli   # background
+PLAYWRIGHT_HTML_OPEN=never npx playwright test --config=<selected-config> <seed-file> --debug=cli   # background
 playwright-cli attach tw-XXXX
 # resume
 ```
@@ -317,18 +350,19 @@ playwright-cli click e7
 
 For each `- expect:` bullet, add an explicit assertion. See [How generation works](#0-how-generation-works) for details.
 
-Before writing each test, identify the seed file, the setup it performs, which setup a reusable fixture/helper supplies, which safe standalone setup must be reproduced directly, and anything that cannot safely be copied. Every generated test must independently reproduce the intended post-seed starting state; running the seed during generation does not initialize a later independent test process.
+Before writing each test, verify the selected config and discoverable destination, then identify the seed file, the setup it performs, which setup a reusable fixture/helper supplies, which safe standalone setup must be reproduced directly, and anything that cannot safely be copied. Every generated test must independently reproduce the intended post-seed starting state; running the seed during generation does not initialize a later independent test process.
 
 Prefer the existing reusable fixture/helper and use it in the generated test runtime. If setup exists only in the standalone seed body, copy equivalent safe deterministic setup (such as public navigation or non-sensitive feature initialization) before scenario-specific steps; do not copy the seed's `test(...)` wrapper. For complex setup shared by multiple scenarios, prefer an appropriate reusable fixture/helper within the authorized scope rather than duplicating large blocks; do not refactor unrelated tests.
 
 Never copy passwords, tokens, credential entry, secrets, or unsafe CLI login procedures from a seed. If sensitive authentication setup has no approved reusable fixture/state mechanism, stop that scenario and report that it cannot safely become independently executable until such a mechanism is available. Do not generate a test that silently omits required setup.
 
-Collect the generated code and write the test file at the path given in the spec. In this fixture-based example, `tests/fixtures.ts` supplies navigation when the generated test itself runs:
+Collect the generated code and write the test file at the path given in the spec. In this illustrative v2 fixture-based layout, `tests/v2/fixtures.ts` supplies navigation when the generated test itself runs; use the actual selected fixture and generated paths:
 
 ```ts
 // spec: specs/basic-operations.plan.md
-// seed: tests/seed.spec.ts
-// test: tests/contact/send-message.spec.ts
+// config: playwright.v2.config.mjs
+// seed: tests/v2/seed.spec.ts
+// test: tests/v2/contact/send-message.spec.ts
 import { test, expect } from '../fixtures';
 
 test.describe('Contact form', () => {
@@ -369,7 +403,7 @@ Rules:
 - **One test per file.** File path, describe name, and test name come verbatim from the spec (minus the ordinal).
 - Prefix each numbered step with a `// N. <step text>` comment before its actions.
 - Use the describe group name verbatim from the spec (no `1.` ordinal).
-- Locate the selected fixture module and calculate its import relative to each generated test file's directory; do not invent or relocate fixtures. Use `/` separators in module specifiers, including on Windows. With `tests/fixtures.ts`, `tests/foo.spec.ts` imports `./fixtures`, `tests/group/foo.spec.ts` imports `../fixtures`, and `tests/a/b/foo.spec.ts` imports `../../fixtures`. If no fixture module exists, import from `@playwright/test` and explicitly invoke the selected reusable helper or reproduce equivalent safe standalone seed setup as described above; the import alone supplies no seed setup.
+- Locate the selected fixture module and calculate its import relative to each generated test file's directory; do not invent or relocate fixtures. Use `/` separators in module specifiers, including on Windows. With an actual fixture at `<testDir>/fixtures.ts`, `<testDir>/foo.spec.ts` imports `./fixtures`, `<testDir>/group/foo.spec.ts` imports `../fixtures`, and `<testDir>/a/b/foo.spec.ts` imports `../../fixtures`. If the existing fixture lives elsewhere, calculate from its actual path instead. If no fixture module exists, import from `@playwright/test` and explicitly invoke the selected reusable helper or reproduce equivalent safe standalone seed setup as described above; the import alone supplies no seed setup.
 - **Important**: close the CLI session and stop the background test before moving to the next scenario.
 
 ### 2.3 Generate multiple scenarios
@@ -378,13 +412,13 @@ Loop 2.2 over the targeted scenarios strictly one at a time: start a fresh seed/
 
 ### 2.4 Run generated tests
 
-After generation, run the new tests once:
+After generation, run the new tests once with the same recorded config and project/environment selection:
 
 ```bash
-PLAYWRIGHT_HTML_OPEN=never npx playwright test tests/<group>/<scenario>.spec.ts
+PLAYWRIGHT_HTML_OPEN=never npx playwright test --config=<selected-config> <generated-test>
 ```
 
-Any failure goes to Section 3.
+A discovered test failure goes to Section 3. If no test is discovered, correct the config/path or discovery mismatch before treating it as a test failure.
 
 ---
 
@@ -394,8 +428,10 @@ Goal: fix failing tests while preserving intended behavior; update the spec only
 
 ### 3.1 Find failing tests
 
+Retrieve the owning config from plan metadata or the generated test's `// config:` header, verifying it against repository structure. If missing, resolve it using Section 1.1 before running anything; do not default arbitrarily. Reproduce with the same config, project selection, and prerequisites, scoped to the requested test(s):
+
 ```bash
-PLAYWRIGHT_HTML_OPEN=never npx playwright test
+PLAYWRIGHT_HTML_OPEN=never npx playwright test --config=<selected-config> <target-test>
 ```
 
 Record the list of failing `<file>:<line>` entries and process them one at a time. Do not attempt parallel fixes — shared state and the single CLI session make that fragile.
@@ -405,7 +441,7 @@ Record the list of failing `<file>:<line>` entries and process them one at a tim
 Run the single failing test in debug mode in the background, then attach:
 
 ```bash
-PLAYWRIGHT_HTML_OPEN=never npx playwright test tests/<group>/<scenario>.spec.ts:<line> --debug=cli
+PLAYWRIGHT_HTML_OPEN=never npx playwright test --config=<selected-config> <target-test>:<line> --debug=cli
 # wait for "Debugging Instructions" and the tw-XXXX session name
 playwright-cli attach tw-XXXX
 ```
@@ -425,7 +461,7 @@ Rehearse the corrected interaction with `playwright-cli` — the generated code 
 
 ### 3.3 Apply the fix
 
-Apply the Generate decision boundary before editing: technical locator or implementation changes may preserve the existing expectations autonomously; user-visible discrepancies require the user decision in Section 3.4 first. Do not change assertions, intended order, or inputs merely to match observed behavior. Stop the background debug run and rerun the single test after an authorized fix.
+Apply the Generate decision boundary before editing: technical locator or implementation changes may preserve the existing expectations autonomously; user-visible discrepancies require the user decision in Section 3.4 first. Do not change assertions, intended order, or inputs merely to match observed behavior. Stop the background debug run and rerun the single test with the same `--config` and recorded project/environment selection after an authorized fix.
 
 Never skip hooks or add sleeps as a fix. Never use `networkidle`.
 

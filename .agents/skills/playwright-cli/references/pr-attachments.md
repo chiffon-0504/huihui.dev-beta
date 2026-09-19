@@ -60,9 +60,11 @@ Reference the file in the body as `![alt](.playwright-cli/settings-after.png)` t
 
 Do not automatically discover and publish arbitrary failure media from `test-results` into a PR. The default flow is: collect output, retain it through the repository's existing approved CI-artifact handling, and perform no automatic PR media upload. CI artifacts are not automatically safe either: respect existing access and retention controls; if storage is not approved for the content, report the limitation instead of adding an upload destination.
 
+Resolve the config that owns the target tests and preserve its prerequisites and project selection, following [config selection](test-generation.md#11-prerequisite-workspace-and-owning-config). Replace `<selected-config>` below with the resolved runner config; do not assume the default owns v2 or other suites.
+
 ```yaml
 steps:
-  - run: npx playwright test
+  - run: npx playwright test --config=<selected-config>
   - name: Report local failure evidence
     if: failure()
     run: echo "Failure media remains in test-results for approved CI-artifact handling; no automatic PR upload."

@@ -1,12 +1,12 @@
 # Running Playwright Tests
 
-To run Playwright tests, use the `npx playwright test` command, or a package manager script. To avoid opening the interactive html report, use `PLAYWRIGHT_HTML_OPEN=never` environment variable.
+Before running/debugging tests, [resolve the owning config and effective test directory](test-generation.md#11-prerequisite-workspace-and-owning-config), including its environment and prerequisites. Use `npx playwright test --config=<selected-config>`, or an existing package script verified to select that same environment. Replace placeholders with resolved paths; preserve the selected config/project through reproduction and validation. To avoid opening the interactive html report, use `PLAYWRIGHT_HTML_OPEN=never` environment variable.
 
 ```bash
-# Run all tests
-PLAYWRIGHT_HTML_OPEN=never npx playwright test
+# Run the requested tests under their owning config
+PLAYWRIGHT_HTML_OPEN=never npx playwright test --config=<selected-config> <target-test>
 
-# Run all tests through a custom npm script
+# Use an existing script only after verifying its config and test scope
 PLAYWRIGHT_HTML_OPEN=never npm run special-test-command
 ```
 
@@ -20,7 +20,7 @@ Once instructions containing a session name are printed, use `playwright-cli` to
 
 ```bash
 # Run the test
-PLAYWRIGHT_HTML_OPEN=never npx playwright test --debug=cli
+PLAYWRIGHT_HTML_OPEN=never npx playwright test --config=<selected-config> <target-test> --debug=cli
 # ...
 # ... debugging instructions for "tw-abcdef" session ...
 # ...
@@ -36,4 +36,4 @@ where the problem is most likely to be.
 Every action you perform with `playwright-cli` generates corresponding Playwright TypeScript code.
 This code appears in the output and can be copied directly into the test. Adapt technical locators without changing intended behavior. If observations disagree with user-visible expectations, stop that scenario and ask the user with the spec step, observed outcome and evidence; follow the [Generate/Heal authority boundary](test-generation.md#22-generate-one-scenario). Change expectations only for a user-confirmed intentional change; preserve them for a confirmed regression.
 
-After fixing the test, stop the background test run. Rerun to check that test passes.
+After fixing the test, stop the background test run. Rerun the target test with the same `--config` and project/environment selection to check that it passes. Treat discovery mismatches as config/path issues, not test failures.
