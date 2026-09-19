@@ -89,10 +89,14 @@ playwright-cli run-code "async page => {
 
 ## Wait Strategies
 
+Do not use `networkidle` as a generic readiness signal. Wait for a specific locator, response, URL, or application-defined ready condition instead. Choose the condition required by the workflow; do not substitute fixed sleeps or increase timeouts to mask missing readiness.
+
+For a specific network dependency, register `page.waitForResponse(...)` before the action that triggers it and match the expected response precisely. Use a concrete navigation/load lifecycle event only when that event itself is required, not as a substitute for application readiness.
+
 ```bash
-# Wait for network idle
+# Wait for the UI element that signals readiness for this workflow
 playwright-cli run-code "async page => {
-  await page.waitForLoadState('networkidle');
+  await page.getByRole('heading', { name: 'Results' }).waitFor({ state: 'visible' });
 }"
 
 # Wait for specific element
