@@ -85,6 +85,138 @@ unexpected resources. The existing Beta CD exact-SHA immutable Pages gates run
 this contract after future deployment; local fixture results do not prove edge
 delivery. CSP enforcing, Report-Only and no-CSP controls remain in the Beta suite.
 
+## Performance budgets
+
+`npm run check:v2:performance` typechecks and performs a clean production build,
+then inventories `dist/` recursively. It prints uncompressed UTF-8/binary byte
+totals, every HTML entry, every individual JS/CSS bundle, and the full file
+inventory before enforcing `tools/performance.mjs`. Missing build categories,
+an incomplete HTML inventory or an exceeded budget exit nonzero. Each exceeded
+budget reports its name, actual bytes and allowed bytes. Unknown file types
+(for example a future font) still count toward the total; copied public files
+are included. No runtime dependency, Lighthouse score, timing threshold or
+external network measurement is required.
+
+Baseline: `2d46ec0f73857859cb73bf92def428eec06b7060` on 2026-09-20,
+Node 24.15.0 / locked Vite 8.1.4, Windows. Two clean builds had identical
+filenames and SHA-256 digests. A separate Git-exported LF build had the same
+byte totals and bundle names. Hashes are reported as filenames, never budget
+keys: changing a hash alone cannot fail a byte budget. These observations do
+not promise identical output from a future toolchain.
+
+All values below are decimal, **uncompressed artifact bytes**, not gzip/Brotli
+wire transfer or a sum of all pages a visitor downloads.
+
+| Measurement | Baseline | Limit | Headroom |
+| --- | ---: | ---: | ---: |
+| All HTML (12 content entries + shared 404) | 10,589 | 11,200 | 5.77% |
+| All JS (including classic theme bootstrap) | 90,961 | 96,000 | 5.54% |
+| All CSS (including 404 CSS) | 16,688 | 17,600 | 5.47% |
+| All local images (9 WebPs + SVG sprite) | 619,357 | 650,000 | 4.95% |
+| Entire output (including `_headers` / `_redirects`) | 738,093 | 775,000 | 5.00% |
+| Largest JS bundle | 69,073 | 73,000 | 5.69% |
+| Largest CSS bundle | 13,070 | 13,800 | 5.59% |
+| Largest local image | 122,618 | 129,000 | 5.20% |
+
+The nine WebPs total 617,206 B. Individual bundles are `main-*.js` 69,073 B,
+`theme-bootstrap-*.js` 21,888 B, `main-*.css` 13,070 B and
+`notFound-*.css` 3,618 B. The SVG sprite is 2,151 B. The roughly 5% rounded
+headroom permits small copy/compiler changes while catching an extra large
+module, stylesheet or photo variant. Aggregate budgets also catch many small
+additions; largest-file limits prevent concentrating a regression in one file.
+No variation was observed in repeated builds, so this is intentional growth
+allowance, not a measured noise tolerance.
+
+### Browser request envelope
+
+`tests/v2/performance.spec.ts` checks all twelve localized entries in Chromium,
+Firefox and WebKit at 1440×900 and 390×900, using the existing desktop presets
+(device scale factor 1 for Chromium/Firefox, 2 for WebKit), fresh contexts
+with cache disabled by interception. Requests are counted with multiplicity
+and charged their matching build-file bytes. The initial checkpoint is the
+document load plus decoded eager image (Works) and completed SVG sprite. Lazy
+image counts at that checkpoint are observations, not fixed expectations.
+The second checkpoint scrolls/decodes every gallery image, or exercises the
+footer/language control on routes without photos. No fixed sleep or assumed
+lazy-loading distance is used. Each test attaches the requested paths, byte
+footprint and limits as JSON (`resource-footprint`).
+
+| Shared browser budget | Baseline envelope | Limit |
+| --- | ---: | ---: |
+| Shell requests including document | 5 | 5 |
+| Shell requested build bytes, all locales/routes | 106,910–107,037 | 113,000 |
+| Works local photo requests before viewer actions | 3 after scrolling | 3 |
+| Works local photo bytes, largest candidate for each photo | 344,696 | 365,000 |
+| Home/About/Posts gallery or external requests | 0 | 0 |
+
+The shell is one document, classic bootstrap, app module, stylesheet and SVG
+sprite. Its byte limit adds 5.57% to the largest localized shell. Works' photo
+byte limit adds 5.89% to the three 1200px variants; it covers native responsive
+selection without pinning a browser's lazy distance or chosen candidate. There
+is no spare request: an architectural change to the request graph needs review.
+These are two reusable byte/request envelopes, not twelve duplicated thresholds.
+Actual requested bytes depend on the candidates and which lazy images have
+started; they are not encoded response sizes, HTTP overhead, or live CDN transfer.
+
+Measured English-route examples (same build; counts include the document):
+
+| Route / browser | Initial requests / bytes | After ordinary browsing |
+| --- | --- | --- |
+| Home, all browsers / both widths | 5 / 106,975 | unchanged |
+| About, all browsers / both widths | 5 / 106,965 | unchanged |
+| Posts, all browsers / both widths | 5 / 106,914 | unchanged |
+| Works, Chromium 1440px | 8 / 295,252 | unchanged |
+| Works, Chromium 390px | 8 / 191,098 | unchanged |
+| Works, Firefox 1440px | 6 / 159,506 | 8 / 295,252 |
+| Works, WebKit 1440px (2x) | 7 / 328,998 | 8 / 451,616 |
+| Works, WebKit 390px (2x) | 7 / 225,824 | 8 / 295,252 |
+
+These initial lazy counts record this observation only; assertions use the
+envelope above. Every locale is measured by the same spec and attached report.
+
+Gallery images retain one eager cover, two `loading="lazy"` images, async
+decoding and no high fetch priority or image preload/prefetch hints. Unrelated
+routes cannot request the gallery even though its URLs exist in the shared JS.
+Normal loading rejects external and non-build requests before dispatch and
+fails on runtime/resource errors. The separate existing viewer contracts prove
+that scrolling, hover, focus and preview opening succeed with R2 unavailable,
+using local WebP only. Explicit high-resolution actions may request only the
+selected published JPEG with no referrer; localized fallback and synthetic
+success/error/stale-completion/CSP controls remain covered. R2 requests are
+intercepted in tests; no source JPEG is downloaded.
+
+The optional published JPGs are 1,587,326 B (Fuji), 1,963,940 B (Tsutenkaku) and
+3,257,044 B (Shiba). They are user-requested media and excluded from initial
+page/build budgets. Their publication, integrity and privacy contracts remain
+owned by the media documentation and existing tests.
+
+### Validation and intentional growth
+
+The existing in-memory production build in `tests/unit/v2-bootstrap.test.mjs`
+applies the same budget logic to emitted output plus copied public files. Thus
+the existing PR/main static-unit and V2 unit jobs enforce the budgets without
+another build or workflow change. The existing V2 browser matrix discovers the
+loading spec. Worker deployment gains no browser dependency; PR/main/Beta CD
+responsibilities, retries and security controls are unchanged.
+
+Run `npm run check:v2:performance`, `npx vitest run tests/unit/v2-`, and
+`npx playwright test --config playwright.v2.config.mjs tests/v2/performance.spec.ts tests/v2/works.spec.ts tests/v2/image-viewer.spec.mjs`
+(the performance command builds before the browser tests). A plain unit run
+does not write or refresh `dist/`.
+
+When architecture intentionally grows, measure the fresh production output and
+all affected localized request paths first. Explain the new bytes/requests in
+the PR, update the shared limits and this baseline together, and retain negative
+unit checks and resource-isolation/privacy contracts. Do not auto-refresh limits
+from the build under test or raise them merely to clear a failure.
+
+The shared application currently includes all page modules and locale copy,
+and both bootstrap and app include theme calculation data. This is observable
+build structure, not proof of a performance regression; no speculative code
+splitting or application optimization is part of this baseline PR. No DevTools
+performance trace was captured, LCP/INP/CLS were not trace-measured, and no
+trace-derived savings are claimed. A request snapshot does not prove permanent non-use.
+
 ## Beta deployment
 
 Use the existing Cloudflare Pages Git integration:
