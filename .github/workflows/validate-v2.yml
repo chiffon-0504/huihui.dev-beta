@@ -3,32 +3,38 @@ name: Validate v2 shell
 on:
   pull_request:
     branches: [main]
-    paths:
-      - "v2/**"
-      - "tests/v2/**"
-      - "tests/v2-beta/**"
-      - "tests/scripts/v2-beta-server.mjs"
-      - "tests/support/v2-beta-contract.mjs"
-      - "tests/support/v2-viewer-fixture.mjs"
-      - "playwright.v2-beta.config.mjs"
-      - ".github/workflows/beta-cd.yml"
-      - "tests/unit/v2-*.test.mjs"
-      - "tests/support/csp-enforcement.mjs"
-      - "playwright.v2.config.mjs"
-      - "playwright.base.config.mjs"
-      - "vite.v2.config.mjs"
-      - "tsconfig.json"
-      - "package.json"
-      - "package-lock.json"
-      - "_headers"
-      - ".github/workflows/validate-v2.yml"
 
 permissions:
   contents: read
 
 jobs:
+  v2-changes:
+    name: Detect v2 changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      required: ${{ steps.changes.outputs.required }}
+    steps:
+      - name: Checkout PR with complete history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+      - name: Detect V2-relevant paths
+        id: changes
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node tests/scripts/v2-pr-gate.mjs changes
+
   v2-unit:
     name: v2 unit contracts
+    needs: v2-changes
+    if: needs.v2-changes.outputs.required == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -46,6 +52,8 @@ jobs:
 
   v2-browsers:
     name: v2 E2E (${{ matrix.browser }})
+    needs: v2-changes
+    if: needs.v2-changes.outputs.required == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -77,6 +85,8 @@ jobs:
 
   v2-beta:
     name: v2 built-beta and CSP
+    needs: v2-changes
+    if: needs.v2-changes.outputs.required == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -108,17 +118,24 @@ jobs:
 
   v2-shell:
     name: TypeScript and v2 browsers
-    needs: [v2-unit, v2-browsers, v2-beta]
+    needs: [v2-changes, v2-unit, v2-browsers, v2-beta]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Require every v2 component to succeed
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+      - name: Require successful V2 validation or verified non-applicability
         env:
+          CHANGES_RESULT: ${{ needs.v2-changes.result }}
+          V2_REQUIRED: ${{ needs.v2-changes.outputs.required }}
           UNIT_RESULT: ${{ needs.v2-unit.result }}
           BROWSERS_RESULT: ${{ needs.v2-browsers.result }}
           BETA_RESULT: ${{ needs.v2-beta.result }}
-        run: |
-          test "$UNIT_RESULT" = success
-          test "$BROWSERS_RESULT" = success
-          test "$BETA_RESULT" = success
+        run: node tests/scripts/v2-pr-gate.mjs gate

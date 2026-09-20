@@ -249,13 +249,31 @@ describe("Playwright cross-browser validation contract", () => {
     const gate = workflow.jobs["v2-shell"];
 
     expect(Object.keys(workflow.jobs).sort()).toEqual([
-      "v2-beta", "v2-browsers", "v2-shell", "v2-unit",
+      "v2-beta", "v2-browsers", "v2-changes", "v2-shell", "v2-unit",
     ]);
+    expect(workflow.on).toEqual({ pull_request: { branches: ["main"] } });
     expect(workflow.permissions).toEqual({ contents: "read" });
+    const changes = workflow.jobs["v2-changes"];
+    expect(changes).not.toHaveProperty("if");
+    expect(changes).not.toHaveProperty("needs");
+    expect(changes.outputs).toEqual({
+      required: "${{ steps.changes.outputs.required }}",
+    });
+    expect(actionSteps(changes, "actions/checkout")[0].with).toEqual({
+      "fetch-depth": 0,
+      "persist-credentials": false,
+    });
+    expect(changes.steps.find(({ id }) => id === "changes")).toMatchObject({
+      env: {
+        PR_BASE_SHA: "${{ github.event.pull_request.base.sha }}",
+        PR_HEAD_SHA: "${{ github.event.pull_request.head.sha }}",
+      },
+      run: "node tests/scripts/v2-pr-gate.mjs changes",
+    });
     for (const job of [unit, browsers, beta]) {
       expect(job["runs-on"]).toBe("ubuntu-latest");
-      expect(job).not.toHaveProperty("needs");
-      expect(job).not.toHaveProperty("if");
+      expect(job.needs).toBe("v2-changes");
+      expect(job.if).toBe("needs.v2-changes.outputs.required == 'true'");
       expect(job).not.toHaveProperty("concurrency");
     }
     expect(source).not.toContain("continue-on-error");
@@ -298,18 +316,19 @@ describe("Playwright cross-browser validation contract", () => {
       });
     }
     expect(gate.name).toBe("TypeScript and v2 browsers");
-    expect(gate.needs).toEqual(["v2-unit", "v2-browsers", "v2-beta"]);
+    expect(gate.needs).toEqual(["v2-changes", "v2-unit", "v2-browsers", "v2-beta"]);
     expect(gate.if).toBe("always()");
-    expect(gate.steps).toHaveLength(1);
-    expect(gate.steps[0].env).toEqual({
+    expect(gate.steps).toHaveLength(3);
+    expect(gate.steps[2]).not.toHaveProperty("if");
+    expect(gate.steps[2].env).toEqual({
+      CHANGES_RESULT: "${{ needs.v2-changes.result }}",
+      V2_REQUIRED: "${{ needs.v2-changes.outputs.required }}",
       UNIT_RESULT: "${{ needs.v2-unit.result }}",
       BROWSERS_RESULT: "${{ needs.v2-browsers.result }}",
       BETA_RESULT: "${{ needs.v2-beta.result }}",
     });
-    expect(runCommands(gate)[0].trim().split("\n")).toEqual([
-      'test "$UNIT_RESULT" = success',
-      'test "$BROWSERS_RESULT" = success',
-      'test "$BETA_RESULT" = success',
+    expect(runCommands(gate)).toEqual([
+      "node tests/scripts/v2-pr-gate.mjs gate",
     ]);
   });
 
