@@ -6,6 +6,7 @@
     "check:ts": "npm run check:v2:types",
     "check:v2:types": "tsc --project v2/tsconfig.json --noEmit",
     "build:v2": "npm run check:v2:types && vite build --config vite.v2.config.mjs",
+    "check:v2:performance": "npm run build:v2 && node v2/tools/check-performance.mjs",
     "preview:v2": "vite preview --config vite.v2.config.mjs",
     "test:e2e:v2": "npm run build:v2 && playwright test --config playwright.v2.config.mjs",
     "check:js": "node tests/scripts/check-js.mjs",

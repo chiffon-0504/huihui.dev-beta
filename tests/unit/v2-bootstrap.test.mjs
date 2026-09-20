@@ -5,6 +5,8 @@ import { build } from "vite";
 import config from "../../vite.v2.config.mjs";
 import { THEME_STORAGE_KEY } from "../../v2/src/theme/preference.ts";
 import { getContent, localeHref, supportedLocales } from "../../v2/src/locales/index.ts";
+import { fileURLToPath } from "node:url";
+import { assertPerformance, measurePerformance, readFiles } from "../../v2/tools/performance.mjs";
 
 let output;
 let bootstrap;
@@ -27,6 +29,11 @@ beforeAll(async () => {
 }, 30_000);
 
 describe("v2 initial theme build contract", () => {
+  test("the production output and copied public files stay within performance budgets", async () => {
+    const publicFiles = await readFiles(fileURLToPath(new URL("../../v2/public/", import.meta.url)));
+    assertPerformance(measurePerformance([...output, ...publicFiles]));
+  });
+
   test.each(["index.html", "en/index.html", "ja/index.html", "about/index.html", "en/about/index.html", "ja/about/index.html", "works/index.html", "en/works/index.html", "ja/works/index.html", "posts/index.html", "en/posts/index.html", "ja/posts/index.html"])("%s blocks parsing with an external classic bootstrap before styles and app", (entry) => {
     const html = String(output.find((asset) => asset.fileName === entry)?.source);
     const tag = `<script src="/${bootstrap.fileName}"></script>`;

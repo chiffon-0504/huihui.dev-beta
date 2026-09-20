@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { getContent, localeHref, supportedLocales } from "../../v2/src/locales";
+import { verifiedHighResolution } from "../../v2/src/media/published";
 
 for (const locale of supportedLocales) {
   const route = localeHref(locale, "", "works");
@@ -97,29 +98,33 @@ for (const locale of supportedLocales) {
   });
 
   test(`${locale} high-resolution errors retain localized previews and accessible close controls`, async ({ page }) => {
-    let requests = 0;
+    const requests: { url: string; referer: string | undefined }[] = [];
     await page.route("https://assets-beta.huihui.dev/**", (route) => {
-      requests++;
+      requests.push({ url: route.request().url(), referer: route.request().headers().referer });
       return route.fulfill({ status: 404, headers: { "cache-control": "public, max-age=31536000, immutable" },
         contentType: "image/jpeg", body: "invalid" });
     });
     await page.goto(route);
     const dialog = page.getByRole("dialog", { name: copy.viewer.title });
-    for (const [index, action] of ["close", "Escape"].entries()) {
+    for (const [index, action] of ["close", "Escape", "close"].entries()) {
       const trigger = page.locator(".image-preview").nth(index);
       await trigger.click();
       const load = dialog.locator(".viewer-load");
       await expect(load).toBeEnabled();
       await expect(dialog.locator(".viewer-stage")).toHaveAttribute("data-mode", "preview");
-      expect(requests).toBe(index);
+      await dialog.locator("img").evaluate((image: HTMLImageElement) => image.decode());
+      expect(await dialog.locator("img").evaluate((image: HTMLImageElement) => new URL(image.currentSrc).origin === location.origin && new URL(image.currentSrc).pathname.endsWith(".webp"))).toBe(true);
+      expect(requests).toHaveLength(index);
       await load.click();
       await expect(dialog.getByRole("status")).toHaveText(copy.viewer.error);
       await expect(dialog.getByRole("status")).toHaveAttribute("aria-live", "polite");
       await expect(load).toBeDisabled();
       await expect(load).toHaveAccessibleName(new RegExp(`^${copy.viewer.load}`));
       await dialog.locator("img").evaluate((image: HTMLImageElement) => image.decode());
-      await expect(dialog.locator("img")).toHaveAttribute("alt", index === 0 ? copy.website.alt : copy.photography.alt);
-      expect(requests).toBe(index + 1);
+      await expect(dialog.locator("img")).toHaveAttribute("alt", [copy.website.alt, copy.photography.alt, copy.photography.shibaAlt][index]!);
+      expect(requests).toHaveLength(index + 1);
+      const id = (["fuji", "tsutenkaku", "shiba"] as const)[index]!;
+      expect(requests[index]).toEqual({ url: verifiedHighResolution[id]!.url, referer: undefined });
       if (action === "close") await dialog.getByRole("button", { name: copy.viewer.close, exact: true }).click();
       else await page.keyboard.press("Escape");
       await expect(dialog).not.toBeVisible();

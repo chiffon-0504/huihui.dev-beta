@@ -3,6 +3,8 @@ import { jpeg, remoteUrl, openViewerFixture, readV2Headers } from "../support/v2
 
 test("real Works: load, scroll, hover, focus and every preview request zero R2 JPGs", async ({ page, baseURL }) => {
   const remote = [];
+  // Ordinary browsing must succeed even when R2 is unavailable.
+  await page.route("https://assets-beta.huihui.dev/**", (route) => route.abort("failed"));
   page.on("request", (request) => { if (new URL(request.url()).origin !== baseURL) remote.push(request.url()); });
   const headers = await readV2Headers();
   await page.route("**/*", async (route) => {
@@ -24,6 +26,9 @@ test("real Works: load, scroll, hover, focus and every preview request zero R2 J
       const loadControl = page.locator(".viewer-load");
       if (await loadControl.evaluate((button) => button.hidden)) await expect(loadControl).not.toBeVisible();
       await page.locator("dialog img").evaluate((image) => image.decode());
+      expect(await page.locator("dialog img").evaluate((image) =>
+        new URL(image.currentSrc).origin === location.origin && new URL(image.currentSrc).pathname.endsWith(".webp"))).toBe(true);
+      await expect(page.locator(".viewer-stage")).toHaveAttribute("data-mode", "preview");
       expect(remote).toEqual([]);
       await page.keyboard.press("Escape");
       await expect(page.locator("dialog")).not.toBeVisible();
