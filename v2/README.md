@@ -331,7 +331,7 @@ v2/
 ├─ src/
 │  ├─ main.ts          # Existing application bootstrap
 │  ├─ components/     # Existing shared UI components
-│  ├─ services/       # Reserved for future service clients
+│  ├─ services/       # Typed JSON transport and explicit Worker origin boundary
 │  ├─ utils/          # Reserved for future reusable utilities
 │  ├─ locales/        # Canonical typed ZH-Hant / EN / JA copy
 │  ├─ types/          # Reserved for future shared application types
@@ -357,6 +357,11 @@ v2/
 ├─ tsconfig.json
 └─ README.md
 ```
+
+The [service foundation](src/services/README.md) provides validated JSON GETs,
+normalized errors, cancellation and explicit beta/production Worker origins.
+No page consumes it yet; feature integration and the required CSP/origin policy
+remain separate work.
 
 V1 remains the active production site while v2 development continues; its root
 HTML/CSS/JavaScript and release flow remain independent of these TypeScript
