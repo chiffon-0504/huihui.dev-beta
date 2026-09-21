@@ -257,6 +257,21 @@ for (const locale of locales) {
           await expect(control).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
         }
         const links = drawer.getByRole("link");
+        for (const anchor of await links.all()) {
+          await expect(anchor).toHaveCSS("font-size", "18px");
+          await expect(anchor).toHaveCSS("font-weight", "600");
+          const textLines = await anchor.evaluate((node) => {
+            const text = [...node.childNodes].find((child) => child.nodeType === Node.TEXT_NODE);
+            const range = document.createRange();
+            range.selectNodeContents(text);
+            return range.getClientRects().length;
+          });
+          expect(textLines).toBe(1);
+        }
+        const github = links.last();
+        const githubBox = await github.boundingBox();
+        const iconBox = await github.locator("svg").boundingBox();
+        expect(Math.abs(iconBox.y + iconBox.height / 2 - githubBox.y - githubBox.height / 2)).toBeLessThanOrEqual(1 / 64);
         const rows = await links.evaluateAll((nodes) => nodes.map((node) => {
           const rect = node.getBoundingClientRect();
           return { x: rect.x, y: rect.y, bottom: rect.bottom };
