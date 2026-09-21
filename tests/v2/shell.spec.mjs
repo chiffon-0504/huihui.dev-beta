@@ -197,6 +197,8 @@ for (const locale of locales) {
       await page.mouse.wheel(0, 300);
       await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(scrollY);
       await toggle.click();
+      await expect(close).toBeFocused();
+      await expect(close).toHaveCSS("text-decoration-line", "none");
       await close.click();
       await expect(drawer).toBeHidden();
       await expect(toggle).toBeFocused();
@@ -288,6 +290,10 @@ for (const locale of locales) {
         await close.click();
         await expect(drawer).toBeHidden();
         await expect(page.locator(".navbar-toggle")).toBeFocused();
+        // Keyboard reopening after pointer use must restore the X indicator.
+        await page.keyboard.press("Enter");
+        await expectTextFocus(close, theme);
+        await page.keyboard.press("Escape");
       }
     });
   }

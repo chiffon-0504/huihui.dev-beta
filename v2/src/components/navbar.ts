@@ -62,7 +62,10 @@ export function createNavbar(locale: Locale, theme: ThemeController, page: Page)
     toggle.setAttribute("aria-expanded", "false");
     (compact.matches ? toggle : brand).focus({ preventScroll: true });
   };
-  toggle.addEventListener("click", () => {
+  toggle.addEventListener("click", (event) => {
+    // WebKit can match :focus-visible after pointer-triggered dialog autofocus.
+    // Keyboard/assistive activation has detail 0 and keeps its focus indicator.
+    close.classList.toggle("pointer-open", event.detail > 0);
     drawer.showModal();
     toggle.setAttribute("aria-expanded", "true");
     close.focus();
@@ -86,6 +89,7 @@ export function createNavbar(locale: Locale, theme: ThemeController, page: Page)
   // Native modality makes the page inert; wrap Tab without visiting browser chrome.
   drawer.addEventListener("keydown", (event) => {
     if (event.key !== "Tab") return;
+    close.classList.remove("pointer-open");
     const last = items.querySelector<HTMLAnchorElement>("li:last-child a")!;
     if (event.shiftKey && document.activeElement === close) {
       event.preventDefault();
