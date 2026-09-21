@@ -1,6 +1,8 @@
 import type { LocaleContent } from "./types";
 
 export default {
+  openNavigation: "ナビゲーションを開く",
+  closeNavigation: "ナビゲーションを閉じる",
   postsLabel: "記事",
   postsPage: {
     title: "記事",

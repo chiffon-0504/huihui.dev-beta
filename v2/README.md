@@ -461,9 +461,11 @@ without an inset frame or background. Its brand link also uses the button color
 on hover/focus without an underline. Keyboard `:focus-visible` outlines remain
 visible, and the button layer introduces no transitions or animations.
 
-The single breakpoint is `40rem`: tokens reduce gutters from 1.5rem to 1rem
-and section spacing from 6rem to 4rem; the existing navbar wraps and Home
-columns stack. Use that literal in media queries because
+The page layout breakpoint is `40rem`: tokens reduce gutters from 1.5rem to 1rem
+and section spacing from 6rem to 4rem, and Home columns stack. Navigation uses
+`48rem`: the Japanese desktop header needs about 704px including its existing
+gaps and gutters; 768px leaves room before controls wrap. Keep that navigation
+query synchronized in `navbar.ts` and `components/navbar.css`. Use literals because
 custom properties cannot supply query conditions. Font sizes use rem; the display heading mixes
 rem and viewport sizing within rem bounds so enlarged text can grow. Do not
 lock root text sizing or hide horizontal overflow to mask reflow defects.
@@ -484,15 +486,19 @@ this system. Home-specific composition stays in `pages/home.css` and consumes
 the shared layers.
 
 The primary About, Works and Posts links point to their matching-language V2 pages.
-All navigation remains visible on mobile and wraps
-at narrow widths or enlarged text. The actions area can later accommodate search
-without adding a search control or reserving a visible empty slot now.
+At 48rem and below, a three-line CSS hamburger replaces the desktop page links
+and GitHub link. It opens a native modal dialog at the viewport's left edge,
+with the same four links and current-page marker. The close button, backdrop,
+Escape and link activation close it. Native modality and explicit Tab wrapping
+contain focus; closing restores the trigger, or the brand after desktop resize.
+The open dialog locks root scrolling without changing the scroll position.
+Language and theme controls remain in the header, wrapping at enlarged text sizes.
 
 The navbar language switcher uses native `details`/`summary` and localized links
 from `locales/`. It preserves the current page and fragment across the three
 locale entries: Home sections stay on Home, About sections stay on About,
 Works links stay on Works, and Posts category/article fragments stay on Posts.
-The same control remains in the wrapping mobile navbar (there is no drawer).
+The same control remains in the mobile navbar outside the navigation drawer.
 Escape restores trigger focus; outside clicks and focus leaving the disclosure
 close it. Tab follows native document order. The disclosure and links work if
 enhancement listeners fail after rendering; the application shell itself still

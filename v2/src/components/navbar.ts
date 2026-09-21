@@ -28,7 +28,77 @@ export function createNavbar(locale: Locale, theme: ThemeController, page: Page)
     createLanguageSwitcher(locale, page),
     createThemeSwitcher(locale, theme),
   );
-  nav.append(brand, primary, actions);
-  header.append(nav);
+  const toggle = element("button", "navbar-toggle navbar-control button button--quiet");
+  toggle.type = "button";
+  toggle.setAttribute("aria-label", copy.openNavigation);
+  toggle.setAttribute("aria-expanded", "false");
+  toggle.setAttribute("aria-controls", "nav-drawer");
+  const icon = element("span", "hamburger");
+  icon.setAttribute("aria-hidden", "true");
+  for (let i = 0; i < 3; i++) icon.append(element("span", ""));
+  toggle.append(icon);
+
+  const drawer = element("dialog", "nav-drawer");
+  drawer.id = "nav-drawer";
+  drawer.setAttribute("aria-label", copy.navigation);
+  const close = element("button", "drawer-close navbar-control button button--quiet", "×");
+  close.type = "button";
+  close.autofocus = true;
+  close.setAttribute("aria-label", copy.closeNavigation);
+  const drawerNav = element("nav", "");
+  drawerNav.setAttribute("aria-label", copy.navigation);
+  const items = primary.cloneNode(true) as HTMLUListElement;
+  items.className = "drawer-links";
+  const githubItem = element("li", "");
+  githubItem.append(github.cloneNode(true));
+  items.append(githubItem);
+  drawerNav.append(items);
+  drawer.append(close, drawerNav);
+
+  // Keep this in sync with the navigation-only CSS breakpoint.
+  const compact = matchMedia("(max-width: 48rem)");
+  const finishClose = () => {
+    if (drawer.open) return;
+    toggle.setAttribute("aria-expanded", "false");
+    (compact.matches ? toggle : brand).focus({ preventScroll: true });
+  };
+  toggle.addEventListener("click", () => {
+    drawer.showModal();
+    toggle.setAttribute("aria-expanded", "true");
+    close.focus();
+  });
+  close.addEventListener("click", () => drawer.close());
+  drawer.addEventListener("close", finishClose);
+  drawerNav.addEventListener("click", (event) => {
+    if (event.target instanceof Element && event.target.closest("a")) drawer.close();
+  });
+  // A backdrop pointer sequence must start and finish outside the panel.
+  const outside = (event: PointerEvent | MouseEvent) => {
+    const rect = drawer.getBoundingClientRect();
+    return event.clientX < rect.left || event.clientX >= rect.right || event.clientY < rect.top || event.clientY >= rect.bottom;
+  };
+  let backdropStart = false;
+  drawer.addEventListener("pointerdown", (event) => { backdropStart = outside(event); });
+  drawer.addEventListener("click", (event) => {
+    if (backdropStart && outside(event)) drawer.close();
+    backdropStart = false;
+  });
+  // Native modality makes the page inert; wrap Tab without visiting browser chrome.
+  drawer.addEventListener("keydown", (event) => {
+    if (event.key !== "Tab") return;
+    const last = items.querySelector<HTMLAnchorElement>("li:last-child a")!;
+    if (event.shiftKey && document.activeElement === close) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      close.focus();
+    }
+  });
+  compact.addEventListener("change", () => {
+    if (!compact.matches && drawer.open) drawer.close();
+  });
+  nav.append(brand, primary, actions, toggle);
+  header.append(nav, drawer);
   return header;
 }

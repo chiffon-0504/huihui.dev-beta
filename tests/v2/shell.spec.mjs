@@ -37,11 +37,13 @@ for (const locale of locales) {
       await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
       await expect(page.getByRole("contentinfo")).toBeVisible();
       const nav = page.getByRole("navigation", { name: locale.navigation });
-      await expect(nav.getByRole("link")).toHaveCount(5);
+      await expect(nav.getByRole("link")).toHaveCount(viewport.width > 768 ? 5 : 1);
       await expect(nav.getByRole("link", { name: "huihui.dev", exact: true })).toHaveAttribute("href", locale.route);
-      await expect(nav.getByRole("link", { name: locale.worksLabel, exact: true })).toHaveAttribute("href", `${locale.route}works/`);
-      await expect(nav.getByRole("link", { name: locale.aboutLabel, exact: true })).toHaveAttribute("href", `${locale.route}about/`);
-      await expect(nav.getByRole("link", { name: "GitHub", exact: true })).toHaveAttribute("href", "https://github.com/chiffon-0504");
+      if (viewport.width > 768) {
+        await expect(nav.getByRole("link", { name: locale.worksLabel, exact: true })).toHaveAttribute("href", `${locale.route}works/`);
+        await expect(nav.getByRole("link", { name: locale.aboutLabel, exact: true })).toHaveAttribute("href", `${locale.route}about/`);
+        await expect(nav.getByRole("link", { name: "GitHub", exact: true })).toHaveAttribute("href", "https://github.com/chiffon-0504");
+      }
       await expect(nav.locator('a[aria-current="page"]')).toHaveAttribute("hreflang", locale.lang);
       await expect(page.getByRole("contentinfo").getByRole("link")).toHaveAttribute("href", "mailto:contact@huihui.dev");
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -59,7 +61,7 @@ for (const locale of locales) {
       // Restart without a fragment so tab order begins at the document start.
       await page.goto(locale.route);
       await page.keyboard.press("Tab");
-      for (const [navIndex, label] of ["huihui.dev", locale.worksLabel, locale.aboutLabel, locale.postsLabel, "GitHub"].entries()) {
+      for (const [navIndex, label] of (viewport.width > 768 ? ["huihui.dev", locale.worksLabel, locale.aboutLabel, locale.postsLabel, "GitHub"] : ["huihui.dev"]).entries()) {
         await page.keyboard.press("Tab");
         const current = nav.getByRole("link", { name: label, exact: true });
         await expect(current).toBeFocused();
@@ -105,8 +107,138 @@ for (const locale of locales) {
     await page.goto(locale.route);
     await page.locator("html").evaluate((node) => { node.style.fontSize = "200%"; });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    for (const link of await page.getByRole("navigation").first().getByRole("link").all()) {
+    await page.locator(".navbar-toggle").click();
+    for (const link of await page.locator(".nav-drawer").getByRole("link").all()) {
       await expect(link).toBeVisible();
     }
+  });
+}
+
+const drawerLabels = {
+  "zh-Hant": ["開啟導覽選單", "關閉導覽選單", "淺色", "深色"],
+  en: ["Open navigation", "Close navigation", "Light", "Dark"],
+  ja: ["ナビゲーションを開く", "ナビゲーションを閉じる", "ライト", "ダーク"],
+};
+
+for (const locale of locales) {
+  for (const theme of ["light", "dark"]) {
+    test(`${locale.lang} mobile drawer keyboard, dismissal and links in ${theme}`, async ({ page, baseURL }, testInfo) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await applyPagesCsp(page, baseURL);
+      await page.goto(locale.route);
+      const [openLabel, closeLabel, light, dark] = drawerLabels[locale.lang];
+      await page.locator(".theme-trigger").click();
+      await page.getByRole("menuitemradio", { name: theme === "light" ? light : dark, exact: true }).click();
+      const toggle = page.getByRole("button", { name: openLabel, exact: true });
+      const drawer = page.getByRole("dialog", { name: locale.navigation });
+      const close = drawer.getByRole("button", { name: closeLabel, exact: true });
+      await expect(toggle).toHaveAttribute("aria-controls", "nav-drawer");
+      await expect(toggle).toHaveAttribute("aria-expanded", "false");
+      await expect(page.locator(".navbar-primary")).toBeHidden();
+      const bars = await toggle.locator(".hamburger span").evaluateAll((nodes) => nodes.map((node) => {
+        const rect = node.getBoundingClientRect();
+        return { width: rect.width, height: rect.height, y: rect.y };
+      }));
+      expect(bars).toHaveLength(3);
+      expect(bars.every((bar) => bar.width === bars[0].width && bar.height === 2)).toBe(true);
+      expect(bars[1].y - bars[0].y).toBe(bars[2].y - bars[1].y);
+
+      // Reach and activate the trigger using native keyboard order.
+      await page.keyboard.press("Tab");
+      await expect(toggle).toBeFocused();
+      await expect(toggle).toHaveCSS("outline-style", "solid");
+      await page.keyboard.press("Enter");
+      await expect(close).toBeFocused();
+      await expect(close).toHaveCSS("outline-style", "solid");
+      await expect(toggle).toHaveAttribute("aria-expanded", "true");
+      await expect(drawer.getByRole("navigation")).toHaveAccessibleName(locale.navigation);
+      await expect(drawer.getByRole("link")).toHaveText([locale.worksLabel, locale.aboutLabel, locale.postsLabel, "GitHub"]);
+      const hrefs = [`${locale.route}works/`, `${locale.route}about/`, `${locale.route}posts/`, "https://github.com/chiffon-0504"];
+      for (const [index, anchor] of (await drawer.getByRole("link").all()).entries()) {
+        await expect(anchor).toHaveAttribute("href", hrefs[index]);
+        await page.keyboard.press("Tab");
+        await expect(anchor).toBeFocused();
+        await expect(anchor).toHaveCSS("outline-style", "solid");
+      }
+      await page.keyboard.press("Tab");
+      await expect(close).toBeFocused();
+      await page.keyboard.press("Shift+Tab");
+      await expect(drawer.getByRole("link").last()).toBeFocused();
+      const box = await drawer.boundingBox();
+      expect(box.x).toBe(0);
+      expect(box.y).toBe(0);
+      expect(box.height).toBe(844);
+      const closeBox = await close.boundingBox();
+      expect(closeBox.x).toBeGreaterThan(box.width / 2);
+      expect(closeBox.y).toBeLessThan(32);
+      await expect(drawer).toHaveCSS("background-color", theme === "light" ? "rgb(255, 255, 255)" : "rgb(10, 10, 10)");
+      const scrollY = await page.evaluate(() => scrollY);
+      await page.mouse.move(380, 600);
+      await page.mouse.wheel(0, 400);
+      await expect(page.locator("html")).toHaveCSS("overflow-y", "hidden");
+      expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
+      if (testInfo.project.name === "chromium") await page.screenshot({ path: testInfo.outputPath(`drawer-${locale.lang}-${theme}.png`) });
+
+      await page.keyboard.press("Escape");
+      await expect(drawer).toBeHidden();
+      await expect(toggle).toBeFocused();
+      await expect(toggle).toHaveAttribute("aria-expanded", "false");
+      await expect(page.locator("html")).not.toHaveCSS("overflow-y", "hidden");
+      await page.mouse.wheel(0, 300);
+      await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(scrollY);
+      await toggle.click();
+      await close.click();
+      await expect(drawer).toBeHidden();
+      await expect(toggle).toBeFocused();
+      await toggle.click();
+      // Interior whitespace is not a backdrop click.
+      await page.mouse.click(100, 400);
+      await expect(drawer).toBeVisible();
+      await page.mouse.click(380, 400);
+      await expect(drawer).toBeHidden();
+      await expect(toggle).toBeFocused();
+
+      for (const href of hrefs.slice(0, 3)) {
+        await page.locator(".navbar-toggle").click();
+        await page.locator(`.nav-drawer a[href='${href}']`).click();
+        await expect(page).toHaveURL(new URL(href, baseURL).href);
+        await page.locator(".navbar-toggle").click();
+        await expect(page.locator(".drawer-links a[aria-current=page]")).toHaveAttribute("href", href);
+        await page.keyboard.press("Escape");
+      }
+    });
+  }
+
+  test(`${locale.lang} navigation breakpoint, resize cleanup and enlarged text`, async ({ page }) => {
+    await page.goto(locale.route);
+    for (const width of [320, 390, 640, 700, 768, 769, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect(page.locator(".navbar-toggle")).toBeVisible({ visible: width <= 768 });
+      await expect(page.locator(".navbar-primary")).toBeVisible({ visible: width > 768 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      const rects = await page.locator(".navbar > :visible").evaluateAll((nodes) => nodes.map((node) => {
+        const rect = node.getBoundingClientRect();
+        return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
+      }));
+      for (let i = 0; i < rects.length; i++) for (let j = i + 1; j < rects.length; j++) {
+        const a = rects[i], b = rects[j];
+        expect(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top).toBe(true);
+      }
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.locator(".navbar-toggle").click();
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect(page.locator(".nav-drawer")).toBeHidden();
+    await expect(page.locator(".brand")).toBeFocused();
+    await expect(page.locator("html")).not.toHaveCSS("overflow-y", "hidden");
+    await page.setViewportSize({ width: 320, height: 700 });
+    await page.emulateMedia({ reducedMotion: "reduce", forcedColors: "active" });
+    await page.locator("html").evaluate((node) => { node.style.fontSize = "200%"; });
+    await page.locator(".navbar-toggle").click();
+    await expect(page.locator(".drawer-close")).toBeInViewport();
+    for (const anchor of await page.locator(".drawer-links a").all()) await expect(anchor).toBeInViewport();
+    expect(await page.locator(".nav-drawer").evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+    await page.keyboard.press("Escape");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });
 }

@@ -72,8 +72,8 @@ for (const locale of locales) {
       await page.locator("html").evaluate((node, scale) => { node.style.fontSize = `${scale * 100}%`; }, textScale);
       const trigger = page.locator(".theme-trigger");
       const language = page.locator(".language-trigger");
-      const github = page.getByRole("link", { name: "GitHub", exact: true });
-      const controls = page.locator(".navbar-actions .navbar-control");
+      const github = page.locator(".navbar-actions > a");
+      const controls = page.locator(".navbar-actions .navbar-control:visible");
 
       await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
       await expect(page.locator("html")).toHaveCSS("background-color", "rgb(0, 0, 0)");
@@ -85,11 +85,11 @@ for (const locale of locales) {
       expect(await language.evaluate((node) => getComputedStyle(node, "::marker").content)).toBe('""');
       await expect(github.locator("svg")).toHaveAttribute("data-icon", "github");
       await expect(trigger.locator("svg")).toHaveAttribute("data-icon", "moon");
-      for (const icon of [github.locator("svg"), trigger.locator("svg")]) {
+      for (const icon of (width > 768 ? [github.locator("svg"), trigger.locator("svg")] : [trigger.locator("svg")])) {
         await expect(icon.locator("use")).toHaveAttribute("href", /^\/assets\/icons-[\w-]+\.svg#(?:github|moon)$/);
         await expect.poll(() => icon.evaluate((node) => node.getBBox().width)).toBeGreaterThan(0);
       }
-      await expect(controls).toHaveCount(3);
+      await expect(controls).toHaveCount(width > 768 ? 3 : 2);
 
       const geometry = await controls.evaluateAll((nodes) => nodes.map((node) => {
         const rect = node.getBoundingClientRect();
@@ -146,7 +146,7 @@ for (const locale of locales) {
       await expect(page.locator(".language-switcher")).not.toHaveAttribute("open");
 
       // SVG paths are decorative, use the same geometry, and add no tab stops.
-      for (const icon of await page.locator(".navbar svg").all()) {
+      for (const icon of await page.locator(".navbar svg:visible").all()) {
         for (const [name, value] of [["viewBox", "0 0 24 24"], ["stroke-width", "2"], ["stroke", "currentColor"], ["fill", "none"], ["aria-hidden", "true"], ["focusable", "false"]]) {
           await expect(icon).toHaveAttribute(name, value);
         }

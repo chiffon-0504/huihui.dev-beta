@@ -71,6 +71,8 @@ export interface LocaleContent {
   readonly language: { readonly label: string; readonly shortLabel: string };
   readonly skip: string;
   readonly navigation: string;
+  readonly openNavigation: string;
+  readonly closeNavigation: string;
   readonly languages: string;
   readonly theme: string;
   readonly themeAuto: string;

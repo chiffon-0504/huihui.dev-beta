@@ -39,9 +39,9 @@ for (const locale of supportedLocales) {
         await expect(page.locator(`#${id} dd`)).toHaveText(items.map((item) => item.description));
       }
       const nav = page.getByRole("navigation", { name: copy.navigation });
-      await expect(nav.getByRole("link", { name: copy.aboutLabel, exact: true })).toHaveAttribute("href", route);
-      await expect(nav.getByRole("link", { name: copy.aboutLabel, exact: true })).toHaveAttribute("aria-current", "page");
-      await expect(nav.getByRole("link", { name: copy.worksLabel, exact: true })).toHaveAttribute("href", localeHref(locale, "", "works"));
+      await expect(nav.getByRole("link", { name: copy.aboutLabel, exact: true, includeHidden: true })).toHaveAttribute("href", route);
+      await expect(nav.getByRole("link", { name: copy.aboutLabel, exact: true, includeHidden: true })).toHaveAttribute("aria-current", "page");
+      await expect(nav.getByRole("link", { name: copy.worksLabel, exact: true, includeHidden: true })).toHaveAttribute("href", localeHref(locale, "", "works"));
       await expect(nav.getByRole("link", { name: "huihui.dev", exact: true })).toHaveAttribute("href", localeHref(locale));
       await expect(page.locator(".footer-contact span")).toHaveText(copy.contact.label);
       await expect(page.getByRole("contentinfo").getByRole("link")).toHaveText(copy.contact.email);
@@ -137,7 +137,7 @@ for (const locale of supportedLocales) {
     }
     // Continue from the theme trigger using real keyboard modality. A scripted
     // focus after pointer-opened menus need not match :focus-visible in Firefox.
-    for (const control of await page.locator("main a, .footer-contact a").all()) {
+    for (const control of await page.locator(".navbar-toggle, main a, .footer-contact a").all()) {
       await page.keyboard.press("Tab");
       await expect(control).toBeFocused();
       await expect(control).toBeInViewport();

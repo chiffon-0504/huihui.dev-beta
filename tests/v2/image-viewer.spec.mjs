@@ -22,7 +22,7 @@ test("real Works: load, scroll, hover, focus and every preview request zero R2 J
       await trigger.focus();
       expect(remote).toEqual([]);
       await trigger.click();
-      await expect(page.locator("dialog")).toBeVisible();
+      await expect(page.locator(".image-viewer")).toBeVisible();
       const loadControl = page.locator(".viewer-load");
       if (await loadControl.evaluate((button) => button.hidden)) await expect(loadControl).not.toBeVisible();
       await page.locator("dialog img").evaluate((image) => image.decode());
@@ -31,7 +31,7 @@ test("real Works: load, scroll, hover, focus and every preview request zero R2 J
       await expect(page.locator(".viewer-stage")).toHaveAttribute("data-mode", "preview");
       expect(remote).toEqual([]);
       await page.keyboard.press("Escape");
-      await expect(page.locator("dialog")).not.toBeVisible();
+      await expect(page.locator(".image-viewer")).not.toBeVisible();
       await expect(trigger).toBeFocused();
     }
   }

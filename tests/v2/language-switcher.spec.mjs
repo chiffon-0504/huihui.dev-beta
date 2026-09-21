@@ -60,7 +60,8 @@ for (const locale of locales) {
       if (testInfo.project.name === "chromium") {
         await page.screenshot({ path: testInfo.outputPath(`${locale.lang}-${width}-open.png`), fullPage: true });
       }
-      await page.getByRole("heading", { level: 1 }).click();
+      // The compact header's panel can cover the heading center; use its left edge.
+      await page.getByRole("heading", { level: 1 }).click({ position: { x: 1, y: 1 } });
       await expect(dropdown).not.toHaveAttribute("open");
       await trigger.click();
       await trigger.click();
@@ -68,7 +69,7 @@ for (const locale of locales) {
 
       // Reach the trigger through the actual document tab order, without focus().
       await page.goto(locale.route);
-      for (let index = 0; index < 7; index++) await page.keyboard.press("Tab");
+      for (let index = 0; index < (width > 768 ? 7 : 3); index++) await page.keyboard.press("Tab");
       await expect(trigger).toBeFocused();
       expect(await trigger.evaluate((node) => getComputedStyle(node).outlineStyle)).toBe("solid");
       for (const key of ["Enter", "Space"]) {
@@ -90,7 +91,7 @@ for (const locale of locales) {
       for (let index = 0; index < 3; index++) await page.keyboard.press("Shift+Tab");
       await expect(trigger).toBeFocused();
       await page.keyboard.press("Shift+Tab");
-      await expect(page.getByRole("link", { name: "GitHub", exact: true })).toBeFocused();
+      await expect(page.getByRole("link", { name: width > 768 ? "GitHub" : "huihui.dev", exact: true })).toBeFocused();
       await expect(dropdown).not.toHaveAttribute("open");
     });
   }
