@@ -1,6 +1,8 @@
 import type { LocaleContent } from "./types";
 
 export default {
+  openNavigation: "開啟導覽選單",
+  closeNavigation: "關閉導覽選單",
   postsLabel: "文章",
   postsPage: {
     title: "文章",

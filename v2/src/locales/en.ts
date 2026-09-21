@@ -1,6 +1,8 @@
 import type { LocaleContent } from "./types";
 
 export default {
+  openNavigation: "Open navigation",
+  closeNavigation: "Close navigation",
   postsLabel: "Posts",
   postsPage: {
     title: "Posts",

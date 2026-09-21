@@ -47,7 +47,7 @@
   /* Opaque surfaces are intentional; no glass blur or decorative gradients. */
   --surface-background-image: none;
   --surface-backdrop-filter: none;
-  /* Sole layout breakpoint: 40rem. Custom properties cannot drive queries. */
+  /* Page layout breakpoint: 40rem; navbar fit: 48rem. Queries need literals. */
 }
 
 :root,
