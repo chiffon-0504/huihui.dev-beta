@@ -487,8 +487,11 @@ the shared layers.
 
 The primary About, Works and Posts links point to their matching-language V2 pages.
 At 48rem and below, a three-line CSS hamburger replaces the desktop page links
-and GitHub link. It opens a native modal dialog at the viewport's left edge,
-with the same four links and current-page marker. The close button, backdrop,
+and GitHub link. It opens a native modal dialog covering the entire viewport,
+with no exposed backdrop, border or rounded surface. The same four links and
+current-page marker remain, with spacious text links and an upper-right close
+button. Drawer controls use color and an underline for keyboard focus instead
+of pill outlines; pointer focus does not retain the underline. The close button,
 Escape and link activation close it. Native modality and explicit Tab wrapping
 contain focus; closing restores the trigger, or the brand after desktop resize.
 The open dialog locks root scrolling without changing the scroll position.

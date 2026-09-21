@@ -120,6 +120,16 @@ const drawerLabels = {
   ja: ["ナビゲーションを開く", "ナビゲーションを閉じる", "ライト", "ダーク"],
 };
 
+async function expectTextFocus(control, theme) {
+  await expect(control).toBeFocused();
+  await expect(control).toHaveCSS("outline-style", "none");
+  await expect(control).toHaveCSS("border-radius", "0px");
+  await expect(control).toHaveCSS("box-shadow", "none");
+  await expect(control).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(control).toHaveCSS("text-decoration-line", "underline");
+  await expect(control).toHaveCSS("color", theme === "light" ? "rgb(0, 111, 222)" : "rgb(143, 211, 255)");
+}
+
 for (const locale of locales) {
   for (const theme of ["light", "dark"]) {
     test(`${locale.lang} mobile drawer keyboard, dismissal and links in ${theme}`, async ({ page, baseURL }, testInfo) => {
@@ -148,8 +158,7 @@ for (const locale of locales) {
       await expect(toggle).toBeFocused();
       await expect(toggle).toHaveCSS("outline-style", "solid");
       await page.keyboard.press("Enter");
-      await expect(close).toBeFocused();
-      await expect(close).toHaveCSS("outline-style", "solid");
+      await expectTextFocus(close, theme);
       await expect(toggle).toHaveAttribute("aria-expanded", "true");
       await expect(drawer.getByRole("navigation")).toHaveAccessibleName(locale.navigation);
       await expect(drawer.getByRole("link")).toHaveText([locale.worksLabel, locale.aboutLabel, locale.postsLabel, "GitHub"]);
@@ -157,8 +166,7 @@ for (const locale of locales) {
       for (const [index, anchor] of (await drawer.getByRole("link").all()).entries()) {
         await expect(anchor).toHaveAttribute("href", hrefs[index]);
         await page.keyboard.press("Tab");
-        await expect(anchor).toBeFocused();
-        await expect(anchor).toHaveCSS("outline-style", "solid");
+        await expectTextFocus(anchor, theme);
       }
       await page.keyboard.press("Tab");
       await expect(close).toBeFocused();
@@ -167,6 +175,7 @@ for (const locale of locales) {
       const box = await drawer.boundingBox();
       expect(box.x).toBe(0);
       expect(box.y).toBe(0);
+      expect(box.width).toBe(page.viewportSize().width);
       // WebKit CI resolves 100dvh to 843.984375px at an 844px viewport.
       expect(Math.abs(box.height - page.viewportSize().height)).toBeLessThanOrEqual(1 / 64);
       const closeBox = await close.boundingBox();
@@ -192,10 +201,12 @@ for (const locale of locales) {
       await expect(drawer).toBeHidden();
       await expect(toggle).toBeFocused();
       await toggle.click();
-      // Interior whitespace is not a backdrop click.
+      // The full-screen surface covers the former backdrop area as well.
       await page.mouse.click(100, 400);
       await expect(drawer).toBeVisible();
       await page.mouse.click(380, 400);
+      await expect(drawer).toBeVisible();
+      await page.keyboard.press("Escape");
       await expect(drawer).toBeHidden();
       await expect(toggle).toBeFocused();
 
@@ -206,6 +217,62 @@ for (const locale of locales) {
         await page.locator(".navbar-toggle").click();
         await expect(page.locator(".drawer-links a[aria-current=page]")).toHaveAttribute("href", href);
         await page.keyboard.press("Escape");
+      }
+    });
+
+    test(`${locale.lang} full-screen drawer surface and focus in ${theme}`, async ({ page }, testInfo) => {
+      for (const width of [320, 390, 768]) {
+        await page.setViewportSize({ width, height: 844 });
+        await page.goto(locale.route);
+        const [, , light, dark] = drawerLabels[locale.lang];
+        await page.locator(".theme-trigger").click();
+        await page.getByRole("menuitemradio", { name: theme === "light" ? light : dark, exact: true }).click();
+        await page.locator(".navbar-toggle").click();
+        const drawer = page.locator(".nav-drawer");
+        const close = drawer.locator(".drawer-close");
+        const box = await drawer.boundingBox();
+        expect(box.x).toBe(0);
+        expect(box.y).toBe(0);
+        expect(box.width).toBe(width);
+        expect(Math.abs(box.height - 844)).toBeLessThanOrEqual(1 / 64);
+        await expect(drawer).toHaveCSS("max-width", "none");
+        await expect(drawer).toHaveCSS("margin", "0px");
+        await expect(drawer).toHaveCSS("inset", "0px");
+        await expect(drawer).toHaveCSS("border-radius", "0px");
+        await expect(drawer).toHaveCSS("border-width", "0px");
+        await expect(drawer).toHaveCSS("background-color", theme === "light" ? "rgb(255, 255, 255)" : "rgb(10, 10, 10)");
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        expect(await drawer.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+        expect(await page.evaluate(() => document.elementFromPoint(innerWidth - 1, innerHeight / 2)?.closest("dialog")?.id)).toBe("nav-drawer");
+        const closeBox = await close.boundingBox();
+        expect(width - closeBox.x - closeBox.width).toBe(16);
+        expect(closeBox.y).toBe(16);
+        await expect(close).toBeFocused();
+        await expect(close).toHaveCSS("text-decoration-line", "none");
+        for (const control of await drawer.locator(".button").all()) {
+          await expect(control).toHaveCSS("border-width", "0px");
+          await expect(control).toHaveCSS("border-radius", "0px");
+          await expect(control).toHaveCSS("outline-style", "none");
+          await expect(control).toHaveCSS("box-shadow", "none");
+          await expect(control).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+        }
+        const links = drawer.getByRole("link");
+        const rows = await links.evaluateAll((nodes) => nodes.map((node) => {
+          const rect = node.getBoundingClientRect();
+          return { x: rect.x, y: rect.y, bottom: rect.bottom };
+        }));
+        expect(rows.every((row) => row.x === 16)).toBe(true);
+        for (let index = 1; index < rows.length; index++) expect(rows[index].y - rows[index - 1].bottom).toBeGreaterThanOrEqual(24);
+        await expect(links.last().locator("svg")).toBeVisible();
+        await page.keyboard.press("Tab");
+        await expectTextFocus(links.first(), theme);
+        if (testInfo.project.name === "chromium") await page.screenshot({ path: testInfo.outputPath(`fullscreen-${locale.lang}-${width}-${theme}.png`) });
+        await page.keyboard.press("Shift+Tab");
+        await expectTextFocus(close, theme);
+        if (testInfo.project.name === "chromium" && width === 390) await page.screenshot({ path: testInfo.outputPath(`close-${locale.lang}-${theme}.png`) });
+        await close.click();
+        await expect(drawer).toBeHidden();
+        await expect(page.locator(".navbar-toggle")).toBeFocused();
       }
     });
   }

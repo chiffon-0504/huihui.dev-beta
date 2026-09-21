@@ -164,9 +164,10 @@
 
 .nav-drawer {
   position: fixed;
-  inset: 0 auto 0 0;
+  inset: 0;
   margin: 0;
-  width: min(20rem, calc(100% - var(--space-8)));
+  width: 100%;
+  max-width: none;
   height: 100dvh;
   max-height: none;
   padding: var(--space-4);
@@ -175,12 +176,12 @@
   color: var(--color-text);
   background: var(--color-surface);
   border: 0;
-  border-right: var(--border-width) solid var(--color-border);
 }
-.nav-drawer::backdrop { background: rgb(0 0 0 / 70%); }
 html:has(.nav-drawer[open]) { overflow: hidden; }
 .drawer-close { display: flex; margin-left: auto; font-size: var(--text-heading); }
-.drawer-links a { display: flex; justify-content: flex-start; }
+.drawer-links { display: grid; gap: var(--space-6); }
+.nav-drawer .button { border: 0; border-radius: 0; background: none; box-shadow: none; outline: 0; }
+.nav-drawer :focus-visible { text-decoration: underline; }
 
 /* Japanese desktop navigation needs about 44rem including gutters and gaps. */
 @media (max-width: 48rem) {
