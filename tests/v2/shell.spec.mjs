@@ -167,7 +167,8 @@ for (const locale of locales) {
       const box = await drawer.boundingBox();
       expect(box.x).toBe(0);
       expect(box.y).toBe(0);
-      expect(box.height).toBe(844);
+      // WebKit CI resolves 100dvh to 843.984375px at an 844px viewport.
+      expect(Math.abs(box.height - page.viewportSize().height)).toBeLessThanOrEqual(1 / 64);
       const closeBox = await close.boundingBox();
       expect(closeBox.x).toBeGreaterThan(box.width / 2);
       expect(closeBox.y).toBeLessThan(32);
