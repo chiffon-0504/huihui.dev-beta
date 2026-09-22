@@ -1,8 +1,16 @@
 # Services
 
 This is the V2 JSON transport foundation, independent of V1 clients. No page
-imports it yet and no request runs at module load. Unused services stay outside
+imports the public GET client yet and no request runs at module load. Unused services stay outside
 the application bundle; there is no demo request or feature migration.
+
+The separate `jev.ts` private POST adapter owns exactly `/api/jev`, sends
+same-origin Access cookies, validates a bounded normalized response and uses
+the existing `ServiceError` taxonomy. It does not widen the public GET client's
+origin/header/credential contract. Local UI tests intercept this exact URL;
+localhost never falls back to a public Worker. The production design and
+disabled-until-configured boundary are documented in
+[Private Jev](../../../workers/huihui-api/JEV.md).
 
 ## Consumer contract
 

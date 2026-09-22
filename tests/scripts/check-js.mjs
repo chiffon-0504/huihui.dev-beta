@@ -4,7 +4,7 @@ import { spawnSync } from "node:child_process";
 
 const root = process.cwd();
 const browserRoots = ["js", "tools/tier-maker"];
-const workerPath = "workers/huihui-api/worker.js";
+const moduleRoots = ["workers/huihui-api", "functions"];
 
 async function listJavaScriptFiles(relativeDirectory) {
   const directory = path.join(root, relativeDirectory);
@@ -43,16 +43,15 @@ for (const filePath of browserFiles) {
   assertSyntax(result, filePath);
 }
 
-const workerSource = await readFile(path.join(root, workerPath), "utf8");
-const workerResult = spawnSync(
-  process.execPath,
-  ["--input-type=module", "--check"],
-  {
-    cwd: root,
-    encoding: "utf8",
-    input: workerSource,
-  },
-);
-assertSyntax(workerResult, workerPath);
+const moduleFiles = (await Promise.all(moduleRoots.map(listJavaScriptFiles))).flat();
+for (const workerPath of moduleFiles) {
+  const workerSource = await readFile(path.join(root, workerPath), "utf8");
+  const workerResult = spawnSync(
+    process.execPath,
+    ["--input-type=module", "--check"],
+    { cwd: root, encoding: "utf8", input: workerSource },
+  );
+  assertSyntax(workerResult, workerPath);
+}
 
-console.log(`JavaScript syntax checks passed for ${browserFiles.length + 1} files.`);
+console.log(`JavaScript syntax checks passed for ${browserFiles.length + moduleFiles.length} files.`);

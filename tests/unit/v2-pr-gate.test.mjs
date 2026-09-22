@@ -23,6 +23,7 @@ const notApplicable = {
 
 describe("V2 required PR gate", () => {
   test.each([
+    "functions/_middleware.js", "workers/huihui-api/jev.js", "workers/huihui-api/jev-security.js", "workers/huihui-api/worker.js",
     "v2/src/main.ts", "v2/tsconfig.json", "tests/v2/home.spec.mjs",
     "tests/v2-beta/pages.spec.mjs", "tests/unit/v2-build.test.mjs",
     "tests/scripts/v2-beta-server.mjs", "tests/support/v2-beta-contract.mjs",

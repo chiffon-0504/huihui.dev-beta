@@ -1,3 +1,4 @@
+import type { JevContent } from "./jev";
 import type { LocaleContent } from "./types";
 
 export default {
@@ -162,3 +163,16 @@ export default {
   toolDescription: "上傳圖片、調整分級，再匯出 PNG。將整理與分享喜好的過程，做成在瀏覽器中就能使用的小工具。",
   toolCta: "使用分級表工具",
 } satisfies LocaleContent;
+
+export const jev = {
+  signIn: "重新載入並登入",
+  intro: "把問題與條件寫下來，讓 Jev 提供一個判斷。", question: "問題", questionHint: "一次問一個明確的問題。",
+  context: "背景與條件", contextHint: "選填。補充會影響判斷的事實。", criteria: "評分標準", criteriaHint: "由低到高描述 2–10 個等級，編號從 0 開始。",
+  options: "選項", optionsHint: "加入 2–12 個不同的選項。", addContext: "新增條件", addCriterion: "新增標準", addOption: "新增選項", remove: "刪除",
+  ask: "詢問 Jev", loading: "Jev 正在判斷…", ready: "結果已更新。", result: "Jev 的判斷", empty: "寫下你的問題，結果會顯示在這裡。",
+  yes: "True · 是", no: "False · 否", highest: "最高機率", confidence: "信心值", score: "分數", between: "分數位置",
+  error: "目前無法取得 Jev 回應，請稍後再試。", authError: "登入已失效，請重新載入頁面以登入。", rateError: "詢問次數較多，請稍候一分鐘再試。",
+  inputError: "請確認內容長度，並填入至少兩個不同的標準或選項。", timeoutError: "等待回應逾時。請確認是否需要再次送出。",
+  privacy: "送出後，問題與條件會交由 TypeSafe 處理。本站不儲存決策紀錄；機率是模型的判斷，並非事實保證。",
+  mode: "判斷模式", language: "語言", home: "回到首頁", skip: "跳到表單", modes: { noul: "是與否的機率", score: "依標準評分", choice: "比較不同選項" },
+} satisfies JevContent;

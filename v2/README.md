@@ -12,8 +12,8 @@ Use Node.js 24 and install dependencies from the repository root with `npm ci`.
 - `npm run dev:v2` starts the v2 development server.
 - `npm run check:v2:types` checks the strict TypeScript application;
   `npm run check:ts` remains a compatibility alias.
-- `npm run build:v2` typechecks and builds twelve content entries plus one shared
-  `404.html` error document into `v2/dist/` (thirteen HTML files total).
+- `npm run build:v2` typechecks and builds twelve public content entries, one
+  private Jev entry and one shared `404.html` into `v2/dist/` (fourteen HTML files).
 - `npm run preview:v2` serves that build locally.
 - `npm run test:e2e:v2` builds and tests Chromium, Firefox, and WebKit.
 - `npx vitest run tests/unit/v2-` runs the focused v2 unit contracts, including
@@ -43,7 +43,9 @@ Existing shell tests also retain coverage under the root v1 `_headers` policy.
 The navigable content inventory remains exactly twelve Home/About/Works/Posts
 entries. `404.html` is one shared error document, not a content page, `Page`
 identity, navbar entry, language-switch destination or sitemap route.
-The emitted HTML inventory is exactly those twelve entries plus `404.html`: 13.
+The emitted HTML inventory is those twelve entries, the independent private
+`tools/jev/index.html` and `404.html`: 14. Jev does not extend the public `Page`
+identity or language routing inventory; its own entry handles in-page languages.
 
 Unknown URLs, including unknown languages and extra path segments, return HTTP
 404 with the intentional error document and preserve the requested URL. They
@@ -86,6 +88,30 @@ this contract after future deployment; local fixture results do not prove edge
 delivery. CSP enforcing, Report-Only and no-CSP controls remain in the Beta suite.
 
 ## Performance budgets
+
+### Private Jev growth measurement (2026-09-22)
+
+Before this feature, fresh `0549c0c0` built to 740,843 B (HTML 10,589 B,
+JS 92,995 B, CSS 17,404 B). The private entry adds 687 B HTML, 13,541 B JS and
+7,906 B CSS, plus the 76 B Functions route manifest. Current output is 763,053 B:
+HTML 11,276 B, JS 106,536 B, CSS 25,310 B, images unchanged at 619,357 B.
+These measurements use the locked Node/Vite toolchain on this Windows checkout.
+
+`privateJevPage()` builds the private entry in isolation using the same Vite
+pipeline and existing theme bootstrap. Public `main-BH8u4AFe.js` (71,107 B),
+`main-DgStSdu9.css` (13,786 B) and the shared bootstrap keep their exact filenames
+and bytes from the pre-change build. Existing twelve-route shell limits remain
+**5 requests / 113,000 B**; private modules are not loaded by public pages.
+
+The aggregate budgets now add explicit allowances of 750 B HTML, 14,000 B JS
+and 8,400 B CSS to the earlier limits below, covering the measured new entry
+with approximately 3–9% per-category headroom. Thus current limits are HTML
+11,950 B, JS 110,000 B, CSS 26,000 B and total 798,150 B. Image and largest-file
+limits are unchanged. The extra allowances total 23,150 B and include the small
+route manifest through the total budget. This is reviewed feature growth, not
+an automatic refresh or a relaxation of public-page request budgets.
+
+The tables below retain the original baseline as historical measurement.
 
 `npm run check:v2:performance` typechecks and performs a clean production build,
 then inventories `dist/` recursively. It prints uncompressed UTF-8/binary byte
@@ -315,6 +341,14 @@ do not change the stable repository, production Pages/Worker, tags or releases.
 
 ## Structure
 
+The private `/tools/jev/` entry lives in `tools/jev/index.html`, `src/jev.ts`,
+`src/styles/pages/jev.css` and `src/services/jev.ts`. It reuses the existing CSS
+tokens, typography, reset, focus and button layers, plus the classic theme
+bootstrap. It has no public navbar entry. Its HTML is Access-gated by Pages
+Functions and its paid API is independently JWT-gated in the beta Worker.
+Both are disabled until external configuration is complete. See
+[Private Jev operations and contracts](../workers/huihui-api/JEV.md).
+
 The TypeScript foundation lives in `src/`, with compiler settings owned by
 `v2/tsconfig.json`. The root `tsconfig.json` extends that configuration for
 existing editor and compiler entry points. Strict checking targets ES2022 with
@@ -360,8 +394,8 @@ v2/
 
 The [service foundation](src/services/README.md) provides validated JSON GETs,
 normalized errors, cancellation and explicit beta/production Worker origins.
-No page consumes it yet; feature integration and the required CSP/origin policy
-remain separate work.
+No public page consumes that GET client yet. The private Jev entry has a separate
+same-origin POST adapter with an explicit Access/session contract.
 
 V1 remains the active production site while v2 development continues; its root
 HTML/CSS/JavaScript and release flow remain independent of these TypeScript
@@ -371,7 +405,7 @@ the shared footer, with no standalone Contact route, module or stylesheet.
 `src/main.ts` composes DOM components from `components/navbar.ts`,
 `components/footer.ts`, and `pages/home.ts`, `pages/about.ts`, `pages/works.ts`, or `pages/posts.ts`. Shared localized copy lives in
 `locales/`; markup uses native elements and `textContent`. There is no router,
-framework or API request. A root-owned theme controller is passed to the navbar;
+framework or public-page API request. A root-owned theme controller is passed to the navbar;
 theme preference, solar calculation and presentation have separate modules.
 
 ### Locale architecture
@@ -400,6 +434,8 @@ There is no router, runtime translation lookup, or translation dependency.
 
 Future v2 page copy belongs in these locale modules, extending the shared schema;
 components and pages consume it rather than maintaining independent translations.
+Private Jev copy uses named exports in those same modules with a separate typed
+`JevContent` contract, so it does not enter the public route or navigation bundle.
 Home's static HTML entries own their document metadata and no-JavaScript fallback;
 About, Works and Posts HTML templates take those strings from the typed locales at build time.
 `content.ts` has been removed because it has no remaining responsibility.

@@ -29,6 +29,18 @@ beforeAll(async () => {
 }, 30_000);
 
 describe("v2 initial theme build contract", () => {
+  test("private Jev has no public entry point or bundled credentials", () => {
+    const html = String(output.find(entry => entry.fileName === "tools/jev/index.html")?.source);
+    expect(html).toContain('<meta name="robots" content="noindex, nofollow">');
+    expect(html).toContain(`<script src="/${bootstrap.fileName}"></script>`);
+    const privateScripts = output.filter(entry => /^assets\/jev-.*\.js$/.test(entry.fileName));
+    expect(privateScripts).toHaveLength(1);
+    expect(String(privateScripts[0].source)).not.toMatch(/TYPESAFE_JEV_API_KEY|api\.typesafe\.ai|cloudflareaccess\.com|synthetic-jev-secret/);
+    for (const entry of output.filter(entry => entry.fileName.endsWith(".html") && entry.fileName !== "tools/jev/index.html")) {
+      expect(String(entry.source)).not.toContain("/tools/jev");
+      expect(String(entry.source)).not.toMatch(/assets\/jev-/);
+    }
+  });
   test("the production output and copied public files stay within performance budgets", async () => {
     const publicFiles = await readFiles(fileURLToPath(new URL("../../v2/public/", import.meta.url)));
     assertPerformance(measurePerformance([...output, ...publicFiles]));
@@ -53,8 +65,8 @@ describe("v2 initial theme build contract", () => {
 
   test("emits exactly Home, About, Works and Posts in three locales with translated static metadata", () => {
     const documents = output.filter((entry) => entry.fileName.endsWith(".html"));
-    expect(documents).toHaveLength(13);
-    const content = documents.filter((entry) => entry.fileName !== "404.html");
+    expect(documents).toHaveLength(14);
+    const content = documents.filter((entry) => !["404.html", "tools/jev/index.html"].includes(entry.fileName));
     expect(content).toHaveLength(12);
     expect(content.map((entry) => entry.fileName).sort())
       .toEqual(["about/index.html", "en/about/index.html", "en/index.html", "en/posts/index.html", "en/works/index.html", "index.html", "ja/about/index.html", "ja/index.html", "ja/posts/index.html", "ja/works/index.html", "posts/index.html", "works/index.html"]);

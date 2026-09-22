@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 
 // Preserve the former workflow path filter, including its shared dependencies.
 const relevantFiles = new Set([
+  "workers/huihui-api/worker.js",
   "tests/scripts/v2-beta-server.mjs",
   "tests/support/v2-beta-contract.mjs",
   "tests/support/v2-viewer-fixture.mjs",
@@ -25,7 +26,8 @@ const relevantFiles = new Set([
 
 export function requiresV2(paths) {
   return paths.some((file) =>
-    /^(?:v2|tests\/v2|tests\/v2-beta)\//.test(file) ||
+    /^(?:v2|functions|tests\/v2|tests\/v2-beta)\//.test(file) ||
+    /^workers\/huihui-api\/jev(?:-security)?\.js$/.test(file) ||
     /^tests\/unit\/v2-[^/]*\.test\.mjs$/.test(file) ||
     relevantFiles.has(file),
   );

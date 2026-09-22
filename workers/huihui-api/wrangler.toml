@@ -20,8 +20,17 @@ workers_dev = true
 
 [env.beta.vars]
 WORKER_ENV = "beta"
+# Private Jev auth configuration is beta-only; secrets are provisioned separately.
+JEV_SITE_ORIGIN = "https://beta.huihui.dev"
+JEV_ACCESS_ISSUER = "https://long-lab-6f3a.cloudflareaccess.com"
+JEV_ACCESS_AUD = "24aaa5dceb6049936ccc41f0906fe45930dea7070b68a7b325bc556dfb6277d8"
 # Vars are not inherited; use the same production monitors, never beta monitors.
 BETTER_STACK_STATUS_PAGE_JSON_URL = "https://huihui-dev.betteruptime.com/index.json"
+
+[[env.beta.ratelimits]]
+name = "JEV_RATE_LIMITER"
+namespace_id = "922601"
+simple = { limit = 10, period = 60 }
 
 [env.beta.observability]
 enabled = true

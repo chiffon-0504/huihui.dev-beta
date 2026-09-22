@@ -1,3 +1,5 @@
+import { handleJev } from "./jev.js";
+
 function decodeHtml(text) {
   return String(text)
     .replace(/<!\[CDATA\[(.*?)\]\]>/g, "$1")
@@ -2447,6 +2449,9 @@ async function routeRequest(request, env, ctx) {
 
 export default {
   async fetch(request, env, ctx) {
+    if (new URL(request.url).pathname === "/api/jev") {
+      return handleJev(request, env);
+    }
     let response;
 
     try {

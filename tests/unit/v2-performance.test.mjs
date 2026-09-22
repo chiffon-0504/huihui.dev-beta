@@ -37,7 +37,7 @@ test("reports all failures and fails closed on empty or malformed inventories", 
   expect(() => assertPerformance(measurePerformance([]))).toThrow("HTML inventory");
   expect(() => measurePerformance([asset("a.js", "a"), asset("a.js", "b")])).toThrow("Duplicate");
   expect(() => measurePerformance([{ fileName: "missing.js" }])).toThrow("Missing bytes");
-  const report = { documents: [{ file: "404.html" }, ...Array.from({ length: 12 }, (_, i) => ({ file: `${i}/index.html` }))], totals: { ...budgets } };
+  const report = { documents: [{ file: "404.html" }, { file: "tools/jev/index.html" }, ...Array.from({ length: 12 }, (_, i) => ({ file: `${i}/index.html` }))], totals: { ...budgets } };
   expect(() => assertPerformance({ ...report, totals: { ...budgets, js: 0 } })).toThrow("Missing js");
   expect(() => assertPerformance({ ...report, totals: { ...budgets, js: budgets.js + 1 } }))
     .toThrow(`js: actual ${budgets.js + 1}, allowed ${budgets.js}`);

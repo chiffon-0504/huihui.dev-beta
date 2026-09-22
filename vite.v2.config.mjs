@@ -89,6 +89,27 @@ function themeBootstrap() {
   };
 }
 
+// Build the private entry separately so its imports cannot split the public shell.
+function privateJevPage() {
+  return {
+    name: "v2-private-jev",
+    apply: "build",
+    async generateBundle(_options, bundle) {
+      const result = await build({
+        configFile: false, root: fromRoot("./v2/"), publicDir: false, logLevel: "silent",
+        build: { write: false, emptyOutDir: false, rolldownOptions: { input: { jev: fromRoot("./v2/tools/jev/index.html") } } },
+      });
+      const bootstrap = Object.keys(bundle).find(name => /^assets\/theme-bootstrap-[a-f0-9]+\.js$/.test(name));
+      if (!bootstrap) throw new Error("Missing theme bootstrap for the private entry.");
+      for (const entry of result.output) {
+        let source = entry.type === "chunk" ? entry.code : entry.source;
+        if (entry.fileName === "tools/jev/index.html") source = String(source).replace("<head>", `<head>\n    <script src="/${bootstrap}"></script>`);
+        this.emitFile({ type: "asset", fileName: entry.fileName, source });
+      }
+    },
+  };
+}
+
 // Preview mirrors Pages' static error document, independently of the app resolver.
 function strictNotFound() {
   return {
@@ -96,7 +117,7 @@ function strictNotFound() {
     async configurePreviewServer(server) {
       const { root, build, preview } = server.config;
       const html = await readFile(resolve(root, build.outDir, "404.html"));
-      const entries = Object.values(build.rolldownOptions.input)
+      const entries = [...Object.values(build.rolldownOptions.input), fromRoot("./v2/tools/jev/index.html")]
         .map((entry) => `/${normalizePath(relative(root, entry))}`)
         .filter((entry) => entry.endsWith("/index.html"));
       const aliases = new Map(entries.flatMap((entry) => {
@@ -138,7 +159,7 @@ export default defineConfig({
   root: fromRoot("./v2/"),
   publicDir: "public",
   appType: "mpa",
-  plugins: [pageHtml(), themeBootstrap(), strictNotFound()],
+  plugins: [pageHtml(), themeBootstrap(), privateJevPage(), strictNotFound()],
   build: {
     outDir: "dist",
     rolldownOptions: {
