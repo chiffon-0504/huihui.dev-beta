@@ -3,11 +3,11 @@ import { resolve, relative } from "node:path";
 
 // Decimal bytes. Baseline, headroom and update procedure: v2/README.md.
 export const budgets = Object.freeze({
-  html: 11_200,
-  js: 96_000,
-  css: 17_600,
+  html: 11_950,
+  js: 110_000,
+  css: 26_000,
   images: 650_000,
-  total: 775_000,
+  total: 798_150,
   largestJs: 73_000,
   largestCss: 13_800,
   largestImage: 129_000,
@@ -65,8 +65,9 @@ export function budgetFailures(actual, allowed) {
 
 export function assertPerformance(report) {
   // A missing/empty build must not appear faster. Route ownership remains in the build contracts.
-  if (report.documents.length !== 13 || !report.documents.some(({ file }) => file === "404.html")) {
-    throw new Error(`HTML inventory: actual ${report.documents.length}, allowed 13 including 404.html`);
+  if (report.documents.length !== 14 || !report.documents.some(({ file }) => file === "404.html")
+    || !report.documents.some(({ file }) => file === "tools/jev/index.html")) {
+    throw new Error(`HTML inventory: actual ${report.documents.length}, allowed 14 including 404.html and private Jev`);
   }
   for (const kind of ["html", "js", "css", "images"]) {
     if (report.totals[kind] <= 0) throw new Error(`Missing ${kind} build output`);

@@ -1,3 +1,4 @@
+import type { JevContent } from "./jev";
 import type { LocaleContent } from "./types";
 
 export default {
@@ -162,3 +163,16 @@ export default {
   toolDescription: "Upload images, arrange your tiers, and export a PNG. A small browser tool for organizing and sharing your favorites.",
   toolCta: "Try Tier Maker",
 } satisfies LocaleContent;
+
+export const jev = {
+  signIn: "Reload to sign in",
+  intro: "Write down a question and its context. Let Jev offer a judgment.", question: "Question", questionHint: "Ask one specific question at a time.",
+  context: "Context", contextHint: "Optional facts that could affect the decision.", criteria: "Scoring criteria", criteriaHint: "Describe 2–10 levels, from low to high. Numbering starts at 0.",
+  options: "Options", optionsHint: "Add 2–12 distinct options.", addContext: "Add context", addCriterion: "Add criterion", addOption: "Add option", remove: "Remove",
+  ask: "Ask Jev", loading: "Jev is considering…", ready: "Result updated.", result: "Jev’s judgment", empty: "Your result will appear here after you ask a question.",
+  yes: "True · Yes", no: "False · No", highest: "Highest probability", confidence: "Confidence", score: "Score", between: "Score position",
+  error: "Unable to get a Jev response. Please try again.", authError: "Your session has expired. Reload the page to sign in.", rateError: "Too many requests. Please wait a minute before trying again.",
+  inputError: "Check the text lengths and enter at least two distinct criteria or options.", timeoutError: "The response timed out. Check whether you want to submit again.",
+  privacy: "Submitting sends your question and context to TypeSafe. This site does not save decision history. Probabilities reflect a model judgment, not a guarantee.",
+  mode: "Decision mode", language: "Language", home: "Back to home", skip: "Skip to form", modes: { noul: "Yes or no probability", score: "Evaluate against a rubric", choice: "Compare your options" },
+} satisfies JevContent;

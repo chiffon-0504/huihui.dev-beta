@@ -1,3 +1,4 @@
+import type { JevContent } from "./jev";
 import type { LocaleContent } from "./types";
 
 export default {
@@ -162,3 +163,16 @@ export default {
   toolDescription: "画像をアップロードしてランクを並べ、PNG で書き出す。お気に入りを整理して共有できる、ブラウザーで動く小さなツールです。",
   toolCta: "ランク表ツールを使う",
 } satisfies LocaleContent;
+
+export const jev = {
+  signIn: "再読み込みしてログイン",
+  intro: "質問と条件を書いて、Jev の判断を参考にしましょう。", question: "質問", questionHint: "一度にひとつの明確な質問をしてください。",
+  context: "背景と条件", contextHint: "任意。判断に関わる事実を補足します。", criteria: "評価基準", criteriaHint: "低い順に 2〜10 段階を説明します。番号は 0 から始まります。",
+  options: "選択肢", optionsHint: "異なる選択肢を 2〜12 個追加します。", addContext: "条件を追加", addCriterion: "基準を追加", addOption: "選択肢を追加", remove: "削除",
+  ask: "Jev に聞く", loading: "Jev が判断しています…", ready: "結果を更新しました。", result: "Jev の判断", empty: "質問を送信すると、ここに結果が表示されます。",
+  yes: "True · はい", no: "False · いいえ", highest: "最も高い確率", confidence: "信頼度", score: "スコア", between: "スコアの位置",
+  error: "Jev の応答を取得できませんでした。もう一度お試しください。", authError: "ログインの有効期限が切れました。ページを再読み込みしてください。", rateError: "リクエストが多すぎます。1 分ほど待ってからお試しください。",
+  inputError: "文字数と、異なる基準または選択肢が 2 個以上あることを確認してください。", timeoutError: "応答がタイムアウトしました。再送信するか確認してください。",
+  privacy: "送信すると、質問と条件が TypeSafe に渡されます。このサイトは判断履歴を保存しません。確率はモデルの判断であり、事実を保証するものではありません。",
+  mode: "判断モード", language: "言語", home: "ホームに戻る", skip: "フォームへ移動", modes: { noul: "はい・いいえの確率", score: "基準に沿って評価", choice: "選択肢を比較" },
+} satisfies JevContent;

@@ -42,6 +42,11 @@ The workflow uses the existing `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID
 
 ## Runtime secrets
 
+The beta-only private `/api/jev` capability is disabled until its Access,
+same-origin Pages bridge, identity limiter and secret are configured. See
+[Private Jev](JEV.md) for the narrow request contract, required bindings, operator
+steps and live acceptance gates. This does not enable the production Worker.
+
 Provision the following runtime secrets separately for beta and production in Cloudflare:
 
 - `STEAM_API_KEY`
