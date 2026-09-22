@@ -80,7 +80,7 @@ describe("Worker deployment isolation", () => {
 
     const wrangler = jobAction(deployment, "cloudflare/wrangler-action");
     expect(wrangler.with.workingDirectory).toBe("workers/huihui-api");
-    expect(wrangler.with.command).toBe("deploy --env beta");
+    expect(wrangler.with.command).toBe("deploy --env beta --tag ${{ github.sha }}");
   });
 
   test("has no documented or workflow-dispatched manual beta bypass", () => {

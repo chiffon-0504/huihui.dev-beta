@@ -40,6 +40,35 @@ in workflow YAML does not create protection rules.
 
 The workflow uses the existing `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` GitHub secrets for Wrangler authentication.
 
+### Beta deployment acceptance
+
+The beta job explicitly selects Wrangler **4.136.3** through the existing
+commit-pinned Cloudflare action and sets up Node.js 24. The action installs that
+exact Wrangler version; no global runner version or floating `latest` is used.
+The site's `package.json` and lockfile remain independent of deployment tooling.
+The production job is unchanged.
+
+Wrangler tags the beta Worker version with the workflow commit SHA. After deploy,
+`verify-deployment.mjs` uses only Cloudflare control-plane GET requests against
+`huihui-api-beta`: it resolves the active deployment, requires one version at
+100% traffic, and reads that version's metadata. The commit tag must match the
+expected SHA, and `JEV_RATE_LIMITER` must have type `ratelimit`, namespace
+`922601`, limit `10` and period `60`, matching `[env.beta]` configuration.
+It checks `TYPESAFE_JEV_API_KEY` by name/type only and never accesses secret values.
+A second deployment GET must still identify the same active deployment/version.
+
+Missing or malformed metadata, API failures, mismatched bindings/SHA, or a changed
+active deployment fail the deploy job even if Wrangler exited successfully.
+Beta CD already requires this Worker workflow to succeed, so that failure also
+blocks Beta CD acceptance. The verifier does not invoke the Worker or Jev API,
+write configuration, retry deployment, or create response artifacts. Its logs
+contain only validated deployment identifiers and fixed diagnostics.
+
+Controlled fixtures and workflow/config contracts run with
+`npx vitest run tests/unit/worker-deployment-acceptance.test.mjs tests/unit/deployment-isolation.test.mjs tests/unit/beta-deployment-sync.test.mjs`.
+Live acceptance requires a separately authorized normal merge/deployment; unit
+tests do not prove that the currently deployed Worker has the binding.
+
 ## Runtime secrets
 
 The beta-only private `/api/jev` capability is disabled until its Access,
