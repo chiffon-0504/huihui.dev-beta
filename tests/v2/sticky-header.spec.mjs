@@ -112,5 +112,53 @@ for (const locale of locales) {
       await expect(page.locator("html")).toHaveAttribute("lang", "en");
       expect(errors).toEqual([]);
     });
+
+    test(`${locale.lang} fragment headings clear the sticky header at ${width}px`, async ({ page, baseURL }) => {
+      await page.setViewportSize({ width, height: 844 });
+      await applyPagesCsp(page, baseURL);
+      const errors = [];
+      page.on("pageerror", (error) => errors.push(error.message));
+      page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+      const header = page.getByRole("banner");
+      const expectHeadingClear = async (hash) => {
+        const target = page.locator(hash);
+        await expect(target).toHaveCount(1);
+        const heading = /-title$/.test(hash) ? target : target.getByRole("heading").first();
+        await expect(heading).toBeInViewport();
+        await expect.poll(async () => {
+          const gap = await page.locator("html").evaluate((node) => parseFloat(getComputedStyle(node).fontSize) / 2);
+          const box = await header.boundingBox();
+          return (await heading.boundingBox()).y - (box.y + box.height) - gap;
+        }).toBeGreaterThanOrEqual(-1);
+        expect(Math.abs((await header.boundingBox()).y)).toBeLessThanOrEqual(1);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      };
+      const article = "arcaea-course-mode-phase-10-clear-2026-07-31";
+      for (const hash of ["#rhythm-games", `#${article}`, `#${article}-title`]) {
+        await page.goto(`${locale.route}posts/${hash}`);
+        await expectHeadingClear(hash);
+        // The existing language control preserves the same category/article fragment.
+        for (const destination of locales) {
+          await page.locator(".language-trigger").click();
+          const link = page.locator(`.language-option[hreflang="${destination.lang}"]`);
+          await expect(link).toHaveAttribute("href", `${destination.route}posts/${hash}`);
+          await link.click();
+          await expect(page).toHaveURL(new URL(`${destination.route}posts/${hash}`, baseURL).href);
+          await expectHeadingClear(hash);
+        }
+      }
+      await page.goto(`${locale.route}posts/`);
+      const permalink = page.locator(`#${article} .post-title-link`);
+      await permalink.click();
+      await expect(page).toHaveURL(new URL(`${locale.route}posts/#${article}`, baseURL).href);
+      await expectHeadingClear(`#${article}`);
+      // Font enlargement and wrapping change the actual header height.
+      await page.setViewportSize({ width: width === 390 ? 320 : 769, height: 900 });
+      await page.locator("html").evaluate((node) => { node.style.fontSize = "200%"; });
+      await page.evaluate(() => scrollTo(0, 0));
+      await permalink.click();
+      await expectHeadingClear(`#${article}`);
+      expect(errors).toEqual([]);
+    });
   }
 }

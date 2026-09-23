@@ -1,11 +1,22 @@
+/* Offset content targets, not the sticky controls themselves when they receive focus. */
+main,
+main [id] {
+  scroll-margin-top: calc(var(--header-height, 0px) + var(--space-2));
+}
+
+.site-header,
+.language-options,
+.theme-options {
+  background: var(--color-surface);
+  background-image: var(--surface-background-image);
+  backdrop-filter: var(--surface-backdrop-filter);
+}
+
 .site-header {
   position: sticky;
   top: 0;
   z-index: var(--z-dropdown);
   border-bottom: var(--border-width) solid var(--color-border);
-  background: var(--color-surface);
-  background-image: var(--surface-background-image);
-  backdrop-filter: var(--surface-backdrop-filter);
 }
 
 .site-header :where(ul) {
@@ -123,9 +134,6 @@
   padding: var(--space-2);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-small);
-  background: var(--color-surface);
-  background-image: var(--surface-background-image);
-  backdrop-filter: var(--surface-backdrop-filter);
   box-shadow: var(--shadow-popover);
 }
 
