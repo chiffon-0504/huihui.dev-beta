@@ -8,12 +8,11 @@ const locales = [
 ];
 
 for (const locale of locales) {
-  test(`${locale.lang} shares localized navigation and section labels`, async ({ page }) => {
-    await page.goto(locale.route);
+  test(`${locale.lang} shares localized navigation on About`, async ({ page }) => {
+    await page.goto(`${locale.route}about/`);
     const nav = page.getByRole("navigation", { name: locale.navigation });
     for (const [id, label] of [["works", locale.worksLabel], ["about", locale.aboutLabel]]) {
       await expect(nav.getByRole("link", { name: label, exact: true })).toHaveAttribute("href", `${locale.route}${id}/`);
-      await expect(page.locator(`#${id}`).getByRole("heading", { level: 2, name: id === "works" ? locale.worksHeading : locale.focusLabel, exact: true })).toBeVisible();
     }
     if (locale.lang !== "en") {
       await expect(nav.getByRole("link", { name: /^(Works|About)$/ })).toHaveCount(0);
@@ -29,7 +28,7 @@ for (const locale of locales) {
       page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
       page.on("response", (response) => { if (response.status() >= 400) errors.push(`${response.status()} ${response.url()}`); });
       await applyPagesCsp(page, baseURL);
-      await page.goto(locale.route);
+      await page.goto(`${locale.route}about/`);
 
       await expect(page.locator("html")).toHaveAttribute("lang", locale.lang);
       await expect(page.getByRole("banner")).toBeVisible();
@@ -44,7 +43,7 @@ for (const locale of locales) {
         await expect(nav.getByRole("link", { name: locale.aboutLabel, exact: true })).toHaveAttribute("href", `${locale.route}about/`);
         await expect(nav.getByRole("link", { name: "GitHub", exact: true })).toHaveAttribute("href", "https://github.com/chiffon-0504");
       }
-      await expect(nav.locator('a[aria-current="page"]')).toHaveAttribute("hreflang", locale.lang);
+      await expect(nav.locator('.language-option[aria-current="page"]')).toHaveAttribute("hreflang", locale.lang);
       await expect(page.getByRole("contentinfo").getByRole("link")).toHaveAttribute("href", "mailto:contact@huihui.dev");
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
       if (testInfo.project.name === "chromium") {
@@ -59,7 +58,7 @@ for (const locale of locales) {
       await expect(page.getByRole("main")).toBeFocused();
 
       // Restart without a fragment so tab order begins at the document start.
-      await page.goto(locale.route);
+      await page.goto(`${locale.route}about/`);
       await page.keyboard.press("Tab");
       for (const [navIndex, label] of (viewport.width > 768 ? ["huihui.dev", locale.worksLabel, locale.aboutLabel, locale.postsLabel, "GitHub"] : ["huihui.dev"]).entries()) {
         await page.keyboard.press("Tab");
@@ -81,7 +80,7 @@ for (const locale of locales) {
             await expect(page.locator("main.works")).toBeVisible();
           }
           // Reload instead of relying on engine-specific fragment tab order.
-          await page.goto(locale.route);
+          await page.goto(`${locale.route}about/`);
           for (let index = 0; index < navIndex + 2; index++) {
             await page.keyboard.press("Tab");
           }
@@ -104,7 +103,7 @@ for (const locale of locales) {
   test(`${locale.lang} reflows at 320px with enlarged text and reduced motion`, async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 700 });
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.goto(locale.route);
+    await page.goto(`${locale.route}about/`);
     await page.locator("html").evaluate((node) => { node.style.fontSize = "200%"; });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.locator(".navbar-toggle").click();
@@ -135,7 +134,7 @@ for (const locale of locales) {
     test(`${locale.lang} mobile drawer keyboard, dismissal and links in ${theme}`, async ({ page, baseURL }, testInfo) => {
       await page.setViewportSize({ width: 390, height: 844 });
       await applyPagesCsp(page, baseURL);
-      await page.goto(locale.route);
+      await page.goto(`${locale.route}about/`);
       const [openLabel, closeLabel, light, dark] = drawerLabels[locale.lang];
       await page.locator(".theme-trigger").click();
       await page.getByRole("menuitemradio", { name: theme === "light" ? light : dark, exact: true }).click();
@@ -225,7 +224,7 @@ for (const locale of locales) {
     test(`${locale.lang} full-screen drawer surface and focus in ${theme}`, async ({ page }, testInfo) => {
       for (const width of [320, 390, 768]) {
         await page.setViewportSize({ width, height: 844 });
-        await page.goto(locale.route);
+        await page.goto(`${locale.route}about/`);
         const [, , light, dark] = drawerLabels[locale.lang];
         await page.locator(".theme-trigger").click();
         await page.getByRole("menuitemradio", { name: theme === "light" ? light : dark, exact: true }).click();
@@ -299,7 +298,7 @@ for (const locale of locales) {
   }
 
   test(`${locale.lang} navigation breakpoint, resize cleanup and enlarged text`, async ({ page }) => {
-    await page.goto(locale.route);
+    await page.goto(`${locale.route}about/`);
     for (const width of [320, 390, 640, 700, 768, 769, 1024, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       await expect(page.locator(".navbar-toggle")).toBeVisible({ visible: width <= 768 });

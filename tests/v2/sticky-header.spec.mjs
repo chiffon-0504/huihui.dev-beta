@@ -15,7 +15,7 @@ for (const locale of locales) {
       const errors = [];
       page.on("pageerror", (error) => errors.push(error.message));
       page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
-      await page.goto(locale.route);
+      await page.goto(`${locale.route}about/`);
       const header = page.getByRole("banner");
       const theme = page.locator(".theme-trigger");
       const language = page.locator(".language-trigger");
@@ -95,17 +95,18 @@ for (const locale of locales) {
         await expectPinned(initial);
       }
 
-      // Follow each local destination from a deeply scrolled Home page.
+      // Follow each local destination from a deeply scrolled About page.
       for (const destination of ["works/", "about/", "posts/", ""]) {
-        await page.goto(locale.route);
+        await page.goto(`${locale.route}about/`);
         await scroll(1);
         await expect.poll(async () => Math.abs((await header.boundingBox()).y)).toBeLessThanOrEqual(1);
         if (destination && width === 390) await toggle.click();
-        const navigation = destination && width === 390 ? drawer : page.locator(".navbar");
+        const navigation = destination && width === 390 ? drawer : page.locator(".navbar-primary");
         const link = destination ? navigation.locator(`a[href="${locale.route}${destination}"]`) : page.locator(".brand");
         await link.click();
         await expect(page).toHaveURL(new URL(`${locale.route}${destination}`, baseURL).href);
       }
+      await page.goto(`${locale.route}about/`);
       await scroll(1);
       await language.click();
       await page.locator('.language-option[hreflang="en"]').click();

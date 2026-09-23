@@ -428,8 +428,8 @@ The resolver's unknown-path ZH-Hant/Home fallback is internal defensive behavior
 only; it does not register routes or define HTTP behavior. The HTTP serving layer
 returns the shared 404 document without loading the resolver. Invalid internal identities passed to `getContent`
 or `localeHref` throw explicitly instead of returning partial content.
-Language links retain the current page and fragment, including Home's `#works`
-and `#about`, About's `#interests`, and Posts category/article IDs.
+Language links retain the current page and fragment, including Home's
+`#main-content`, About's `#interests`, and Posts category/article IDs.
 There is no router, runtime translation lookup, or translation dependency.
 
 Future v2 page copy belongs in these locale modules, extending the shared schema;
@@ -486,7 +486,7 @@ All variants use `--radius-pill` (`9999px`) for their shape and local focus radi
 plus shared spacing and `--control-size` tokens rather than fixed heights that
 prevent text wrapping. Navigation CTAs remain native anchors with their hrefs;
 theme buttons and language disclosures retain native `button` and `summary`
-semantics. Home's former underline CTAs consume this layer instead of page-owned
+semantics. Page CTAs consume this layer instead of page-owned
 button styles, consistently across ZH/EN/JA.
 
 Outlined and primary buttons use `--color-button` for their outline/text or fill,
@@ -498,7 +498,7 @@ on hover/focus without an underline. Keyboard `:focus-visible` outlines remain
 visible, and the button layer introduces no transitions or animations.
 
 The page layout breakpoint is `40rem`: tokens reduce gutters from 1.5rem to 1rem
-and section spacing from 6rem to 4rem, and Home columns stack. Navigation uses
+and section spacing from 6rem to 4rem, and Home windows stack. Navigation uses
 `48rem`: the Japanese desktop header needs about 704px including its existing
 gaps and gutters; 768px leaves room before controls wrap. Keep that navigation
 query synchronized in `navbar.ts` and `components/navbar.css`. Use literals because
@@ -621,47 +621,42 @@ public `contact@huihui.dev` mail link. It is shared by Home, About, Works and Po
 regression assertion is replaced: v2 has its own Playwright configuration and PR
 validation job.
 
-## Home milestone
+## Home desktop prototype
 
-TypeScript, the design system, application shell, locale architecture, and Home
-are complete, followed by the About milestone below. Works and Posts are complete in their milestones below; Contact is footer-only.
+Home is an exploratory personal desktop, shared across the three locales through
+`LocaleContent.home`. It contains Profile, Playing, local live Time, System
+Status and Website Version windows on a mostly empty canvas. The old Hero and
+portfolio sections are removed. Home omits Works/About/Posts navigation; other
+pages retain it. About's former Home `#works` CTA now opens localized Works.
+The shared brand, language/theme controls, skip link and contact footer remain.
 
-`pages/home.ts` renders one shared composition for all three locales:
+`components/desktop.ts` provides `createWindow` and `createDesktop`. The manager
+uses title-bar pointer capture, ignores close-button/secondary pointer starts,
+and never prevents content selection or native links. Pointer/focus interaction
+moves a window to the end of a bounded stacking list (z-index 1 through 5 inside
+an isolated canvas). Closing removes just that window, restores keyboard focus
+when needed and releases its resources. Positions and closed states are only
+in memory: reload restores all five defaults, with no storage reads or writes.
 
-1. **Hero:** Web Design, Website Development and UI / UX positioning, with
-   performance, security and privacy as the central promise. Primary Works and
-   secondary About fragment links remain native anchors.
-2. **Selected work:** huihui.dev and Tier Maker, with readable summaries and
-   direct source/tool links. Projects use open columns instead of boxed cards.
-3. **Focus:** Web Design, Website Development and UI / UX, at the existing
-   `#about` destination, with a link to the full profile.
-4. **Engineering principles:** concrete performance, security and privacy
-   decisions behind the site.
-5. **Practice and interests:** AI-assisted development, Cloudflare and GitHub /
-   CI/CD skills alongside a separately headed section for ongoing Apple, OpenAI
-   and Web/AI interests that can inform future Posts. These are not new routes.
+The canvas clamps windows to its bounds and re-clamps after resizing or content
+reflow. On short viewports the page can scroll vertically. At the existing
+40rem page breakpoint, CSS and the manager disable dragging and use a single
+column with normal touch scrolling. No movement animations, resize handles,
+minimize/maximize, snapping or desktop customization are included.
 
-The full-profile link now opens the matching-language V2 About page. More-work
-and tool links still use matching-language pages on `https://huihui.dev`,
-explicitly labeled as the current site. These are ordinary same-tab links, not
-embedded v1 pages. Home's Hero keeps its useful Works and Focus fragment links.
+The clock reads device-local time every second, pauses while the document is
+hidden or leaves, resumes on visibility/pageshow (including bfcache), and stops
+when closed. It is a semantic time element without per-second live announcements.
+System Status explicitly says live status is not connected and marks Website/API
+as not checked. The public GET client requires a separate environment/CSP/local
+policy decision; this prototype does not call it or claim operational health.
+Version says V2 in development, without declaring a stable release number.
 
-All Home text belongs to `locales/` and the shared `LocaleContent` schema. The
-content describes the current Web/UI direction and existing projects; no v1
-markup, styles, scripts or runtime data are imported. Home-specific composition
-uses existing typography, spacing, color, radius and control tokens. It removes
-the decorative eyebrow, project category micro-labels and abstract Hero sketch.
-Normal Home content uses the existing 1.125rem token, including current-site
-link context. Hierarchy comes from headings, spacing and restrained rules.
-The sole 40rem breakpoint stacks the work, focus, principles and practice columns.
-
-Home uses one h1, five section h2s, and project/topic h3s. Fragment destinations accept
-keyboard focus, CTA text wraps, and links keep the shared visible focus style.
-`tests/v2/home.spec.ts` covers three locales, desktop/mobile, both themes,
-keyboard anchors, current-site destinations, readable typography, no external
-resource requests, and 320px with 200% text and reduced motion. The locale browser
-contract covers all Home copy; existing shell,
-language and theme suites retain their integration coverage.
+`tests/v2/home.spec.ts` covers desktop/tablet dragging, content selection,
+stacking/overlap, pointer cancellation, close/reload/default positions, unchanged
+storage, viewport changes, keyboard focus, local midnight and clock cleanup,
+three locales/themes, and mobile 320px/200% text reflow. Shared navigation tests
+continue on About, while Home has its own shell and locale coverage.
 
 ## About milestone
 

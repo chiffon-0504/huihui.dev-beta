@@ -38,7 +38,7 @@ export function createAbout(locale: Locale): HTMLElement {
 
   const practice = section("practice", copy.practiceTitle);
   const practiceBody = element("div", "about-practice");
-  practiceBody.append(topics(copy.practice), link(copy.worksCta, localeHref(locale, "#works"), "button"));
+  practiceBody.append(topics(copy.practice), link(copy.worksCta, localeHref(locale, "", "works"), "button"));
   practice.append(practiceBody);
 
   const interests = section("interests", copy.interestsTitle);

@@ -69,7 +69,7 @@ for (const locale of locales) {
 
       // Reach the trigger through the actual document tab order, without focus().
       await page.goto(locale.route);
-      for (let index = 0; index < (width > 768 ? 7 : 3); index++) await page.keyboard.press("Tab");
+      for (let index = 0; index < (width > 768 ? 4 : 3); index++) await page.keyboard.press("Tab");
       await expect(trigger).toBeFocused();
       expect(await trigger.evaluate((node) => getComputedStyle(node).outlineStyle)).toBe("solid");
       for (const key of ["Enter", "Space"]) {
@@ -97,7 +97,7 @@ for (const locale of locales) {
   }
 
   test(`${locale.lang} switches to every equivalent localized section`, async ({ page }) => {
-    for (const hash of ["", "#works", "#about"]) {
+    for (const hash of ["", "#profile", "#playing"]) {
       for (const target of locales) {
         await page.goto(`${locale.route}${hash}`);
         const dropdown = page.locator(".language-switcher");
@@ -110,13 +110,14 @@ for (const locale of locales) {
         await expect(page.locator(".language-switcher")).not.toHaveAttribute("open");
       }
     }
-    // A fragment changed by the Home CTA must also update existing links.
+    // A fragment changed by the Home skip link must also update existing links.
     await page.goto(locale.route);
-    await page.locator('.hero-actions a[href="#about"]').click();
+    await page.locator(".skip-link").focus();
+    await page.keyboard.press("Enter");
     await page.locator("summary").click();
     for (const target of locales) {
       await expect(page.locator(".language-switcher").getByRole("link", { name: target.label, exact: true }))
-        .toHaveAttribute("href", `${target.route}#about`);
+        .toHaveAttribute("href", `${target.route}#main-content`);
     }
   });
 
@@ -133,13 +134,13 @@ for (const locale of locales) {
 }
 
 test("rendered native disclosure and links work without enhancement listeners", async ({ page }) => {
-  await page.goto("/en/#works");
+  await page.goto("/en/#profile");
   // Cloning retains native markup while removing listeners on the component.
   await page.locator(".language-switcher").evaluate((node) => node.replaceWith(node.cloneNode(true)));
   const dropdown = page.locator(".language-switcher");
   await dropdown.locator("summary").click();
   await expect(dropdown).toHaveAttribute("open", "");
   await dropdown.getByRole("link", { name: "日本語", exact: true }).click();
-  await expect(page).toHaveURL(/\/ja\/#works$/);
+  await expect(page).toHaveURL(/\/ja\/#profile$/);
   await expect(page.locator("html")).toHaveAttribute("lang", "ja");
 });

@@ -76,7 +76,7 @@ for (const locale of supportedLocales) {
         await expect(page.locator("main h1")).toHaveText(getContent(target).worksPage.title);
       }
     }
-    for (const origin of [localeHref(locale), localeHref(locale, "", "about")]) {
+    for (const origin of [localeHref(locale, "", "posts"), localeHref(locale, "", "about")]) {
       await page.goto(origin);
       await page.locator(".navbar-primary a").first().click();
       await expect(page).toHaveURL(new RegExp(`${route}$`));
