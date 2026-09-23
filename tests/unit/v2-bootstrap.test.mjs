@@ -29,6 +29,32 @@ beforeAll(async () => {
 }, 30_000);
 
 describe("v2 initial theme build contract", () => {
+  test("all fourteen built heads share the compact multi-resolution favicon", async () => {
+    const documents = output.filter((entry) => entry.fileName.endsWith(".html"));
+    expect(documents).toHaveLength(14);
+    for (const entry of documents) {
+      const head = String(entry.source).match(/<head\b[^>]*>([\s\S]*?)<\/head>/i)?.[1];
+      expect(head, entry.fileName).toBeDefined();
+      expect(head.match(/<link\b[^>]*rel="icon"[^>]*>/g), entry.fileName)
+        .toEqual(['<link rel="icon" href="/favicon.ico">']);
+    }
+    const ico = await readFile(new URL("../../v2/public/favicon.ico", import.meta.url));
+    expect(ico.readUInt16LE(0)).toBe(0);
+    expect(ico.readUInt16LE(2)).toBe(1);
+    expect(ico.readUInt16LE(4)).toBe(3);
+    for (const [index, size] of [16, 32, 48].entries()) {
+      const offset = 6 + index * 16;
+      expect([ico[offset], ico[offset + 1]]).toEqual([size, size]);
+      const length = ico.readUInt32LE(offset + 8);
+      const start = ico.readUInt32LE(offset + 12);
+      expect(start).toBeGreaterThanOrEqual(54);
+      expect(length).toBeGreaterThan(0);
+      expect(start + length).toBeLessThanOrEqual(ico.length);
+      expect(ico.subarray(start, start + 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+      expect([ico.readUInt32BE(start + 16), ico.readUInt32BE(start + 20)]).toEqual([size, size]);
+    }
+  });
+
   test("private Jev has no public entry point or bundled credentials", () => {
     const html = String(output.find(entry => entry.fileName === "tools/jev/index.html")?.source);
     expect(html).toContain('<meta name="robots" content="noindex, nofollow">');
