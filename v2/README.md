@@ -89,6 +89,21 @@ delivery. CSP enforcing, Report-Only and no-CSP controls remain in the Beta suit
 
 ## Performance budgets
 
+### Accessible desktop movement growth (2026-09-24)
+
+Against PR #248 head `2b9d6e7`, the localized Move disclosure, four native
+direction buttons and compact-mode focus cleanup increase the public app JS
+from 65,902 B to 67,816 B (+1,914 B). Sharing the title-bar button styles limits
+the public CSS increase from 13,784 B to 14,182 B (+398 B). The title bar does
+not grow when the direction panel opens; no dependency, asset or request is added.
+The largest-CSS limit adds a scoped 400 B allowance for this measured feature,
+from 13,800 B to 14,200 B (18 B remaining). Aggregate CSS is 25,706 B, within the
+unchanged 26,000 B limit; JS, total, image and browser request limits also stay
+unchanged. This allowance covers the new accessible movement controls, not
+unrelated CSS growth. All twelve localized shells request 5 files totaling
+106,808–106,915 B, within the unchanged 113,000 B browser envelope. The earlier
+tables remain historical baselines.
+
 ### Private Jev growth measurement (2026-09-22)
 
 Before this feature, fresh `0549c0c0` built to 740,843 B (HTML 10,589 B,
@@ -638,6 +653,14 @@ an isolated canvas). Closing removes just that window, restores keyboard focus
 when needed and releases its resources. Positions and closed states are only
 in memory: reload restores all five defaults, with no storage reads or writes.
 
+Each draggable window also has a localized Move disclosure. Four native buttons
+move it up/down/left/right by 24 CSS pixels per activation, using the same clamp
+as dragging. They support pointer/touch activation and ordinary Tab, Enter and
+Space keys; Escape collapses the controls and restores Move focus. Moving focus
+outside the disclosure also collapses it. The direction panel overlays content
+without expanding the title bar. Entering compact layout restores focus to Close
+before hiding movement controls; returning to desktop keeps the panel collapsed.
+
 The canvas clamps windows to its bounds and re-clamps after resizing or content
 reflow. On short viewports the page can scroll vertically. At the existing
 40rem page breakpoint, CSS and the manager disable dragging and use a single
@@ -657,6 +680,9 @@ stacking/overlap, pointer cancellation, close/reload/default positions, unchange
 storage, viewport changes, keyboard focus, local midnight and clock cleanup,
 three locales/themes, and mobile 320px/200% text reflow. Shared navigation tests
 continue on About, while Home has its own shell and locale coverage.
+`tests/v2/desktop-movement.spec.ts` covers localized keyboard movement controls,
+pointer/touch directions, all four clamped edges, compact focus restoration and
+position reset without persistence across Chromium, Firefox and WebKit.
 
 ## About milestone
 

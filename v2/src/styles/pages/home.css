@@ -33,22 +33,44 @@
   font-size: var(--text-base);
   letter-spacing: normal;
 }
-.window-close {
+.window-titlebar :where(button) {
   flex: none;
   min-width: var(--control-size);
   min-height: var(--control-size);
   border: 0;
-  border-left: 1px solid var(--color-border);
   background: transparent;
+  cursor: pointer;
+}
+.window-close {
+  border-left: 1px solid var(--color-border);
   color: #c52222;
   font-size: var(--text-heading);
-  cursor: pointer;
 }
 [data-theme="dark"] .window-close {
   color: #ff8585;
 }
-.window-close:hover {
+.window-titlebar button:hover {
   background: var(--color-background);
+}
+.window-movement {
+  position: relative;
+  flex: none;
+}
+.window-move, .window-directions button {
+  padding: var(--space-1) var(--space-2);
+  color: var(--color-text);
+}
+.window-directions {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  padding: var(--space-2);
+  border: 1px solid var(--color-muted);
+  background: var(--color-surface);
+}
+.window-directions:not([hidden]) {
+  display: flex;
+  gap: var(--space-2);
 }
 .is-dragging .window-titlebar {
   cursor: grabbing;

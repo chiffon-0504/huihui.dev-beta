@@ -27,14 +27,16 @@ export function createWindow(id: string, title: string, closeLabel: string,
   return { node, titleBar, content, close, start, ...(onClose ? { onClose } : {}) };
 }
 
-/** One manager owns pointer capture, bounded positions and a finite stacking order. */
-export function createDesktop(windows: readonly DesktopWindow[]) {
+/** One manager owns pointer/button movement, bounded positions and a finite stacking order. */
+export function createDesktop(windows: readonly DesktopWindow[],
+  moveLabels: Readonly<Record<"label" | "up" | "down" | "left" | "right", string>>) {
   const node = element("div", "desktop");
   // Match the existing page-layout breakpoint in home.css.
   const compact = matchMedia("(max-width: 40rem)");
   const events = new AbortController();
   const order = [...windows];
   const positions = new Map<DesktopWindow, { x: number; y: number }>();
+  const movementControls = new Map<DesktopWindow, { node: HTMLElement; collapse: () => void }>();
   let drag: { window: DesktopWindow; pointerId: number; dx: number; dy: number } | undefined;
   const restack = () => order.forEach((item, index) => { item.node.style.zIndex = String(index + 1); });
   const raise = (item: DesktopWindow) => {
@@ -60,11 +62,16 @@ export function createDesktop(windows: readonly DesktopWindow[]) {
   };
   const layout = () => {
     endDrag();
-    for (const item of order) {
+    for (const item of [...order]) {
       if (compact.matches) {
+        const controls = movementControls.get(item)!;
+        if (controls.node.contains(document.activeElement)) item.close.focus({ preventScroll: true });
+        controls.collapse();
+        controls.node.hidden = true;
         item.node.style.removeProperty("left");
         item.node.style.removeProperty("top");
       } else {
+        movementControls.get(item)!.node.hidden = false;
         const saved = positions.get(item);
         const point = place(item, saved ?? {
           x: item.start.x * (node.clientWidth - item.node.offsetWidth),
@@ -76,13 +83,59 @@ export function createDesktop(windows: readonly DesktopWindow[]) {
   };
   const observer = new ResizeObserver(layout);
   for (const item of windows) {
+    const movement = element("div", "window-movement");
+    movement.hidden = compact.matches;
+    const toggle = element("button", "window-move", moveLabels.label);
+    toggle.type = "button";
+    const title = item.titleBar.querySelector("h2")!.textContent;
+    toggle.setAttribute("aria-label", `${moveLabels.label}: ${title}`);
+    toggle.setAttribute("aria-expanded", "false");
+    const directions = element("div", "window-directions");
+    directions.id = `${item.node.id}-movement`;
+    directions.hidden = true;
+    directions.setAttribute("role", "group");
+    directions.setAttribute("aria-label", `${moveLabels.label}: ${title}`);
+    toggle.setAttribute("aria-controls", directions.id);
+    const collapse = () => { directions.hidden = true; toggle.setAttribute("aria-expanded", "false"); };
+    for (const [direction, arrow, dx, dy] of [
+      ["up", "↑", 0, -24], ["down", "↓", 0, 24], ["left", "←", -24, 0], ["right", "→", 24, 0],
+    ] as const) {
+      const button = element("button", "", arrow);
+      button.type = "button";
+      button.setAttribute("aria-label", `${moveLabels[direction]}: ${title}`);
+      button.addEventListener("click", () => {
+        if (compact.matches) return;
+        endDrag();
+        raise(item);
+        const point = positions.get(item) ?? { x: item.node.offsetLeft, y: item.node.offsetTop };
+        positions.set(item, place(item, { x: point.x + dx, y: point.y + dy }));
+      }, { signal: events.signal });
+      directions.append(button);
+    }
+    toggle.addEventListener("click", () => {
+      if (compact.matches) return;
+      directions.hidden = !directions.hidden;
+      toggle.setAttribute("aria-expanded", String(!directions.hidden));
+    }, { signal: events.signal });
+    movement.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape" || directions.hidden) return;
+      event.preventDefault();
+      collapse();
+      toggle.focus({ preventScroll: true });
+    }, { signal: events.signal });
+    movement.addEventListener("focusout", (event) => {
+      if (!(event.relatedTarget instanceof Node) || !movement.contains(event.relatedTarget)) collapse();
+    }, { signal: events.signal });
+    movement.append(toggle, directions);
+    movementControls.set(item, { node: movement, collapse });
+    item.titleBar.insertBefore(movement, item.close);
     node.append(item.node);
     observer.observe(item.node);
     item.node.addEventListener("pointerdown", () => raise(item), { signal: events.signal });
     item.node.addEventListener("focusin", () => raise(item), { signal: events.signal });
     item.titleBar.addEventListener("pointerdown", (event) => {
       if (compact.matches || drag || !event.isPrimary || event.button !== 0 ||
-        (event.target instanceof Element && event.target.closest("button"))) return;
+        (event.target instanceof Element && event.target.closest("button, .window-movement"))) return;
       event.preventDefault();
       const rect = item.node.getBoundingClientRect();
       drag = { window: item, pointerId: event.pointerId, dx: event.clientX - rect.left, dy: event.clientY - rect.top };
@@ -105,6 +158,7 @@ export function createDesktop(windows: readonly DesktopWindow[]) {
       order.splice(order.indexOf(item), 1);
       observer.unobserve(item.node);
       positions.delete(item);
+      movementControls.delete(item);
       item.node.remove();
       item.onClose?.();
       restack();

@@ -135,11 +135,12 @@ export default {
     version: "サイトのバージョン",
     development: "開発中 · デスクトップ試作",
     notes: [
-      "タイトルバーをドラッグして移動できます。",
+      "タイトルバーのドラッグまたは「移動」ボタンで位置を調整できます。",
       "再読み込みすると、すべてのウィンドウと位置が元に戻ります。"
     ],
     source: "ソースを見る",
-    close: "ウィンドウを閉じる"
+    close: "ウィンドウを閉じる",
+    move: { label: "移動", up: "上に移動", down: "下に移動", left: "左に移動", right: "右に移動" }
   },
 } satisfies LocaleContent;
 

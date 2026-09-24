@@ -35,7 +35,12 @@ for (const locale of supportedLocales) {
       await expect(page.locator("#version a")).toHaveAttribute("href", "https://github.com/chiffon-0504/huihui.dev-beta");
       for (const item of await page.locator(".desktop-window").all()) {
         await expect(item).toHaveAccessibleName(await item.locator("h2").innerText());
-        await expect(item.locator("button")).toHaveAccessibleName(`${copy.home.close}: ${await item.locator("h2").innerText()}`);
+        await expect(item.locator(".window-close")).toHaveAccessibleName(`${copy.home.close}: ${await item.locator("h2").innerText()}`);
+        if (width <= 640) await expect(item.locator(".window-movement")).toBeHidden();
+        else {
+          await expect(item.locator(".window-move")).toBeVisible();
+          await expect(item.locator(".window-move")).toHaveAccessibleName(`${copy.home.move.label}: ${await item.locator("h2").innerText()}`);
+        }
         await expect(item).toHaveCSS("position", width <= 640 ? "relative" : "absolute");
       }
       for (const theme of ["light", "dark", "auto"] as const) {
@@ -106,8 +111,8 @@ test("pointer and keyboard focus raise windows with bounded z-index and visible 
     return document.elementFromPoint(r.x + 20, r.y + 20)?.closest(".desktop-window")?.id;
   })).toBe("playing");
   for (let i = 0; i < 12; i++) {
-    await profile.locator("button").focus();
-    await playing.locator("button").focus();
+    await profile.locator(".window-close").focus();
+    await playing.locator(".window-close").focus();
   }
   expect(await page.locator(".desktop-window").evaluateAll((nodes) => nodes.map((node) => Number(getComputedStyle(node).zIndex)).sort())).toEqual([1, 2, 3, 4, 5]);
 });
@@ -175,9 +180,11 @@ test("native keyboard skip, content link, close buttons and final focus remain u
   await expect(page.locator("main")).toBeFocused();
   for (const id of ["profile", "playing", "clock", "status", "version"]) {
     await page.keyboard.press("Tab");
-    await expect(page.locator(`#${id} button`)).toBeFocused();
+    await expect(page.locator(`#${id} .window-move`)).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(page.locator(`#${id} .window-close`)).toBeFocused();
     await expect(page.locator(`#${id}`)).toHaveCSS("z-index", "5");
-    await expect(page.locator(`#${id} button`)).toHaveCSS("outline-style", "solid");
+    await expect(page.locator(`#${id} .window-close`)).toHaveCSS("outline-style", "solid");
   }
   await page.keyboard.press("Tab");
   await expect(page.locator("#version a")).toBeFocused();
@@ -204,7 +211,7 @@ for (const timezoneId of ["Asia/Taipei", "America/New_York"]) {
       await expect(page.locator(".desktop-date")).toHaveText("2026 / 9 / 25");
       await expect(page.locator(".desktop-time")).toHaveText("00 : 00 : 00");
       await page.evaluate(() => { (window as any).closedClock = document.querySelector(".desktop-clock"); });
-      await page.locator("#clock button").click();
+      await page.locator("#clock .window-close").click();
       const stopped = await page.evaluate(() => (window as any).closedClock.dateTime);
       await page.clock.runFor(5000);
       expect(await page.evaluate(() => (window as any).closedClock.dateTime)).toBe(stopped);

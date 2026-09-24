@@ -9,7 +9,7 @@ export const budgets = Object.freeze({
   images: 650_000,
   total: 798_150,
   largestJs: 73_000,
-  largestCss: 13_800,
+  largestCss: 14_200,
   largestImage: 129_000,
 });
 

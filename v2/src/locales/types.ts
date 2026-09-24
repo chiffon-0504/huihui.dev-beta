@@ -99,4 +99,5 @@ export interface HomeContent {
   readonly notes: readonly string[];
   readonly source: string;
   readonly close: string;
+  readonly move: Readonly<Record<"label" | "up" | "down" | "left" | "right", string>>;
 }

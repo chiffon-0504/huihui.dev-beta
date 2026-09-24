@@ -50,7 +50,7 @@ export function createHome(locale: Locale): HTMLElement {
   for (const note of copy.notes) notes.append(element("li", "", note));
   version.content.append(notes, link(copy.source, "https://github.com/chiffon-0504/huihui.dev-beta"));
 
-  const desktop = createDesktop([profile, playing, clock, status, version]);
+  const desktop = createDesktop([profile, playing, clock, status, version], copy.move);
   main.append(desktop.node);
   const visibility = () => document.hidden ? stopClock() : startClock();
   document.addEventListener("visibilitychange", visibility);

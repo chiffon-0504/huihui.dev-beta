@@ -135,11 +135,12 @@ export default {
     version: "網站版本",
     development: "開發中 · 桌面原型",
     notes: [
-      "拖曳標題列移動視窗。",
+      "拖曳標題列或使用「移動」按鈕調整視窗位置。",
       "關閉的視窗與位置會在重新整理後還原。"
     ],
     source: "查看原始碼",
-    close: "關閉視窗"
+    close: "關閉視窗",
+    move: { label: "移動", up: "向上移動", down: "向下移動", left: "向左移動", right: "向右移動" }
   },
 } satisfies LocaleContent;
 

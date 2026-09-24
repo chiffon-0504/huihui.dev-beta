@@ -135,11 +135,12 @@ export default {
     version: "Website version",
     development: "In development · Desktop prototype",
     notes: [
-      "Drag a title bar to move a window.",
+      "Drag a title bar or use Move to reposition a window.",
       "Refresh to restore all windows and their positions."
     ],
     source: "View source",
-    close: "Close window"
+    close: "Close window",
+    move: { label: "Move", up: "Move up", down: "Move down", left: "Move left", right: "Move right" }
   },
 } satisfies LocaleContent;
 
