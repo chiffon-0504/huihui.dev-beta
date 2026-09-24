@@ -9,11 +9,9 @@ export function createHome(locale: Locale): HTMLElement {
   main.tabIndex = -1;
   main.append(element("h1", "desktop-heading", copy.title));
 
-  const profile = createWindow("profile", copy.profile, copy.close, { x: 0.03, y: 0.05 });
-  profile.content.append(element("p", "profile-user", "User = huihui"), element("p", "profile-online", `● ${copy.online}`));
   const playing = createWindow("playing", copy.playing, copy.close, { x: 0.46, y: 0.14 });
   const games = element("ul", "desktop-list");
-  for (const game of ["Arcaea", "BanG Dream!", "QR Notes"]) games.append(element("li", "", game));
+  for (const game of ["Arcaea", "BanG Dream! Our Notes"]) games.append(element("li", "", game));
   playing.content.append(games);
 
   let timer: ReturnType<typeof setInterval> | undefined;
@@ -50,7 +48,7 @@ export function createHome(locale: Locale): HTMLElement {
   for (const note of copy.notes) notes.append(element("li", "", note));
   version.content.append(notes, link(copy.source, "https://github.com/chiffon-0504/huihui.dev-beta"));
 
-  const desktop = createDesktop([profile, playing, clock, status, version], copy.move);
+  const desktop = createDesktop([playing, clock, status, version], copy.move);
   main.append(desktop.node);
   const visibility = () => document.hidden ? stopClock() : startClock();
   document.addEventListener("visibilitychange", visibility);

@@ -123,9 +123,7 @@ export default {
   aboutLabel: "About",
   home: {
     title: "huihui’s desktop",
-    profile: "My profile",
-    online: "Online",
-    playing: "Playing",
+    playing: "Rhythm games",
     time: "Now time",
     localTime: "Local time",
     status: "System status",

@@ -123,9 +123,7 @@ export default {
   aboutLabel: "關於",
   home: {
     title: "huihui 的桌面",
-    profile: "個人資料",
-    online: "上線中",
-    playing: "正在玩",
+    playing: "音樂遊戲",
     time: "現在時間",
     localTime: "本地時間",
     status: "系統狀態",

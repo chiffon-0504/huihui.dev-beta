@@ -26,10 +26,11 @@ for (const locale of supportedLocales) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto(localeHref(locale));
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(copy.home.title);
-      await expect(page.locator(".desktop-window")).toHaveCount(5);
-      await expect(page.locator(".desktop-window h2")).toHaveText([copy.home.profile, copy.home.playing, copy.home.time, copy.home.status, copy.home.version]);
+      await expect(page.locator(".desktop-window")).toHaveCount(4);
+      await expect(page.locator("#profile, .profile-user, .profile-online")).toHaveCount(0);
+      await expect(page.locator(".desktop-window h2")).toHaveText([copy.home.playing, copy.home.time, copy.home.status, copy.home.version]);
       await expect(page.locator(".navbar-primary, .drawer-links a[href*='/works/'], .drawer-links a[href*='/about/'], .drawer-links a[href*='/posts/'], .hero")).toHaveCount(0);
-      await expect(page.locator(".desktop-list li")).toHaveText(["Arcaea", "BanG Dream!", "QR Notes"]);
+      await expect(page.locator(".desktop-list li")).toHaveText(["Arcaea", "BanG Dream! Our Notes"]);
       await expect(page.locator("#status .window-content > p")).toHaveText(copy.home.statusUnavailable);
       await expect(page.locator("#status dd")).toHaveText([copy.home.notChecked, copy.home.notChecked]);
       await expect(page.locator("#version a")).toHaveAttribute("href", "https://github.com/chiffon-0504/huihui.dev-beta");
@@ -51,9 +52,9 @@ for (const locale of supportedLocales) {
         if (theme !== "auto" && testInfo.project.name === "chromium") await page.screenshot({ path: testInfo.outputPath(`desktop-${locale}-${width}-${theme}.png`), fullPage: true });
       }
       if (width === 768) {
-        const before = await position(page.locator("#profile"));
-        await move(page, page.locator("#profile .window-titlebar"), 30, 60);
-        expect(await position(page.locator("#profile"))).not.toEqual(before);
+        const before = await position(page.locator("#playing"));
+        await move(page, page.locator("#playing .window-titlebar"), 30, 60);
+        expect(await position(page.locator("#playing"))).not.toEqual(before);
       }
       expect(errors).toEqual([]);
     });
@@ -62,17 +63,17 @@ for (const locale of supportedLocales) {
     await page.setViewportSize({ width: 320, height: 900 });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(localeHref(locale));
-    const before = await position(page.locator("#profile"));
-    await move(page, page.locator("#profile .window-titlebar"), 70, 80);
-    expect(await position(page.locator("#profile"))).toEqual(before);
-    await expect(page.locator("#profile .window-titlebar")).toHaveCSS("touch-action", "auto");
+    const before = await position(page.locator("#playing"));
+    await move(page, page.locator("#playing .window-titlebar"), 70, 80);
+    expect(await position(page.locator("#playing"))).toEqual(before);
+    await expect(page.locator("#playing .window-titlebar")).toHaveCSS("touch-action", "auto");
     await page.locator("html").evaluate((node) => { node.style.fontSize = "200%"; });
     await reflow(page);
     const boxes = await page.locator(".desktop-window").evaluateAll((nodes) => nodes.map((node) => { const r = node.getBoundingClientRect(); return { top: r.top, bottom: r.bottom }; }));
     for (let i = 1; i < boxes.length; i++) expect(boxes[i]!.top).toBeGreaterThan(boxes[i - 1]!.bottom);
-    await page.locator("#playing .window-close").click();
-    await expect(page.locator(".desktop-window")).toHaveCount(4);
-    await expect(page.locator("#profile")).toBeVisible();
+    await page.locator("#clock .window-close").click();
+    await expect(page.locator(".desktop-window")).toHaveCount(3);
+    await expect(page.locator("#playing")).toBeVisible();
     await reflow(page);
   });
 }
@@ -80,7 +81,7 @@ for (const locale of supportedLocales) {
 test("all windows drag only by title bar; content selects text and keeps links usable", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/en/");
-  for (const id of ["profile", "playing", "clock", "status", "version"]) {
+  for (const id of ["playing", "clock", "status", "version"]) {
     const item = page.locator(`#${id}`);
     const original = await position(item);
     await move(page, item.locator(".window-content"), 24, 16);
@@ -91,7 +92,7 @@ test("all windows drag only by title bar; content selects text and keeps links u
     expect(moved.y).toBeCloseTo(original.y + 24, 0);
     await expect(item).not.toHaveClass(/is-dragging/);
   }
-  await page.locator(".profile-user").dblclick({ position: { x: 12, y: 12 } });
+  await page.locator(".desktop-list li:first-child").dblclick({ position: { x: 12, y: 12 } });
   expect(await page.evaluate(() => getSelection()?.toString().length)).toBeGreaterThan(0);
   await page.locator("#version a").click({ trial: true });
 });
@@ -99,22 +100,22 @@ test("all windows drag only by title bar; content selects text and keeps links u
 test("pointer and keyboard focus raise windows with bounded z-index and visible overlap", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/en/");
-  const profile = page.locator("#profile");
-  const playing = page.locator("#playing");
-  const a = (await profile.boundingBox())!, b = (await playing.boundingBox())!;
-  await move(page, profile.locator(".window-titlebar"), b.x - a.x + 40, b.y - a.y + 40);
-  await expect(profile).toHaveCSS("z-index", "5");
-  await playing.locator("h2").click();
-  await expect(playing).toHaveCSS("z-index", "5");
+  const music = page.locator("#playing");
+  const clock = page.locator("#clock");
+  const a = (await music.boundingBox())!, b = (await clock.boundingBox())!;
+  await move(page, music.locator(".window-titlebar"), b.x - a.x + 40, b.y - a.y + 40);
+  await expect(music).toHaveCSS("z-index", "4");
+  await clock.locator("h2").click();
+  await expect(clock).toHaveCSS("z-index", "4");
   expect(await page.evaluate(() => {
-    const r = document.querySelector("#profile")!.getBoundingClientRect();
+    const r = document.querySelector("#playing")!.getBoundingClientRect();
     return document.elementFromPoint(r.x + 20, r.y + 20)?.closest(".desktop-window")?.id;
-  })).toBe("playing");
+  })).toBe("clock");
   for (let i = 0; i < 12; i++) {
-    await profile.locator(".window-close").focus();
-    await playing.locator(".window-close").focus();
+    await music.locator(".window-close").focus();
+    await clock.locator(".window-close").focus();
   }
-  expect(await page.locator(".desktop-window").evaluateAll((nodes) => nodes.map((node) => Number(getComputedStyle(node).zIndex)).sort())).toEqual([1, 2, 3, 4, 5]);
+  expect(await page.locator(".desktop-window").evaluateAll((nodes) => nodes.map((node) => Number(getComputedStyle(node).zIndex)).sort())).toEqual([1, 2, 3, 4]);
 });
 
 test("close affects one window; reload restores all defaults without storage", async ({ page }) => {
@@ -124,14 +125,14 @@ test("close affects one window; reload restores all defaults without storage", a
   const baselineStorage = await storage();
   const positions = () => page.locator(".desktop-window").evaluateAll((nodes) => nodes.map((node: HTMLElement) => ({ id: node.id, x: node.offsetLeft, y: node.offsetTop })));
   const defaults = await positions();
-  await move(page, page.locator("#profile .window-titlebar"), 150, 80);
-  await page.locator("#playing .window-close").click();
-  await expect(page.locator("#playing")).toHaveCount(0);
-  await expect(page.locator(".desktop-window")).toHaveCount(4);
+  await move(page, page.locator("#playing .window-titlebar"), 150, 80);
+  await page.locator("#clock .window-close").click();
+  await expect(page.locator("#clock")).toHaveCount(0);
+  await expect(page.locator(".desktop-window")).toHaveCount(3);
   expect(await positions()).not.toEqual(defaults);
   expect(await storage()).toEqual(baselineStorage);
   await page.reload();
-  await expect(page.locator(".desktop-window")).toHaveCount(5);
+  await expect(page.locator(".desktop-window")).toHaveCount(4);
   await expect.poll(positions).toEqual(defaults);
   expect(await storage()).toEqual(baselineStorage);
 });
@@ -139,13 +140,13 @@ test("close affects one window; reload restores all defaults without storage", a
 test("window boundaries survive dragging and viewport mode changes", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/en/");
-  const profile = page.locator("#profile");
-  await move(page, profile.locator(".window-titlebar"), -5000, -5000);
-  expect(await position(profile)).toEqual({ x: 0, y: 0 });
-  await move(page, profile.locator(".window-titlebar"), 5000, 5000);
+  const playing = page.locator("#playing");
+  await move(page, playing.locator(".window-titlebar"), -5000, -5000);
+  expect(await position(playing)).toEqual({ x: 0, y: 0 });
+  await move(page, playing.locator(".window-titlebar"), 5000, 5000);
   for (const width of [1440, 700, 390, 900]) {
     await page.setViewportSize({ width, height: 700 });
-    await expect(profile).toHaveCSS("position", width <= 640 ? "relative" : "absolute");
+    await expect(playing).toHaveCSS("position", width <= 640 ? "relative" : "absolute");
     await expect.poll(() => page.locator(".desktop-window").evaluateAll((nodes) => nodes.every((node) => {
       const r = node.getBoundingClientRect(), canvas = node.parentElement!.getBoundingClientRect();
       return r.left >= canvas.left && r.right <= canvas.right + 1 && r.top >= canvas.top && r.bottom <= canvas.bottom + 1;
@@ -156,20 +157,20 @@ test("window boundaries survive dragging and viewport mode changes", async ({ pa
 
 test("pointer cancellation releases the drag and secondary clicks do not drag", async ({ page }) => {
   await page.goto("/en/");
-  const title = page.locator("#profile .window-titlebar");
+  const title = page.locator("#playing .window-titlebar");
   const box = (await title.boundingBox())!;
   await page.mouse.move(box.x + 20, box.y + 20);
   await title.evaluate((node) => node.addEventListener("pointerdown", (event) => { (window as any).dragPointerId = (event as PointerEvent).pointerId; }, { once: true }));
   await page.mouse.down();
-  await expect(page.locator("#profile")).toHaveClass(/is-dragging/);
+  await expect(page.locator("#playing")).toHaveClass(/is-dragging/);
   await title.dispatchEvent("pointercancel", { pointerId: await page.evaluate(() => (window as any).dragPointerId) });
-  await expect(page.locator("#profile")).not.toHaveClass(/is-dragging/);
-  const stopped = await position(page.locator("#profile"));
+  await expect(page.locator("#playing")).not.toHaveClass(/is-dragging/);
+  const stopped = await position(page.locator("#playing"));
   await page.mouse.move(box.x + 70, box.y + 70);
   await page.mouse.up();
-  expect(await position(page.locator("#profile"))).toEqual(stopped);
+  expect(await position(page.locator("#playing"))).toEqual(stopped);
   await title.dispatchEvent("pointerdown", { pointerId: 2, isPrimary: true, button: 2 });
-  await expect(page.locator("#profile")).not.toHaveClass(/is-dragging/);
+  await expect(page.locator("#playing")).not.toHaveClass(/is-dragging/);
 });
 
 test("native keyboard skip, content link, close buttons and final focus remain usable", async ({ page }) => {
@@ -178,18 +179,18 @@ test("native keyboard skip, content link, close buttons and final focus remain u
   await expect(page.locator(".skip-link")).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.locator("main")).toBeFocused();
-  for (const id of ["profile", "playing", "clock", "status", "version"]) {
+  for (const id of ["playing", "clock", "status", "version"]) {
     await page.keyboard.press("Tab");
     await expect(page.locator(`#${id} .window-move`)).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(page.locator(`#${id} .window-close`)).toBeFocused();
-    await expect(page.locator(`#${id}`)).toHaveCSS("z-index", "5");
+    await expect(page.locator(`#${id}`)).toHaveCSS("z-index", "4");
     await expect(page.locator(`#${id} .window-close`)).toHaveCSS("outline-style", "solid");
   }
   await page.keyboard.press("Tab");
   await expect(page.locator("#version a")).toBeFocused();
   await page.keyboard.press("Shift+Tab");
-  for (let remaining = 4; remaining >= 0; remaining--) {
+  for (let remaining = 3; remaining >= 0; remaining--) {
     await page.keyboard.press("Enter");
     await expect(page.locator(".desktop-window")).toHaveCount(remaining);
     if (remaining) expect(await page.evaluate(() => document.activeElement?.className)).toBe("window-close");

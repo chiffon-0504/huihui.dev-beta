@@ -85,8 +85,6 @@ export interface LocaleContent {
 
 export interface HomeContent {
   readonly title: string;
-  readonly profile: string;
-  readonly online: string;
   readonly playing: string;
   readonly time: string;
   readonly localTime: string;

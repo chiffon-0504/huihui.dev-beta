@@ -123,9 +123,7 @@ export default {
   aboutLabel: "プロフィール",
   home: {
     title: "huihui のデスクトップ",
-    profile: "マイプロフィール",
-    online: "オンライン",
-    playing: "プレイ中",
+    playing: "音楽ゲーム",
     time: "現在の時刻",
     localTime: "ローカル時刻",
     status: "システム状況",

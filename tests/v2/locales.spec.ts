@@ -6,7 +6,7 @@ for (const locale of supportedLocales) {
     const copy = getContent(locale);
     await page.goto(localeHref(locale));
     await expect(page.locator("main h1")).toHaveText(copy.home.title);
-    await expect(page.locator(".profile-online")).toHaveText(`● ${copy.home.online}`);
+    await expect(page.locator("#playing h2")).toHaveText(copy.home.playing);
     await expect(page.locator("#clock .desktop-muted")).toHaveText(copy.home.localTime);
     await expect(page.locator("#version .desktop-muted")).toHaveText(copy.home.development);
     await expect(page.locator(".desktop-notes li")).toHaveText([...copy.home.notes]);

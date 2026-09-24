@@ -79,12 +79,8 @@
   padding: var(--space-4);
   overflow-wrap: anywhere;
 }
-.profile-user, .desktop-clock {
+.desktop-clock {
   font-family: var(--font-mono);
-}
-.profile-online {
-  margin-top: var(--space-3);
-  color: var(--color-accent);
 }
 .desktop-list {
   list-style: none;

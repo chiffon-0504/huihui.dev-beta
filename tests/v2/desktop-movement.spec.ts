@@ -17,12 +17,12 @@ for (const locale of supportedLocales) {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(localeHref(locale));
     const copy = getContent(locale).home;
-    for (const id of ["profile", "playing", "clock", "status", "version"]) {
+    for (const id of ["playing", "clock", "status", "version"]) {
       const item = page.locator(`#${id}`);
       const title = await item.locator("h2").innerText();
       const toggle = item.getByRole("button", { name: `${copy.move.label}: ${title}`, exact: true });
       await tabTo(page, toggle);
-      await expect(item).toHaveCSS("z-index", "5");
+      await expect(item).toHaveCSS("z-index", "4");
       const before = await position(item);
       await page.keyboard.press("Enter");
       await expect(toggle).toHaveAttribute("aria-expanded", "true");
@@ -38,9 +38,9 @@ for (const locale of supportedLocales) {
         const button = group.getByRole("button", { name: `${copy.move[direction]}: ${title}`, exact: true });
         await expect(button).toBeFocused();
         await expect(button).toHaveCSS("outline-style", "solid");
-        // Profile starts away from all boundaries; other windows verify the
+        // The music window starts away from all boundaries; other windows verify the
         // same localized controls without assuming room for an unclamped step.
-        if (id === "profile") {
+        if (id === "playing") {
           const from = await position(item);
           await page.keyboard.press(key);
           expect(await position(item)).toEqual({ x: from.x + dx, y: from.y + dy });
@@ -65,12 +65,12 @@ for (const touch of [false, true]) {
     const page = await context.newPage();
     try {
       await page.goto(test.info().project.use.baseURL + "/en/");
-      const item = page.locator("#profile");
+      const item = page.locator("#playing");
       const activate = (button: Locator) => touch ? button.tap() : button.click();
-      await activate(item.getByRole("button", { name: "Move: My profile", exact: true }));
+      await activate(item.getByRole("button", { name: "Move: Rhythm games", exact: true }));
       for (const [direction, dx, dy] of [["up", 0, -24], ["down", 0, 24], ["left", -24, 0], ["right", 24, 0]] as const) {
         const before = await position(item);
-        await activate(item.getByRole("button", { name: `Move ${direction}: My profile`, exact: true }));
+        await activate(item.getByRole("button", { name: `Move ${direction}: Rhythm games`, exact: true }));
         expect(await position(item)).toEqual({ x: before.x + dx, y: before.y + dy });
         await expect(item).not.toHaveClass(/is-dragging/);
       }
@@ -81,14 +81,14 @@ for (const touch of [false, true]) {
 test("button movement shares drag clamping, stays reachable and resets without storage", async ({ page }) => {
   await page.setViewportSize({ width: 768, height: 900 });
   await page.goto("/en/");
-  const item = page.locator("#profile");
-  const toggle = item.getByRole("button", { name: "Move: My profile", exact: true });
+  const item = page.locator("#playing");
+  const toggle = item.getByRole("button", { name: "Move: Rhythm games", exact: true });
   const storage = () => page.evaluate(() => ({ local: { ...localStorage }, session: { ...sessionStorage } }));
   const original = await position(item), saved = await storage();
   await tabTo(page, toggle);
   await page.keyboard.press("Enter");
   for (const direction of ["up", "down", "left", "right"]) {
-    const button = item.getByRole("button", { name: `Move ${direction}: My profile`, exact: true });
+    const button = item.getByRole("button", { name: `Move ${direction}: Rhythm games`, exact: true });
     await tabTo(page, button);
     const bound = await item.evaluate((node: HTMLElement) => ({ x: node.parentElement!.clientWidth - node.offsetWidth, y: node.parentElement!.clientHeight - node.offsetHeight }));
     // More real keyboard activations than needed to hit and exceed either edge.
@@ -114,8 +114,8 @@ test("button movement shares drag clamping, stays reachable and resets without s
 test("compact layout hides movement, restores focus and keeps positions through mode changes", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/en/");
-  const item = page.locator("#profile");
-  const toggle = item.getByRole("button", { name: "Move: My profile", exact: true });
+  const item = page.locator("#playing");
+  const toggle = item.getByRole("button", { name: "Move: Rhythm games", exact: true });
   await tabTo(page, toggle);
   await page.keyboard.press("Enter");
   await page.keyboard.press("Tab");
@@ -137,7 +137,7 @@ test("compact layout hides movement, restores focus and keeps positions through 
     expect(await position(item)).toEqual(before);
     await expect(item).not.toHaveClass(/is-dragging/);
     // A stale switch activation queued across resize must also be harmless.
-    await item.getByRole("button", { name: "Move right: My profile", includeHidden: true }).dispatchEvent("click");
+    await item.getByRole("button", { name: "Move right: Rhythm games", includeHidden: true }).dispatchEvent("click");
     expect(await position(item)).toEqual(before);
     await item.locator(".window-close").focus();
   }
