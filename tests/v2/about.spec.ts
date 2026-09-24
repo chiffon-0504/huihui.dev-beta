@@ -58,9 +58,10 @@ for (const locale of supportedLocales) {
         }
       }
       await page.getByRole("link", { name: about.worksCta, exact: true }).click();
-      await expect(page).toHaveURL(new RegExp(`${localeHref(locale)}#works$`));
-      await expect(page.locator("#works h2")).toBeInViewport();
-      await page.locator("#about a").click();
+      await expect(page).toHaveURL(new RegExp(`${localeHref(locale, "", "works")}$`));
+      await expect(page.locator("main.works")).toBeVisible();
+      if (width === 390) await page.locator(".navbar-toggle").click();
+      await page.locator(width === 390 ? ".drawer-links" : ".navbar-primary").getByRole("link", { name: copy.aboutLabel, exact: true }).click();
       await expect(page).toHaveURL(new RegExp(`${route}$`));
       await expect(page.locator("main.about")).toBeVisible();
       expect(errors).toEqual([]);

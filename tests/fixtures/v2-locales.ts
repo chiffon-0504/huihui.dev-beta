@@ -16,10 +16,14 @@ export const missingKey: LocaleContent = missingAccessibility;
 export const incompatible: LocaleContent = { ...ja, themeAuto: 42 };
 // @ts-expect-error Language metadata must include both self-name labels.
 export const incompleteLanguage: LocaleContent = { ...zhHant, language: { label: "中文" } };
-const { toolCta, ...missingHomeAction } = en;
-void toolCta;
+const { close, ...missingHomeAction } = en.home;
+void close;
 // @ts-expect-error Every locale must include the complete Home action copy.
-export const incompleteHome: LocaleContent = missingHomeAction;
+export const incompleteHome: LocaleContent = { ...en, home: missingHomeAction };
+const { right, ...missingDirection } = en.home.move;
+void right;
+// @ts-expect-error Every locale must provide all four window movement labels.
+export const incompleteMovement: LocaleContent = { ...en, home: { ...en.home, move: missingDirection } };
 // @ts-expect-error The registry must include every supported locale.
 export const incompleteRegistry: Record<Locale, LocaleContent> = { en, ja };
 // @ts-expect-error Unknown internal identities are rejected at the consumer boundary.
@@ -27,7 +31,7 @@ getContent("fr");
 // @ts-expect-error Unknown identities cannot create language links.
 localeHref("fr");
 // @ts-expect-error Consumers cannot edit canonical copy through the registry.
-locales.en.title = "Changed";
+locales.en.home.title = "Changed";
 
 const { interestsTitle, ...missingAboutHeading } = en.aboutPage;
 void interestsTitle;

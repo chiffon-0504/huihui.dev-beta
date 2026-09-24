@@ -19,18 +19,12 @@ describe("v2 localized shell", () => {
 
   for (const locale of supportedLocales) {
     test(`${locale} has a matching entry and complete shared content`, async () => {
-      const { language, focus, principles, skills, interests, aboutPage, worksPage, postsPage, contact, ...copy } = getContent(locale);
+      const { language, home, aboutPage, worksPage, postsPage, contact, ...copy } = getContent(locale);
       expect(Object.keys(getContent(locale)).sort()).toEqual(Object.keys(content.en).sort());
       for (const value of [...Object.values(copy), ...Object.values(language)]) expect(value.trim()).not.toBe("");
       const strings = (value) => typeof value === "string" ? [value] : Object.values(value).flatMap(strings);
-      for (const value of strings({ aboutPage, worksPage, postsPage, contact })) expect(value.trim()).not.toBe("");
-      for (const topics of [focus, principles, skills, interests]) {
-        expect(topics).toHaveLength(3);
-        for (const topic of topics) {
-          expect(topic.title.trim()).not.toBe("");
-          expect(topic.description.trim()).not.toBe("");
-        }
-      }
+      for (const value of strings({ home, aboutPage, worksPage, postsPage, contact })) expect(value.trim()).not.toBe("");
+      expect(home.notes).toHaveLength(2);
       const route = localeHref(locale);
       expect(resolveLocale(route)).toBe(locale);
       expect(resolveLocale(`${route}index.html`)).toBe(locale);
