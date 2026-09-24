@@ -168,6 +168,28 @@ additions; largest-file limits prevent concentrating a regression in one file.
 No variation was observed in repeated builds, so this is intentional growth
 allowance, not a measured noise tolerance.
 
+### Memories window media addition (2026-09-24)
+
+The supplied Home photo adds two local WebPs (320x240 and 640x480), totaling
+53,154 B. The production build measures HTML 11,781 B, JS 101,567 B,
+CSS 25,212 B, images 676,988 B and total output 816,127 B. Largest JS/CSS/image
+are 66,138 / 13,688 / 122,618 B. The original PNG is not emitted.
+
+This requested media addition increases only aggregate images and total limits
+by 56,000 B (53,154 B plus 5.35% rounded headroom): images 706,000 B and total
+854,150 B. Existing HTML/JS/CSS, largest-file, shell and Works limits are unchanged.
+Home has a separate envelope of one local image request / 43,500 B, based on the
+41,396 B largest candidate plus 5.08% headroom. About/Works/Posts may not request
+this image, and Home still may not load Works photos or external media.
+
+The browser spec measures all twelve localized routes at 1440px and 390px in
+Chromium, Firefox and WebKit. It explicitly decodes the Home photo after scrolling
+and requires exactly one selected candidate, preserving lazy/async behavior and
+strict request/error checks. Measured Home shells use 5 requests / 104,652–104,725 B
+across locales; the photo adds exactly one request (11,758 B at desktop 1x;
+41,396 B at 390px or WebKit 2x). Source provenance and derivative hashes are in
+[the local asset inventory](src/media/assets/README.md#home-memory).
+
 ### Browser request envelope
 
 `tests/v2/performance.spec.ts` checks all twelve localized entries in Chromium,
@@ -178,8 +200,8 @@ and charged their matching build-file bytes. The initial checkpoint is the
 document load plus decoded eager image (Works) and completed SVG sprite. Lazy
 image counts at that checkpoint are observations, not fixed expectations.
 The second checkpoint scrolls/decodes every gallery image, or exercises the
-footer/language control on routes without photos. No fixed sleep or assumed
-lazy-loading distance is used. Each test attaches the requested paths, byte
+footer/language control on non-Works routes, then decodes the Home photo.
+No fixed sleep or assumed lazy-loading distance is used. Each test attaches the requested paths, byte
 footprint and limits as JSON (`resource-footprint`).
 
 | Shared browser budget | Baseline envelope | Limit |
@@ -188,18 +210,21 @@ footprint and limits as JSON (`resource-footprint`).
 | Shell requested build bytes, all locales/routes | 106,910–107,037 | 113,000 |
 | Works local photo requests before viewer actions | 3 after scrolling | 3 |
 | Works local photo bytes, largest candidate for each photo | 344,696 | 365,000 |
-| Home/About/Posts gallery or external requests | 0 | 0 |
+| Home local photo requests after scrolling | 1 | 1 |
+| Home local photo bytes, largest candidate | 41,396 | 43,500 |
+| Home/About/Posts Works-gallery or external requests | 0 | 0 |
 
 The shell is one document, classic bootstrap, app module, stylesheet and SVG
 sprite. Its byte limit adds 5.57% to the largest localized shell. Works' photo
 byte limit adds 5.89% to the three 1200px variants; it covers native responsive
 selection without pinning a browser's lazy distance or chosen candidate. There
 is no spare request: an architectural change to the request graph needs review.
-These are two reusable byte/request envelopes, not twelve duplicated thresholds.
+These are reusable byte/request envelopes, not twelve duplicated thresholds.
 Actual requested bytes depend on the candidates and which lazy images have
 started; they are not encoded response sizes, HTTP overhead, or live CDN transfer.
 
-Measured English-route examples (same build; counts include the document):
+Historical English-route examples before the Home photo
+(same build; counts include the document):
 
 | Route / browser | Initial requests / bytes | After ordinary browsing |
 | --- | --- | --- |
@@ -639,7 +664,7 @@ validation job.
 ## Home desktop prototype
 
 Home is an exploratory personal desktop, shared across the three locales through
-`LocaleContent.home`. It contains Rhythm Games, Bishoujo Games, local live Time,
+`LocaleContent.home`. It contains Rhythm Games, Bishoujo Games, Memories, local live Time,
 System Status and Website Version windows on a mostly empty canvas. The old Hero and
 portfolio sections are removed. Home omits Works/About/Posts navigation; other
 pages retain it. About's former Home `#works` CTA now opens localized Works.
@@ -648,10 +673,16 @@ The shared brand, language/theme controls, skip link and contact footer remain.
 `components/desktop.ts` provides `createWindow` and `createDesktop`. The manager
 uses title-bar pointer capture, ignores close-button/secondary pointer starts,
 and never prevents content selection or native links. Pointer/focus interaction
-moves a window to the end of a bounded stacking list (z-index 1 through 5 inside
+moves a window to the end of a bounded stacking list (z-index 1 through 6 inside
 an isolated canvas). Closing removes just that window, restores keyboard focus
 when needed and releases its resources. Positions and closed states are only
-in memory: reload restores all five defaults, with no storage reads or writes.
+in memory: reload restores all six defaults, with no storage reads or writes.
+
+Memories uses the existing `ImageAsset` / `createImage` component with two local
+WebP candidates, explicit 4:3 dimensions and responsive sizes. Its title is
+localized; the supplied concert caption and alt text remain in their original
+language in all locales. Native image dragging is disabled so it cannot consume
+the next title-bar gesture in WebKit. It has no viewer, links or additional controls.
 
 Each title bar contains only its localized heading and Close button. Windows
 move by dragging the title bar; there is no Move toggle or directional panel.

@@ -27,13 +27,32 @@ for (const locale of supportedLocales) {
       await page.goto(localeHref(locale));
       await expect(page.locator("main h1, .desktop-heading")).toHaveCount(0);
       expect(await page.locator("main").evaluate((node) => node.firstElementChild?.className)).toBe("desktop");
-      await expect(page.locator(".desktop-window")).toHaveCount(5);
+      await expect(page.locator(".desktop-window")).toHaveCount(6);
       await expect(page.locator("#profile, .profile-user, .profile-online")).toHaveCount(0);
-      await expect(page.locator(".desktop-window h2")).toHaveText([copy.home.playing, copy.home.bishoujo, copy.home.time, copy.home.status, copy.home.version]);
+      await expect(page.locator(".desktop-window h2")).toHaveText([copy.home.playing, copy.home.bishoujo, copy.home.memories, copy.home.time, copy.home.status, copy.home.version]);
       await expect(page.locator(".navbar-primary, .drawer-links a[href*='/works/'], .drawer-links a[href*='/about/'], .drawer-links a[href*='/posts/'], .hero")).toHaveCount(0);
       await expect(page.locator("#playing .desktop-list li")).toHaveText(["Arcaea", "BanG Dream! Our Notes"]);
       await expect(page.locator("#bishoujo .desktop-list li")).toHaveText(["Summer Pockets REFLECTION BLUE", "魔女的夜宴", "蒼之彼方的四重奏"]);
       await expect(page.locator("#bishoujo .window-content a, #bishoujo .window-content button, #bishoujo img")).toHaveCount(0);
+      const photo = page.locator("#memories img");
+      await expect(photo).toHaveCount(1);
+      await expect(photo).toHaveAttribute("draggable", "false");
+      await expect(photo).toHaveAttribute("alt", "Ave Mujica LIVE TOUR 2026『Exitus』台北追加公演DAY2");
+      await expect(photo).toHaveAttribute("width", "640");
+      await expect(photo).toHaveAttribute("height", "480");
+      await photo.scrollIntoViewIfNeeded();
+      await expect.poll(() => photo.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth > 0)).toBe(true);
+      await photo.evaluate((node: HTMLImageElement) => node.decode());
+      const dimensions = await photo.evaluate((node: HTMLImageElement) => ({
+        natural: node.naturalWidth / node.naturalHeight,
+        rendered: node.getBoundingClientRect().width / node.getBoundingClientRect().height,
+        source: new URL(node.currentSrc).pathname,
+      }));
+      expect(dimensions.natural).toBeCloseTo(4 / 3, 2);
+      expect(dimensions.rendered).toBeCloseTo(4 / 3, 2);
+      expect(dimensions.source).toMatch(/^\/assets\/ave-mujica-exitus-taipei-day2-(320|640)-[\w-]+\.webp$/);
+      await expect(page.locator("#memories .window-content > p")).toHaveText(["Ave Mujica LIVE TOUR 2026『Exitus』", "台北追加公演DAY2"]);
+      await expect(page.locator("#memories .window-content a, #memories .window-content button, .image-viewer")).toHaveCount(0);
       await expect(page.locator("#status .window-content > p")).toHaveText(copy.home.statusUnavailable);
       await expect(page.locator("#status dd")).toHaveText([copy.home.notChecked, copy.home.notChecked]);
       await expect(page.locator("#version a")).toHaveCount(0);
@@ -63,11 +82,11 @@ for (const locale of supportedLocales) {
       expect(errors).toEqual([]);
     });
   }
-  test(`${locale} bishoujo window retains session state and reload restores defaults`, async ({ page }) => {
+  for (const id of ["bishoujo", "memories"]) test(`${locale} ${id} window retains session state and reload restores defaults`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(localeHref(locale));
-    const item = page.locator("#bishoujo");
-    const others = () => page.locator(".desktop-window:not(#bishoujo)").evaluateAll((nodes) =>
+    const item = page.locator(`#${id}`);
+    const others = () => page.locator(`.desktop-window:not(#${id})`).evaluateAll((nodes) =>
       nodes.map((node: HTMLElement) => ({ id: node.id, x: node.offsetLeft, y: node.offsetTop })));
     const storage = () => page.evaluate(() => ({ local: { ...localStorage }, session: { ...sessionStorage } }));
     const original = await position(item), otherDefaults = await others(), saved = await storage();
@@ -86,7 +105,7 @@ for (const locale of supportedLocales) {
     expect(await others()).toEqual(otherDefaults);
     await page.setViewportSize({ width: 390, height: 900 });
     await expect(item).toHaveCount(0);
-    await expect(page.locator(".desktop-window")).toHaveCount(4);
+    await expect(page.locator(".desktop-window")).toHaveCount(5);
     expect(await storage()).toEqual(saved);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.reload();
@@ -108,16 +127,16 @@ for (const locale of supportedLocales) {
     const boxes = await page.locator(".desktop-window").evaluateAll((nodes) => nodes.map((node) => { const r = node.getBoundingClientRect(); return { top: r.top, bottom: r.bottom }; }));
     for (let i = 1; i < boxes.length; i++) expect(boxes[i]!.top).toBeGreaterThan(boxes[i - 1]!.bottom);
     await page.locator("#clock .window-close").click();
-    await expect(page.locator(".desktop-window")).toHaveCount(4);
+    await expect(page.locator(".desktop-window")).toHaveCount(5);
     await expect(page.locator("#playing")).toBeVisible();
     await reflow(page);
   });
 }
 
-test("all windows drag only by title bar; content selects text", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/en/");
-  for (const id of ["playing", "bishoujo", "clock", "status", "version"]) {
+for (const id of ["playing", "bishoujo", "memories", "clock", "status", "version"]) {
+  test(`${id} drags only by title bar; content does not move the window`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/en/");
     const item = page.locator(`#${id}`);
     const original = await position(item);
     await move(page, item.locator(".window-content"), 24, 16);
@@ -127,10 +146,12 @@ test("all windows drag only by title bar; content selects text", async ({ page }
     expect(moved.x).toBeCloseTo(original.x - 24, 0);
     expect(moved.y).toBeCloseTo(original.y + 24, 0);
     await expect(item).not.toHaveClass(/is-dragging/);
-  }
-  await page.locator("#playing .desktop-list li:first-child").dblclick({ position: { x: 12, y: 12 } });
-  expect(await page.evaluate(() => getSelection()?.toString().length)).toBeGreaterThan(0);
-});
+    if (id === "playing") {
+      await item.locator(".desktop-list li:first-child").dblclick({ position: { x: 12, y: 12 } });
+      expect(await page.evaluate(() => getSelection()?.toString().length)).toBeGreaterThan(0);
+    }
+  });
+}
 
 test("pointer and keyboard focus raise windows with bounded z-index and visible overlap", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -139,9 +160,9 @@ test("pointer and keyboard focus raise windows with bounded z-index and visible 
   const clock = page.locator("#clock");
   const a = (await music.boundingBox())!, b = (await clock.boundingBox())!;
   await move(page, music.locator(".window-titlebar"), b.x - a.x + 40, b.y - a.y + 40);
-  await expect(music).toHaveCSS("z-index", "5");
+  await expect(music).toHaveCSS("z-index", "6");
   await clock.locator("h2").click();
-  await expect(clock).toHaveCSS("z-index", "5");
+  await expect(clock).toHaveCSS("z-index", "6");
   expect(await page.evaluate(() => {
     const r = document.querySelector("#playing")!.getBoundingClientRect();
     return document.elementFromPoint(r.x + 20, r.y + 20)?.closest(".desktop-window")?.id;
@@ -150,7 +171,7 @@ test("pointer and keyboard focus raise windows with bounded z-index and visible 
     await music.locator(".window-close").focus();
     await clock.locator(".window-close").focus();
   }
-  expect(await page.locator(".desktop-window").evaluateAll((nodes) => nodes.map((node) => Number(getComputedStyle(node).zIndex)).sort())).toEqual([1, 2, 3, 4, 5]);
+  expect(await page.locator(".desktop-window").evaluateAll((nodes) => nodes.map((node) => Number(getComputedStyle(node).zIndex)).sort())).toEqual([1, 2, 3, 4, 5, 6]);
 });
 
 test("close affects one window; reload restores all defaults without storage", async ({ page }) => {
@@ -163,11 +184,11 @@ test("close affects one window; reload restores all defaults without storage", a
   await move(page, page.locator("#playing .window-titlebar"), 150, 80);
   await page.locator("#clock .window-close").click();
   await expect(page.locator("#clock")).toHaveCount(0);
-  await expect(page.locator(".desktop-window")).toHaveCount(4);
+  await expect(page.locator(".desktop-window")).toHaveCount(5);
   expect(await positions()).not.toEqual(defaults);
   expect(await storage()).toEqual(baselineStorage);
   await page.reload();
-  await expect(page.locator(".desktop-window")).toHaveCount(5);
+  await expect(page.locator(".desktop-window")).toHaveCount(6);
   await expect.poll(positions).toEqual(defaults);
   expect(await storage()).toEqual(baselineStorage);
 });
@@ -214,13 +235,13 @@ test("native keyboard skip, close buttons and final focus remain usable", async 
   await expect(page.locator(".skip-link")).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.locator("main")).toBeFocused();
-  for (const id of ["playing", "bishoujo", "clock", "status", "version"]) {
+  for (const id of ["playing", "bishoujo", "memories", "clock", "status", "version"]) {
     await page.keyboard.press("Tab");
     await expect(page.locator(`#${id} .window-close`)).toBeFocused();
-    await expect(page.locator(`#${id}`)).toHaveCSS("z-index", "5");
+    await expect(page.locator(`#${id}`)).toHaveCSS("z-index", "6");
     await expect(page.locator(`#${id} .window-close`)).toHaveCSS("outline-style", "solid");
   }
-  for (let remaining = 4; remaining >= 0; remaining--) {
+  for (let remaining = 5; remaining >= 0; remaining--) {
     await page.keyboard.press("Enter");
     await expect(page.locator(".desktop-window")).toHaveCount(remaining);
     if (remaining) expect(await page.evaluate(() => document.activeElement?.className)).toBe("window-close");

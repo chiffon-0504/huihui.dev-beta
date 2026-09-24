@@ -124,6 +124,7 @@ export default {
   home: {
     playing: "音樂遊戲",
     bishoujo: "美少女遊戲",
+    memories: "回憶",
     time: "現在時間",
     localTime: "本地時間",
     status: "系統狀態",

@@ -1,6 +1,8 @@
 import { getContent, type Locale } from "../locales";
 import { element } from "../dom";
 import { createDesktop, createWindow } from "../components/desktop";
+import { createImage } from "../components/media";
+import { memoryImage, memoryImageSizes } from "../media/memories";
 
 export function createHome(locale: Locale): HTMLElement {
   const copy = getContent(locale).home;
@@ -19,6 +21,15 @@ export function createHome(locale: Locale): HTMLElement {
     bishoujoGames.append(element("li", "", game));
   }
   bishoujo.content.append(bishoujoGames);
+
+  const memories = createWindow("memories", copy.memories, copy.close, { x: 0.46, y: 0.90 });
+  const photo = createImage({ asset: memoryImage, alt: "Ave Mujica LIVE TOUR 2026『Exitus』台北追加公演DAY2", sizes: memoryImageSizes });
+  // Keep native image dragging from consuming the next title-bar pointer gesture.
+  photo.draggable = false;
+  memories.content.append(photo,
+    element("p", "desktop-memory-caption", "Ave Mujica LIVE TOUR 2026『Exitus』"),
+    element("p", "", "台北追加公演DAY2"),
+  );
 
   let timer: ReturnType<typeof setInterval> | undefined;
   const stopClock = () => { clearInterval(timer); timer = undefined; };
@@ -54,7 +65,7 @@ export function createHome(locale: Locale): HTMLElement {
   for (const note of copy.notes) notes.append(element("li", "", note));
   version.content.append(notes);
 
-  const desktop = createDesktop([playing, bishoujo, clock, status, version]);
+  const desktop = createDesktop([playing, bishoujo, memories, clock, status, version]);
   main.append(desktop.node);
   const visibility = () => document.hidden ? stopClock() : startClock();
   document.addEventListener("visibilitychange", visibility);

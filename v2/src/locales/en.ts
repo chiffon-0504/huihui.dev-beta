@@ -124,6 +124,7 @@ export default {
   home: {
     playing: "Rhythm games",
     bishoujo: "Bishoujo Games",
+    memories: "Memories",
     time: "Now time",
     localTime: "Local time",
     status: "System status",

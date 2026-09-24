@@ -6,8 +6,8 @@ export const budgets = Object.freeze({
   html: 11_950,
   js: 110_000,
   css: 26_000,
-  images: 650_000,
-  total: 798_150,
+  images: 706_000,
+  total: 854_150,
   largestJs: 73_000,
   largestCss: 14_200,
   largestImage: 129_000,
@@ -16,6 +16,8 @@ export const budgets = Object.freeze({
 export const loadingBudgets = Object.freeze({
   shellRequests: 5, // document, classic bootstrap, app module, CSS, SVG sprite
   shellBytes: 113_000,
+  homeImageRequests: 1, // one selected local Memories candidate, Home only
+  homeImageBytes: 43_500, // largest 640px candidate (41,396 B) + about 5%
   worksImageRequests: 3, // one selected candidate per photo; no lazy-distance assumption
   worksImageBytes: 365_000, // upper bound: all three largest local candidates + 5%
 });

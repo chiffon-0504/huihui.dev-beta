@@ -74,6 +74,9 @@
 .desktop-muted {
   color: var(--color-muted);
 }
+.desktop-memory-caption {
+  margin-top: var(--space-4);
+}
 .desktop-services {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
