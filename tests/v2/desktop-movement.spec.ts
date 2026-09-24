@@ -17,12 +17,12 @@ for (const locale of supportedLocales) {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(localeHref(locale));
     const copy = getContent(locale).home;
-    for (const id of ["playing", "clock", "status", "version"]) {
+    for (const id of ["playing", "bishoujo", "clock", "status", "version"]) {
       const item = page.locator(`#${id}`);
       const title = await item.locator("h2").innerText();
       const toggle = item.getByRole("button", { name: `${copy.move.label}: ${title}`, exact: true });
       await tabTo(page, toggle);
-      await expect(item).toHaveCSS("z-index", "4");
+      await expect(item).toHaveCSS("z-index", "5");
       const before = await position(item);
       await page.keyboard.press("Enter");
       await expect(toggle).toHaveAttribute("aria-expanded", "true");
@@ -38,9 +38,9 @@ for (const locale of supportedLocales) {
         const button = group.getByRole("button", { name: `${copy.move[direction]}: ${title}`, exact: true });
         await expect(button).toBeFocused();
         await expect(button).toHaveCSS("outline-style", "solid");
-        // The music window starts away from all boundaries; other windows verify the
+        // Both game windows start away from all boundaries; other windows verify the
         // same localized controls without assuming room for an unclamped step.
-        if (id === "playing") {
+        if (id === "playing" || id === "bishoujo") {
           const from = await position(item);
           await page.keyboard.press(key);
           expect(await position(item)).toEqual({ x: from.x + dx, y: from.y + dy });

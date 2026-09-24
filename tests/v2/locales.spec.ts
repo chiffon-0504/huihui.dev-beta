@@ -8,6 +8,9 @@ for (const locale of supportedLocales) {
     await expect(page.locator("main h1")).toHaveCount(0);
     await expect(page.locator(".desktop-version")).toHaveText("V2.0.0");
     await expect(page.locator("#playing h2")).toHaveText(copy.home.playing);
+    const bishoujoTitle = { "zh-Hant": "美少女遊戲", en: "Bishoujo Games", ja: "美少女ゲーム" }[locale];
+    await expect(page.locator("#bishoujo h2")).toHaveText(bishoujoTitle);
+    expect(copy.home.bishoujo).toBe(bishoujoTitle);
     await expect(page.locator("#clock .desktop-muted")).toHaveText(copy.home.localTime);
     await expect(page.locator("#version .desktop-muted")).toHaveText(copy.home.development);
     await expect(page.locator(".desktop-notes li")).toHaveText([...copy.home.notes]);

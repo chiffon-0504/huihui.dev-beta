@@ -123,6 +123,7 @@ export default {
   aboutLabel: "About",
   home: {
     playing: "Rhythm games",
+    bishoujo: "Bishoujo Games",
     time: "Now time",
     localTime: "Local time",
     status: "System status",

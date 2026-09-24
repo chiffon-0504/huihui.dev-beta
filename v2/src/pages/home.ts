@@ -13,6 +13,13 @@ export function createHome(locale: Locale): HTMLElement {
   for (const game of ["Arcaea", "BanG Dream! Our Notes"]) games.append(element("li", "", game));
   playing.content.append(games);
 
+  const bishoujo = createWindow("bishoujo", copy.bishoujo, copy.close, { x: 0.03, y: 0.42 });
+  const bishoujoGames = element("ul", "desktop-list");
+  for (const game of ["Summer Pockets REFLECTION BLUE", "魔女的夜宴", "蒼之彼方的四重奏"]) {
+    bishoujoGames.append(element("li", "", game));
+  }
+  bishoujo.content.append(bishoujoGames);
+
   let timer: ReturnType<typeof setInterval> | undefined;
   const stopClock = () => { clearInterval(timer); timer = undefined; };
   const clock = createWindow("clock", copy.time, copy.close, { x: 0.96, y: 0.02 }, stopClock);
@@ -47,7 +54,7 @@ export function createHome(locale: Locale): HTMLElement {
   for (const note of copy.notes) notes.append(element("li", "", note));
   version.content.append(notes);
 
-  const desktop = createDesktop([playing, clock, status, version], copy.move);
+  const desktop = createDesktop([playing, bishoujo, clock, status, version], copy.move);
   main.append(desktop.node);
   const visibility = () => document.hidden ? stopClock() : startClock();
   document.addEventListener("visibilitychange", visibility);

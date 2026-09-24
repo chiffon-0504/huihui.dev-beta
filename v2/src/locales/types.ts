@@ -85,6 +85,7 @@ export interface LocaleContent {
 
 export interface HomeContent {
   readonly playing: string;
+  readonly bishoujo: string;
   readonly time: string;
   readonly localTime: string;
   readonly status: string;

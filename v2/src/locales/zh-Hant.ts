@@ -123,6 +123,7 @@ export default {
   aboutLabel: "關於",
   home: {
     playing: "音樂遊戲",
+    bishoujo: "美少女遊戲",
     time: "現在時間",
     localTime: "本地時間",
     status: "系統狀態",
