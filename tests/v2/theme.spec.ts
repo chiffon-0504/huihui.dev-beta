@@ -125,10 +125,18 @@ for (const width of [1440, 390]) {
     await page.clock.setFixedTime(daytime);
     await page.goto("/en/");
     const { root, trigger } = control(page);
-    // Reach the new control through document Tab order, after the language summary.
-    // Compact navigation removes the four desktop links from the tab order.
-    for (let index = 0; index < (width > 768 ? 7 : 3); index++) await page.keyboard.press("Tab");
-    await expect(page.locator(".language-switcher summary")).toBeFocused();
+    const language = page.getByLabel("Language: English", { exact: true });
+    await expect(language).toBeVisible();
+    // Follow native Tab navigation to the named control, independent of preceding
+    // Home links. Bound traversal by the rendered controls so a trap or missing
+    // tab stop fails instead of looping forever; never assign focus directly.
+    const tabStopLimit = await page.locator("a[href]:visible, button:visible, summary:visible").count();
+    for (let index = 0; index < tabStopLimit; index++) {
+      await page.keyboard.press("Tab");
+      if (await language.evaluate((node) => node === document.activeElement)) break;
+    }
+    await expect(language).toBeFocused();
+    await expect(language).toHaveCSS("outline-style", "solid");
     await page.keyboard.press("Tab");
     await expect(trigger).toBeFocused();
     expect(await trigger.evaluate((node) => getComputedStyle(node).outlineStyle)).toBe("solid");
@@ -159,7 +167,7 @@ for (const width of [1440, 390]) {
     await expect(dark).toBeFocused();
     await page.keyboard.press("Shift+Tab");
     await expect(trigger).toHaveAttribute("aria-expanded", "false");
-    await expect(page.locator(".language-switcher summary")).toBeFocused();
+    await expect(language).toBeFocused();
   });
 }
 
