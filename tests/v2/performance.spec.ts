@@ -39,7 +39,7 @@ for (const locale of supportedLocales) {
         });
         const sprite = page.waitForResponse((response) => /\/assets\/icons-[\w-]+\.svg$/.test(response.url()));
         await page.goto(route);
-        await expect(page.locator("main h1")).toBeVisible();
+        await expect(page.locator(name === "home" ? "#version .desktop-version" : "main h1")).toBeVisible();
         expect(await (await sprite).finished()).toBeNull();
         const images = page.locator("main img");
         await expect(images).toHaveCount(name === "works" ? 3 : 0);

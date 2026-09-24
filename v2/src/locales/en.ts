@@ -122,7 +122,6 @@ export default {
   worksLabel: "Works",
   aboutLabel: "About",
   home: {
-    title: "huihui’s desktop",
     playing: "Rhythm games",
     time: "Now time",
     localTime: "Local time",
@@ -131,12 +130,11 @@ export default {
     website: "Website",
     notChecked: "Not checked",
     version: "Website version",
-    development: "In development · Desktop prototype",
+    development: "In Development",
     notes: [
-      "Drag a title bar or use Move to reposition a window.",
-      "Refresh to restore all windows and their positions."
+      "Redesigned from the ground up",
+      "TypeScript + modular CSS architecture"
     ],
-    source: "View source",
     close: "Close window",
     move: { label: "Move", up: "Move up", down: "Move down", left: "Move left", right: "Move right" }
   },

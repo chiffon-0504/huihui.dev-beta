@@ -1,12 +1,6 @@
 .home {
   margin: var(--space-4) var(--gutter) var(--space-8);
 }
-.desktop-heading {
-  font: inherit;
-  color: var(--color-muted);
-  letter-spacing: normal;
-  margin-bottom: var(--space-4);
-}
 .desktop {
   position: relative;
   isolation: isolate;

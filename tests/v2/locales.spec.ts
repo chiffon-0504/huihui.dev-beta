@@ -5,12 +5,13 @@ for (const locale of supportedLocales) {
   test(`${locale} renders canonical desktop copy and shared accessible labels`, async ({ page }) => {
     const copy = getContent(locale);
     await page.goto(localeHref(locale));
-    await expect(page.locator("main h1")).toHaveText(copy.home.title);
+    await expect(page.locator("main h1")).toHaveCount(0);
+    await expect(page.locator(".desktop-version")).toHaveText("V2.0.0");
     await expect(page.locator("#playing h2")).toHaveText(copy.home.playing);
     await expect(page.locator("#clock .desktop-muted")).toHaveText(copy.home.localTime);
     await expect(page.locator("#version .desktop-muted")).toHaveText(copy.home.development);
     await expect(page.locator(".desktop-notes li")).toHaveText([...copy.home.notes]);
-    await expect(page.locator("#version a")).toHaveText(copy.home.source);
+    await expect(page.locator("#version a")).toHaveCount(0);
     await expect(page.locator("#status dt")).toHaveText([copy.home.website, "API"]);
     await expect(page.locator(".skip-link")).toHaveAccessibleName(copy.skip);
     await expect(page.getByRole("navigation")).toHaveAccessibleName(copy.navigation);

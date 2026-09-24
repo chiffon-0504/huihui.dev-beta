@@ -122,7 +122,6 @@ export default {
   worksLabel: "制作実績",
   aboutLabel: "プロフィール",
   home: {
-    title: "huihui のデスクトップ",
     playing: "音楽ゲーム",
     time: "現在の時刻",
     localTime: "ローカル時刻",
@@ -131,12 +130,11 @@ export default {
     website: "ウェブサイト",
     notChecked: "未取得",
     version: "サイトのバージョン",
-    development: "開発中 · デスクトップ試作",
+    development: "開発中",
     notes: [
-      "タイトルバーのドラッグまたは「移動」ボタンで位置を調整できます。",
-      "再読み込みすると、すべてのウィンドウと位置が元に戻ります。"
+      "全面的に再設計",
+      "TypeScript + モジュール化 CSS アーキテクチャを採用"
     ],
-    source: "ソースを見る",
     close: "ウィンドウを閉じる",
     move: { label: "移動", up: "上に移動", down: "下に移動", left: "左に移動", right: "右に移動" }
   },

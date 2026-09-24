@@ -111,7 +111,7 @@ for (const locale of locales) {
       await trigger.click();
       await expect(language).not.toHaveAttribute("open");
       await expect(trigger).toHaveAttribute("aria-expanded", "true");
-      await page.getByRole("heading", { level: 1 }).click();
+      await page.getByRole("main").click({ position: { x: 1, y: 1 } });
       await expect(trigger).toHaveAttribute("aria-expanded", "false");
       await expect(page.locator("html")).toHaveAttribute("lang", locale.lang);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

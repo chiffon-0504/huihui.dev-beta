@@ -25,7 +25,8 @@ for (const locale of supportedLocales) {
       page.on("request", (request) => { if (new URL(request.url()).origin !== new URL(baseURL!).origin) errors.push(request.url()); });
       await page.setViewportSize({ width, height: 900 });
       await page.goto(localeHref(locale));
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText(copy.home.title);
+      await expect(page.locator("main h1, .desktop-heading")).toHaveCount(0);
+      expect(await page.locator("main").evaluate((node) => node.firstElementChild?.className)).toBe("desktop");
       await expect(page.locator(".desktop-window")).toHaveCount(4);
       await expect(page.locator("#profile, .profile-user, .profile-online")).toHaveCount(0);
       await expect(page.locator(".desktop-window h2")).toHaveText([copy.home.playing, copy.home.time, copy.home.status, copy.home.version]);
@@ -33,7 +34,10 @@ for (const locale of supportedLocales) {
       await expect(page.locator(".desktop-list li")).toHaveText(["Arcaea", "BanG Dream! Our Notes"]);
       await expect(page.locator("#status .window-content > p")).toHaveText(copy.home.statusUnavailable);
       await expect(page.locator("#status dd")).toHaveText([copy.home.notChecked, copy.home.notChecked]);
-      await expect(page.locator("#version a")).toHaveAttribute("href", "https://github.com/chiffon-0504/huihui.dev-beta");
+      await expect(page.locator("#version a")).toHaveCount(0);
+      await expect(page.locator(".desktop-version")).toHaveText("V2.0.0");
+      await expect(page.locator("#version .desktop-muted")).toHaveText(copy.home.development);
+      await expect(page.locator(".desktop-notes li")).toHaveText([...copy.home.notes]);
       for (const item of await page.locator(".desktop-window").all()) {
         await expect(item).toHaveAccessibleName(await item.locator("h2").innerText());
         await expect(item.locator(".window-close")).toHaveAccessibleName(`${copy.home.close}: ${await item.locator("h2").innerText()}`);
@@ -78,7 +82,7 @@ for (const locale of supportedLocales) {
   });
 }
 
-test("all windows drag only by title bar; content selects text and keeps links usable", async ({ page }) => {
+test("all windows drag only by title bar; content selects text", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/en/");
   for (const id of ["playing", "clock", "status", "version"]) {
@@ -94,7 +98,6 @@ test("all windows drag only by title bar; content selects text and keeps links u
   }
   await page.locator(".desktop-list li:first-child").dblclick({ position: { x: 12, y: 12 } });
   expect(await page.evaluate(() => getSelection()?.toString().length)).toBeGreaterThan(0);
-  await page.locator("#version a").click({ trial: true });
 });
 
 test("pointer and keyboard focus raise windows with bounded z-index and visible overlap", async ({ page }) => {
@@ -173,7 +176,7 @@ test("pointer cancellation releases the drag and secondary clicks do not drag", 
   await expect(page.locator("#playing")).not.toHaveClass(/is-dragging/);
 });
 
-test("native keyboard skip, content link, close buttons and final focus remain usable", async ({ page }) => {
+test("native keyboard skip, close buttons and final focus remain usable", async ({ page }) => {
   await page.goto("/en/");
   await page.keyboard.press("Tab");
   await expect(page.locator(".skip-link")).toBeFocused();
@@ -187,9 +190,6 @@ test("native keyboard skip, content link, close buttons and final focus remain u
     await expect(page.locator(`#${id}`)).toHaveCSS("z-index", "4");
     await expect(page.locator(`#${id} .window-close`)).toHaveCSS("outline-style", "solid");
   }
-  await page.keyboard.press("Tab");
-  await expect(page.locator("#version a")).toBeFocused();
-  await page.keyboard.press("Shift+Tab");
   for (let remaining = 3; remaining >= 0; remaining--) {
     await page.keyboard.press("Enter");
     await expect(page.locator(".desktop-window")).toHaveCount(remaining);

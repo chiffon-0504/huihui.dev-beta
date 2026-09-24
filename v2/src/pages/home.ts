@@ -1,5 +1,5 @@
 import { getContent, type Locale } from "../locales";
-import { element, link } from "../dom";
+import { element } from "../dom";
 import { createDesktop, createWindow } from "../components/desktop";
 
 export function createHome(locale: Locale): HTMLElement {
@@ -7,7 +7,6 @@ export function createHome(locale: Locale): HTMLElement {
   const main = element("main", "home");
   main.id = "main-content";
   main.tabIndex = -1;
-  main.append(element("h1", "desktop-heading", copy.title));
 
   const playing = createWindow("playing", copy.playing, copy.close, { x: 0.46, y: 0.14 });
   const games = element("ul", "desktop-list");
@@ -43,10 +42,10 @@ export function createHome(locale: Locale): HTMLElement {
   status.content.append(services);
 
   const version = createWindow("version", copy.version, copy.close, { x: 0.12, y: 0.91 });
-  version.content.append(element("p", "desktop-version", "V2"), element("p", "desktop-muted", copy.development));
+  version.content.append(element("p", "desktop-version", "V2.0.0"), element("p", "desktop-muted", copy.development));
   const notes = element("ul", "desktop-notes");
   for (const note of copy.notes) notes.append(element("li", "", note));
-  version.content.append(notes, link(copy.source, "https://github.com/chiffon-0504/huihui.dev-beta"));
+  version.content.append(notes);
 
   const desktop = createDesktop([playing, clock, status, version], copy.move);
   main.append(desktop.node);

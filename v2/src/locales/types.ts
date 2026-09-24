@@ -84,7 +84,6 @@ export interface LocaleContent {
 }
 
 export interface HomeContent {
-  readonly title: string;
   readonly playing: string;
   readonly time: string;
   readonly localTime: string;
@@ -95,7 +94,6 @@ export interface HomeContent {
   readonly version: string;
   readonly development: string;
   readonly notes: readonly string[];
-  readonly source: string;
   readonly close: string;
   readonly move: Readonly<Record<"label" | "up" | "down" | "left" | "right", string>>;
 }
