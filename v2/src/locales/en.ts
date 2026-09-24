@@ -137,7 +137,6 @@ export default {
       "TypeScript + modular CSS architecture"
     ],
     close: "Close window",
-    move: { label: "Move", up: "Move up", down: "Move down", left: "Move left", right: "Move right" }
   },
 } satisfies LocaleContent;
 

@@ -137,7 +137,6 @@ export default {
       "採用 TypeScript + 模組化 CSS 架構"
     ],
     close: "關閉視窗",
-    move: { label: "移動", up: "向上移動", down: "向下移動", left: "向左移動", right: "向右移動" }
   },
 } satisfies LocaleContent;
 

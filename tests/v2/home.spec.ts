@@ -43,11 +43,9 @@ for (const locale of supportedLocales) {
       for (const item of await page.locator(".desktop-window").all()) {
         await expect(item).toHaveAccessibleName(await item.locator("h2").innerText());
         await expect(item.locator(".window-close")).toHaveAccessibleName(`${copy.home.close}: ${await item.locator("h2").innerText()}`);
-        if (width <= 640) await expect(item.locator(".window-movement")).toBeHidden();
-        else {
-          await expect(item.locator(".window-move")).toBeVisible();
-          await expect(item.locator(".window-move")).toHaveAccessibleName(`${copy.home.move.label}: ${await item.locator("h2").innerText()}`);
-        }
+        await expect(item.locator(".window-titlebar > *")).toHaveCount(2);
+        await expect(item.locator(".window-titlebar button")).toHaveText(["×"]);
+        await expect(item.locator(".window-movement, .window-move, .window-directions")).toHaveCount(0);
         await expect(item).toHaveCSS("position", width <= 640 ? "relative" : "absolute");
       }
       for (const theme of ["light", "dark", "auto"] as const) {
@@ -217,8 +215,6 @@ test("native keyboard skip, close buttons and final focus remain usable", async 
   await page.keyboard.press("Enter");
   await expect(page.locator("main")).toBeFocused();
   for (const id of ["playing", "bishoujo", "clock", "status", "version"]) {
-    await page.keyboard.press("Tab");
-    await expect(page.locator(`#${id} .window-move`)).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(page.locator(`#${id} .window-close`)).toBeFocused();
     await expect(page.locator(`#${id}`)).toHaveCSS("z-index", "5");

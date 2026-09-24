@@ -137,7 +137,6 @@ export default {
       "TypeScript + モジュール化 CSS アーキテクチャを採用"
     ],
     close: "ウィンドウを閉じる",
-    move: { label: "移動", up: "上に移動", down: "下に移動", left: "左に移動", right: "右に移動" }
   },
 } satisfies LocaleContent;
 

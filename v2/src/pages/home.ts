@@ -54,7 +54,7 @@ export function createHome(locale: Locale): HTMLElement {
   for (const note of copy.notes) notes.append(element("li", "", note));
   version.content.append(notes);
 
-  const desktop = createDesktop([playing, bishoujo, clock, status, version], copy.move);
+  const desktop = createDesktop([playing, bishoujo, clock, status, version]);
   main.append(desktop.node);
   const visibility = () => document.hidden ? stopClock() : startClock();
   document.addEventListener("visibilitychange", visibility);

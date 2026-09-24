@@ -639,8 +639,8 @@ validation job.
 ## Home desktop prototype
 
 Home is an exploratory personal desktop, shared across the three locales through
-`LocaleContent.home`. It contains Profile, Playing, local live Time, System
-Status and Website Version windows on a mostly empty canvas. The old Hero and
+`LocaleContent.home`. It contains Rhythm Games, Bishoujo Games, local live Time,
+System Status and Website Version windows on a mostly empty canvas. The old Hero and
 portfolio sections are removed. Home omits Works/About/Posts navigation; other
 pages retain it. About's former Home `#works` CTA now opens localized Works.
 The shared brand, language/theme controls, skip link and contact footer remain.
@@ -653,13 +653,8 @@ an isolated canvas). Closing removes just that window, restores keyboard focus
 when needed and releases its resources. Positions and closed states are only
 in memory: reload restores all five defaults, with no storage reads or writes.
 
-Each draggable window also has a localized Move disclosure. Four native buttons
-move it up/down/left/right by 24 CSS pixels per activation, using the same clamp
-as dragging. They support pointer/touch activation and ordinary Tab, Enter and
-Space keys; Escape collapses the controls and restores Move focus. Moving focus
-outside the disclosure also collapses it. The direction panel overlays content
-without expanding the title bar. Entering compact layout restores focus to Close
-before hiding movement controls; returning to desktop keeps the panel collapsed.
+Each title bar contains only its localized heading and Close button. Windows
+move by dragging the title bar; there is no Move toggle or directional panel.
 
 The canvas clamps windows to its bounds and re-clamps after resizing or content
 reflow. On short viewports the page can scroll vertically. At the existing
@@ -673,16 +668,14 @@ when closed. It is a semantic time element without per-second live announcements
 System Status explicitly says live status is not connected and marks Website/API
 as not checked. The public GET client requires a separate environment/CSP/local
 policy decision; this prototype does not call it or claim operational health.
-Version says V2 in development, without declaring a stable release number.
+Version displays V2.0.0 in development with localized redesign and architecture
+notes; this does not publish a stable release.
 
 `tests/v2/home.spec.ts` covers desktop/tablet dragging, content selection,
 stacking/overlap, pointer cancellation, close/reload/default positions, unchanged
 storage, viewport changes, keyboard focus, local midnight and clock cleanup,
 three locales/themes, and mobile 320px/200% text reflow. Shared navigation tests
 continue on About, while Home has its own shell and locale coverage.
-`tests/v2/desktop-movement.spec.ts` covers localized keyboard movement controls,
-pointer/touch directions, all four clamped edges, compact focus restoration and
-position reset without persistence across Chromium, Firefox and WebKit.
 
 ## About milestone
 
