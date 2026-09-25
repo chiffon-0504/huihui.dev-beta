@@ -10,6 +10,8 @@ test.beforeAll(async () => {
 });
 const photoPath = /^assets\/(?:fuji|tsutenkaku|shiba)-\d+-[\w-]+\.webp$/;
 
+const memoryPath = /^assets\/ave-mujica-exitus-taipei-day2-(?:320|640)-[\w-]+\.webp$/;
+
 for (const locale of supportedLocales) {
   for (const name of ["home", "about", "works", "posts"] as const) {
     for (const width of [1440, 390]) {
@@ -30,7 +32,7 @@ for (const locale of supportedLocales) {
           const url = new URL(intercept.request().url());
           const file = url.pathname === route ? documentFile : url.pathname.slice(1);
           const allowed = url.origin === baseURL && !url.search && bytes.has(file)
-            && (file === documentFile || /\.(?:js|css|svg)$/.test(file) || (name === "works" && photoPath.test(file)));
+            && (file === documentFile || /\.(?:js|css|svg)$/.test(file) || (name === "works" && photoPath.test(file)) || (name === "home" && memoryPath.test(file)));
           if (!allowed) {
             unexpected.push(url.href);
             return intercept.abort("blockedbyclient");
@@ -39,19 +41,21 @@ for (const locale of supportedLocales) {
         });
         const sprite = page.waitForResponse((response) => /\/assets\/icons-[\w-]+\.svg$/.test(response.url()));
         await page.goto(route);
-        await expect(page.locator("main h1")).toBeVisible();
+        await expect(page.locator(name === "home" ? "#version .desktop-version" : "main h1")).toBeVisible();
         expect(await (await sprite).finished()).toBeNull();
         const images = page.locator("main img");
-        await expect(images).toHaveCount(name === "works" ? 3 : 0);
+        await expect(images).toHaveCount(name === "works" ? 3 : name === "home" ? 1 : 0);
         if (name === "works") await images.first().evaluate((image: HTMLImageElement) => image.decode());
 
         const footprint = () => {
           const paths = requests.filter((url) => new URL(url).origin === baseURL)
             .map((url) => new URL(url).pathname === route ? documentFile : new URL(url).pathname.slice(1));
-          const shell = paths.filter((path) => !photoPath.test(path));
+          const shell = paths.filter((path) => !photoPath.test(path) && !memoryPath.test(path));
           const photos = paths.filter((path) => photoPath.test(path));
+          const memories = paths.filter((path) => memoryPath.test(path));
           return { shellRequests: shell.length, shellBytes: shell.reduce((sum, path) => sum + (bytes.get(path) ?? 0), 0),
-            worksImageRequests: photos.length, worksImageBytes: photos.reduce((sum, path) => sum + (bytes.get(path) ?? 0), 0), paths };
+            worksImageRequests: photos.length, worksImageBytes: photos.reduce((sum, path) => sum + (bytes.get(path) ?? 0), 0),
+            homeImageRequests: memories.length, homeImageBytes: memories.reduce((sum, path) => sum + (bytes.get(path) ?? 0), 0), paths };
         };
         const initial = footprint();
         // No exact lazy count at load: browsers may fetch near-viewport images at different distances.
@@ -80,7 +84,13 @@ for (const locale of supportedLocales) {
           expect(footprint().worksImageRequests).toBe(0);
           await expect(page.locator(".image-viewer")).toHaveCount(0);
         }
+        if (name === "home") {
+          await images.first().scrollIntoViewIfNeeded();
+          await expect.poll(() => images.first().evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth > 0)).toBe(true);
+          await images.first().evaluate((node: HTMLImageElement) => node.decode());
+        }
         const browsed = footprint();
+        expect(browsed.homeImageRequests).toBe(name === "home" ? 1 : 0);
         expect(budgetFailures(browsed, loadingBudgets)).toEqual([]);
         expect(unexpected).toEqual([]);
         expect(errors).toEqual([]);

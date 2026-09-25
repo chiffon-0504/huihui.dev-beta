@@ -1,12 +1,6 @@
 .home {
   margin: var(--space-4) var(--gutter) var(--space-8);
 }
-.desktop-heading {
-  font: inherit;
-  color: var(--color-muted);
-  letter-spacing: normal;
-  margin-bottom: var(--space-4);
-}
 .desktop {
   position: relative;
   isolation: isolate;
@@ -52,26 +46,6 @@
 .window-titlebar button:hover {
   background: var(--color-background);
 }
-.window-movement {
-  position: relative;
-  flex: none;
-}
-.window-move, .window-directions button {
-  padding: var(--space-1) var(--space-2);
-  color: var(--color-text);
-}
-.window-directions {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  padding: var(--space-2);
-  border: 1px solid var(--color-muted);
-  background: var(--color-surface);
-}
-.window-directions:not([hidden]) {
-  display: flex;
-  gap: var(--space-2);
-}
 .is-dragging .window-titlebar {
   cursor: grabbing;
 }
@@ -79,12 +53,8 @@
   padding: var(--space-4);
   overflow-wrap: anywhere;
 }
-.profile-user, .desktop-clock {
+.desktop-clock {
   font-family: var(--font-mono);
-}
-.profile-online {
-  margin-top: var(--space-3);
-  color: var(--color-accent);
 }
 .desktop-list {
   list-style: none;
@@ -103,6 +73,9 @@
 }
 .desktop-muted {
   color: var(--color-muted);
+}
+.desktop-memory-caption {
+  margin-top: var(--space-4);
 }
 .desktop-services {
   display: grid;

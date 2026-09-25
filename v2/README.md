@@ -168,6 +168,48 @@ additions; largest-file limits prevent concentrating a regression in one file.
 No variation was observed in repeated builds, so this is intentional growth
 allowance, not a measured noise tolerance.
 
+### Memories window media addition (2026-09-24)
+
+The supplied Home photo adds two local WebPs (320x240 and 640x480), totaling
+53,154 B. The final production-build baseline was remeasured on 2026-09-25,
+after restoring title-bar keyboard movement and the visually hidden Home h1,
+using `npm run build:v2` followed by `node v2/tools/check-performance.mjs`
+(Node 24.15.0 / Vite 8.1.4 on Windows). All values are uncompressed bytes:
+
+| Measurement | Windows working tree (CRLF) | Same source normalized to LF |
+| --- | ---: | ---: |
+| All HTML (14 entries) | 11,781 | 11,554 |
+| All JS | 102,719 | 102,719 |
+| All CSS | 25,498 | 25,498 |
+| All local images | 676,988 | 676,949 |
+| Entire output | 817,565 | 817,286 |
+| Largest JS bundle | 67,290 | 67,290 |
+| Largest CSS bundle | 13,831 | 13,831 |
+| Largest local image | 122,618 | 122,618 |
+
+The LF column is a separately built snapshot of the same final working-tree
+source, matching Git's stored line endings; it is not copied from a review or
+an earlier build. Preserved CRLF in HTML, the SVG sprite and copied public files
+accounts for the 279 B total difference. Both output inventories contain no PNG:
+the original concert PNG is still not emitted. Both builds pass the existing
+budgets; this measurement refresh changes no limits.
+
+This requested media addition increases only aggregate images and total limits
+by 56,000 B (53,154 B plus 5.35% rounded headroom): images 706,000 B and total
+854,150 B. Existing HTML/JS/CSS, largest-file, shell and Works limits are unchanged.
+Home has a separate envelope of one local image request / 43,500 B, based on the
+41,396 B largest candidate plus 5.08% headroom. About/Works/Posts may not request
+this image, and Home still may not load Works photos or external media.
+
+The browser spec measures all twelve localized routes at 1440px and 390px in
+Chromium, Firefox and WebKit. It explicitly decodes the Home photo after scrolling
+and requires exactly one selected candidate, preserving lazy/async behavior and
+strict request/error checks. Final Home shells use 5 requests / 105,947–106,020 B
+across locales in the CRLF build (105,893–105,966 B in the LF build); the photo
+adds exactly one request (11,758 B at desktop 1x;
+41,396 B at 390px or WebKit 2x). Source provenance and derivative hashes are in
+[the local asset inventory](src/media/assets/README.md#home-memory).
+
 ### Browser request envelope
 
 `tests/v2/performance.spec.ts` checks all twelve localized entries in Chromium,
@@ -178,8 +220,8 @@ and charged their matching build-file bytes. The initial checkpoint is the
 document load plus decoded eager image (Works) and completed SVG sprite. Lazy
 image counts at that checkpoint are observations, not fixed expectations.
 The second checkpoint scrolls/decodes every gallery image, or exercises the
-footer/language control on routes without photos. No fixed sleep or assumed
-lazy-loading distance is used. Each test attaches the requested paths, byte
+footer/language control on non-Works routes, then decodes the Home photo.
+No fixed sleep or assumed lazy-loading distance is used. Each test attaches the requested paths, byte
 footprint and limits as JSON (`resource-footprint`).
 
 | Shared browser budget | Baseline envelope | Limit |
@@ -188,18 +230,21 @@ footprint and limits as JSON (`resource-footprint`).
 | Shell requested build bytes, all locales/routes | 106,910–107,037 | 113,000 |
 | Works local photo requests before viewer actions | 3 after scrolling | 3 |
 | Works local photo bytes, largest candidate for each photo | 344,696 | 365,000 |
-| Home/About/Posts gallery or external requests | 0 | 0 |
+| Home local photo requests after scrolling | 1 | 1 |
+| Home local photo bytes, largest candidate | 41,396 | 43,500 |
+| Home/About/Posts Works-gallery or external requests | 0 | 0 |
 
 The shell is one document, classic bootstrap, app module, stylesheet and SVG
 sprite. Its byte limit adds 5.57% to the largest localized shell. Works' photo
 byte limit adds 5.89% to the three 1200px variants; it covers native responsive
 selection without pinning a browser's lazy distance or chosen candidate. There
 is no spare request: an architectural change to the request graph needs review.
-These are two reusable byte/request envelopes, not twelve duplicated thresholds.
+These are reusable byte/request envelopes, not twelve duplicated thresholds.
 Actual requested bytes depend on the candidates and which lazy images have
 started; they are not encoded response sizes, HTTP overhead, or live CDN transfer.
 
-Measured English-route examples (same build; counts include the document):
+Historical English-route examples before the Home photo
+(same build; counts include the document):
 
 | Route / browser | Initial requests / bytes | After ordinary browsing |
 | --- | --- | --- |
@@ -639,32 +684,41 @@ validation job.
 ## Home desktop prototype
 
 Home is an exploratory personal desktop, shared across the three locales through
-`LocaleContent.home`. It contains Profile, Playing, local live Time, System
-Status and Website Version windows on a mostly empty canvas. The old Hero and
+`LocaleContent.home`. It contains Rhythm Games, Bishoujo Games, Memories, local live Time,
+System Status and Website Version windows on a mostly empty canvas. The old Hero and
 portfolio sections are removed. Home omits Works/About/Posts navigation; other
 pages retain it. About's former Home `#works` CTA now opens localized Works.
 The shared brand, language/theme controls, skip link and contact footer remain.
+Main begins with one localized h1 using the shared `.visually-hidden` utility;
+it stays in the accessibility tree without visible heading space. Window titles
+remain h2 elements.
 
 `components/desktop.ts` provides `createWindow` and `createDesktop`. The manager
 uses title-bar pointer capture, ignores close-button/secondary pointer starts,
 and never prevents content selection or native links. Pointer/focus interaction
-moves a window to the end of a bounded stacking list (z-index 1 through 5 inside
+moves a window to the end of a bounded stacking list (z-index 1 through 6 inside
 an isolated canvas). Closing removes just that window, restores keyboard focus
 when needed and releases its resources. Positions and closed states are only
-in memory: reload restores all five defaults, with no storage reads or writes.
+in memory: reload restores all six defaults, with no storage reads or writes.
 
-Each draggable window also has a localized Move disclosure. Four native buttons
-move it up/down/left/right by 24 CSS pixels per activation, using the same clamp
-as dragging. They support pointer/touch activation and ordinary Tab, Enter and
-Space keys; Escape collapses the controls and restores Move focus. Moving focus
-outside the disclosure also collapses it. The direction panel overlays content
-without expanding the title bar. Entering compact layout restores focus to Close
-before hiding movement controls; returning to desktop keeps the panel collapsed.
+Memories uses the existing `ImageAsset` / `createImage` component with two local
+WebP candidates, explicit 4:3 dimensions and responsive sizes. Its title is
+localized; the supplied concert caption and alt text remain in their original
+language in all locales. Native image dragging is disabled so it cannot consume
+the next title-bar gesture in WebKit. It has no viewer, links or additional controls.
+
+Each title bar contains only its localized heading and Close button. On desktop,
+the title bar is also a Tab stop with localized accessible movement instructions;
+unmodified arrow keys move its window by 24px through the same bounds as dragging.
+Keys from the Close button retain their native behavior. There is no Move toggle
+or directional panel.
 
 The canvas clamps windows to its bounds and re-clamps after resizing or content
 reflow. On short viewports the page can scroll vertically. At the existing
-40rem page breakpoint, CSS and the manager disable dragging and use a single
-column with normal touch scrolling. No movement animations, resize handles,
+40rem page breakpoint, CSS and the manager disable dragging and keyboard movement,
+remove title bars from Tab order, and use a single column with normal touch scrolling.
+If a title bar has focus at that transition, focus moves to its Close button.
+No movement animations, resize handles,
 minimize/maximize, snapping or desktop customization are included.
 
 The clock reads device-local time every second, pauses while the document is
@@ -673,16 +727,14 @@ when closed. It is a semantic time element without per-second live announcements
 System Status explicitly says live status is not connected and marks Website/API
 as not checked. The public GET client requires a separate environment/CSP/local
 policy decision; this prototype does not call it or claim operational health.
-Version says V2 in development, without declaring a stable release number.
+Version displays V2.0.0 in development with localized redesign and architecture
+notes; this does not publish a stable release.
 
 `tests/v2/home.spec.ts` covers desktop/tablet dragging, content selection,
 stacking/overlap, pointer cancellation, close/reload/default positions, unchanged
 storage, viewport changes, keyboard focus, local midnight and clock cleanup,
 three locales/themes, and mobile 320px/200% text reflow. Shared navigation tests
 continue on About, while Home has its own shell and locale coverage.
-`tests/v2/desktop-movement.spec.ts` covers localized keyboard movement controls,
-pointer/touch directions, all four clamped edges, compact focus restoration and
-position reset without persistence across Chromium, Firefox and WebKit.
 
 ## About milestone
 

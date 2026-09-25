@@ -85,9 +85,9 @@ export interface LocaleContent {
 
 export interface HomeContent {
   readonly title: string;
-  readonly profile: string;
-  readonly online: string;
   readonly playing: string;
+  readonly bishoujo: string;
+  readonly memories: string;
   readonly time: string;
   readonly localTime: string;
   readonly status: string;
@@ -97,7 +97,6 @@ export interface HomeContent {
   readonly version: string;
   readonly development: string;
   readonly notes: readonly string[];
-  readonly source: string;
   readonly close: string;
-  readonly move: Readonly<Record<"label" | "up" | "down" | "left" | "right", string>>;
+  readonly keyboardMove: string;
 }

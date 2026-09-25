@@ -60,8 +60,8 @@ for (const locale of locales) {
       if (testInfo.project.name === "chromium") {
         await page.screenshot({ path: testInfo.outputPath(`${locale.lang}-${width}-open.png`), fullPage: true });
       }
-      // The compact header's panel can cover the heading center; use its left edge.
-      await page.getByRole("heading", { level: 1 }).click({ position: { x: 1, y: 1 } });
+      // Click the main area's left edge outside the compact header panel.
+      await page.getByRole("main").click({ position: { x: 1, y: 1 } });
       await expect(dropdown).not.toHaveAttribute("open");
       await trigger.click();
       await trigger.click();
@@ -97,7 +97,7 @@ for (const locale of locales) {
   }
 
   test(`${locale.lang} switches to every equivalent localized section`, async ({ page }) => {
-    for (const hash of ["", "#profile", "#playing"]) {
+    for (const hash of ["", "#clock", "#playing"]) {
       for (const target of locales) {
         await page.goto(`${locale.route}${hash}`);
         const dropdown = page.locator(".language-switcher");
@@ -134,13 +134,13 @@ for (const locale of locales) {
 }
 
 test("rendered native disclosure and links work without enhancement listeners", async ({ page }) => {
-  await page.goto("/en/#profile");
+  await page.goto("/en/#clock");
   // Cloning retains native markup while removing listeners on the component.
   await page.locator(".language-switcher").evaluate((node) => node.replaceWith(node.cloneNode(true)));
   const dropdown = page.locator(".language-switcher");
   await dropdown.locator("summary").click();
   await expect(dropdown).toHaveAttribute("open", "");
   await dropdown.getByRole("link", { name: "日本語", exact: true }).click();
-  await expect(page).toHaveURL(/\/ja\/#profile$/);
+  await expect(page).toHaveURL(/\/ja\/#clock$/);
   await expect(page.locator("html")).toHaveAttribute("lang", "ja");
 });

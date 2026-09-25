@@ -1,20 +1,36 @@
 import { getContent, type Locale } from "../locales";
-import { element, link } from "../dom";
+import { element } from "../dom";
 import { createDesktop, createWindow } from "../components/desktop";
+import { createImage } from "../components/media";
+import { memoryImage, memoryImageSizes } from "../media/memories";
 
 export function createHome(locale: Locale): HTMLElement {
   const copy = getContent(locale).home;
   const main = element("main", "home");
   main.id = "main-content";
   main.tabIndex = -1;
-  main.append(element("h1", "desktop-heading", copy.title));
+  main.append(element("h1", "visually-hidden", copy.title));
 
-  const profile = createWindow("profile", copy.profile, copy.close, { x: 0.03, y: 0.05 });
-  profile.content.append(element("p", "profile-user", "User = huihui"), element("p", "profile-online", `● ${copy.online}`));
   const playing = createWindow("playing", copy.playing, copy.close, { x: 0.46, y: 0.14 });
   const games = element("ul", "desktop-list");
-  for (const game of ["Arcaea", "BanG Dream!", "QR Notes"]) games.append(element("li", "", game));
+  for (const game of ["Arcaea", "BanG Dream! Our Notes"]) games.append(element("li", "", game));
   playing.content.append(games);
+
+  const bishoujo = createWindow("bishoujo", copy.bishoujo, copy.close, { x: 0.03, y: 0.42 });
+  const bishoujoGames = element("ul", "desktop-list");
+  for (const game of ["Summer Pockets REFLECTION BLUE", "魔女的夜宴", "蒼之彼方的四重奏"]) {
+    bishoujoGames.append(element("li", "", game));
+  }
+  bishoujo.content.append(bishoujoGames);
+
+  const memories = createWindow("memories", copy.memories, copy.close, { x: 0.46, y: 0.90 });
+  const photo = createImage({ asset: memoryImage, alt: "Ave Mujica LIVE TOUR 2026『Exitus』台北追加公演DAY2", sizes: memoryImageSizes });
+  // Keep native image dragging from consuming the next title-bar pointer gesture.
+  photo.draggable = false;
+  memories.content.append(photo,
+    element("p", "desktop-memory-caption", "Ave Mujica LIVE TOUR 2026『Exitus』"),
+    element("p", "", "台北追加公演DAY2"),
+  );
 
   let timer: ReturnType<typeof setInterval> | undefined;
   const stopClock = () => { clearInterval(timer); timer = undefined; };
@@ -45,12 +61,12 @@ export function createHome(locale: Locale): HTMLElement {
   status.content.append(services);
 
   const version = createWindow("version", copy.version, copy.close, { x: 0.12, y: 0.91 });
-  version.content.append(element("p", "desktop-version", "V2"), element("p", "desktop-muted", copy.development));
+  version.content.append(element("p", "desktop-version", "V2.0.0"), element("p", "desktop-muted", copy.development));
   const notes = element("ul", "desktop-notes");
   for (const note of copy.notes) notes.append(element("li", "", note));
-  version.content.append(notes, link(copy.source, "https://github.com/chiffon-0504/huihui.dev-beta"));
+  version.content.append(notes);
 
-  const desktop = createDesktop([profile, playing, clock, status, version], copy.move);
+  const desktop = createDesktop([playing, bishoujo, memories, clock, status, version], copy.keyboardMove);
   main.append(desktop.node);
   const visibility = () => document.hidden ? stopClock() : startClock();
   document.addEventListener("visibilitychange", visibility);

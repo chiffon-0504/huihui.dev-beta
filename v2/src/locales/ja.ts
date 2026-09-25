@@ -123,9 +123,9 @@ export default {
   aboutLabel: "プロフィール",
   home: {
     title: "huihui のデスクトップ",
-    profile: "マイプロフィール",
-    online: "オンライン",
-    playing: "プレイ中",
+    playing: "音楽ゲーム",
+    bishoujo: "美少女ゲーム",
+    memories: "思い出",
     time: "現在の時刻",
     localTime: "ローカル時刻",
     status: "システム状況",
@@ -133,14 +133,13 @@ export default {
     website: "ウェブサイト",
     notChecked: "未取得",
     version: "サイトのバージョン",
-    development: "開発中 · デスクトップ試作",
+    development: "開発中",
     notes: [
-      "タイトルバーのドラッグまたは「移動」ボタンで位置を調整できます。",
-      "再読み込みすると、すべてのウィンドウと位置が元に戻ります。"
+      "全面的に再設計",
+      "TypeScript + モジュール化 CSS アーキテクチャを採用"
     ],
-    source: "ソースを見る",
     close: "ウィンドウを閉じる",
-    move: { label: "移動", up: "上に移動", down: "下に移動", left: "左に移動", right: "右に移動" }
+    keyboardMove: "矢印キーでこのウィンドウを移動できます。",
   },
 } satisfies LocaleContent;
 

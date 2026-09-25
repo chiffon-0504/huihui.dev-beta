@@ -2,7 +2,7 @@ import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "vitest";
-import { assertPerformance, budgetFailures, budgets, measurePerformance, readFiles } from "../../v2/tools/performance.mjs";
+import { assertPerformance, budgetFailures, budgets, loadingBudgets, measurePerformance, readFiles } from "../../v2/tools/performance.mjs";
 
 const asset = (fileName, source) => ({ fileName, source });
 
@@ -23,6 +23,12 @@ test.each(Object.keys(budgets))("%s accepts the exact limit and reports a one-by
   expect(budgetFailures({ [name]: budgets[name] }, { [name]: budgets[name] })).toEqual([]);
   expect(budgetFailures({ [name]: budgets[name] + 1 }, { [name]: budgets[name] }))
     .toEqual([`${name}: actual ${budgets[name] + 1}, allowed ${budgets[name]}`]);
+});
+
+test.each(Object.keys(loadingBudgets))("%s loading envelope rejects an extra request or byte", (name) => {
+  const limit = loadingBudgets[name];
+  expect(budgetFailures({ [name]: limit }, { [name]: limit })).toEqual([]);
+  expect(budgetFailures({ [name]: limit + 1 }, { [name]: limit })).toHaveLength(1);
 });
 
 test.each([undefined, NaN, Infinity, -1, 1.5])("rejects invalid measured value %s", (value) => {

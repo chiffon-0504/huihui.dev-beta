@@ -4,6 +4,14 @@ import { getContent, localeHref, locales as content, supportedLocales, resolveLo
 
 describe("v2 localized shell", () => {
   test.each([
+    ["zh-Hant", "huihui 的桌面"],
+    ["en", "huihui’s desktop"],
+    ["ja", "huihui のデスクトップ"],
+  ])("%s defines the semantic Home heading", (locale, title) => {
+    expect(content[locale].home.title).toBe(title);
+  });
+
+  test.each([
     ["zh-Hant", "作品", "關於"],
     ["en", "Works", "About"],
     ["ja", "制作実績", "プロフィール"],

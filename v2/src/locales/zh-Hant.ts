@@ -123,9 +123,9 @@ export default {
   aboutLabel: "關於",
   home: {
     title: "huihui 的桌面",
-    profile: "個人資料",
-    online: "上線中",
-    playing: "正在玩",
+    playing: "音樂遊戲",
+    bishoujo: "美少女遊戲",
+    memories: "回憶",
     time: "現在時間",
     localTime: "本地時間",
     status: "系統狀態",
@@ -133,14 +133,13 @@ export default {
     website: "網站",
     notChecked: "尚未取得",
     version: "網站版本",
-    development: "開發中 · 桌面原型",
+    development: "開發中",
     notes: [
-      "拖曳標題列或使用「移動」按鈕調整視窗位置。",
-      "關閉的視窗與位置會在重新整理後還原。"
+      "重新設計",
+      "採用 TypeScript + 模組化 CSS 架構"
     ],
-    source: "查看原始碼",
     close: "關閉視窗",
-    move: { label: "移動", up: "向上移動", down: "向下移動", left: "向左移動", right: "向右移動" }
+    keyboardMove: "使用方向鍵移動此視窗。",
   },
 } satisfies LocaleContent;
 
