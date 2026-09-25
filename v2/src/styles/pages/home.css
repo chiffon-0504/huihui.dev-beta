@@ -4,9 +4,11 @@
 .desktop {
   position: relative;
   isolation: isolate;
+  container-type: inline-size;
   min-height: max(42rem, calc(100svh - var(--header-height) - 9rem));
 }
 .desktop-window {
+  --desktop-compact: 0;
   position: absolute;
   width: min(20rem, 100%);
   border: 1px solid var(--color-muted);
@@ -92,20 +94,24 @@
   padding-inline-start: var(--space-6);
   margin-block: var(--space-4);
 }
-@media (max-width: 40rem) {
-  .desktop {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-6);
-    min-height: 0;
-  }
+/* Music/Time separation: 0.42 * (canvas - 20rem) >= 20rem. */
+@container (width < calc(20rem + 20rem / 0.42)) {
   .desktop-window {
-    position: relative;
-    width: 100%;
+    --desktop-compact: 1;
   }
-  .window-titlebar {
-    cursor: auto;
-    touch-action: auto;
-    user-select: auto;
-  }
+}
+.desktop.is-compact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-height: 0;
+}
+.desktop.is-compact .desktop-window {
+  position: relative;
+  width: 100%;
+}
+.desktop.is-compact .window-titlebar {
+  cursor: auto;
+  touch-action: auto;
+  user-select: auto;
 }
