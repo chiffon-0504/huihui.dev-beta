@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { applyPagesCsp } from "../support/csp-enforcement.mjs";
+import { mockSystemStatus } from "../support/v2-system-status.mjs";
 
 const locales = [
   { route: "/", lang: "zh-Hant", light: "淺色", dark: "深色" },
@@ -12,6 +13,7 @@ for (const locale of locales) {
     test(`${locale.lang} sticky header and navigation after scrolling at ${width}px`, async ({ page, baseURL }) => {
       await page.setViewportSize({ width, height: 844 });
       await applyPagesCsp(page, baseURL);
+      await mockSystemStatus(page);
       const errors = [];
       page.on("pageerror", (error) => errors.push(error.message));
       page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
