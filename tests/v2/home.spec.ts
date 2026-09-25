@@ -25,11 +25,33 @@ for (const locale of supportedLocales) {
       page.on("request", (request) => { if (new URL(request.url()).origin !== new URL(baseURL!).origin) errors.push(request.url()); });
       await page.setViewportSize({ width, height: 900 });
       await page.goto(localeHref(locale));
-      await expect(page.locator("main h1, .desktop-heading")).toHaveCount(0);
-      expect(await page.locator("main").evaluate((node) => node.firstElementChild?.className)).toBe("desktop");
+      await expect(page.locator("h1")).toHaveCount(1);
+      const heading = page.getByRole("main").getByRole("heading", { level: 1 });
+      await expect(heading).toHaveText(copy.home.title);
+      await expect(heading).toHaveAccessibleName(copy.home.title);
+      await expect(heading).not.toHaveAttribute("hidden");
+      await expect(heading).toHaveCSS("position", "absolute");
+      await expect(heading).toHaveCSS("clip-path", "inset(50%)");
+      await expect(heading).toHaveCSS("width", "1px");
+      await expect(heading).toHaveCSS("height", "1px");
+      await expect(page.locator(".desktop-heading")).toHaveCount(0);
+      const layout = await page.locator("main").evaluate((node) => {
+        const measure = () => ({
+          boxes: [node, ...node.querySelectorAll(".desktop, .desktop-window")].map((item) => item.getBoundingClientRect().toJSON()),
+          width: document.documentElement.scrollWidth,
+          height: document.documentElement.scrollHeight,
+        });
+        const before = measure(), title = node.querySelector("h1")!;
+        title.remove();
+        const without = measure();
+        node.prepend(title);
+        return { before, without };
+      });
+      expect(layout.before).toEqual(layout.without);
       await expect(page.locator(".desktop-window")).toHaveCount(6);
       await expect(page.locator("#profile, .profile-user, .profile-online")).toHaveCount(0);
       await expect(page.locator(".desktop-window h2")).toHaveText([copy.home.playing, copy.home.bishoujo, copy.home.memories, copy.home.time, copy.home.status, copy.home.version]);
+      await expect(page.getByRole("main").getByRole("heading", { level: 2 })).toHaveCount(6);
       await expect(page.locator(".navbar-primary, .drawer-links a[href*='/works/'], .drawer-links a[href*='/about/'], .drawer-links a[href*='/posts/'], .hero")).toHaveCount(0);
       await expect(page.locator("#playing .desktop-list li")).toHaveText(["Arcaea", "BanG Dream! Our Notes"]);
       await expect(page.locator("#bishoujo .desktop-list li")).toHaveText(["Summer Pockets REFLECTION BLUE", "魔女的夜宴", "蒼之彼方的四重奏"]);

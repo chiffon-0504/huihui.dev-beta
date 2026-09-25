@@ -9,6 +9,7 @@ export function createHome(locale: Locale): HTMLElement {
   const main = element("main", "home");
   main.id = "main-content";
   main.tabIndex = -1;
+  main.append(element("h1", "visually-hidden", copy.title));
 
   const playing = createWindow("playing", copy.playing, copy.close, { x: 0.46, y: 0.14 });
   const games = element("ul", "desktop-list");

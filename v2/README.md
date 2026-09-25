@@ -171,9 +171,28 @@ allowance, not a measured noise tolerance.
 ### Memories window media addition (2026-09-24)
 
 The supplied Home photo adds two local WebPs (320x240 and 640x480), totaling
-53,154 B. The production build measures HTML 11,781 B, JS 101,567 B,
-CSS 25,212 B, images 676,988 B and total output 816,127 B. Largest JS/CSS/image
-are 66,138 / 13,688 / 122,618 B. The original PNG is not emitted.
+53,154 B. The final production-build baseline was remeasured on 2026-09-25,
+after restoring title-bar keyboard movement and the visually hidden Home h1,
+using `npm run build:v2` followed by `node v2/tools/check-performance.mjs`
+(Node 24.15.0 / Vite 8.1.4 on Windows). All values are uncompressed bytes:
+
+| Measurement | Windows working tree (CRLF) | Same source normalized to LF |
+| --- | ---: | ---: |
+| All HTML (14 entries) | 11,781 | 11,554 |
+| All JS | 102,719 | 102,719 |
+| All CSS | 25,498 | 25,498 |
+| All local images | 676,988 | 676,949 |
+| Entire output | 817,565 | 817,286 |
+| Largest JS bundle | 67,290 | 67,290 |
+| Largest CSS bundle | 13,831 | 13,831 |
+| Largest local image | 122,618 | 122,618 |
+
+The LF column is a separately built snapshot of the same final working-tree
+source, matching Git's stored line endings; it is not copied from a review or
+an earlier build. Preserved CRLF in HTML, the SVG sprite and copied public files
+accounts for the 279 B total difference. Both output inventories contain no PNG:
+the original concert PNG is still not emitted. Both builds pass the existing
+budgets; this measurement refresh changes no limits.
 
 This requested media addition increases only aggregate images and total limits
 by 56,000 B (53,154 B plus 5.35% rounded headroom): images 706,000 B and total
@@ -185,8 +204,9 @@ this image, and Home still may not load Works photos or external media.
 The browser spec measures all twelve localized routes at 1440px and 390px in
 Chromium, Firefox and WebKit. It explicitly decodes the Home photo after scrolling
 and requires exactly one selected candidate, preserving lazy/async behavior and
-strict request/error checks. Measured Home shells use 5 requests / 104,652–104,725 B
-across locales; the photo adds exactly one request (11,758 B at desktop 1x;
+strict request/error checks. Final Home shells use 5 requests / 105,947–106,020 B
+across locales in the CRLF build (105,893–105,966 B in the LF build); the photo
+adds exactly one request (11,758 B at desktop 1x;
 41,396 B at 390px or WebKit 2x). Source provenance and derivative hashes are in
 [the local asset inventory](src/media/assets/README.md#home-memory).
 
@@ -669,6 +689,9 @@ System Status and Website Version windows on a mostly empty canvas. The old Hero
 portfolio sections are removed. Home omits Works/About/Posts navigation; other
 pages retain it. About's former Home `#works` CTA now opens localized Works.
 The shared brand, language/theme controls, skip link and contact footer remain.
+Main begins with one localized h1 using the shared `.visually-hidden` utility;
+it stays in the accessibility tree without visible heading space. Window titles
+remain h2 elements.
 
 `components/desktop.ts` provides `createWindow` and `createDesktop`. The manager
 uses title-bar pointer capture, ignores close-button/secondary pointer starts,

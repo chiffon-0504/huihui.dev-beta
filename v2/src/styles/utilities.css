@@ -1,3 +1,16 @@
+/* Keep semantic content available to assistive technology without layout space. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Keep the keyboard entry point above open navigation panels. */
 .skip-link {
   position: absolute;

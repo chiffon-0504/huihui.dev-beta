@@ -122,6 +122,7 @@ export default {
   worksLabel: "制作実績",
   aboutLabel: "プロフィール",
   home: {
+    title: "huihui のデスクトップ",
     playing: "音楽ゲーム",
     bishoujo: "美少女ゲーム",
     memories: "思い出",

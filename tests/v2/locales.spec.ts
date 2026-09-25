@@ -5,7 +5,8 @@ for (const locale of supportedLocales) {
   test(`${locale} renders canonical desktop copy and shared accessible labels`, async ({ page }) => {
     const copy = getContent(locale);
     await page.goto(localeHref(locale));
-    await expect(page.locator("main h1")).toHaveCount(0);
+    await expect(page.locator("main h1")).toHaveCount(1);
+    await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toHaveAccessibleName(copy.home.title);
     await expect(page.locator(".desktop-version")).toHaveText("V2.0.0");
     await expect(page.locator("#playing h2")).toHaveText(copy.home.playing);
     const bishoujoTitle = { "zh-Hant": "美少女遊戲", en: "Bishoujo Games", ja: "美少女ゲーム" }[locale];

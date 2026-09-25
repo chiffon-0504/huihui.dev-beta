@@ -122,6 +122,7 @@ export default {
   worksLabel: "Works",
   aboutLabel: "About",
   home: {
+    title: "huihui’s desktop",
     playing: "Rhythm games",
     bishoujo: "Bishoujo Games",
     memories: "Memories",

@@ -84,6 +84,7 @@ export interface LocaleContent {
 }
 
 export interface HomeContent {
+  readonly title: string;
   readonly playing: string;
   readonly bishoujo: string;
   readonly memories: string;

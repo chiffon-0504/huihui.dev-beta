@@ -20,6 +20,10 @@ const { close, ...missingHomeAction } = en.home;
 void close;
 // @ts-expect-error Every locale must include the complete Home action copy.
 export const incompleteHome: LocaleContent = { ...en, home: missingHomeAction };
+const { title, ...missingHomeTitle } = en.home;
+void title;
+// @ts-expect-error Every locale must provide the semantic Home heading.
+export const incompleteHomeHeading: LocaleContent = { ...en, home: missingHomeTitle };
 const { keyboardMove, ...missingKeyboardInstruction } = en.home;
 void keyboardMove;
 // @ts-expect-error Every locale must describe keyboard window movement.
