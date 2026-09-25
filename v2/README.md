@@ -714,13 +714,18 @@ Keys from the Close button retain their native behavior. There is no Move toggle
 or directional panel.
 
 The canvas clamps windows to its bounds and re-clamps after resizing or content
-reflow. On short viewports the page can scroll vertically. At the Home-specific
-70.625rem (1130px at the default font size) breakpoint, CSS and the manager disable
-dragging and keyboard movement,
-remove title bars from Tab order, and use a single column with normal touch scrolling.
+reflow. On short viewports the page can scroll vertically. When the actual canvas
+is narrower than `20rem + 20rem / 0.42` (about 1081.905px at the default font size),
+the manager disables dragging and keyboard movement, removes title bars from Tab
+order, and uses a single column with normal touch scrolling.
 If a title bar has focus at that transition, focus moves to its Close button.
 This threshold keeps the default Music/Time windows apart above compact mode:
-`(0.90 - 0.48) * (viewport - 3rem gutters - 20rem window) >= 20rem`.
+`(0.90 - 0.48) * (canvas width - 20rem window) >= 20rem`.
+A container query measures `.desktop` itself, so scrollbar space is already
+excluded. The manager reads its query signal after mounting in the pre-paint
+microtask and toggles the existing compact styles. ResizeObserver schedules later
+updates via requestAnimationFrame, outside observer delivery. Compact mode never
+overwrites saved drag positions or temporarily measures a floating layout.
 Other pages retain their existing breakpoints.
 No movement animations, resize handles,
 minimize/maximize, snapping or desktop customization are included.

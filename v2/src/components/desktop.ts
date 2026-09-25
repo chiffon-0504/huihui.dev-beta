@@ -32,9 +32,8 @@ export function createWindow(id: string, title: string, closeLabel: string,
 /** One manager owns pointer dragging, bounded positions and a finite stacking order. */
 export function createDesktop(windows: readonly DesktopWindow[], keyboardMove: string) {
   const node = element("div", "desktop");
-  // Match home.css: the default Music/Time windows need (0.90 - 0.48)
-  // * (viewport - 3rem gutters - 20rem window) >= 20rem to avoid overlap.
-  const compact = matchMedia("(max-width: 70.625rem)");
+  let compact = false;
+  let layoutFrame = 0;
   const events = new AbortController();
   const order = [...windows];
   const positions = new Map<DesktopWindow, { x: number; y: number }>();
@@ -62,10 +61,16 @@ export function createDesktop(windows: readonly DesktopWindow[], keyboardMove: s
     if (item.titleBar.hasPointerCapture(pointerId)) item.titleBar.releasePointerCapture(pointerId);
   };
   const layout = () => {
+    // Force the connected canvas's first layout before reading its query result.
+    if (!node.isConnected || node.clientWidth === 0) return;
+    // The container query measures this canvas, including scrollbar deductions.
+    // Read after mounting, before changing layout; no temporary desktop reflow.
+    if (order.length) compact = getComputedStyle(order[0]!.node).getPropertyValue("--desktop-compact").trim() === "1";
+    node.classList.toggle("is-compact", compact);
     endDrag();
     for (const item of [...order]) {
-      item.titleBar.tabIndex = compact.matches ? -1 : 0;
-      if (compact.matches) {
+      item.titleBar.tabIndex = compact ? -1 : 0;
+      if (compact) {
         item.titleBar.removeAttribute("aria-description");
         item.titleBar.removeAttribute("aria-keyshortcuts");
         if (document.activeElement === item.titleBar) item.close.focus({ preventScroll: true });
@@ -83,14 +88,18 @@ export function createDesktop(windows: readonly DesktopWindow[], keyboardMove: s
       }
     }
   };
-  const observer = new ResizeObserver(layout);
+  const observer = new ResizeObserver(() => {
+    // Mode changes resize the canvas/windows; write outside observer delivery.
+    cancelAnimationFrame(layoutFrame);
+    layoutFrame = requestAnimationFrame(layout);
+  });
   for (const item of windows) {
     node.append(item.node);
     observer.observe(item.node);
     item.node.addEventListener("pointerdown", () => raise(item), { signal: events.signal });
     item.node.addEventListener("focusin", () => raise(item), { signal: events.signal });
     item.titleBar.addEventListener("keydown", (event) => {
-      if (compact.matches || drag || event.defaultPrevented || event.target !== item.titleBar ||
+      if (compact || drag || event.defaultPrevented || event.target !== item.titleBar ||
         document.activeElement !== item.titleBar || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
       const dx = event.key === "ArrowLeft" ? -24 : event.key === "ArrowRight" ? 24 : 0;
       const dy = event.key === "ArrowUp" ? -24 : event.key === "ArrowDown" ? 24 : 0;
@@ -100,7 +109,7 @@ export function createDesktop(windows: readonly DesktopWindow[], keyboardMove: s
       positions.set(item, place(item, { x: item.node.offsetLeft + dx, y: item.node.offsetTop + dy }));
     }, { signal: events.signal });
     item.titleBar.addEventListener("pointerdown", (event) => {
-      if (compact.matches || drag || !event.isPrimary || event.button !== 0 ||
+      if (compact || drag || !event.isPrimary || event.button !== 0 ||
         (event.target instanceof Element && event.target.closest("button"))) return;
       event.preventDefault();
       const rect = item.node.getBoundingClientRect();
@@ -132,7 +141,6 @@ export function createDesktop(windows: readonly DesktopWindow[], keyboardMove: s
   }
   restack();
   observer.observe(node);
-  compact.addEventListener("change", layout, { signal: events.signal });
   window.addEventListener("blur", endDrag, { signal: events.signal });
   // The page mounts synchronously. Place windows before their first paint,
   // rather than waiting for the observer's first asynchronous notification.
@@ -142,6 +150,7 @@ export function createDesktop(windows: readonly DesktopWindow[], keyboardMove: s
     dispose() {
       endDrag();
       observer.disconnect();
+      cancelAnimationFrame(layoutFrame);
       events.abort();
       for (const item of order) item.onClose?.();
     },
