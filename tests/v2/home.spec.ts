@@ -119,6 +119,107 @@ for (const locale of supportedLocales) {
     expect(await others()).toEqual(otherDefaults);
     expect(await storage()).toEqual(saved);
   });
+  test(`${locale} title bar keyboard movement is bounded and leaves other windows unchanged`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(localeHref(locale));
+    const item = page.locator("#playing"), title = item.locator(".window-titlebar");
+    const others = () => page.locator(".desktop-window:not(#playing)").evaluateAll((nodes) =>
+      nodes.map((node: HTMLElement) => ({ id: node.id, x: node.offsetLeft, y: node.offsetTop })));
+    const otherDefaults = await others();
+    await page.evaluate(() => document.addEventListener("keydown", (event) => {
+      document.documentElement.dataset.keyPrevented = String(event.defaultPrevented);
+    }));
+    await page.locator("main").focus();
+    await page.keyboard.press("Tab");
+    await expect(title).toBeFocused();
+    await expect(title).toHaveAccessibleName(copy.home.playing);
+    await expect(title).toHaveAccessibleDescription(copy.home.keyboardMove);
+    await expect(title).toHaveCSS("outline-style", "solid");
+    await expect(item).toHaveCSS("z-index", "6");
+    const scroll = await page.evaluate(() => ({ x: scrollX, y: scrollY }));
+    for (const [key, dx, dy] of [["ArrowUp", 0, -24], ["ArrowDown", 0, 24], ["ArrowLeft", -24, 0], ["ArrowRight", 24, 0]] as const) {
+      const before = await position(item);
+      await page.keyboard.press(key);
+      expect(await position(item)).toEqual({ x: before.x + dx, y: before.y + dy });
+      await expect(page.locator("html")).toHaveAttribute("data-key-prevented", "true");
+    }
+    expect(await page.evaluate(() => ({ x: scrollX, y: scrollY }))).toEqual(scroll);
+    const moved = await position(item);
+    for (const key of ["a", "Shift+ArrowRight", "Control+ArrowLeft", "Alt+ArrowUp", "Meta+ArrowDown"]) {
+      await page.keyboard.press(key);
+      await expect(page.locator("html")).toHaveAttribute("data-key-prevented", "false");
+      expect(await position(item)).toEqual(moved);
+    }
+    for (let i = 0; i < 60; i++) {
+      await page.keyboard.press("ArrowLeft");
+      await page.keyboard.press("ArrowUp");
+    }
+    expect(await position(item)).toEqual({ x: 0, y: 0 });
+    for (let i = 0; i < 60; i++) {
+      await page.keyboard.press("ArrowRight");
+      await page.keyboard.press("ArrowDown");
+    }
+    expect(await position(item)).toEqual(await item.evaluate((node: HTMLElement) => ({
+      x: node.parentElement!.clientWidth - node.offsetWidth,
+      y: node.parentElement!.clientHeight - node.offsetHeight,
+    })));
+    expect(await others()).toEqual(otherDefaults);
+    const bounded = await position(item);
+    await page.keyboard.press("Tab");
+    await expect(item.locator(".window-close")).toBeFocused();
+    for (const key of ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]) {
+      await page.keyboard.press(key);
+      await expect(page.locator("html")).toHaveAttribute("data-key-prevented", "false");
+      expect(await position(item)).toEqual(bounded);
+    }
+    await expect(page.locator(".window-movement, .window-move, .window-directions")).toHaveCount(0);
+    await expect(page.locator(".window-titlebar button")).toHaveText(Array(6).fill("×"));
+    await expect(page.getByText(copy.home.keyboardMove, { exact: true })).toHaveCount(0);
+    await page.keyboard.press("Enter");
+    await expect(item).toHaveCount(0);
+    expect(await others()).toEqual(otherDefaults);
+  });
+  test(`${locale} compact layout disables title bar keyboard movement and restores desktop focusability`, async ({ page }) => {
+    await page.setViewportSize({ width: 641, height: 900 });
+    await page.goto(localeHref(locale));
+    await page.evaluate(() => document.addEventListener("keydown", (event) => {
+      document.documentElement.dataset.keyPrevented = String(event.defaultPrevented);
+    }));
+    const item = page.locator("#playing"), title = item.locator(".window-titlebar");
+    await page.locator("main").focus();
+    await page.keyboard.press("Tab");
+    await expect(title).toBeFocused();
+    await page.keyboard.press("ArrowDown");
+    const moved = await position(item);
+    for (const width of [640, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect(title).toHaveAttribute("tabindex", "-1");
+      await expect(item.locator(".window-close")).toBeFocused();
+      await expect(title).toHaveAccessibleDescription("");
+      await expect(title).not.toHaveAttribute("aria-keyshortcuts");
+      const before = await position(item);
+      // Even a programmatically focused compact title bar must not consume arrows.
+      await title.focus();
+      for (const key of ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]) {
+        await page.keyboard.press(key);
+        await expect(page.locator("html")).toHaveAttribute("data-key-prevented", "false");
+      }
+      expect(await position(item)).toEqual(before);
+      await expect(item).toHaveCSS("position", "relative");
+      await page.locator("main").focus();
+      await page.keyboard.press("Tab");
+      await expect(item.locator(".window-close")).toBeFocused();
+      await reflow(page);
+    }
+    await page.setViewportSize({ width: 641, height: 900 });
+    await expect(title).toHaveAttribute("tabindex", "0");
+    await expect(title).toHaveAccessibleDescription(copy.home.keyboardMove);
+    await expect.poll(() => position(item)).toEqual(moved);
+    await page.keyboard.press("Shift+Tab");
+    await expect(title).toBeFocused();
+    await page.keyboard.press("ArrowUp");
+    expect(await position(item)).toEqual({ x: moved.x, y: moved.y - 24 });
+  });
   test(`${locale} mobile stacks without dragging or overflow at 320px and enlarged text`, async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 900 });
     await page.emulateMedia({ reducedMotion: "reduce" });
@@ -241,6 +342,9 @@ test("native keyboard skip, close buttons and final focus remain usable", async 
   await page.keyboard.press("Enter");
   await expect(page.locator("main")).toBeFocused();
   for (const id of ["playing", "bishoujo", "memories", "clock", "status", "version"]) {
+    await page.keyboard.press("Tab");
+    await expect(page.locator(`#${id} .window-titlebar`)).toBeFocused();
+    await expect(page.locator(`#${id} .window-titlebar`)).toHaveCSS("outline-style", "solid");
     await page.keyboard.press("Tab");
     await expect(page.locator(`#${id} .window-close`)).toBeFocused();
     await expect(page.locator(`#${id}`)).toHaveCSS("z-index", "6");

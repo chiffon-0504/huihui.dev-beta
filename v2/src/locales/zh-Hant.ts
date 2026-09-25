@@ -138,6 +138,7 @@ export default {
       "採用 TypeScript + 模組化 CSS 架構"
     ],
     close: "關閉視窗",
+    keyboardMove: "使用方向鍵移動此視窗。",
   },
 } satisfies LocaleContent;
 

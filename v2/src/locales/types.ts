@@ -97,4 +97,5 @@ export interface HomeContent {
   readonly development: string;
   readonly notes: readonly string[];
   readonly close: string;
+  readonly keyboardMove: string;
 }

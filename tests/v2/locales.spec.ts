@@ -19,6 +19,10 @@ for (const locale of supportedLocales) {
     await expect(page.locator(".desktop-notes li")).toHaveText([...copy.home.notes]);
     await expect(page.locator("#version a")).toHaveCount(0);
     await expect(page.locator("#status dt")).toHaveText([copy.home.website, "API"]);
+    for (const title of await page.locator(".window-titlebar").all()) {
+      await expect(title).toHaveAccessibleName(await title.locator("h2").innerText());
+      await expect(title).toHaveAccessibleDescription(copy.home.keyboardMove);
+    }
     await expect(page.locator(".skip-link")).toHaveAccessibleName(copy.skip);
     await expect(page.getByRole("navigation")).toHaveAccessibleName(copy.navigation);
     await expect(page.locator("summary")).toHaveAccessibleName(`${copy.languages}: ${copy.language.shortLabel}`);

@@ -138,6 +138,7 @@ export default {
       "TypeScript + モジュール化 CSS アーキテクチャを採用"
     ],
     close: "ウィンドウを閉じる",
+    keyboardMove: "矢印キーでこのウィンドウを移動できます。",
   },
 } satisfies LocaleContent;
 

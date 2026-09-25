@@ -16,6 +16,8 @@ export function createWindow(id: string, title: string, closeLabel: string,
   node.tabIndex = -1;
   node.setAttribute("aria-labelledby", `${id}-title`);
   const titleBar = element("div", "window-titlebar");
+  titleBar.setAttribute("role", "group");
+  titleBar.setAttribute("aria-labelledby", `${id}-title`);
   const heading = element("h2", "", title);
   heading.id = `${id}-title`;
   const close = element("button", "window-close", "×");
@@ -28,7 +30,7 @@ export function createWindow(id: string, title: string, closeLabel: string,
 }
 
 /** One manager owns pointer dragging, bounded positions and a finite stacking order. */
-export function createDesktop(windows: readonly DesktopWindow[]) {
+export function createDesktop(windows: readonly DesktopWindow[], keyboardMove: string) {
   const node = element("div", "desktop");
   // Match the existing page-layout breakpoint in home.css.
   const compact = matchMedia("(max-width: 40rem)");
@@ -61,10 +63,16 @@ export function createDesktop(windows: readonly DesktopWindow[]) {
   const layout = () => {
     endDrag();
     for (const item of [...order]) {
+      item.titleBar.tabIndex = compact.matches ? -1 : 0;
       if (compact.matches) {
+        item.titleBar.removeAttribute("aria-description");
+        item.titleBar.removeAttribute("aria-keyshortcuts");
+        if (document.activeElement === item.titleBar) item.close.focus({ preventScroll: true });
         item.node.style.removeProperty("left");
         item.node.style.removeProperty("top");
       } else {
+        item.titleBar.setAttribute("aria-description", keyboardMove);
+        item.titleBar.setAttribute("aria-keyshortcuts", "ArrowUp ArrowDown ArrowLeft ArrowRight");
         const saved = positions.get(item);
         const point = place(item, saved ?? {
           x: item.start.x * (node.clientWidth - item.node.offsetWidth),
@@ -80,6 +88,16 @@ export function createDesktop(windows: readonly DesktopWindow[]) {
     observer.observe(item.node);
     item.node.addEventListener("pointerdown", () => raise(item), { signal: events.signal });
     item.node.addEventListener("focusin", () => raise(item), { signal: events.signal });
+    item.titleBar.addEventListener("keydown", (event) => {
+      if (compact.matches || drag || event.defaultPrevented || event.target !== item.titleBar ||
+        document.activeElement !== item.titleBar || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+      const dx = event.key === "ArrowLeft" ? -24 : event.key === "ArrowRight" ? 24 : 0;
+      const dy = event.key === "ArrowUp" ? -24 : event.key === "ArrowDown" ? 24 : 0;
+      if (!dx && !dy) return;
+      event.preventDefault();
+      raise(item);
+      positions.set(item, place(item, { x: item.node.offsetLeft + dx, y: item.node.offsetTop + dy }));
+    }, { signal: events.signal });
     item.titleBar.addEventListener("pointerdown", (event) => {
       if (compact.matches || drag || !event.isPrimary || event.button !== 0 ||
         (event.target instanceof Element && event.target.closest("button"))) return;

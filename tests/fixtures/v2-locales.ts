@@ -20,6 +20,10 @@ const { close, ...missingHomeAction } = en.home;
 void close;
 // @ts-expect-error Every locale must include the complete Home action copy.
 export const incompleteHome: LocaleContent = { ...en, home: missingHomeAction };
+const { keyboardMove, ...missingKeyboardInstruction } = en.home;
+void keyboardMove;
+// @ts-expect-error Every locale must describe keyboard window movement.
+export const incompleteKeyboardHome: LocaleContent = { ...en, home: missingKeyboardInstruction };
 // @ts-expect-error The registry must include every supported locale.
 export const incompleteRegistry: Record<Locale, LocaleContent> = { en, ja };
 // @ts-expect-error Unknown internal identities are rejected at the consumer boundary.

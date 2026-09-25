@@ -684,13 +684,18 @@ localized; the supplied concert caption and alt text remain in their original
 language in all locales. Native image dragging is disabled so it cannot consume
 the next title-bar gesture in WebKit. It has no viewer, links or additional controls.
 
-Each title bar contains only its localized heading and Close button. Windows
-move by dragging the title bar; there is no Move toggle or directional panel.
+Each title bar contains only its localized heading and Close button. On desktop,
+the title bar is also a Tab stop with localized accessible movement instructions;
+unmodified arrow keys move its window by 24px through the same bounds as dragging.
+Keys from the Close button retain their native behavior. There is no Move toggle
+or directional panel.
 
 The canvas clamps windows to its bounds and re-clamps after resizing or content
 reflow. On short viewports the page can scroll vertically. At the existing
-40rem page breakpoint, CSS and the manager disable dragging and use a single
-column with normal touch scrolling. No movement animations, resize handles,
+40rem page breakpoint, CSS and the manager disable dragging and keyboard movement,
+remove title bars from Tab order, and use a single column with normal touch scrolling.
+If a title bar has focus at that transition, focus moves to its Close button.
+No movement animations, resize handles,
 minimize/maximize, snapping or desktop customization are included.
 
 The clock reads device-local time every second, pauses while the document is

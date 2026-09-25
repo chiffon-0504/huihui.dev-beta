@@ -138,6 +138,7 @@ export default {
       "TypeScript + modular CSS architecture"
     ],
     close: "Close window",
+    keyboardMove: "Use the arrow keys to move this window.",
   },
 } satisfies LocaleContent;
 
