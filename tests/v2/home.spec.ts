@@ -97,6 +97,11 @@ for (const locale of supportedLocales) {
     expect(await others()).toEqual(otherDefaults);
     await page.setViewportSize({ width: 390, height: 900 });
     await expect(item).toHaveCSS("position", "relative");
+    // CSS can switch before the desktop manager handles the compact breakpoint.
+    await expect.poll(() => page.locator(".desktop-window").evaluateAll((nodes) =>
+      nodes.filter((node: HTMLElement) => node.style.left || node.style.top)
+        .map((node: HTMLElement) => ({ id: node.id, left: node.style.left, top: node.style.top }))))
+      .toEqual([]);
     await reflow(page);
     await page.setViewportSize({ width: 1440, height: 900 });
     await expect.poll(() => position(item)).toEqual(moved);
