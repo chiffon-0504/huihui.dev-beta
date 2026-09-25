@@ -92,7 +92,8 @@
   padding-inline-start: var(--space-6);
   margin-block: var(--space-4);
 }
-@media (max-width: 40rem) {
+/* Keep in sync with desktop.ts: default windows separate above 1130px. */
+@media (max-width: 70.625rem) {
   .desktop {
     display: flex;
     flex-direction: column;

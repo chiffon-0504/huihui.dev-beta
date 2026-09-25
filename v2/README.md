@@ -714,10 +714,14 @@ Keys from the Close button retain their native behavior. There is no Move toggle
 or directional panel.
 
 The canvas clamps windows to its bounds and re-clamps after resizing or content
-reflow. On short viewports the page can scroll vertically. At the existing
-40rem page breakpoint, CSS and the manager disable dragging and keyboard movement,
+reflow. On short viewports the page can scroll vertically. At the Home-specific
+70.625rem (1130px at the default font size) breakpoint, CSS and the manager disable
+dragging and keyboard movement,
 remove title bars from Tab order, and use a single column with normal touch scrolling.
 If a title bar has focus at that transition, focus moves to its Close button.
+This threshold keeps the default Music/Time windows apart above compact mode:
+`(0.90 - 0.48) * (viewport - 3rem gutters - 20rem window) >= 20rem`.
+Other pages retain their existing breakpoints.
 No movement animations, resize handles,
 minimize/maximize, snapping or desktop customization are included.
 

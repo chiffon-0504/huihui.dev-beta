@@ -32,8 +32,9 @@ export function createWindow(id: string, title: string, closeLabel: string,
 /** One manager owns pointer dragging, bounded positions and a finite stacking order. */
 export function createDesktop(windows: readonly DesktopWindow[], keyboardMove: string) {
   const node = element("div", "desktop");
-  // Match the existing page-layout breakpoint in home.css.
-  const compact = matchMedia("(max-width: 40rem)");
+  // Match home.css: the default Music/Time windows need (0.90 - 0.48)
+  // * (viewport - 3rem gutters - 20rem window) >= 20rem to avoid overlap.
+  const compact = matchMedia("(max-width: 70.625rem)");
   const events = new AbortController();
   const order = [...windows];
   const positions = new Map<DesktopWindow, { x: number; y: number }>();

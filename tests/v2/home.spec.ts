@@ -16,7 +16,40 @@ async function reflow(page: Page) {
 
 for (const locale of supportedLocales) {
   const copy = getContent(locale);
-  for (const width of [1440, 768, 390]) {
+  for (const width of [390, 640, 641, 768, 1129, 1130, 1131, 1382, 1440]) {
+    test(`${locale} default title bars and close buttons receive pointers at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: width === 1382 ? 729 : 900 });
+      for (const id of ["playing", "bishoujo", "memories", "clock", "status", "version"]) {
+        // Reload so raising/removing one window cannot hide an obstructed default.
+        await page.goto(localeHref(locale));
+        const item = page.locator(`#${id}`), title = item.locator(".window-titlebar");
+        await title.scrollIntoViewIfNeeded();
+        for (const target of [title, item.locator(".window-close")]) {
+          expect(await target.evaluate((node) => {
+            const r = node.getBoundingClientRect();
+            // Sample across the full bar/button, including their leading/trailing edges.
+            for (let x = r.left + 1; x < r.right - 1; x++) {
+              if (!node.contains(document.elementFromPoint(x, r.top + r.height / 2))) return false;
+            }
+            return true;
+          }), `${id} default pointer target`).toBe(true);
+        }
+        const before = await position(item);
+        await move(page, title, id === "status" ? -24 : 24, 4);
+        await expect(item).toHaveCSS("z-index", "6");
+        if (width > 1130) {
+          expect(await position(item)).toEqual({ x: before.x + (id === "status" ? -24 : 24), y: before.y + 4 });
+        } else {
+          expect(await position(item)).toEqual(before);
+          await expect(title).toHaveCSS("touch-action", "auto");
+        }
+        await item.locator(".window-close").click();
+        await expect(item).toHaveCount(0);
+        await expect(page.locator(".desktop-window")).toHaveCount(5);
+      }
+    });
+  }
+  for (const width of [1440, 1131, 768, 390]) {
     test(`${locale} desktop windows, controls and themes at ${width}px`, async ({ page, baseURL }, testInfo) => {
       const errors: string[] = [];
       page.on("pageerror", (error) => errors.push(error.message));
@@ -87,7 +120,7 @@ for (const locale of supportedLocales) {
         await expect(item.locator(".window-titlebar > *")).toHaveCount(2);
         await expect(item.locator(".window-titlebar button")).toHaveText(["×"]);
         await expect(item.locator(".window-movement, .window-move, .window-directions")).toHaveCount(0);
-        await expect(item).toHaveCSS("position", width <= 640 ? "relative" : "absolute");
+        await expect(item).toHaveCSS("position", width <= 1130 ? "relative" : "absolute");
       }
       for (const theme of ["light", "dark", "auto"] as const) {
         await page.locator(".theme-trigger").click();
@@ -96,7 +129,7 @@ for (const locale of supportedLocales) {
         await reflow(page);
         if (theme !== "auto" && testInfo.project.name === "chromium") await page.screenshot({ path: testInfo.outputPath(`desktop-${locale}-${width}-${theme}.png`), fullPage: true });
       }
-      if (width === 768) {
+      if (width === 1131) {
         const before = await position(page.locator("#playing"));
         await move(page, page.locator("#playing .window-titlebar"), 30, 60);
         expect(await position(page.locator("#playing"))).not.toEqual(before);
@@ -202,7 +235,7 @@ for (const locale of supportedLocales) {
     expect(await others()).toEqual(otherDefaults);
   });
   test(`${locale} compact layout disables title bar keyboard movement and restores desktop focusability`, async ({ page }) => {
-    await page.setViewportSize({ width: 641, height: 900 });
+    await page.setViewportSize({ width: 1131, height: 900 });
     await page.goto(localeHref(locale));
     await page.evaluate(() => document.addEventListener("keydown", (event) => {
       document.documentElement.dataset.keyPrevented = String(event.defaultPrevented);
@@ -213,7 +246,7 @@ for (const locale of supportedLocales) {
     await expect(title).toBeFocused();
     await page.keyboard.press("ArrowDown");
     const moved = await position(item);
-    for (const width of [640, 390]) {
+    for (const width of [1130, 768, 640, 390]) {
       await page.setViewportSize({ width, height: 900 });
       await expect(title).toHaveAttribute("tabindex", "-1");
       await expect(item.locator(".window-close")).toBeFocused();
@@ -233,7 +266,7 @@ for (const locale of supportedLocales) {
       await expect(item.locator(".window-close")).toBeFocused();
       await reflow(page);
     }
-    await page.setViewportSize({ width: 641, height: 900 });
+    await page.setViewportSize({ width: 1131, height: 900 });
     await expect(title).toHaveAttribute("tabindex", "0");
     await expect(title).toHaveAccessibleDescription(copy.home.keyboardMove);
     await expect.poll(() => position(item)).toEqual(moved);
@@ -269,10 +302,12 @@ for (const id of ["playing", "bishoujo", "memories", "clock", "status", "version
     const original = await position(item);
     await move(page, item.locator(".window-content"), 24, 16);
     expect(await position(item)).toEqual(original);
-    await move(page, item.locator(".window-titlebar"), -24, 24);
+    // Move inward from the new left/bottom defaults without hitting the clamp.
+    const dx = original.x < 24 ? 24 : -24, dy = id === "status" ? -24 : 24;
+    await move(page, item.locator(".window-titlebar"), dx, dy);
     const moved = await position(item);
-    expect(moved.x).toBeCloseTo(original.x - 24, 0);
-    expect(moved.y).toBeCloseTo(original.y + 24, 0);
+    expect(moved.x).toBeCloseTo(original.x + dx, 0);
+    expect(moved.y).toBeCloseTo(original.y + dy, 0);
     await expect(item).not.toHaveClass(/is-dragging/);
     if (id === "playing") {
       await item.locator(".desktop-list li:first-child").dblclick({ position: { x: 12, y: 12 } });
@@ -330,7 +365,7 @@ test("window boundaries survive dragging and viewport mode changes", async ({ pa
   await move(page, playing.locator(".window-titlebar"), 5000, 5000);
   for (const width of [1440, 700, 390, 900]) {
     await page.setViewportSize({ width, height: 700 });
-    await expect(playing).toHaveCSS("position", width <= 640 ? "relative" : "absolute");
+    await expect(playing).toHaveCSS("position", width <= 1130 ? "relative" : "absolute");
     await expect.poll(() => page.locator(".desktop-window").evaluateAll((nodes) => nodes.every((node) => {
       const r = node.getBoundingClientRect(), canvas = node.parentElement!.getBoundingClientRect();
       return r.left >= canvas.left && r.right <= canvas.right + 1 && r.top >= canvas.top && r.bottom <= canvas.bottom + 1;
