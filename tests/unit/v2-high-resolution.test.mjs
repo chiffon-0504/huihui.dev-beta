@@ -123,5 +123,5 @@ test("identical existing objects are reused and new objects are verified before 
 test("only beta img-src expands; all unrelated policy directives are pinned", async () => {
   const headers = await readFile(new URL("../../v2/public/_headers", import.meta.url), "utf8");
   const policy = headers.match(/Content-Security-Policy: (.+)/)[1];
-  expect(policy).toBe("default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://assets-beta.huihui.dev; connect-src 'self'; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'none';");
+  expect(policy).toBe("default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://assets-beta.huihui.dev; connect-src 'self' https://huihui-api-beta.huihuigames01.workers.dev; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'none';");
 });

@@ -1,5 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { applyPagesCsp } from "../support/csp-enforcement.mjs";
+import { applyPagesCsp as applyRootPagesCsp } from "../support/csp-enforcement.mjs";
+import { mockSystemStatus } from "../support/v2-system-status.mjs";
+
+test.beforeEach(async ({ context }) => { await mockSystemStatus(context); });
+async function applyPagesCsp(page, baseURL) {
+  await applyRootPagesCsp(page, baseURL);
+  await mockSystemStatus(page);
+}
 
 const locales = [
   { route: "/", lang: "zh-Hant", label: "中文", theme: "主題", auto: "自動", light: "淺色", dark: "深色" },

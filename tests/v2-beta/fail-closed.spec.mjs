@@ -4,6 +4,21 @@ import { createServer } from "node:http";
 import { guardBrowser, navigate } from "./browser.mjs";
 import { cloudflareJsdBootstrap, securityHeaders } from "../support/v2-beta-contract.mjs";
 import { readdir } from "node:fs/promises";
+import { statusEndpoint } from "../support/v2-system-status.mjs";
+
+for (const scenario of ["history", "query", "post", "non-home"]) {
+  test(`status request exception stays exact: ${scenario}`, async ({ page, baseURL }) => {
+    const checkErrors = await guardBrowser(page, baseURL, { verifyBuild: true });
+    await navigate(page, `${baseURL}${scenario === "non-home" ? "/about/" : "/"}`, headers);
+    if (scenario !== "non-home") await expect(page.locator("#status [role=status]")).toHaveAttribute("data-state", "ready");
+    await checkErrors();
+    await page.evaluate(({ url, method }) => fetch(url, { method }).catch(() => {}), {
+      url: statusEndpoint + (scenario === "history" ? "/history" : scenario === "query" ? "?extra=1" : ""),
+      method: scenario === "post" ? "POST" : "GET",
+    });
+    await expect(checkErrors()).rejects.toThrow(/forbidden request/);
+  });
+}
 
 const origin = "http://v2-beta-fixture.test";
 const headers = securityHeaders(await readFile(new URL("../../v2/public/_headers", import.meta.url), "utf8"));

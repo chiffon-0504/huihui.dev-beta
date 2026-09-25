@@ -252,6 +252,23 @@ test.each([0, 1, 7, 13])("classifies %i attributed monitoring events separately 
   expect(validateBrowserEvidence(monitoringEvidence(count))).toBe(1);
 });
 
+test("only the exact beta status connection is attributable to Home monitoring", () => {
+  const data = monitoringEvidence();
+  const event = data.violations[1];
+  event.blockedURI = "https://huihui-api-beta.huihuigames01.workers.dev/api/system-status";
+  expect(validateBrowserEvidence(data)).toBe(1);
+  for (const url of ["https://api.huihui.dev/api/system-status", event.blockedURI + "/history", event.blockedURI + "?extra=1"]) {
+    event.blockedURI = url;
+    expect(() => validateBrowserEvidence(data)).toThrow(/outside repository build/);
+  }
+  event.blockedURI = "https://huihui-api-beta.huihuigames01.workers.dev/api/system-status";
+  event.effectiveDirective = event.violatedDirective = "script-src-elem";
+  expect(() => validateBrowserEvidence(data)).toThrow(/outside repository build/);
+  event.effectiveDirective = event.violatedDirective = "connect-src";
+  event.disposition = "enforce";
+  expect(() => validateBrowserEvidence(data)).toThrow(/enforcing/);
+});
+
 test("WebP digest reads are attributed only to known build assets, never script execution", () => {
   const data = monitoringEvidence();
   const image = "https://beta.huihui.dev/assets/fuji-480-fixture.webp";
@@ -383,7 +400,7 @@ test.each([
 test("v2 beta security headers remain enforcing and self-only", async () => {
   const source = await read("v2/public/_headers");
   const headers = securityHeaders(source);
-  expect(headers["content-security-policy"]).toBe("default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://assets-beta.huihui.dev; connect-src 'self'; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'none';");
+  expect(headers["content-security-policy"]).toBe("default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://assets-beta.huihui.dev; connect-src 'self' https://huihui-api-beta.huihuigames01.workers.dev; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'none';");
   expect(headers["x-robots-tag"]).toBe("noindex, nofollow");
   expect(source).not.toMatch(/unsafe-inline|unsafe-eval|api\.huihui\.dev|Report-Only/);
   expect(() => validateSecurityHeaders({}, headers, "beta")).toThrow("delivery mismatch");

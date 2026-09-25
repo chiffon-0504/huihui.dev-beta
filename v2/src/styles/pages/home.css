@@ -89,6 +89,10 @@
   margin: 0;
   text-align: end;
 }
+.status-dot { color: var(--color-muted); }
+[data-tone="good"] { color: #289657; }
+[data-tone="warning"] { color: #a87900; }
+[data-tone="error"] { color: #d74b4b; }
 
 .desktop-notes {
   padding-inline-start: var(--space-6);

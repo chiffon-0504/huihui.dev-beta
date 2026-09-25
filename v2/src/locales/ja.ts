@@ -129,9 +129,13 @@ export default {
     time: "現在の時刻",
     localTime: "ローカル時刻",
     status: "システム状況",
-    statusUnavailable: "このプレビューは稼働状況に未接続です。",
+    statusLoading: "稼働状況を確認中…",
+    statusHealthy: "すべてのシステムが正常稼働中",
+    statusLabels: {
+      operational: "正常稼働", degraded_performance: "パフォーマンス低下", partial_outage: "一部障害",
+      major_outage: "大規模障害", unknown: "不明／取得できません",
+    },
     website: "ウェブサイト",
-    notChecked: "未取得",
     version: "サイトのバージョン",
     development: "開発中",
     notes: [
