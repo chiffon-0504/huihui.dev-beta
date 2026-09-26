@@ -29,6 +29,15 @@ beforeAll(async () => {
 }, 30_000);
 
 describe("v2 initial theme build contract", () => {
+  test("root Home preserves the Website health canonical identity marker", () => {
+    const html = String(output.find((entry) => entry.fileName === "index.html")?.source);
+    const marker = '<link rel="canonical" href="https://huihui.dev/">';
+    expect(html.match(/<link\b[^>]*\brel\s*=\s*["']canonical["'][^>]*>/gi))
+      .toEqual([marker]);
+    const head = html.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i)?.[1];
+    expect(head).toContain(marker);
+  });
+
   test("all fourteen built heads share the compact multi-resolution favicon", async () => {
     const documents = output.filter((entry) => entry.fileName.endsWith(".html"));
     expect(documents).toHaveLength(14);
