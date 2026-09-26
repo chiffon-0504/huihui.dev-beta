@@ -377,6 +377,11 @@ for (const id of ["playing", "bishoujo", "memories", "clock", "status", "version
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/en/");
     const item = page.locator(`#${id}`);
+    if (id === "status") {
+      await expect(item.locator("[role=status]")).toHaveAttribute("data-state", "ready");
+      await expect.poll(() => item.evaluate((node: HTMLElement) =>
+        node.offsetTop === Math.round(0.98 * (node.parentElement!.clientHeight - node.offsetHeight)))).toBe(true);
+    }
     const original = await position(item);
     await move(page, item.locator(".window-content"), 24, 16);
     expect(await position(item)).toEqual(original);
