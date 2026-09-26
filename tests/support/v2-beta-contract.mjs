@@ -157,7 +157,9 @@ export function validateBrowserEvidence({ contract, url, documents, violations, 
     // to a stale policy from an earlier response at that URL.
     check(contract === "custom" && betaNavigation(event.documentURI) && responses.length === 1 && responses[0].reportOnlyPolicy === event.originalPolicy && isCloudflareMonitoringPolicy(event.originalPolicy), "Report-Only violation has no attributable Cloudflare response policy");
     check(event.effectiveDirective === event.violatedDirective && ["script-src-elem", "connect-src"].includes(event.effectiveDirective), "Unexpected monitoring violation directive");
-    check(assets.has(event.blockedURI) && (event.effectiveDirective !== "script-src-elem" || event.blockedURI.endsWith(".js")), "Monitoring violation is outside repository build resources");
+    const statusConnection = event.effectiveDirective === "connect-src" &&
+      event.blockedURI === "https://huihui-api-beta.huihuigames01.workers.dev/api/system-status";
+    check(statusConnection || (assets.has(event.blockedURI) && (event.effectiveDirective !== "script-src-elem" || event.blockedURI.endsWith(".js"))), "Monitoring violation is outside repository build resources");
     check(event.sourceFile === "" || event.sourceFile === event.documentURI || (assets.has(event.sourceFile) && event.sourceFile.endsWith(".js")), "Monitoring violation has an unrelated source");
     check(event.sample === "" && Number.isSafeInteger(event.lineNumber) && event.lineNumber >= 0 && Number.isSafeInteger(event.columnNumber) && event.columnNumber >= 0, "Unexpected monitoring violation metadata");
   }

@@ -19,7 +19,9 @@ const navbar = createNavbar(locale, theme, page);
 app.replaceChildren(
   link(getContent(locale).skip, "#main-content", "skip-link"),
   navbar,
-  page === "posts" ? createPosts(locale) : page === "works" ? createWorks(locale) : page === "about" ? createAbout(locale) : createHome(locale),
+  // This application is deployed to beta. A future production entry must bind
+  // "production" explicitly and supply its corresponding CSP; never infer from a preview URL.
+  page === "posts" ? createPosts(locale) : page === "works" ? createWorks(locale) : page === "about" ? createAbout(locale) : createHome(locale, "beta"),
   createFooter(locale),
 );
 

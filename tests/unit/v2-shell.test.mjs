@@ -87,6 +87,16 @@ function luminance(hex) {
   return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722;
 }
 
+test("System Status indicators retain 3:1 contrast on both theme surfaces", async () => {
+  const css = await readFile(new URL("../../v2/src/styles/pages/home.css", import.meta.url), "utf8");
+  const colors = [...css.matchAll(/\[data-tone="(?:good|warning|error)"\]\s*\{\s*color:\s*(#[0-9a-f]{6})/g)].map((match) => match[1]);
+  expect(colors).toHaveLength(3);
+  for (const color of colors) for (const background of ["#ffffff", "#0a0a0a"]) {
+    const values = [luminance(color), luminance(background)].sort((a, b) => b - a);
+    expect((values[0] + 0.05) / (values[1] + 0.05), `${color} on ${background}`).toBeGreaterThanOrEqual(3);
+  }
+});
+
 test("v2 palettes preserve existing accents and isolate the light button color", async () => {
   const css = await readFile(new URL("../../v2/src/styles/tokens.css", import.meta.url), "utf8");
   const palette = (theme) => Object.fromEntries([...css.match(new RegExp(`\\[data-theme="${theme}"\\]\\s*\\{([^}]+)\\}`))[1].matchAll(/--color-([\w-]+):\s*(#[0-9a-f]{6})/g)].map((match) => [match[1], match[2]]));

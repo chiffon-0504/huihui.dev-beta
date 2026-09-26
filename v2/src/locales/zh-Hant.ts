@@ -129,9 +129,13 @@ export default {
     time: "現在時間",
     localTime: "本地時間",
     status: "系統狀態",
-    statusUnavailable: "此預覽尚未連接即時狀態。",
+    statusLoading: "正在檢查狀態…",
+    statusHealthy: "全部系統運作正常",
+    statusLabels: {
+      operational: "營運正常", degraded_performance: "效能降低", partial_outage: "部分服務中斷",
+      major_outage: "重大服務中斷", unknown: "狀態不明／暫時無法取得",
+    },
     website: "網站",
-    notChecked: "尚未取得",
     version: "網站版本",
     development: "開發中",
     notes: [

@@ -3,8 +3,10 @@ import { element } from "../dom";
 import { createDesktop, createWindow } from "../components/desktop";
 import { createImage } from "../components/media";
 import { memoryImage, memoryImageSizes } from "../media/memories";
+import { createSystemStatus } from "../components/system-status";
+import type { ApiEnvironment } from "../services/endpoints";
 
-export function createHome(locale: Locale): HTMLElement {
+export function createHome(locale: Locale, environment: ApiEnvironment): HTMLElement {
   const copy = getContent(locale).home;
   const main = element("main", "home");
   main.id = "main-content";
@@ -52,13 +54,11 @@ export function createHome(locale: Locale): HTMLElement {
     timer = setInterval(tick, 1000);
   };
   tick();
-  const status = createWindow("status", copy.status, copy.close, { x: 0.98, y: 0.98 });
-  status.content.append(element("p", "", copy.statusUnavailable));
-  const services = element("dl", "desktop-services");
-  for (const label of [copy.website, "API"]) {
-    services.append(element("dt", "", label), element("dd", "desktop-muted", copy.notChecked));
-  }
-  status.content.append(services);
+  const health = createSystemStatus(copy, environment);
+  const status = createWindow("status", copy.status, copy.close, { x: 0.98, y: 0.98 }, health.cancel);
+  status.content.append(health.node);
+  const refreshStatus = () => { if (status.node.isConnected) void health.refresh(); };
+  const restore = (event: PageTransitionEvent) => { if (event.persisted) refreshStatus(); };
 
   const version = createWindow("version", copy.version, copy.close, { x: 0, y: 0 });
   version.content.append(element("p", "desktop-version", "V2.0.0"), element("p", "desktop-muted", copy.development));
@@ -71,15 +71,19 @@ export function createHome(locale: Locale): HTMLElement {
   const visibility = () => document.hidden ? stopClock() : startClock();
   document.addEventListener("visibilitychange", visibility);
   window.addEventListener("pageshow", startClock);
+  window.addEventListener("pageshow", restore);
   window.addEventListener("pagehide", (event) => {
     stopClock();
+    health.cancel();
     if (!event.persisted) {
       desktop.dispose();
       document.removeEventListener("visibilitychange", visibility);
       window.removeEventListener("pageshow", startClock);
+      window.removeEventListener("pageshow", restore);
     }
   });
   // The caller mounts main synchronously; avoid a detached-node interval.
   queueMicrotask(startClock);
+  queueMicrotask(refreshStatus);
   return main;
 }

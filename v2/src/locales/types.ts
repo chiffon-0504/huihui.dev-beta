@@ -1,4 +1,5 @@
 import type { PostCategory, PostId } from "../posts/registry";
+import type { SystemStatusValue } from "../services/system-status";
 
 export const supportedLocales = ["zh-Hant", "en", "ja"] as const;
 export type Locale = (typeof supportedLocales)[number];
@@ -91,9 +92,10 @@ export interface HomeContent {
   readonly time: string;
   readonly localTime: string;
   readonly status: string;
-  readonly statusUnavailable: string;
+  readonly statusLoading: string;
+  readonly statusHealthy: string;
+  readonly statusLabels: Readonly<Record<SystemStatusValue, string>>;
   readonly website: string;
-  readonly notChecked: string;
   readonly version: string;
   readonly development: string;
   readonly notes: readonly string[];

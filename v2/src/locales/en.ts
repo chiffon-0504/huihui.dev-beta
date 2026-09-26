@@ -129,9 +129,13 @@ export default {
     time: "Now time",
     localTime: "Local time",
     status: "System status",
-    statusUnavailable: "Live status is not connected in this preview.",
+    statusLoading: "Checking status…",
+    statusHealthy: "All systems operational",
+    statusLabels: {
+      operational: "Operational", degraded_performance: "Degraded performance", partial_outage: "Partial outage",
+      major_outage: "Major outage", unknown: "Unknown / unavailable",
+    },
     website: "Website",
-    notChecked: "Not checked",
     version: "Website version",
     development: "In Development",
     notes: [

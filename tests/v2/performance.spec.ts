@@ -2,6 +2,9 @@ import { resolve } from "node:path";
 import { expect, test } from "@playwright/test";
 import { localeHref, supportedLocales } from "../../v2/src/locales";
 import { budgetFailures, loadingBudgets, measurePerformance, readFiles } from "../../v2/tools/performance.mjs";
+let statusFixture: typeof import("../support/v2-system-status.mjs").statusFixture;
+let statusEndpoint: string;
+test.beforeAll(async () => { ({ statusFixture, statusEndpoint } = await import("../support/v2-system-status.mjs")); });
 
 let bytes: Map<string, number>;
 test.beforeAll(async () => {
@@ -30,6 +33,9 @@ for (const locale of supportedLocales) {
         // Fresh Playwright context + routing disables cache. Never contact external infrastructure.
         await page.route("**/*", async (intercept) => {
           const url = new URL(intercept.request().url());
+          if (name === "home" && url.href === statusEndpoint && intercept.request().method() === "GET") {
+            return intercept.fulfill({ json: statusFixture() });
+          }
           const file = url.pathname === route ? documentFile : url.pathname.slice(1);
           const allowed = url.origin === baseURL && !url.search && bytes.has(file)
             && (file === documentFile || /\.(?:js|css|svg)$/.test(file) || (name === "works" && photoPath.test(file)) || (name === "home" && memoryPath.test(file)));
@@ -41,6 +47,7 @@ for (const locale of supportedLocales) {
         });
         const sprite = page.waitForResponse((response) => /\/assets\/icons-[\w-]+\.svg$/.test(response.url()));
         await page.goto(route);
+        if (name === "home") await expect(page.locator("#status [role=status]")).toHaveAttribute("data-state", "ready");
         await expect(page.locator(name === "home" ? "#version .desktop-version" : "main h1")).toBeVisible();
         expect(await (await sprite).finished()).toBeNull();
         const images = page.locator("main img");
@@ -93,6 +100,7 @@ for (const locale of supportedLocales) {
         expect(browsed.homeImageRequests).toBe(name === "home" ? 1 : 0);
         expect(budgetFailures(browsed, loadingBudgets)).toEqual([]);
         expect(unexpected).toEqual([]);
+        expect(requests.filter((url) => url === statusEndpoint)).toHaveLength(name === "home" ? 1 : 0);
         expect(errors).toEqual([]);
         await testInfo.attach("resource-footprint", { body: JSON.stringify({
           route, width, deviceScaleFactor: testInfo.project.use.deviceScaleFactor,

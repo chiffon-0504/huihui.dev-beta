@@ -232,13 +232,14 @@ footprint and limits as JSON (`resource-footprint`).
 | Works local photo bytes, largest candidate for each photo | 344,696 | 365,000 |
 | Home local photo requests after scrolling | 1 | 1 |
 | Home local photo bytes, largest candidate | 41,396 | 43,500 |
-| Home/About/Posts Works-gallery or external requests | 0 | 0 |
+| Home/About/Posts Works-gallery or unapproved external requests | 0 | 0 |
 
 The shell is one document, classic bootstrap, app module, stylesheet and SVG
 sprite. Its byte limit adds 5.57% to the largest localized shell. Works' photo
 byte limit adds 5.89% to the three 1200px variants; it covers native responsive
 selection without pinning a browser's lazy distance or chosen candidate. There
-is no spare request: an architectural change to the request graph needs review.
+is no spare shell request. The later System Status integration below adds one
+separately asserted Home API GET; no shell or media limit is raised.
 These are reusable byte/request envelopes, not twelve duplicated thresholds.
 Actual requested bytes depend on the candidates and which lazy images have
 started; they are not encoded response sizes, HTTP overhead, or live CDN transfer.
@@ -263,7 +264,7 @@ envelope above. Every locale is measured by the same spec and attached report.
 Gallery images retain one eager cover, two `loading="lazy"` images, async
 decoding and no high fetch priority or image preload/prefetch hints. Unrelated
 routes cannot request the gallery even though its URLs exist in the shared JS.
-Normal loading rejects external and non-build requests before dispatch and
+Normal loading rejects unapproved external and non-build requests before dispatch and
 fails on runtime/resource errors. The separate existing viewer contracts prove
 that scrolling, hover, focus and preview opening succeed with R2 unavailable,
 using local WebP only. Explicit high-resolution actions may request only the
@@ -454,8 +455,10 @@ v2/
 
 The [service foundation](src/services/README.md) provides validated JSON GETs,
 normalized errors, cancellation and explicit beta/production Worker origins.
-No public page consumes that GET client yet. The private Jev entry has a separate
-same-origin POST adapter with an explicit Access/session contract.
+The System Status surface on Home is the first public-page consumer of the
+validated GET client, using the environment-specific `/api/system-status`
+endpoint. The private Jev entry has a separate same-origin POST adapter with an
+explicit Access/session contract.
 
 V1 remains the active production site while v2 development continues; its root
 HTML/CSS/JavaScript and release flow remain independent of these TypeScript
@@ -464,8 +467,8 @@ the shared footer, with no standalone Contact route, module or stylesheet.
 
 `src/main.ts` composes DOM components from `components/navbar.ts`,
 `components/footer.ts`, and `pages/home.ts`, `pages/about.ts`, `pages/works.ts`, or `pages/posts.ts`. Shared localized copy lives in
-`locales/`; markup uses native elements and `textContent`. There is no router,
-framework or public-page API request. A root-owned theme controller is passed to the navbar;
+`locales/`; markup uses native elements and `textContent`. There is no client-side
+router or frontend framework. A root-owned theme controller is passed to the navbar;
 theme preference, solar calculation and presentation have separate modules.
 
 ### Locale architecture
@@ -733,11 +736,31 @@ minimize/maximize, snapping or desktop customization are included.
 The clock reads device-local time every second, pauses while the document is
 hidden or leaves, resumes on visibility/pageshow (including bfcache), and stops
 when closed. It is a semantic time element without per-second live announcements.
-System Status explicitly says live status is not connected and marks Website/API
-as not checked. The public GET client requires a separate environment/CSP/local
-policy decision; this prototype does not call it or claim operational health.
+System Status uses the existing public GET client and beta `/api/system-status`.
+It shows localized loading, validated API overall and independent Website/API
+states, or unknown on request/data failure. Close/pagehide cancels pending work;
+persisted pageshow refreshes the still-open window. The beta/development binding
+is explicit in `main.ts`; future production must select the existing production
+environment and corresponding CSP. See [Services](src/services/README.md).
+The canonical beta Website may remain in partial outage while `beta.huihui.dev`
+is disabled; the temporary Pages preview is not its probe target.
 Version displays V2.0.0 in development with localized redesign and architecture
 notes; this does not publish a stable release.
+
+### System Status request and build footprint (2026-09-25)
+
+Home now performs exactly one credential-free, no-store beta API GET on initial
+mount, in addition to the unchanged five shell resources and one local photo.
+About/Works/Posts still make no status request. Performance browser tests pin
+that exact endpoint/method to a synthetic response and count it separately;
+all unknown external requests remain failures. Shell/image byte and request
+budgets are unchanged. The Windows production build measures 107,285 B JS,
+25,774 B CSS, 822,456 B total, largest JS 71,856 B and largest CSS 14,107 B,
+all within existing limits. API body bytes are dynamic data, not build assets.
+Built-beta smoke likewise fixtures only this Home GET; its asset digests and
+enforcing/Report-Only/no-CSP controls remain required. These fixture tests do
+not prove live API health or CORS. A read-only live check on 2026-09-25 confirmed
+`Access-Control-Allow-Origin: https://huihuidev-beta.pages.dev` for that Origin.
 
 `tests/v2/home.spec.ts` covers desktop/tablet dragging, content selection,
 stacking/overlap, pointer cancellation, close/reload/default positions, unchanged

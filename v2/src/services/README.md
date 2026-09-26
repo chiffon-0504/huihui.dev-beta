@@ -1,8 +1,7 @@
 # Services
 
-This is the V2 JSON transport foundation, independent of V1 clients. No page
-imports the public GET client yet and no request runs at module load. Unused services stay outside
-the application bundle; there is no demo request or feature migration.
+This is the V2 JSON transport foundation, independent of V1 clients. Home's
+System Status is its first public GET consumer. No request runs at module load.
 
 The separate `jev.ts` private POST adapter owns exactly `/api/jev`, sends
 same-origin Access cookies, validates a bounded normalized response and uses
@@ -54,14 +53,34 @@ paths, backslashes, whitespace, trailing slashes, queries and fragments fail
 before fetch. Query parameters and write requests are deferred until a real
 endpoint contract needs them; callers must not work around this with raw fetch.
 
-This resolver does not grant access or select a deployment environment on behalf
-of a page. The current V2 CSP is `connect-src 'self'`, so it intentionally blocks
-both cross-origin API bases. Existing beta Worker CORS accepts the beta custom
-domain and that project's Pages hosts; production accepts the production hosts.
-Neither currently admits localhost. The first integration PR must explicitly
-decide the trusted page-to-environment binding and obtain the scoped CSP/local
-testing policy it needs. This foundation does not change CSP, CORS, Worker routes,
-configuration, DNS or workflows, and does not make production network requests.
+The resolver does not select an environment on behalf of a page. `main.ts`
+explicitly binds the current beta/development application to `"beta"` and passes
+that choice through Home to the status service. A future production entry must
+explicitly select `"production"` and ship its corresponding CSP; Vite's
+production build mode and a temporary preview hostname never select production.
+V2's `connect-src` preserves `'self'` and allows only the exact beta API origin.
+Existing beta Worker CORS accepts the beta custom domain and this project's
+Pages hosts; production accepts production hosts. Neither admits localhost.
+Local browser tests intercept only the exact endpoint with synthetic responses;
+ordinary localhost requests fail closed rather than bypassing CORS or falling
+back to production. Worker, CORS, DNS and remote settings remain unchanged.
+
+## System Status
+
+`system-status.ts` owns `GET /api/system-status`, a six-second deadline and
+validation of `ok`, the five supported states, a canonical `checkedAt` timestamp,
+unique known component IDs, required Website/API and optional Contact. Components
+are resolved by ID. The UI uses the API overall status, including Contact's
+contribution, without adding a Contact row or recomputing overall from two rows.
+Unknown states are valid health data; malformed data or request failures make
+the entire surface unknown. No retry, polling, history or third-party call runs.
+
+Each surface has an independent generation/controller. Refresh supersedes the
+previous request; close/pagehide cancels it; persisted pageshow refreshes an open
+surface. Loading, overall and row labels use the existing three typed locales.
+The API describes canonical environment health: beta Website probes
+`beta.huihui.dev`, not the Pages preview hosting the UI. A beta Website partial
+outage while that custom domain is disabled must remain a partial outage.
 
 ## Failures and cancellation
 

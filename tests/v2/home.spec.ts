@@ -1,5 +1,10 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { getContent, localeHref, supportedLocales } from "../../v2/src/locales";
+let mockSystemStatus: typeof import("../support/v2-system-status.mjs").mockSystemStatus;
+let statusEndpoint: string;
+test.beforeAll(async () => { ({ mockSystemStatus, statusEndpoint } = await import("../support/v2-system-status.mjs")); });
+
+test.beforeEach(async ({ context }) => { await mockSystemStatus(context); });
 
 async function move(page: Page, handle: Locator, dx: number, dy: number) {
   const box = (await handle.boundingBox())!;
@@ -24,7 +29,7 @@ for (const locale of supportedLocales) {
     await page.setViewportSize({ width: 1131, height: 729 });
     // Deduct scrollbar-like space deterministically, even with overlay scrollbars.
     await page.route("**/*", async (route) => {
-      if (!route.request().isNavigationRequest()) return route.continue();
+      if (!route.request().isNavigationRequest()) return route.fallback();
       const response = await route.fetch();
       await route.fulfill({ response, body: (await response.text()).replace("</head>",
         "<style>.desktop { width: 1067px; }</style></head>") });
@@ -120,7 +125,7 @@ for (const locale of supportedLocales) {
       page.on("pageerror", (error) => errors.push(error.message));
       page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
       page.on("requestfailed", (request) => errors.push(request.url()));
-      page.on("request", (request) => { if (new URL(request.url()).origin !== new URL(baseURL!).origin) errors.push(request.url()); });
+      page.on("request", (request) => { if (new URL(request.url()).origin !== new URL(baseURL!).origin && request.url() !== statusEndpoint) errors.push(request.url()); });
       await page.setViewportSize({ width, height: 900 });
       await page.goto(localeHref(locale));
       await expect(page.locator("h1")).toHaveCount(1);
@@ -173,8 +178,8 @@ for (const locale of supportedLocales) {
       expect(dimensions.source).toMatch(/^\/assets\/ave-mujica-exitus-taipei-day2-(320|640)-[\w-]+\.webp$/);
       await expect(page.locator("#memories .window-content > p")).toHaveText(["Ave Mujica LIVE TOUR 2026『Exitus』", "台北追加公演DAY2"]);
       await expect(page.locator("#memories .window-content a, #memories .window-content button, .image-viewer")).toHaveCount(0);
-      await expect(page.locator("#status .window-content > p")).toHaveText(copy.home.statusUnavailable);
-      await expect(page.locator("#status dd")).toHaveText([copy.home.notChecked, copy.home.notChecked]);
+      await expect(page.locator("#status [role=status] > p")).toHaveText(`● ${copy.home.statusLabels.partial_outage}`);
+      await expect(page.locator("#status dd")).toHaveText([`● ${copy.home.statusLabels.partial_outage}`, `● ${copy.home.statusLabels.operational}`]);
       await expect(page.locator("#version a")).toHaveCount(0);
       await expect(page.locator(".desktop-version")).toHaveText("V2.0.0");
       await expect(page.locator("#version .desktop-muted")).toHaveText(copy.home.development);
@@ -242,6 +247,11 @@ for (const locale of supportedLocales) {
   test(`${locale} title bar keyboard movement is bounded and leaves other windows unchanged`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(localeHref(locale));
+    await expect(page.locator("#status [role=status]")).toHaveAttribute("data-state", "ready");
+    // Health text can resize its window. Finish that independent initial layout
+    // before asserting that keyboard movement leaves other windows untouched.
+    await expect.poll(() => page.locator("#status").evaluate((node: HTMLElement) =>
+      node.offsetTop === Math.round(0.98 * (node.parentElement!.clientHeight - node.offsetHeight)))).toBe(true);
     const item = page.locator("#playing"), title = item.locator(".window-titlebar");
     const others = () => page.locator(".desktop-window:not(#playing)").evaluateAll((nodes) =>
       nodes.map((node: HTMLElement) => ({ id: node.id, x: node.offsetLeft, y: node.offsetTop })));

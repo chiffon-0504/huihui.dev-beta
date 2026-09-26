@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { failedRequestMetadata, inspectDocument, isResponsiveImageCancellation, validateBrowserEvidence, validateResponse, validateSecurityHeaders } from "../support/v2-beta-contract.mjs";
+import { statusEndpoint, statusFixture } from "../support/v2-system-status.mjs";
 
 const applicationRoutes = ["/", "/en/", "/ja/", "/about/", "/en/about/", "/ja/about/", "/works/", "/en/works/", "/ja/works/", "/posts/", "/en/posts/", "/ja/posts/"];
 
@@ -30,6 +31,7 @@ export async function guardBrowser(page, baseURL, { contract = "pages", verifyBu
   const pending = [];
   const failedRequests = [];
   const requestDocuments = new WeakMap();
+  const statusRequests = new WeakSet();
   let documentId = 0;
   page.on("framenavigated", (frame) => { if (frame === page.mainFrame()) documentId++; });
   page.on("request", (request) => requestDocuments.set(request, documentId));
@@ -60,6 +62,7 @@ export async function guardBrowser(page, baseURL, { contract = "pages", verifyBu
       } catch (error) { errors.push(error.message); }
     }
     if (verifyBuild) pending.push((async () => {
+      if (statusRequests.has(response.request())) return;
       const url = new URL(response.url());
       const request = response.request();
       if (request.isNavigationRequest()) {
@@ -80,6 +83,13 @@ export async function guardBrowser(page, baseURL, { contract = "pages", verifyBu
   await page.route("**/*", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
+    // Built-site smoke uses a deterministic health response, never live health
+    // as a deployment gate. Only Home may issue this exact credential-free GET.
+    if (url.href === statusEndpoint && request.method() === "GET" && request.resourceType() === "fetch" &&
+      request.frame() === page.mainFrame() && ["/", "/en/", "/ja/"].includes(new URL(page.url()).pathname)) {
+      statusRequests.add(request);
+      return route.fulfill({ json: statusFixture() });
+    }
     const unexpectedBuildRequest = verifyBuild && (url.search || (request.isNavigationRequest()
       ? request.frame() !== page.mainFrame() || !applicationRoutes.includes(url.pathname)
       : !builtAssets.has(url.pathname)));

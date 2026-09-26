@@ -1,11 +1,19 @@
 import { expect, test } from "@playwright/test";
 import { calculateSolarTimes } from "../../v2/src/theme/solar";
 
+let mockSystemStatus: typeof import("../support/v2-system-status.mjs").mockSystemStatus;
+let statusEndpoint: string;
+test.beforeAll(async () => { ({ mockSystemStatus, statusEndpoint } = await import("../support/v2-system-status.mjs")); });
+
+test.beforeEach(async ({ context }) => { await mockSystemStatus(context); });
+
 // Keep the shared ESM helper on the native import path. The spec and application
 // TypeScript use Playwright's transform in this repository's CommonJS package.
 async function applyPagesCsp(...args: Parameters<typeof import("../support/csp-enforcement.mjs").applyPagesCsp>) {
   const { applyPagesCsp: apply } = await import("../support/csp-enforcement.mjs");
-  return apply(...args);
+  const result = await apply(...args);
+  await mockSystemStatus(args[0]);
+  return result;
 }
 
 const storageKey = "huihui-v2-theme";
@@ -333,6 +341,7 @@ for (const saved of [null, "dark"]) {
       await expect(page.locator("html")).toHaveCSS("color-scheme", "dark");
       await expect(page.locator("html")).toHaveCSS("background-color", "rgb(0, 0, 0)");
       await expect(page.locator("#app > *")).toHaveCount(0);
+      expect(serviceRequests).toEqual([]);
     } finally {
       releaseMain();
       await navigation;
@@ -345,7 +354,8 @@ for (const saved of [null, "dark"]) {
     expect(observations.firstContent).toEqual({ theme: "dark", colorScheme: "dark" });
     expect(observations.geolocationReads).toBe(0);
     expect(observations.violations).toEqual([]);
-    expect(serviceRequests).toEqual([]);
+    await expect(page.locator("#status [role=status]")).toHaveAttribute("data-state", "ready");
+    expect(serviceRequests).toEqual([statusEndpoint]);
     expect(errors).toEqual([]);
   });
 }
