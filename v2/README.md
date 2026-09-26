@@ -455,8 +455,10 @@ v2/
 
 The [service foundation](src/services/README.md) provides validated JSON GETs,
 normalized errors, cancellation and explicit beta/production Worker origins.
-No public page consumes that GET client yet. The private Jev entry has a separate
-same-origin POST adapter with an explicit Access/session contract.
+The System Status surface on Home is the first public-page consumer of the
+validated GET client, using the environment-specific `/api/system-status`
+endpoint. The private Jev entry has a separate same-origin POST adapter with an
+explicit Access/session contract.
 
 V1 remains the active production site while v2 development continues; its root
 HTML/CSS/JavaScript and release flow remain independent of these TypeScript
@@ -465,8 +467,8 @@ the shared footer, with no standalone Contact route, module or stylesheet.
 
 `src/main.ts` composes DOM components from `components/navbar.ts`,
 `components/footer.ts`, and `pages/home.ts`, `pages/about.ts`, `pages/works.ts`, or `pages/posts.ts`. Shared localized copy lives in
-`locales/`; markup uses native elements and `textContent`. There is no router,
-framework or public-page API request. A root-owned theme controller is passed to the navbar;
+`locales/`; markup uses native elements and `textContent`. There is no client-side
+router or frontend framework. A root-owned theme controller is passed to the navbar;
 theme preference, solar calculation and presentation have separate modules.
 
 ### Locale architecture
