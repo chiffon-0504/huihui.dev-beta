@@ -15,7 +15,12 @@ export async function onRequest({ request, env, next }) {
         if (request.headers.has(name)) headers.set(name, request.headers.get(name));
       }
       return await deadline(22000, async signal => {
-        const response = await env.JEV_API.fetch(new Request(request, { headers, signal, redirect: "error" }));
+        // workerd supports manual/follow only. Never follow a service redirect.
+        const response = await env.JEV_API.fetch(new Request(request, { headers, signal, redirect: "manual" }));
+        if (response.status >= 300 && response.status < 400) {
+          void response.body?.cancel().catch(() => {});
+          throw jevError("invalid_response", 502);
+        }
         // Finish the bounded body before closing the service request's signal.
         let body;
         try { body = await boundedJson(response, 16384, signal); }
