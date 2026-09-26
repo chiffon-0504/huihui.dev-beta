@@ -123,11 +123,9 @@ export default {
   aboutLabel: "プロフィール",
   home: {
     jev: {
-      question: "Yes / No で答えられる質問",
+      question: "質問",
       submit: "JEV に聞く",
       remaining: "24 時間以内の残り：",
-      rules: "各 IP につき直近 24 時間で成功 3 回まで。最大 99 文字。質問は TypeSafe に送信されます。",
-      idle: "送信後に結果と残り回数を表示します。",
       loading: "JEV が考えています…",
       invalid: "1〜99 文字で質問を 1 つ入力してください。",
       limited: "3 回使用済みです。以前の使用から 24 時間後にお試しください。",

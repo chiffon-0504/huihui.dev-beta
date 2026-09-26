@@ -108,8 +108,6 @@ export interface PublicJevContent {
   readonly question: string;
   readonly submit: string;
   readonly remaining: string;
-  readonly rules: string;
-  readonly idle: string;
   readonly loading: string;
   readonly invalid: string;
   readonly limited: string;

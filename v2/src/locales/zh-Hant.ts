@@ -123,11 +123,9 @@ export default {
   aboutLabel: "關於",
   home: {
     jev: {
-      question: "問一個 Yes / No 問題",
+      question: "問題",
       submit: "問 JEV",
       remaining: "24 小時內剩餘：",
-      rules: "每個 IP 在滾動 24 小時內可成功詢問 3 次，最多 99 字。問題會傳送至 TypeSafe。",
-      idle: "送出後顯示結果與剩餘次數。",
       loading: "JEV 思考中…",
       invalid: "請輸入 1–99 字的單一問題。",
       limited: "已用完 3 次，請在先前的使用滿 24 小時後再試。",

@@ -127,10 +127,11 @@ fixtures do not prove those external conditions.
 
 ## UI and validation
 
-Three typed locales share one window, native input, visible code-point counter,
-submit button, polite atomic status region and explicit remaining count. No paid
-request runs on load. Before a response (or after uncertain transport failure),
-remaining is `— / 3`. Pending submissions are guarded and editing is read-only;
+Three typed locales share one window, a natively resizable textarea, visible
+code-point counter, submit button and polite atomic status region. No paid
+request runs on load. Initial instructions and quota placeholders are absent;
+remaining is shown only from a server response and hidden after uncertain
+transport failure. Pending submissions are guarded and editing is read-only;
 the button stays focusable. Closing/pagehide aborts local pending work. No
 question/result/quota goes into localStorage or sessionStorage. All DOM text is
 rendered with `textContent`.

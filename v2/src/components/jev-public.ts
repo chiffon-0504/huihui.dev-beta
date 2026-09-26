@@ -9,29 +9,30 @@ export function createPublicJev(copy: PublicJevContent) {
   node.autocomplete = "off";
   const label = element("label", "", copy.question);
   label.htmlFor = "jev-public-question";
-  const input = element("input", "");
+  const input = element("textarea", "");
   input.id = label.htmlFor;
-  input.type = "text";
+  input.rows = 1;
   input.required = true;
   input.autocomplete = "off";
-  input.setAttribute("aria-describedby", "jev-public-counter jev-public-rules");
+  input.setAttribute("aria-describedby", "jev-public-counter");
   const counter = element("span", "desktop-muted", "0 / 99");
   counter.id = "jev-public-counter";
-  const rules = element("p", "desktop-muted", copy.rules);
-  rules.id = "jev-public-rules";
   const submit = element("button", "button", copy.submit);
   submit.type = "submit";
   const status = element("div", "");
   status.setAttribute("role", "status");
   status.setAttribute("aria-live", "polite");
   status.setAttribute("aria-atomic", "true");
-  const result = element("p", "", copy.idle);
-  const remaining = element("p", "desktop-muted", `${copy.remaining} — / 3`);
-  status.append(result, remaining);
-  node.append(label, input, counter, submit, status, rules);
+  const result = element("p", "");
+  const remaining = element("p", "desktop-muted");
+  node.append(label, input, counter, submit, status);
   node.dataset.state = "idle";
   let pending: AbortController | undefined;
-  const show = (state: string, text: string) => { node.dataset.state = state; result.textContent = text; };
+  const show = (state: string, text: string) => {
+    node.dataset.state = state;
+    result.textContent = text;
+    if (!result.parentNode) status.prepend(result);
+  };
   input.addEventListener("input", () => {
     counter.textContent = `${questionLength(input.value)} / 99`;
     input.setAttribute("aria-invalid", String(!validPublicQuestion(input.value)));
@@ -55,6 +56,7 @@ export function createPublicJev(copy: PublicJevContent) {
       const reply = await askPublicJev(input.value, current.signal);
       if (pending !== current) return;
       remaining.textContent = `${copy.remaining} ${reply.remaining} / 3`;
+      status.append(remaining);
       if (reply.ok) {
         const yes = reply.probability >= 0.5;
         show(yes ? "yes" : "no", `${yes ? "YES" : "NO"} ${Math.round((yes ? reply.probability : 1 - reply.probability) * 100)}%`);
@@ -63,7 +65,7 @@ export function createPublicJev(copy: PublicJevContent) {
       if (pending !== current) return;
       const invalid = error instanceof ServiceError && [400, 413, 415].includes(error.status ?? 0);
       if (invalid) input.setAttribute("aria-invalid", "true");
-      else remaining.textContent = `${copy.remaining} — / 3`;
+      else remaining.remove();
       show(invalid ? "invalid" : "unavailable", invalid ? copy.invalid : copy.unavailable);
     } finally {
       if (pending === current) {
@@ -82,7 +84,7 @@ export function createPublicJev(copy: PublicJevContent) {
       submit.removeAttribute("aria-disabled");
       input.readOnly = false;
       if (active) {
-        remaining.textContent = `${copy.remaining} — / 3`;
+        remaining.remove();
         show("unavailable", copy.unavailable);
       }
     },

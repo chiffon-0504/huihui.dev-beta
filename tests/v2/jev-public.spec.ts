@@ -15,24 +15,34 @@ for (const locale of supportedLocales) {
       await route.fulfill({ json: success() });
     });
     await page.goto(localeHref(locale));
-    const form = page.locator(".jev-public"), input = page.getByLabel(copy.question, { exact: true });
+    const form = page.locator(".jev-public"), input = page.getByLabel(copy.question, { exact: true }), button = form.getByRole("button");
     await expect(page.locator("#jev-public-title")).toHaveText("Yes or NO ?");
+    if (locale === "zh-Hant") await expect(input).toHaveAccessibleName("問題");
+    await expect(input).toHaveJSProperty("tagName", "TEXTAREA");
+    await expect(input).toHaveAttribute("aria-describedby", "jev-public-counter");
     await expect(form).toHaveAttribute("data-state", "idle");
-    await expect(form.getByRole("status")).toContainText(`${copy.remaining} — / 3`);
+    await expect(form.getByRole("status")).toBeEmpty();
+    await expect(form.locator("p")).toHaveCount(0);
+    await expect(form).toHaveText(`${copy.question}0 / 99${copy.submit}`);
     expect(requests).toEqual([]);
     await input.focus(); await page.keyboard.press("Enter");
-    await expect(form).toHaveAttribute("data-state", "invalid");
+    await expect(input).toHaveValue("\n");
+    await expect(form).toHaveAttribute("data-state", "idle");
     await expect(input).toBeFocused();
-    await input.fill("字".repeat(100)); await page.keyboard.press("Enter");
+    expect(requests).toEqual([]);
+    await input.press("Tab"); await expect(button).toBeFocused(); await page.keyboard.press("Enter");
+    await expect(form).toHaveAttribute("data-state", "invalid");
+    await expect(button).toBeFocused();
+    await input.fill("字".repeat(100)); await button.press("Enter");
     await expect(page.locator("#jev-public-counter")).toHaveText("100 / 99");
     await expect(input).toHaveAttribute("aria-invalid", "true"); expect(requests).toEqual([]);
-    await input.fill("😀".repeat(99)); await page.keyboard.press("Enter");
+    await input.fill("😀".repeat(99)); await button.press("Enter");
     await expect(page.locator("#jev-public-counter")).toHaveText("99 / 99");
     await expect(form).toHaveAttribute("data-state", "yes");
     await expect(form.getByRole("status")).toContainText("YES 73%");
     await expect(form.getByRole("status")).toContainText(`${copy.remaining} 2 / 3`);
     await expect(form.getByRole("status")).toHaveAttribute("aria-live", "polite");
-    await expect(input).toBeFocused();
+    await expect(button).toBeFocused();
     expect(requests).toEqual([{ url: new URL("/api/jev-public", page.url()).href, body: { question: "😀".repeat(99) } }]);
   });
   test(`${locale} pending state prevents duplicate submits and preserves focus`, async ({ page }) => {
@@ -67,24 +77,24 @@ for (const locale of supportedLocales) {
         : { json: success(0.73, calls > 4 ? 2 : 3 - calls) });
     });
     await page.goto(localeHref(locale));
-    const form = page.locator(".jev-public"), input = page.getByLabel(copy.question, { exact: true });
+    const form = page.locator(".jev-public"), input = page.getByLabel(copy.question, { exact: true }), button = form.getByRole("button");
     await input.fill("One question?");
     for (const remaining of [2, 1, 0]) {
-      await input.press("Enter");
+      await button.press("Enter");
       await expect(form.getByRole("status")).toContainText(`${copy.remaining} ${remaining} / 3`);
       await expect(form).toHaveAttribute("data-state", "yes");
     }
-    await input.press("Enter"); await expect(form).toHaveAttribute("data-state", "rate_limited");
+    await button.press("Enter"); await expect(form).toHaveAttribute("data-state", "rate_limited");
     await expect(form.getByRole("status")).toContainText(copy.limited);
     // The server decides expiry; the UI has no persistent lock or automatic retry.
-    await input.press("Enter"); await expect(form).toHaveAttribute("data-state", "yes");
+    await button.press("Enter"); await expect(form).toHaveAttribute("data-state", "yes");
     await expect(form.getByRole("status")).toContainText(`${copy.remaining} 2 / 3`);
   });
   test(`${locale} sanitized invalid, busy, unavailable and malformed response states`, async ({ page }) => {
     let status = 400, body: unknown = { secret: "sensitive-provider-diagnostic" };
     await page.route("**/api/jev-public", route => route.fulfill({ status, json: body }));
     await page.goto(localeHref(locale));
-    const form = page.locator(".jev-public"), input = page.getByLabel(copy.question, { exact: true });
+    const form = page.locator(".jev-public"), input = page.getByLabel(copy.question, { exact: true }), button = form.getByRole("button");
     await input.fill("<img src=x onerror=alert(1)>");
     for (const [nextStatus, nextBody, state, text] of [
       [400, body, "invalid", copy.invalid],
@@ -93,11 +103,11 @@ for (const locale of supportedLocales) {
       [200, { ...success(), probability: 2 }, "unavailable", copy.unavailable],
     ] as const) {
       status = nextStatus; body = nextBody;
-      await input.press("Enter");
+      await button.press("Enter");
       await expect(form).toHaveAttribute("data-state", state);
       await expect(form.getByRole("status")).toContainText(text);
       if (state === "invalid") await expect(input).toHaveAttribute("aria-invalid", "true");
-      if (state === "unavailable") await expect(form.getByRole("status")).toContainText(`${copy.remaining} — / 3`);
+      if (state === "unavailable") await expect(form.getByRole("status")).not.toContainText(copy.remaining);
       await expect(form).not.toContainText("sensitive-provider-diagnostic");
       await expect(form.locator("img")).toHaveCount(0);
     }
@@ -116,6 +126,55 @@ for (const locale of supportedLocales) {
     expect(await page.evaluate(() => JSON.stringify([localStorage, sessionStorage]))).not.toContain("synthetic private draft");
     await page.reload(); await expect(item).toBeVisible(); await expect(input).toHaveValue("");
   });
+  test(`${locale} native textarea resize preserves its bounds, draft and window controls`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 1400 });
+    await page.goto(localeHref(locale));
+    await expect(page.locator("#status [role=status]")).toHaveAttribute("data-state", "ready");
+    const item = page.locator("#jev-public"), input = page.getByLabel(copy.question, { exact: true });
+    await input.fill("A resizable draft?");
+    await expect(input).toHaveCSS("resize", "both");
+    await expect(input).toHaveCSS("overflow", "auto");
+    const initial = (await input.boundingBox())!;
+    expect(initial.height).toBeGreaterThanOrEqual(44);
+    expect(initial.height).toBeLessThanOrEqual(48);
+    const resize = async (dx: number, dy: number) => {
+      await input.scrollIntoViewIfNeeded();
+      const box = (await input.boundingBox())!;
+      const x = box.x + box.width - 3, y = box.y + box.height - 3;
+      await page.mouse.move(x, y); await page.mouse.down();
+      await page.mouse.move(x + dx, y + dy, { steps: 6 }); await page.mouse.up();
+    };
+    await resize(-72, 80);
+    await expect.poll(async () => (await input.boundingBox())!.height).toBeGreaterThan(initial.height + 24);
+    await expect.poll(async () => (await input.boundingBox())!.width).toBeLessThan(initial.width - 24);
+    const narrow = (await input.boundingBox())!.width;
+    await resize(100, 300);
+    await expect.poll(async () => (await input.boundingBox())!.width).toBeGreaterThan(narrow + 24);
+    expect(await input.evaluate(node => {
+      const box = node.getBoundingClientRect(), form = node.closest("form")!.getBoundingClientRect();
+      return box.right <= form.right && box.height <= parseFloat(getComputedStyle(node).maxHeight);
+    })).toBe(true);
+    await expect(item).not.toHaveClass(/is-dragging/);
+    await expect(input).toHaveValue("A resizable draft?");
+    await expect(page.locator("#jev-public-counter")).toHaveText("18 / 99");
+    await expect(item.locator("form")).toHaveAttribute("data-state", "idle");
+    await expect(item.getByRole("status")).toBeEmpty();
+    await page.setViewportSize({ width: 320, height: 900 });
+    await expect(item).toHaveCSS("position", "relative");
+    expect(await input.evaluate(node => {
+      const box = node.getBoundingClientRect(), form = node.closest("form")!.getBoundingClientRect();
+      return box.left >= form.left && box.right <= form.right;
+    })).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await resize(-180, -180);
+    await expect.poll(async () => (await input.boundingBox())!.width).toBeLessThanOrEqual(161);
+    await expect.poll(async () => (await input.boundingBox())!.height).toBeLessThanOrEqual(48);
+    expect(await input.evaluate(node => {
+      const box = node.getBoundingClientRect(), style = getComputedStyle(node);
+      return box.width >= 160 && box.height >= parseFloat(style.minHeight);
+    })).toBe(true);
+    await item.locator(".window-close").click(); await expect(item).toHaveCount(0);
+  });
   test(`${locale} every public result keeps the unknown status and clock windows reachable`, async ({ page }) => {
     await page.route("**/api/system-status", route => route.fulfill({ status: 503, body: "unavailable" }));
     let status = 200, body: unknown = success();
@@ -124,7 +183,7 @@ for (const locale of supportedLocales) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto(localeHref(locale));
       await expect(page.locator("#status [role=status]")).toHaveAttribute("data-state", "unknown");
-      const input = page.locator("#jev-public input"), form = page.locator(".jev-public");
+      const input = page.locator("#jev-public textarea"), form = page.locator(".jev-public");
       for (const [state, nextStatus, nextBody] of [
         ["idle", 200, success()], ["yes", 200, success()], ["no", 200, success(0.2)],
         ["busy", 429, { ok: false, error: "busy", remaining: 3, resetAt: null }],
@@ -132,7 +191,7 @@ for (const locale of supportedLocales) {
         ["unavailable", 503, {}], ["invalid", 400, {}],
       ] as const) {
         status = nextStatus; body = nextBody;
-        if (state !== "idle") { await input.fill("One?"); await input.press("Enter"); }
+        if (state !== "idle") { await input.fill("One?"); await form.getByRole("button").press("Enter"); }
         await expect(form).toHaveAttribute("data-state", state);
         if (await page.locator("#jev-public").evaluate(node => getComputedStyle(node).position === "absolute")) {
           await expect.poll(() => page.evaluate(() => {
@@ -165,7 +224,7 @@ test("closing a pending widget cancels stale results and leaves the other window
   });
   await page.goto("/en/");
   const item = page.locator("#jev-public");
-  await item.locator("input").fill("One?"); await item.locator("input").press("Enter");
+  await item.locator("textarea").fill("One?"); await item.locator("form button").press("Enter");
   await expect(item.locator("form")).toHaveAttribute("data-state", "loading");
   await expect.poll(() => typeof release).toBe("function");
   await item.locator(".window-close").click(); release!();
@@ -186,8 +245,8 @@ test("public submission works under the unchanged shipped CSP", async ({ page })
   });
   await page.route("**/api/jev-public", route => route.fulfill({ json: success() }));
   await page.goto("/en/");
-  await page.locator("#jev-public input").fill("One question?");
-  await page.locator("#jev-public input").press("Enter");
+  await page.locator("#jev-public textarea").fill("One question?");
+  await page.locator("#jev-public form button").press("Enter");
   await expect(page.locator(".jev-public")).toHaveAttribute("data-state", "yes");
   expect(violations).toEqual([]);
 });
