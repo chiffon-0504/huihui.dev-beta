@@ -71,6 +71,10 @@ tests do not prove that the currently deployed Worker has the binding.
 
 ## Runtime secrets
 
+The independent public Home widget and `/api/jev-public` endpoint use a beta-only
+SQLite Durable Object and server-side IP HMAC key. See [Public JEV Lite](JEV-PUBLIC.md)
+for quota semantics, privacy, required manual secret provisioning and rollout checks.
+
 The beta-only private `/api/jev` capability is disabled until its Access,
 same-origin Pages bridge, identity limiter and secret are configured. See
 [Private Jev](JEV.md) for the narrow request contract, required bindings, operator

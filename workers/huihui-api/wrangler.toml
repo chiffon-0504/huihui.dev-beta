@@ -17,6 +17,15 @@ BETTER_STACK_STATUS_PAGE_JSON_URL = "https://huihui-dev.betteruptime.com/index.j
 [env.beta]
 name = "huihui-api-beta"
 workers_dev = true
+main = "worker-beta.js"
+
+[[env.beta.durable_objects.bindings]]
+name = "JEV_PUBLIC_QUOTA"
+class_name = "JevPublicQuota"
+
+[[env.beta.migrations]]
+tag = "jev-public-v1"
+new_sqlite_classes = ["JevPublicQuota"]
 
 [env.beta.vars]
 WORKER_ENV = "beta"

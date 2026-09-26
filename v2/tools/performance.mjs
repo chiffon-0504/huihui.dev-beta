@@ -4,18 +4,18 @@ import { resolve, relative } from "node:path";
 // Decimal bytes. Baseline, headroom and update procedure: v2/README.md.
 export const budgets = Object.freeze({
   html: 11_950,
-  js: 110_000,
-  css: 26_000,
+  js: 116_000, // Public JEV: measured +5,721 B; scoped 6,000 B allowance.
+  css: 26_400, // Public JEV: measured +312 B; scoped 400 B allowance.
   images: 706_000,
   total: 854_150,
-  largestJs: 73_000,
-  largestCss: 14_200,
+  largestJs: 79_000,
+  largestCss: 14_600,
   largestImage: 129_000,
 });
 
 export const loadingBudgets = Object.freeze({
   shellRequests: 5, // document, classic bootstrap, app module, CSS, SVG sprite
-  shellBytes: 113_000,
+  shellBytes: 119_400, // Same five resources; public JEV JS/CSS allowance only.
   homeImageRequests: 1, // one selected local Memories candidate, Home only
   homeImageBytes: 43_500, // largest 640px candidate (41,396 B) + about 5%
   worksImageRequests: 3, // one selected candidate per photo; no lazy-distance assumption

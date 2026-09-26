@@ -13,6 +13,12 @@ disabled-until-configured boundary are documented in
 
 ## Consumer contract
 
+`jev-public.ts` is the independent Home-only POST adapter for `/api/jev-public`.
+It sends only one question with omitted credentials, validates the small public
+probability/quota response, and supports cancellation and a 25-second deadline.
+It does not widen the shared GET transport or reuse private Access cookies.
+See [Public JEV Lite](../../../workers/huihui-api/JEV-PUBLIC.md) for its server policy.
+
 `requestJson(environment, path, validate, options?)` performs one JSON GET and
 returns `Promise<T>`, inferred from a required `(value: unknown) => value is T`
 guard. Feature adapters should own their path and small synchronous data guard.

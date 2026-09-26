@@ -4,6 +4,7 @@ import { createDesktop, createWindow } from "../components/desktop";
 import { createImage } from "../components/media";
 import { memoryImage, memoryImageSizes } from "../media/memories";
 import { createSystemStatus } from "../components/system-status";
+import { createPublicJev } from "../components/jev-public";
 import type { ApiEnvironment } from "../services/endpoints";
 
 export function createHome(locale: Locale, environment: ApiEnvironment): HTMLElement {
@@ -66,7 +67,10 @@ export function createHome(locale: Locale, environment: ApiEnvironment): HTMLEle
   for (const note of copy.notes) notes.append(element("li", "", note));
   version.content.append(notes);
 
-  const desktop = createDesktop([playing, bishoujo, memories, clock, status, version], copy.keyboardMove);
+  const publicJev = createPublicJev(copy.jev);
+  const jev = createWindow("jev-public", "Yes or NO ?", copy.close, { x: 0.96, y: 0.48 }, publicJev.cancel);
+  jev.content.append(publicJev.node);
+  const desktop = createDesktop([playing, bishoujo, memories, clock, status, version, jev], copy.keyboardMove);
   main.append(desktop.node);
   const visibility = () => document.hidden ? stopClock() : startClock();
   document.addEventListener("visibilitychange", visibility);
@@ -75,6 +79,7 @@ export function createHome(locale: Locale, environment: ApiEnvironment): HTMLEle
   window.addEventListener("pagehide", (event) => {
     stopClock();
     health.cancel();
+    publicJev.cancel();
     if (!event.persisted) {
       desktop.dispose();
       document.removeEventListener("visibilitychange", visibility);

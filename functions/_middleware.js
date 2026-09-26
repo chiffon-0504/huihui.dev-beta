@@ -1,8 +1,10 @@
 import { authorizeJev, boundedJson, deadline, jevError, privateFailure, privateHeaders, privateJson, requireJevOrigin } from "../workers/huihui-api/jev-security.js";
+import { bridgePublicJev } from "../workers/huihui-api/jev-public-bridge.js";
 
 // _routes.json keeps public content on static Pages; every private alias is gated.
 export async function onRequest({ request, env, next }) {
   const url = new URL(request.url);
+  if (url.pathname === "/api/jev-public") return bridgePublicJev(request, env);
   try {
     requireJevOrigin(request, env);
     if (url.pathname === "/api/jev") {

@@ -134,6 +134,19 @@ describe("cryptographic Access authorization", () => {
 });
 
 describe("costly Worker endpoint", () => {
+  test.each([noul, score, choice])("public quota exhaustion cannot restrict private $mode", async form => {
+    const upstream = mockUpstream(form);
+    const env = baseEnv();
+    env.JEV_PUBLIC_IP_HMAC_KEY = "synthetic-independent-public-key-1234";
+    env.JEV_PUBLIC_QUOTA = { getByName: vi.fn(() => ({ ask: async () => new Response(null, { status: 429 }) })) };
+    for (let i = 0; i < 4; i++) {
+      const response = await call(request(form), env);
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ ok: true, result: normalizeJevResponse(fixture(form), form) });
+    }
+    expect(upstream).toHaveBeenCalledTimes(4);
+    expect(env.JEV_PUBLIC_QUOTA.getByName).not.toHaveBeenCalled();
+  });
   test.each([noul, score, choice])("accepts authorized $mode with fixed upstream credentials", async form => {
     const upstream = mockUpstream(form); const env = baseEnv();
     const response = await call(request(form), env);

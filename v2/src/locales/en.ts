@@ -122,6 +122,18 @@ export default {
   worksLabel: "Works",
   aboutLabel: "About",
   home: {
+    jev: {
+      question: "Ask a Yes / No question",
+      submit: "Ask JEV",
+      remaining: "Remaining in 24 hours:",
+      rules: "3 successful questions per IP in a rolling 24 hours. Up to 99 characters. Questions are sent to TypeSafe.",
+      idle: "Submit to see a result and remaining uses.",
+      loading: "JEV is thinking…",
+      invalid: "Enter one question of 1–99 characters.",
+      limited: "All 3 uses are spent. Try again 24 hours after an earlier use.",
+      busy: "Questions from this IP are still processing. Try again shortly.",
+      unavailable: "JEV is unavailable. Try again later.",
+    },
     title: "huihui’s desktop",
     playing: "Rhythm games",
     bishoujo: "Bishoujo Games",

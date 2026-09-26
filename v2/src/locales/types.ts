@@ -85,6 +85,7 @@ export interface LocaleContent {
 }
 
 export interface HomeContent {
+  readonly jev: PublicJevContent;
   readonly title: string;
   readonly playing: string;
   readonly bishoujo: string;
@@ -101,4 +102,17 @@ export interface HomeContent {
   readonly notes: readonly string[];
   readonly close: string;
   readonly keyboardMove: string;
+}
+
+export interface PublicJevContent {
+  readonly question: string;
+  readonly submit: string;
+  readonly remaining: string;
+  readonly rules: string;
+  readonly idle: string;
+  readonly loading: string;
+  readonly invalid: string;
+  readonly limited: string;
+  readonly busy: string;
+  readonly unavailable: string;
 }
