@@ -7,6 +7,8 @@ test.beforeAll(async () => { ({ mockSystemStatus, statusEndpoint } = await impor
 test.beforeEach(async ({ context }) => { await mockSystemStatus(context); });
 
 async function move(page: Page, handle: Locator, dx: number, dy: number) {
+  // Raw mouse coordinates do not scroll to offscreen windows on a taller canvas.
+  await handle.scrollIntoViewIfNeeded();
   const box = (await handle.boundingBox())!;
   await page.mouse.move(box.x + 24, box.y + box.height / 2);
   await page.mouse.down();

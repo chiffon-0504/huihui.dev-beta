@@ -116,6 +116,45 @@ for (const locale of supportedLocales) {
     expect(await page.evaluate(() => JSON.stringify([localStorage, sessionStorage]))).not.toContain("synthetic private draft");
     await page.reload(); await expect(item).toBeVisible(); await expect(input).toHaveValue("");
   });
+  test(`${locale} every public result keeps the unknown status and clock windows reachable`, async ({ page }) => {
+    await page.route("**/api/system-status", route => route.fulfill({ status: 503, body: "unavailable" }));
+    let status = 200, body: unknown = success();
+    await page.route("**/api/jev-public", route => route.fulfill({ status, json: body }));
+    for (const width of [1130, 1280, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(localeHref(locale));
+      await expect(page.locator("#status [role=status]")).toHaveAttribute("data-state", "unknown");
+      const input = page.locator("#jev-public input"), form = page.locator(".jev-public");
+      for (const [state, nextStatus, nextBody] of [
+        ["idle", 200, success()], ["yes", 200, success()], ["no", 200, success(0.2)],
+        ["busy", 429, { ok: false, error: "busy", remaining: 3, resetAt: null }],
+        ["rate_limited", 429, { ok: false, error: "rate_limited", remaining: 0, resetAt: Date.now() + 86400000 }],
+        ["unavailable", 503, {}], ["invalid", 400, {}],
+      ] as const) {
+        status = nextStatus; body = nextBody;
+        if (state !== "idle") { await input.fill("One?"); await input.press("Enter"); }
+        await expect(form).toHaveAttribute("data-state", state);
+        if (await page.locator("#jev-public").evaluate(node => getComputedStyle(node).position === "absolute")) {
+          await expect.poll(() => page.evaluate(() => {
+            const clock = document.querySelector("#clock")!.getBoundingClientRect();
+            const jev = document.querySelector("#jev-public")!.getBoundingClientRect();
+            const status = document.querySelector("#status")!.getBoundingClientRect();
+            return Math.min(jev.top - clock.bottom, status.top - jev.bottom);
+          })).toBeGreaterThanOrEqual(8);
+        }
+        for (const id of ["clock", "jev-public", "status"]) {
+          const title = page.locator(`#${id} .window-titlebar`);
+          await title.scrollIntoViewIfNeeded();
+          expect(await title.evaluate(node => {
+            const r = node.getBoundingClientRect();
+            return [r.left + 2, r.left + 24, r.right - 2].every(x => node.contains(document.elementFromPoint(x, r.top + r.height / 2)));
+          })).toBe(true);
+        }
+      }
+      await page.locator("#status .window-close").click();
+      await expect(page.locator("#status")).toHaveCount(0);
+    }
+  });
 }
 
 test("closing a pending widget cancels stale results and leaves the other windows usable", async ({ page }) => {

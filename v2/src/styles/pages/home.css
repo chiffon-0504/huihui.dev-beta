@@ -5,7 +5,7 @@
   position: relative;
   isolation: isolate;
   container-type: inline-size;
-  min-height: max(54rem, calc(100svh - var(--header-height) - 9rem));
+  min-height: max(62rem, calc(100svh - var(--header-height) - 9rem));
 }
 .desktop-window {
   --desktop-compact: 0;

@@ -54,7 +54,10 @@ Wrangler tags the beta Worker version with the workflow commit SHA. After deploy
 100% traffic, and reads that version's metadata. The commit tag must match the
 expected SHA, and `JEV_RATE_LIMITER` must have type `ratelimit`, namespace
 `922601`, limit `10` and period `60`, matching `[env.beta]` configuration.
-It checks `TYPESAFE_JEV_API_KEY` by name/type only and never accesses secret values.
+`JEV_PUBLIC_QUOTA` must be a `durable_object_namespace` binding for the local
+`JevPublicQuota` class. It checks `TYPESAFE_JEV_API_KEY` and
+`JEV_PUBLIC_IP_HMAC_KEY` by name/type only and never accesses secret values.
+Missing, duplicate, wrong-type or mismatched public bindings fail acceptance.
 A second deployment GET must still identify the same active deployment/version.
 
 Missing or malformed metadata, API failures, mismatched bindings/SHA, or a changed

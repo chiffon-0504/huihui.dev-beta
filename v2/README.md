@@ -724,7 +724,11 @@ in memory: reload restores all seven defaults, with no storage reads or writes.
 
 The public JEV window reuses that manager and shared controls. It occupies the
 right column between Time and System Status; the floating canvas minimum grows
-from 42rem to 54rem so all seven default title bars remain reachable. The existing
+from 42rem to 62rem so the right column remains separated even with multiline JEV
+errors and unknown System Status labels. Linux measured a 445px idle JEV window
+and 235px unknown status window; the canvas also accommodates the additional
+result line (471px JEV) with more than a 16px vertical gap at the default ratios.
+All seven default title bars remain reachable. The existing
 canvas-width compact threshold is unchanged (the Bishoujo/JEV horizontal gap is
 0.43 of usable placement width, at least the existing 0.42 minimum). Mobile
 continues to stack windows. The widget has one labelled question input, a Unicode

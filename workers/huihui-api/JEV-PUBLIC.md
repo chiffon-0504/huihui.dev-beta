@@ -110,8 +110,11 @@ merge/deployment flow separately; never deploy the top-level production target.
 `env.beta.main` selects `worker-beta.js`, the DO export wrapper around the
 existing Worker. Production keeps `worker.js` and has no quota namespace or
 migration. Missing HMAC/provider/binding configuration produces an unavailable
-state rather than relaxing policy. Do not routinely rotate the HMAC key: doing
-so selects new identities and resets their quotas. A necessary rotation requires
+state rather than relaxing policy. The existing beta deployment verifier also
+requires the public DO binding/class and HMAC secret metadata, without reading
+secret values; missing or mismatched bindings fail Worker/Beta CD acceptance.
+Provision the HMAC secret before the normal beta rollout. Do not routinely rotate
+the HMAC key: doing so selects new identities and resets their quotas. A necessary rotation requires
 a separately planned pause of at least one full quota window or state migration.
 
 Pages and Worker may roll out in either order. Older Worker/Pages versions return
