@@ -53,8 +53,9 @@ separate D1 database, KV namespace or external service.
 The `uses` table contains only random reservation IDs, `pending`/`success` state
 and expiry timestamps. Each admission uses a synchronous SQLite transaction:
 remove expired rows, count successful plus pending rows, and reserve if below
-three. No `await` splits these operations. An alarm is persisted before paid
-I/O. Concurrent requests see the reservation while the provider is pending.
+three. No `await` splits these operations. The earliest pending lease or successful
+use expiry is scheduled before paid I/O, without postponing an earlier alarm.
+Concurrent requests see the reservation while the provider is pending.
 
 Only a validated Noul result converts its reservation to a successful use,
 atomically, with expiry at completion plus exactly 24 hours. Finalization checks
@@ -65,9 +66,11 @@ use within the rolling window is denied before another provider request.
 Invalid input never reserves. Upstream/network/HTTP/JSON/schema failures and
 timeouts delete the pending reservation. Storage errors deny success; abandoned
 reservations expire after 15 seconds, longer than the ten-second provider
-deadline. Persisted successes survive object eviction/restart. Alarm cleanup
-deletes expired state even without another visitor, and calls `deleteAll()` once
-empty. Requests also prune expiry immediately; resets are not tied to midnight.
+deadline. Persisted successes survive object eviction/restart. Success and release
+reconcile cleanup without postponing an earlier alarm. Alarm cleanup prunes expired
+state even without another visitor, then schedules the next live expiry. Once empty,
+`deleteAll()` removes active state and its alarm under the configured compatibility
+date. Requests also prune expiry immediately; resets are not tied to midnight.
 
 Exhaustion returns 429 `rate_limited`, remaining zero and the next expiry.
 If capacity is temporarily reserved, 429 `busy` identifies pending work instead

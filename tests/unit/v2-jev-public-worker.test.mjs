@@ -12,6 +12,7 @@ function storage() {
   // Execute the actual SQL and transactions, including rollback, with built-in SQLite.
   const db = new DatabaseSync(":memory:");
   databases.push(db);
+  let alarm = null;
   return {
     sql: { exec(query, ...args) {
       const rows = db.prepare(query).all(...args);
@@ -22,11 +23,21 @@ function storage() {
       try { const result = callback(); db.exec("COMMIT"); return result; }
       catch (error) { db.exec("ROLLBACK"); throw error; }
     },
-    setAlarm: vi.fn(async () => {}),
-    deleteAll: vi.fn(async () => db.exec("DROP TABLE IF EXISTS uses")),
+    getAlarm: vi.fn(async () => alarm),
+    setAlarm: vi.fn(async time => { alarm = time; }),
+    // The configured compatibility date makes deleteAll clear SQL and alarms.
+    deleteAll: vi.fn(async () => { db.exec("DROP TABLE IF EXISTS uses"); alarm = null; }),
+    async fireAlarm() {
+      expect(alarm).not.toBeNull();
+      expect(alarm).toBeLessThanOrEqual(Date.now());
+      // During alarm delivery getAlarm returns null until another alarm is set.
+      alarm = null;
+      await expirePublicJev(this);
+    },
   };
 }
-const rows = store => store.sql.exec("SELECT * FROM uses").toArray();
+const rows = store => store.sql.exec("SELECT name FROM sqlite_master WHERE name = 'uses'").toArray().length
+  ? store.sql.exec("SELECT * FROM uses").toArray() : [];
 const upstreamResult = () => Response.json({ answers: { decision: { type: "noul", noul: 0.73 } }, secret: "never-return" });
 function fixture() {
   const stores = new Map();
@@ -133,6 +144,8 @@ describe("rolling successful-use quota", () => {
     fetch.mockImplementation(async () => { if (++calls === 3) entered.resolve(); await release.promise; return upstreamResult(); });
     const pending = Array.from({ length: 20 }, () => f.call(request()));
     await entered.promise;
+    const store = [...f.stores.values()][0], firstAlarm = await store.getAlarm();
+    expect(firstAlarm).toBe(Math.min(...rows(store).map(row => row.expires_at)));
     const blocked = await f.call(request());
     expect(blocked.status).toBe(429); expect(await blocked.json()).toMatchObject({ error: "busy", remaining: 3 });
     expect(fetch).toHaveBeenCalledTimes(3);
@@ -140,6 +153,7 @@ describe("rolling successful-use quota", () => {
     const responses = await Promise.all(pending);
     expect(responses.filter(r => r.status === 200)).toHaveLength(3);
     expect(responses.filter(r => r.status === 429)).toHaveLength(17);
+    expect(await store.getAlarm()).toBe(firstAlarm);
     expect((await f.call(request())).status).toBe(429);
   });
   test.each(["http", "redirect", "network", "json", "schema", "oversized"])("failed %s requests free reservations", async failure => {
@@ -197,15 +211,140 @@ describe("rolling successful-use quota", () => {
     release.resolve(); expect((await first).status).toBe(503);
     expect(rows([...f.stores.values()][0])).toHaveLength(1);
   });
-  test("internal alarm or commit failure does not permanently consume quota", async () => {
+  test.each(["getAlarm", "setAlarm"])("internal %s or commit failure does not permanently consume quota", async operation => {
     const f = fixture(); const store = storage(); initializePublicJev(store);
-    store.setAlarm.mockRejectedValueOnce(new Error("storage failure"));
+    store[operation].mockRejectedValueOnce(new Error("storage failure"));
     expect((await askPublicJev(store, f.env, "One?")).status).toBe(503); expect(fetch).not.toHaveBeenCalled(); expect(rows(store)).toEqual([]);
     const original = store.sql.exec;
     store.sql.exec = (query, ...args) => { if (query.startsWith("UPDATE")) throw new Error("storage failure"); return original(query, ...args); };
     expect((await askPublicJev(store, f.env, "One?")).status).toBe(503); expect(rows(store)).toEqual([]);
     store.sql.exec = original;
     expect(await (await askPublicJev(store, f.env, "One?")).json()).toMatchObject({ remaining: 2 });
+  });
+});
+
+describe("quota cleanup alarms", () => {
+  test("first pending lease is scheduled before upstream I/O and later admission cannot postpone it", async () => {
+    vi.useFakeTimers(); const start = Date.now();
+    const f = fixture(), store = storage(), firstEntered = Promise.withResolvers(), secondEntered = Promise.withResolvers(), release = Promise.withResolvers();
+    fetch.mockImplementationOnce(async () => { firstEntered.resolve(); await release.promise; return upstreamResult(); });
+    fetch.mockImplementationOnce(async () => { secondEntered.resolve(); await release.promise; return upstreamResult(); });
+    const first = askPublicJev(store, f.env, "First?"); await firstEntered.promise;
+    expect(await store.getAlarm()).toBe(start + PUBLIC_JEV_LEASE_MS);
+    expect(rows(store)).toMatchObject([{ state: "pending", expires_at: start + PUBLIC_JEV_LEASE_MS }]);
+    vi.setSystemTime(start + 1000);
+    const second = askPublicJev(store, f.env, "Second?"); await secondEntered.promise;
+    expect(await store.getAlarm()).toBe(start + PUBLIC_JEV_LEASE_MS);
+    expect(store.setAlarm).toHaveBeenCalledTimes(1);
+    release.resolve();
+    expect((await Promise.all([first, second])).map(response => response.status)).toEqual([200, 200]);
+  });
+  test("pending to success retains cleanup through its lease alarm and exact rolling expiry", async () => {
+    vi.useFakeTimers(); const start = Date.now(); const f = fixture(), store = storage();
+    expect((await askPublicJev(store, f.env, "Success?")).status).toBe(200);
+    expect(rows(store)).toMatchObject([{ state: "success", expires_at: start + PUBLIC_JEV_WINDOW_MS }]);
+    expect(await store.getAlarm()).toBe(start + PUBLIC_JEV_LEASE_MS);
+    vi.setSystemTime(start + PUBLIC_JEV_LEASE_MS); await store.fireAlarm();
+    expect(await store.getAlarm()).toBe(start + PUBLIC_JEV_WINDOW_MS);
+    expect(rows(store)).toHaveLength(1);
+    vi.setSystemTime(start + PUBLIC_JEV_WINDOW_MS); await store.fireAlarm();
+    expect(rows(store)).toEqual([]); expect(await store.getAlarm()).toBeNull();
+    expect(store.deleteAll).toHaveBeenCalledOnce();
+    expect(store.sql.exec("SELECT name FROM sqlite_master WHERE name = 'uses'").toArray()).toEqual([]);
+    expect(await (await askPublicJev(store, f.env, "After deletion?")).json()).toMatchObject({ remaining: 2 });
+    expect(await store.getAlarm()).toBe(Date.now() + PUBLIC_JEV_LEASE_MS);
+  });
+  test("multiple successful uses never postpone the earliest success expiry", async () => {
+    vi.useFakeTimers(); const start = Date.now(); const f = fixture(), store = storage();
+    await askPublicJev(store, f.env, "First?");
+    vi.setSystemTime(start + PUBLIC_JEV_LEASE_MS); await store.fireAlarm();
+    for (const offset of [5000, 2000]) {
+      vi.setSystemTime(start + PUBLIC_JEV_WINDOW_MS - offset);
+      expect((await askPublicJev(store, f.env, "Later?")).status).toBe(200);
+      expect(await store.getAlarm()).toBe(start + PUBLIC_JEV_WINDOW_MS);
+    }
+    expect(store.setAlarm.mock.calls.map(([time]) => time)).toEqual([start + PUBLIC_JEV_LEASE_MS, start + PUBLIC_JEV_WINDOW_MS]);
+    vi.setSystemTime(start + PUBLIC_JEV_WINDOW_MS); await store.fireAlarm();
+    expect(rows(store)).toHaveLength(2);
+    expect(await store.getAlarm()).toBe(start + 2 * PUBLIC_JEV_WINDOW_MS - 5000);
+  });
+  test("a new pending lease brings a later successful-use alarm forward", async () => {
+    vi.useFakeTimers(); const start = Date.now(); const f = fixture(), store = storage(), entered = Promise.withResolvers(), release = Promise.withResolvers();
+    await askPublicJev(store, f.env, "Success?");
+    vi.setSystemTime(start + PUBLIC_JEV_LEASE_MS); await store.fireAlarm();
+    fetch.mockImplementationOnce(async () => { entered.resolve(); await release.promise; return new Response(null, { status: 500 }); });
+    const pending = askPublicJev(store, f.env, "Failure?"); await entered.promise;
+    expect(await store.getAlarm()).toBe(start + 2 * PUBLIC_JEV_LEASE_MS);
+    release.resolve(); expect((await pending).status).toBe(502);
+    expect(rows(store)).toMatchObject([{ state: "success" }]);
+    expect(await store.getAlarm()).toBe(start + 2 * PUBLIC_JEV_LEASE_MS);
+    vi.setSystemTime(start + 2 * PUBLIC_JEV_LEASE_MS); await store.fireAlarm();
+    expect(await store.getAlarm()).toBe(start + PUBLIC_JEV_WINDOW_MS);
+  });
+  test("releasing the earliest reservation preserves cleanup for the remaining pending lease", async () => {
+    vi.useFakeTimers(); const start = Date.now();
+    const f = fixture(), store = storage(), firstEntered = Promise.withResolvers(), secondEntered = Promise.withResolvers();
+    const firstRelease = Promise.withResolvers(), secondRelease = Promise.withResolvers();
+    fetch.mockImplementationOnce(async () => { firstEntered.resolve(); await firstRelease.promise; return new Response(null, { status: 500 }); });
+    fetch.mockImplementationOnce(async () => { secondEntered.resolve(); await secondRelease.promise; return new Response(null, { status: 500 }); });
+    const first = askPublicJev(store, f.env, "First?"); await firstEntered.promise;
+    vi.setSystemTime(start + 1000);
+    const second = askPublicJev(store, f.env, "Second?"); await secondEntered.promise;
+    firstRelease.resolve(); expect((await first).status).toBe(502);
+    expect(rows(store)).toMatchObject([{ state: "pending", expires_at: start + 1000 + PUBLIC_JEV_LEASE_MS }]);
+    expect(await store.getAlarm()).toBe(start + PUBLIC_JEV_LEASE_MS);
+    vi.setSystemTime(start + PUBLIC_JEV_LEASE_MS); await store.fireAlarm();
+    expect(await store.getAlarm()).toBe(start + 1000 + PUBLIC_JEV_LEASE_MS);
+    secondRelease.resolve(); expect((await second).status).toBe(502);
+    expect(rows(store)).toEqual([]); expect(await store.getAlarm()).toBeNull();
+    expect(store.deleteAll).toHaveBeenCalledOnce();
+  });
+  test.each(["http", "network", "timeout"])("last reservation %s failure removes active state and its alarm", async failure => {
+    vi.useFakeTimers(); const f = fixture(), store = storage(), entered = Promise.withResolvers();
+    fetch.mockImplementationOnce(() => {
+      entered.resolve();
+      if (failure === "network") throw new Error("synthetic failure");
+      return failure === "timeout" ? new Promise(() => {}) : new Response(null, { status: 500 });
+    });
+    const pending = askPublicJev(store, f.env, "Failure?"); await entered.promise;
+    if (failure === "timeout") await vi.advanceTimersByTimeAsync(10001);
+    expect((await pending).status).toBe(failure === "timeout" ? 504 : 502);
+    expect(rows(store)).toEqual([]); expect(await store.getAlarm()).toBeNull();
+    expect(store.deleteAll).toHaveBeenCalledOnce();
+  });
+  test("finalization alarm-read failure releases the reservation without spending quota", async () => {
+    const f = fixture(), store = storage();
+    store.getAlarm.mockResolvedValueOnce(null).mockRejectedValueOnce(new Error("storage failure"));
+    expect((await askPublicJev(store, f.env, "Failure?")).status).toBe(503);
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(rows(store)).toEqual([]); expect(await store.getAlarm()).toBeNull();
+    expect(store.deleteAll).toHaveBeenCalledOnce();
+    expect(await (await askPublicJev(store, f.env, "Retry?")).json()).toMatchObject({ remaining: 2 });
+  });
+  test("alarm prunes expired pending and successful rows and schedules each next live expiry", async () => {
+    vi.useFakeTimers(); const start = Date.now(), store = storage(); initializePublicJev(store);
+    for (const [id, state, expires] of [["expired-success", "success", start], ["expired-pending", "pending", start], ["pending", "pending", start + 1000], ["success", "success", start + 2000]]) {
+      store.sql.exec("INSERT INTO uses VALUES (?, ?, ?)", id, state, expires);
+    }
+    await store.setAlarm(start); await store.fireAlarm();
+    expect(rows(store).map(row => row.id).sort()).toEqual(["pending", "success"]);
+    expect(await store.getAlarm()).toBe(start + 1000);
+    vi.setSystemTime(start + 1000); await store.fireAlarm();
+    expect(rows(store).map(row => row.id)).toEqual(["success"]);
+    expect(await store.getAlarm()).toBe(start + 2000);
+    vi.setSystemTime(start + 2000); await store.fireAlarm();
+    expect(rows(store)).toEqual([]); expect(await store.getAlarm()).toBeNull();
+    expect(store.deleteAll).toHaveBeenCalledOnce();
+  });
+  test("an alarm reclaims an abandoned lease and fences a late completion after active-state deletion", async () => {
+    vi.useFakeTimers(); const start = Date.now(); const f = fixture(), store = storage(), entered = Promise.withResolvers(), release = Promise.withResolvers();
+    fetch.mockImplementationOnce(async () => { entered.resolve(); await release.promise; return upstreamResult(); });
+    const pending = askPublicJev(store, f.env, "Abandoned?"); await entered.promise;
+    vi.setSystemTime(start + PUBLIC_JEV_LEASE_MS); await store.fireAlarm();
+    expect(rows(store)).toEqual([]); expect(await store.getAlarm()).toBeNull();
+    release.resolve(); expect((await pending).status).toBe(503);
+    expect(rows(store)).toEqual([]); expect(await store.getAlarm()).toBeNull();
+    expect(await (await askPublicJev(store, f.env, "New slot?")).json()).toMatchObject({ remaining: 2 });
   });
 });
 
@@ -262,6 +401,9 @@ describe("IP privacy and Pages isolation", () => {
   });
   test("only beta has the new entry, binding and SQLite migration; existing route manifest covers public API", async () => {
     const config = await readFile(new URL("../../workers/huihui-api/wrangler.toml", import.meta.url), "utf8");
+    // Cleanup relies on deleteAll atomically removing alarms as well as SQL.
+    expect(config.match(/^compatibility_date = "([^"]+)"/m)?.[1]).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(Date.parse(config.match(/^compatibility_date = "([^"]+)"/m)[1])).toBeGreaterThanOrEqual(Date.parse("2026-02-24"));
     expect(config.split("[env.beta]")[0]).not.toMatch(/JevPublicQuota|JEV_PUBLIC|worker-beta/);
     expect(config).toContain('main = "worker-beta.js"');
     expect(config).toContain("[[env.beta.durable_objects.bindings]]");
