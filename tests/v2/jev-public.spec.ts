@@ -126,7 +126,7 @@ for (const locale of supportedLocales) {
     expect(await page.evaluate(() => JSON.stringify([localStorage, sessionStorage]))).not.toContain("synthetic private draft");
     await page.reload(); await expect(item).toBeVisible(); await expect(input).toHaveValue("");
   });
-  test(`${locale} native textarea resize preserves its bounds, draft and window controls`, async ({ page }) => {
+  test(`${locale} native textarea resize preserves its bounds, draft and window controls`, async ({ page, browserName }) => {
     await page.setViewportSize({ width: 1440, height: 1400 });
     await page.goto(localeHref(locale));
     await expect(page.locator("#status [role=status]")).toHaveAttribute("data-state", "ready");
@@ -137,6 +137,12 @@ for (const locale of supportedLocales) {
     const initial = (await input.boundingBox())!;
     expect(initial.height).toBeGreaterThanOrEqual(44);
     expect(initial.height).toBeLessThanOrEqual(48);
+    if (browserName === "webkit" && process.platform !== "darwin") {
+      // Non-Apple Playwright WebKit has zero-width native scrollbars, giving
+      // even a bare textarea no resize hit area. Supply scrollbar geometry for
+      // this gesture; keep the app's resize/min/max rules and real mouse input.
+      await page.addStyleTag({ content: ".jev-public textarea { overflow: scroll; } .jev-public textarea::-webkit-scrollbar { width: 16px; height: 16px; }" });
+    }
     const resize = async (dx: number, dy: number) => {
       await input.scrollIntoViewIfNeeded();
       const box = (await input.boundingBox())!;
