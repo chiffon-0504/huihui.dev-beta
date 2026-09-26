@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, test, vi } from "vitest";
 import { parseDocument } from "yaml";
 import {
-  BETA_WORKER, EXPECTED_LIMITER, activeDeployment, runAcceptance,
+  BETA_WORKER, EXPECTED_LIMITER, EXPECTED_PUBLIC_QUOTA, activeDeployment, runAcceptance,
   verifyBetaDeployment, verifyVersion,
 } from "../../workers/huihui-api/verify-deployment.mjs";
 
@@ -24,6 +24,8 @@ function version() {
     resources: { bindings: [
       { name: EXPECTED_LIMITER.name, type: "ratelimit", namespace_id: "922601", simple: { limit: 10, period: 60 } },
       { name: "TYPESAFE_JEV_API_KEY", type: "secret_text" },
+      { name: EXPECTED_PUBLIC_QUOTA.name, type: "durable_object_namespace", class_name: "JevPublicQuota" },
+      { name: "JEV_PUBLIC_IP_HMAC_KEY", type: "secret_text" },
     ] },
   };
 }
@@ -91,6 +93,15 @@ describe("beta deployment toolchain contract", () => {
     expect(() => completedFailure("Beta Worker workflow", { status: "completed", conclusion: "failure" }, SHA)).toThrow("failure");
   });
 
+  test("public quota metadata matches the beta-only class and binding declaration", async () => {
+    const config = (await readFile(new URL("../../workers/huihui-api/wrangler.toml", import.meta.url), "utf8")).replace(/\r\n/g, "\n");
+    const quota = config.match(/\[\[env\.beta\.durable_objects\.bindings\]\]([^]*?)(?=\n\[|$)/g);
+    expect(quota).toHaveLength(1);
+    expect(quota[0]).toContain(`name = "${EXPECTED_PUBLIC_QUOTA.name}"`);
+    expect(quota[0]).toContain(`class_name = "${EXPECTED_PUBLIC_QUOTA.class_name}"`);
+    expect(config.split("[env.beta]")[0]).not.toContain("JEV_PUBLIC_QUOTA");
+  });
+
   test("package and lockfile remain consistent without adding a second Wrangler source", async () => {
     const manifest = JSON.parse(await readFile(new URL("../../package.json", import.meta.url), "utf8"));
     const lock = JSON.parse(await readFile(new URL("../../package-lock.json", import.meta.url), "utf8"));
@@ -152,12 +163,46 @@ describe("remote beta Worker acceptance", () => {
     ["wrong SHA", v => { v.annotations["workers/tag"] = "c".repeat(40); }],
     ["untagged", v => { delete v.annotations; }],
     ["no bindings", v => { delete v.resources.bindings; }],
-    ["no secret", v => { v.resources.bindings.pop(); }],
+    ["no private secret", v => { v.resources.bindings.splice(1, 1); }],
     ["plaintext secret", v => { v.resources.bindings[1].type = "plain_text"; }],
     ["duplicate secret", v => { v.resources.bindings.push(v.resources.bindings[1]); }],
   ])("rejects %s metadata", (_, mutate) => {
     const deployed = version(); mutate(deployed);
     expect(() => verifyVersion(deployed, VERSION, SHA)).toThrow();
+  });
+
+  test.each([
+    ["missing", v => { v.resources.bindings.splice(2, 1); }],
+    ["wrong type", v => { v.resources.bindings[2].type = "kv_namespace"; }],
+    ["missing class", v => { delete v.resources.bindings[2].class_name; }],
+    ["wrong class", v => { v.resources.bindings[2].class_name = "OtherQuota"; }],
+    ["external Worker", v => { v.resources.bindings[2].script_name = "huihui-api"; }],
+    ["duplicate", v => { v.resources.bindings.push(v.resources.bindings[2]); }],
+  ])("fails acceptance when public quota is %s", async (_, mutate) => {
+    const deployed = version(); mutate(deployed);
+    const fetchImpl = fixture({ deployed }), log = vi.fn(), error = vi.fn();
+    expect(await runAcceptance({ env, fetchImpl, log, error })).toBe(1);
+    expect(error).toHaveBeenCalledWith("JEV_PUBLIC_QUOTA is missing or does not match the beta configuration.");
+    expect(log).not.toHaveBeenCalled();
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  test("accepts an explicitly named same-Worker quota binding", () => {
+    const deployed = version(); deployed.resources.bindings[2].script_name = BETA_WORKER;
+    expect(() => verifyVersion(deployed, VERSION, SHA)).not.toThrow();
+  });
+
+  test.each([
+    ["missing", v => { v.resources.bindings.pop(); }],
+    ["plaintext", v => { v.resources.bindings[3].type = "plain_text"; }],
+    ["duplicate", v => { v.resources.bindings.push(v.resources.bindings[3]); }],
+  ])("fails acceptance when public HMAC secret is %s", async (_, mutate) => {
+    const deployed = version(); mutate(deployed);
+    const fetchImpl = fixture({ deployed }), log = vi.fn(), error = vi.fn();
+    expect(await runAcceptance({ env, fetchImpl, log, error })).toBe(1);
+    expect(error).toHaveBeenCalledWith("JEV_PUBLIC_IP_HMAC_KEY secret metadata is missing or invalid.");
+    expect(log).not.toHaveBeenCalled();
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
   test.each(["deployment", "version"])("rejects an active %s change during verification", async field => {
@@ -180,7 +225,7 @@ describe("remote beta Worker acceptance", () => {
     expect(valueAccess).not.toHaveBeenCalled();
     expect(error).not.toHaveBeenCalled();
     expect(log).toHaveBeenCalledExactlyOnceWith(
-      `Verified huihui-api-beta commit ${SHA}, deployment ${DEPLOYMENT}, version ${VERSION}: JEV_RATE_LIMITER matches; required secret metadata present.`,
+      `Verified huihui-api-beta commit ${SHA}, deployment ${DEPLOYMENT}, version ${VERSION}: JEV_RATE_LIMITER and JEV_PUBLIC_QUOTA match; required secret metadata present.`,
     );
   });
 

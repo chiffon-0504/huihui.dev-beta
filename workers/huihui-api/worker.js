@@ -1,4 +1,5 @@
 import { handleJev } from "./jev.js";
+import { handlePublicJev } from "./jev-public.js";
 
 function decodeHtml(text) {
   return String(text)
@@ -2449,6 +2450,9 @@ async function routeRequest(request, env, ctx) {
 
 export default {
   async fetch(request, env, ctx) {
+    if (new URL(request.url).pathname === "/api/jev-public") {
+      return handlePublicJev(request, env);
+    }
     if (new URL(request.url).pathname === "/api/jev") {
       return handleJev(request, env);
     }

@@ -89,6 +89,24 @@ delivery. CSP enforcing, Report-Only and no-CSP controls remain in the Beta suit
 
 ## Performance budgets
 
+### Public JEV Lite growth measurement (2026-09-26)
+
+Fresh `8889dc1c` measures 107,320 B JS, 25,774 B CSS, 822,547 B total,
+largest JS 71,891 B and largest CSS 14,107 B. The public widget adds 5,004 B JS
+and 423 B CSS: its form, bounded/cancellable client, quota/error states and three
+typed locales. Final measurements are 112,324 B JS, 26,197 B CSS, 827,974 B total,
+largest JS 76,895 B and largest CSS 14,530 B. Private Jev's JS/CSS retain their
+original hashes and bytes; HTML and images are unchanged.
+
+The shared app already bundles all public page modules and copy, so all twelve
+public routes receive this increment. Scoped allowances add 6,000 B to aggregate
+and largest JS, 400 B to aggregate and largest CSS, and 6,400 B to the shell byte
+envelope. Limits are now 116,000 / 79,000 B JS, 26,400 / 14,600 B CSS, and
+119,400 B per shell. Aggregate total, HTML, image and every request-count limit
+are unchanged. One-byte negative controls remain. There is no new startup API
+request: public JEV POST runs only after a valid explicit submission. Existing
+System Status GET and local photo envelopes are unchanged.
+
 ### Accessible desktop movement growth (2026-09-24)
 
 Against PR #248 head `2b9d6e7`, the localized Move disclosure, four native
@@ -688,7 +706,7 @@ validation job.
 
 Home is an exploratory personal desktop, shared across the three locales through
 `LocaleContent.home`. It contains Rhythm Games, Bishoujo Games, Memories, local live Time,
-System Status and Website Version windows on a mostly empty canvas. The old Hero and
+System Status, Website Version and Yes or NO ? windows on a mostly empty canvas. The old Hero and
 portfolio sections are removed. Home omits Works/About/Posts navigation; other
 pages retain it. About's former Home `#works` CTA now opens localized Works.
 The shared brand, language/theme controls, skip link and contact footer remain.
@@ -699,10 +717,26 @@ remain h2 elements.
 `components/desktop.ts` provides `createWindow` and `createDesktop`. The manager
 uses title-bar pointer capture, ignores close-button/secondary pointer starts,
 and never prevents content selection or native links. Pointer/focus interaction
-moves a window to the end of a bounded stacking list (z-index 1 through 6 inside
+moves a window to the end of a bounded stacking list (z-index 1 through 7 inside
 an isolated canvas). Closing removes just that window, restores keyboard focus
 when needed and releases its resources. Positions and closed states are only
-in memory: reload restores all six defaults, with no storage reads or writes.
+in memory: reload restores all seven defaults, with no storage reads or writes.
+
+The public JEV window reuses that manager and shared controls. It occupies the
+right column between Time and System Status; the floating canvas minimum grows
+from 42rem to 62rem so the right column remains separated even with multiline JEV
+errors and unknown System Status labels. The canvas reserves room for a 471px
+JEV window and 235px unknown status window with more than a 16px vertical gap at
+the default ratios; this allowance is retained after simplifying the initial UI.
+All seven default title bars remain reachable. The existing
+canvas-width compact threshold is unchanged (the Bishoujo/JEV horizontal gap is
+0.43 of usable placement width, at least the existing 0.42 minimum). Mobile
+continues to stack windows. Initially the widget shows one labelled, natively
+resizable textarea, a Unicode counter and a guarded submit button. Results use a
+polite status region; remaining quota appears only from a real server response.
+It uses the isolated same-origin public client and never links to private Jev.
+See [Public JEV Lite](../workers/huihui-api/JEV-PUBLIC.md) for the server contract,
+privacy, manual configuration and rollout behavior.
 
 Memories uses the existing `ImageAsset` / `createImage` component with two local
 WebP candidates, explicit 4:3 dimensions and responsive sizes. Its title is

@@ -122,6 +122,16 @@ export default {
   worksLabel: "制作実績",
   aboutLabel: "プロフィール",
   home: {
+    jev: {
+      question: "質問",
+      submit: "JEV に聞く",
+      remaining: "24 時間以内の残り：",
+      loading: "JEV が考えています…",
+      invalid: "1〜99 文字で質問を 1 つ入力してください。",
+      limited: "3 回使用済みです。以前の使用から 24 時間後にお試しください。",
+      busy: "同じ IP の質問を処理中です。少し待ってお試しください。",
+      unavailable: "現在 JEV を利用できません。後ほどお試しください。",
+    },
     title: "huihui のデスクトップ",
     playing: "音楽ゲーム",
     bishoujo: "美少女ゲーム",

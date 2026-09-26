@@ -7,6 +7,8 @@ test.beforeAll(async () => { ({ mockSystemStatus, statusEndpoint } = await impor
 test.beforeEach(async ({ context }) => { await mockSystemStatus(context); });
 
 async function move(page: Page, handle: Locator, dx: number, dy: number) {
+  // Raw mouse coordinates do not scroll to offscreen windows on a taller canvas.
+  await handle.scrollIntoViewIfNeeded();
   const box = (await handle.boundingBox())!;
   await page.mouse.move(box.x + 24, box.y + box.height / 2);
   await page.mouse.down();
@@ -68,7 +70,7 @@ for (const locale of supportedLocales) {
     }
     const before = await position(item);
     await move(page, title, 30, 60);
-    await expect(item).toHaveCSS("z-index", "6");
+    await expect(item).toHaveCSS("z-index", "7");
     const moved = await position(item);
     expect(moved).toEqual({ x: before.x + 30, y: before.y + 60 });
     for (const width of [1067, 1082, 1067, 1082]) {
@@ -89,7 +91,7 @@ for (const locale of supportedLocales) {
   for (const width of [390, 640, 641, 768, 1129, 1130, 1131, 1382, 1440]) {
     test(`${locale} default title bars and close buttons receive pointers at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: width === 1382 ? 729 : 900 });
-      for (const id of ["playing", "bishoujo", "memories", "clock", "status", "version"]) {
+      for (const id of ["playing", "bishoujo", "memories", "clock", "status", "version", "jev-public"]) {
         // Reload so raising/removing one window cannot hide an obstructed default.
         await page.goto(localeHref(locale));
         const item = page.locator(`#${id}`), title = item.locator(".window-titlebar");
@@ -106,7 +108,7 @@ for (const locale of supportedLocales) {
         }
         const before = await position(item);
         await move(page, title, id === "status" ? -24 : 24, 4);
-        await expect(item).toHaveCSS("z-index", "6");
+        await expect(item).toHaveCSS("z-index", "7");
         if (await hasFloatingSpace(page)) {
           expect(await position(item)).toEqual({ x: before.x + (id === "status" ? -24 : 24), y: before.y + 4 });
         } else {
@@ -115,7 +117,7 @@ for (const locale of supportedLocales) {
         }
         await item.locator(".window-close").click();
         await expect(item).toHaveCount(0);
-        await expect(page.locator(".desktop-window")).toHaveCount(5);
+        await expect(page.locator(".desktop-window")).toHaveCount(6);
       }
     });
   }
@@ -151,10 +153,10 @@ for (const locale of supportedLocales) {
         return { before, without };
       });
       expect(layout.before).toEqual(layout.without);
-      await expect(page.locator(".desktop-window")).toHaveCount(6);
+      await expect(page.locator(".desktop-window")).toHaveCount(7);
       await expect(page.locator("#profile, .profile-user, .profile-online")).toHaveCount(0);
-      await expect(page.locator(".desktop-window h2")).toHaveText([copy.home.playing, copy.home.bishoujo, copy.home.memories, copy.home.time, copy.home.status, copy.home.version]);
-      await expect(page.getByRole("main").getByRole("heading", { level: 2 })).toHaveCount(6);
+      await expect(page.locator(".desktop-window h2")).toHaveText([copy.home.playing, copy.home.bishoujo, copy.home.memories, copy.home.time, copy.home.status, copy.home.version, "Yes or NO ?"]);
+      await expect(page.getByRole("main").getByRole("heading", { level: 2 })).toHaveCount(7);
       await expect(page.locator(".navbar-primary, .drawer-links a[href*='/works/'], .drawer-links a[href*='/about/'], .drawer-links a[href*='/posts/'], .hero")).toHaveCount(0);
       await expect(page.locator("#playing .desktop-list li")).toHaveText(["Arcaea", "BanG Dream! Our Notes"]);
       await expect(page.locator("#bishoujo .desktop-list li")).toHaveText(["Summer Pockets REFLECTION BLUE", "魔女的夜宴", "蒼之彼方的四重奏"]);
@@ -235,7 +237,7 @@ for (const locale of supportedLocales) {
     expect(await others()).toEqual(otherDefaults);
     await page.setViewportSize({ width: 390, height: 900 });
     await expect(item).toHaveCount(0);
-    await expect(page.locator(".desktop-window")).toHaveCount(5);
+    await expect(page.locator(".desktop-window")).toHaveCount(6);
     expect(await storage()).toEqual(saved);
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.reload();
@@ -265,7 +267,7 @@ for (const locale of supportedLocales) {
     await expect(title).toHaveAccessibleName(copy.home.playing);
     await expect(title).toHaveAccessibleDescription(copy.home.keyboardMove);
     await expect(title).toHaveCSS("outline-style", "solid");
-    await expect(item).toHaveCSS("z-index", "6");
+    await expect(item).toHaveCSS("z-index", "7");
     const scroll = await page.evaluate(() => ({ x: scrollX, y: scrollY }));
     for (const [key, dx, dy] of [["ArrowUp", 0, -24], ["ArrowDown", 0, 24], ["ArrowLeft", -24, 0], ["ArrowRight", 24, 0]] as const) {
       const before = await position(item);
@@ -303,7 +305,7 @@ for (const locale of supportedLocales) {
       expect(await position(item)).toEqual(bounded);
     }
     await expect(page.locator(".window-movement, .window-move, .window-directions")).toHaveCount(0);
-    await expect(page.locator(".window-titlebar button")).toHaveText(Array(6).fill("×"));
+    await expect(page.locator(".window-titlebar button")).toHaveText(Array(7).fill("×"));
     await expect(page.getByText(copy.home.keyboardMove, { exact: true })).toHaveCount(0);
     await page.keyboard.press("Enter");
     await expect(item).toHaveCount(0);
@@ -364,17 +366,22 @@ for (const locale of supportedLocales) {
     const boxes = await page.locator(".desktop-window").evaluateAll((nodes) => nodes.map((node) => { const r = node.getBoundingClientRect(); return { top: r.top, bottom: r.bottom }; }));
     for (let i = 1; i < boxes.length; i++) expect(boxes[i]!.top).toBeGreaterThan(boxes[i - 1]!.bottom);
     await page.locator("#clock .window-close").click();
-    await expect(page.locator(".desktop-window")).toHaveCount(5);
+    await expect(page.locator(".desktop-window")).toHaveCount(6);
     await expect(page.locator("#playing")).toBeVisible();
     await reflow(page);
   });
 }
 
-for (const id of ["playing", "bishoujo", "memories", "clock", "status", "version"]) {
+for (const id of ["playing", "bishoujo", "memories", "clock", "status", "version", "jev-public"]) {
   test(`${id} drags only by title bar; content does not move the window`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/en/");
     const item = page.locator(`#${id}`);
+    if (id === "status") {
+      await expect(item.locator("[role=status]")).toHaveAttribute("data-state", "ready");
+      await expect.poll(() => item.evaluate((node: HTMLElement) =>
+        node.offsetTop === Math.round(0.98 * (node.parentElement!.clientHeight - node.offsetHeight)))).toBe(true);
+    }
     const original = await position(item);
     await move(page, item.locator(".window-content"), 24, 16);
     expect(await position(item)).toEqual(original);
@@ -399,9 +406,9 @@ test("pointer and keyboard focus raise windows with bounded z-index and visible 
   const clock = page.locator("#clock");
   const a = (await music.boundingBox())!, b = (await clock.boundingBox())!;
   await move(page, music.locator(".window-titlebar"), b.x - a.x + 40, b.y - a.y + 40);
-  await expect(music).toHaveCSS("z-index", "6");
+  await expect(music).toHaveCSS("z-index", "7");
   await clock.locator("h2").click();
-  await expect(clock).toHaveCSS("z-index", "6");
+  await expect(clock).toHaveCSS("z-index", "7");
   expect(await page.evaluate(() => {
     const r = document.querySelector("#playing")!.getBoundingClientRect();
     return document.elementFromPoint(r.x + 20, r.y + 20)?.closest(".desktop-window")?.id;
@@ -410,12 +417,16 @@ test("pointer and keyboard focus raise windows with bounded z-index and visible 
     await music.locator(".window-close").focus();
     await clock.locator(".window-close").focus();
   }
-  expect(await page.locator(".desktop-window").evaluateAll((nodes) => nodes.map((node) => Number(getComputedStyle(node).zIndex)).sort())).toEqual([1, 2, 3, 4, 5, 6]);
+  expect(await page.locator(".desktop-window").evaluateAll((nodes) => nodes.map((node) => Number(getComputedStyle(node).zIndex)).sort())).toEqual([1, 2, 3, 4, 5, 6, 7]);
 });
 
 test("close affects one window; reload restores all defaults without storage", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/en/");
+  // Compare settled defaults, not the status window's transient loading height.
+  await expect(page.locator("#status [role=status]")).toHaveAttribute("data-state", "ready");
+  await expect.poll(() => page.locator("#status").evaluate((node: HTMLElement) =>
+    node.offsetTop === Math.round(0.98 * (node.parentElement!.clientHeight - node.offsetHeight)))).toBe(true);
   const storage = () => page.evaluate(() => ({ local: { ...localStorage }, session: { ...sessionStorage } }));
   const baselineStorage = await storage();
   const positions = () => page.locator(".desktop-window").evaluateAll((nodes) => nodes.map((node: HTMLElement) => ({ id: node.id, x: node.offsetLeft, y: node.offsetTop })));
@@ -423,11 +434,11 @@ test("close affects one window; reload restores all defaults without storage", a
   await move(page, page.locator("#playing .window-titlebar"), 150, 80);
   await page.locator("#clock .window-close").click();
   await expect(page.locator("#clock")).toHaveCount(0);
-  await expect(page.locator(".desktop-window")).toHaveCount(5);
+  await expect(page.locator(".desktop-window")).toHaveCount(6);
   expect(await positions()).not.toEqual(defaults);
   expect(await storage()).toEqual(baselineStorage);
   await page.reload();
-  await expect(page.locator(".desktop-window")).toHaveCount(6);
+  await expect(page.locator(".desktop-window")).toHaveCount(7);
   await expect.poll(positions).toEqual(defaults);
   expect(await storage()).toEqual(baselineStorage);
 });
@@ -474,16 +485,16 @@ test("native keyboard skip, close buttons and final focus remain usable", async 
   await expect(page.locator(".skip-link")).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.locator("main")).toBeFocused();
-  for (const id of ["playing", "bishoujo", "memories", "clock", "status", "version"]) {
+  for (const id of ["playing", "bishoujo", "memories", "clock", "status", "version", "jev-public"]) {
     await page.keyboard.press("Tab");
     await expect(page.locator(`#${id} .window-titlebar`)).toBeFocused();
     await expect(page.locator(`#${id} .window-titlebar`)).toHaveCSS("outline-style", "solid");
     await page.keyboard.press("Tab");
     await expect(page.locator(`#${id} .window-close`)).toBeFocused();
-    await expect(page.locator(`#${id}`)).toHaveCSS("z-index", "6");
+    await expect(page.locator(`#${id}`)).toHaveCSS("z-index", "7");
     await expect(page.locator(`#${id} .window-close`)).toHaveCSS("outline-style", "solid");
   }
-  for (let remaining = 5; remaining >= 0; remaining--) {
+  for (let remaining = 6; remaining >= 0; remaining--) {
     await page.keyboard.press("Enter");
     await expect(page.locator(".desktop-window")).toHaveCount(remaining);
     if (remaining) expect(await page.evaluate(() => document.activeElement?.className)).toBe("window-close");

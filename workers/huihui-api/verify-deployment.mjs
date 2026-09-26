@@ -9,6 +9,11 @@ export const EXPECTED_LIMITER = Object.freeze({
   limit: 10,
   period: 60,
 });
+export const EXPECTED_PUBLIC_QUOTA = Object.freeze({
+  name: "JEV_PUBLIC_QUOTA",
+  type: "durable_object_namespace",
+  class_name: "JevPublicQuota",
+});
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const SHA = /^[0-9a-f]{40}$/;
@@ -47,12 +52,21 @@ export function verifyVersion(version, versionId, targetSha) {
       limiters[0].simple?.period === EXPECTED_LIMITER.period,
     "JEV_RATE_LIMITER is missing or does not match the beta configuration.",
   );
-  // Inspect names/types only. Never read, copy, serialize or log binding values.
-  const keys = bindings.filter(binding => binding?.name === "TYPESAFE_JEV_API_KEY");
+  const quotas = bindings.filter(binding => binding?.name === EXPECTED_PUBLIC_QUOTA.name);
   requireCondition(
-    keys.length === 1 && keys[0].type === "secret_text",
-    "TYPESAFE_JEV_API_KEY secret metadata is missing or invalid.",
+    quotas.length === 1 && quotas[0].type === EXPECTED_PUBLIC_QUOTA.type &&
+      quotas[0].class_name === EXPECTED_PUBLIC_QUOTA.class_name &&
+      (quotas[0].script_name === undefined || quotas[0].script_name === BETA_WORKER),
+    "JEV_PUBLIC_QUOTA is missing or does not match the beta configuration.",
   );
+  // Inspect names/types only. Never read, copy, serialize or log secret values.
+  for (const name of ["TYPESAFE_JEV_API_KEY", "JEV_PUBLIC_IP_HMAC_KEY"]) {
+    const keys = bindings.filter(binding => binding?.name === name);
+    requireCondition(
+      keys.length === 1 && keys[0].type === "secret_text",
+      `${name} secret metadata is missing or invalid.`,
+    );
+  }
 }
 
 export async function verifyBetaDeployment({ accountId, apiToken, targetSha, fetchImpl = fetch }) {
@@ -103,7 +117,7 @@ export async function runAcceptance({ env = process.env, fetchImpl = fetch, log 
       targetSha: env.TARGET_SHA,
       fetchImpl,
     });
-    log(`Verified ${verified.worker} commit ${verified.sha}, deployment ${verified.deploymentId}, version ${verified.versionId}: ${verified.limiter} matches; required secret metadata present.`);
+    log(`Verified ${verified.worker} commit ${verified.sha}, deployment ${verified.deploymentId}, version ${verified.versionId}: ${verified.limiter} and ${EXPECTED_PUBLIC_QUOTA.name} match; required secret metadata present.`);
     return 0;
   } catch (cause) {
     error(cause instanceof AcceptanceError ? cause.message : "Beta Worker deployment verification failed.");

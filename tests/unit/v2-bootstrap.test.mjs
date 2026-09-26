@@ -65,6 +65,9 @@ describe("v2 initial theme build contract", () => {
   });
 
   test("private Jev has no public entry point or bundled credentials", () => {
+    for (const entry of output.filter(entry => /\.js$/.test(entry.fileName))) {
+      expect(String(entry.code ?? entry.source)).not.toMatch(/TYPESAFE_JEV_API_KEY|JEV_PUBLIC_IP_HMAC_KEY|api\.typesafe\.ai|cloudflareaccess\.com|synthetic-provider-secret/);
+    }
     const html = String(output.find(entry => entry.fileName === "tools/jev/index.html")?.source);
     expect(html).toContain('<meta name="robots" content="noindex, nofollow">');
     expect(html).toContain(`<script src="/${bootstrap.fileName}"></script>`);
