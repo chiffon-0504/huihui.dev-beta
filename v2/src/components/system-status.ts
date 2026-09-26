@@ -24,8 +24,8 @@ export function createSystemStatus(copy: HomeContent, environment: ApiEnvironmen
     target.replaceChildren(dot, document.createTextNode(text));
   };
   const client = createSystemStatusClient(environment, (result) => {
+    node.setAttribute("aria-busy", "true");
     node.dataset.state = result.state;
-    node.setAttribute("aria-busy", String(result.state === "loading"));
     const overall = result.state === "ready" ? result.data.status : "unknown";
     show(summary, overall, result.state === "loading" ? copy.statusLoading :
       overall === "operational" ? copy.statusHealthy : copy.statusLabels[overall]);
@@ -33,6 +33,7 @@ export function createSystemStatus(copy: HomeContent, environment: ApiEnvironmen
       const status = result.state === "ready" ? result.data.components.find((component) => component.id === id)!.status : "unknown";
       show(rows[id], status, result.state === "loading" ? copy.statusLoading : copy.statusLabels[status]);
     }
+    if (result.state !== "loading") node.setAttribute("aria-busy", "false");
   });
   return { node, ...client };
 }
