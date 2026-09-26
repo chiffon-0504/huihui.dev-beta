@@ -117,6 +117,20 @@ describe("cryptographic Access authorization", () => {
     vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("private-network-detail"); }));
     expect((await call()).status).toBe(503);
   });
+  test.each([301, 302, 303, 307, 308])("rejects JWKS HTTP %i without following Location", async status => {
+    const cancel = vi.fn();
+    vi.stubGlobal("fetch", vi.fn(async (_url, init) => {
+      expect(init.redirect).toBe("manual");
+      return new Response(new ReadableStream({ cancel }), { status, headers: { Location: "https://attacker.test/keys" } });
+    }));
+    const env = baseEnv();
+    const response = await call(request(), env);
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ ok: false, error: "unavailable" });
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(cancel).toHaveBeenCalled();
+    expect(env.JEV_RATE_LIMITER.limit).not.toHaveBeenCalled();
+  });
 });
 
 describe("costly Worker endpoint", () => {
@@ -131,7 +145,7 @@ describe("costly Worker endpoint", () => {
     expect(upstream).toHaveBeenCalledTimes(1);
     const init = upstream.mock.calls[0][1];
     expect(JSON.parse(init.body)).toEqual(toJevPayload(form));
-    expect(init.redirect).toBe("error");
+    expect(init.redirect).toBe("manual");
     expect(Object.keys(init.headers).sort()).toEqual(["Accept", "Authorization", "Content-Type"]);
   });
   test.each(["TYPESAFE_JEV_API_KEY", "JEV_RATE_LIMITER", "JEV_ACCESS_AUD", "JEV_ACCESS_ISSUER", "JEV_ALLOWED_EMAIL", "JEV_SITE_ORIGIN"])("missing %s fails closed", async key => {
@@ -165,6 +179,20 @@ describe("costly Worker endpoint", () => {
     mockUpstream(noul, () => new Response("synthetic-jev-secret private-stack-trace", { status }));
     const response = await call(); expect(response.status).toBe(502);
     expect(await response.json()).toEqual({ ok: false, error: "upstream_unavailable" });
+  });
+  test.each([301, 302, 303, 307, 308])("rejects upstream HTTP %i without forwarding the API key to Location", async status => {
+    const cancel = vi.fn();
+    const upstream = mockUpstream(noul, (_url, init) => {
+      expect(init.redirect).toBe("manual");
+      return new Response(new ReadableStream({ cancel }), { status, headers: { Location: "https://attacker.test/collect" } });
+    });
+    const response = await call();
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ ok: false, error: "upstream_unavailable" });
+    expect(response.headers.has("Location")).toBe(false);
+    expect(upstream).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(cancel).toHaveBeenCalled();
   });
   test.each(["{", "x".repeat(32769), JSON.stringify({ answers: { decision: { type: "noul", noul: 8 } } })])("rejects malformed upstream bodies %#", async body => {
     mockUpstream(noul, () => new Response(body)); expect((await call()).status).toBe(502);
@@ -210,6 +238,17 @@ describe("Pages UI and same-origin bridge", () => {
     expect(result.status).toBe(200); expect(upstream).toHaveBeenCalledTimes(1);
     expect(binding.mock.calls[0][0].headers.has("Cookie")).toBe(false);
     expect(binding.mock.calls[0][0].headers.has("Authorization")).toBe(false);
+    expect(binding.mock.calls[0][0].redirect).toBe("manual");
+  });
+  test.each([301, 302, 303, 307, 308])("bridge rejects service HTTP %i even with a valid JSON body", async status => {
+    const binding = vi.fn(async () => Response.json({ ok: true, result: { mode: "noul", probability: 0.73 } },
+      { status, headers: { Location: "https://attacker.test/collect" } }));
+    const response = await onRequest({ request: request(), env: { ...baseEnv(), JEV_API: { fetch: binding } }, next: vi.fn() });
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ ok: false, error: "invalid_response" });
+    expect(response.headers.has("Location")).toBe(false);
+    expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+    expect(binding).toHaveBeenCalledTimes(1);
   });
   test("bridge cannot authorize an anonymous costly request", async () => {
     const upstream = mockUpstream(); const env = baseEnv();

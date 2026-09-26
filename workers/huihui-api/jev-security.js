@@ -112,9 +112,12 @@ export async function authorizeJev(request, env) {
   try {
     keys = await deadline(4000, async signal => {
       const response = await fetch(`${issuer}/cdn-cgi/access/certs`, {
-        signal, redirect: "error", headers: { Accept: "application/json" },
+        signal, redirect: "manual", headers: { Accept: "application/json" },
       });
-      if (!response.ok) throw new Error();
+      if (!response.ok) {
+        void response.body?.cancel().catch(() => {});
+        throw new Error();
+      }
       const data = await boundedJson(response, 65536, signal);
       if (!Array.isArray(data?.keys) || data.keys.length > 10) throw new Error();
       return data.keys;

@@ -92,7 +92,7 @@ export async function handleJev(request, env) {
       let response;
       try {
         response = await fetch("https://api.typesafe.ai/v1/systemone", {
-          method: "POST", redirect: "error", signal,
+          method: "POST", redirect: "manual", signal,
           headers: { Authorization: `Bearer ${env.TYPESAFE_JEV_API_KEY}`, "Content-Type": "application/json", Accept: "application/json" },
           body: JSON.stringify(toJevPayload(form)),
         });
